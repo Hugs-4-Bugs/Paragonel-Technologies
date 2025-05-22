@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button'; // Added this import
 import { Linkedin, Twitter, Github, UserCircle, Brain, CloudCog, Layers2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -30,9 +31,9 @@ const teamMembers: TeamMember[] = [
     id: '1',
     name: 'Prabhat Kumar',
     title: 'Founder & CEO',
-    imageUrl: '/prabhat-kumar.png', // Replace with actual image path if you've added it, e.g., /prabhat-kumar.png
+    imageUrl: '/prabhat-kumar.png',
     aiHint: 'Prabhat Kumar Founder CEO QuantumFusion Solutions',
-    bio: 'Prabhat Kumar, with a Bachelor of Engineering in Computer Science, is the visionary Founder & CEO of QuantumFusion Solutions. He leads the company with a passion for innovation, driving its mission to deliver cutting-edge AI, Cloud, DevOps, and SaaS solutions that shape the future of technology. His expertise lies in architecting scalable systems and fostering a culture of continuous learning and technological excellence within the team.',
+    bio: 'Prabhat Kumar, with a Bachelor of Engineering in Computer Science, is the visionary Founder & CEO of QuantumFusion Solutions. He leads the company with a passion for innovation, driving its mission to deliver cutting-edge AI, Cloud, DevOps, and SaaS solutions that shape the future of technology.',
     socials: { linkedin: '#', twitter: '#' },
     icon: Brain,
   },
