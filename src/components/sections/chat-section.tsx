@@ -18,7 +18,7 @@ interface ChatMessage {
 }
 
 export function ChatSection() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Auto-open chat
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +27,7 @@ export function ChatSection() {
   const initialMessage: ChatMessage = {
     id: 'initial-ai-message',
     sender: 'ai',
-    text: "Hi! I'm the QuantumFusion Solutions assistant. How can I help you today about our company and services?",
+    text: "Hi! I'm the QuantumFusion Solutions assistant. How can I help you today about our company, services, or careers?",
     timestamp: new Date(),
   };
 
@@ -35,7 +35,7 @@ export function ChatSection() {
     if (isOpen && messages.length === 0) {
       setMessages([initialMessage]);
     }
-  }, [isOpen, messages.length]); // Added messages.length to dependencies to re-trigger if chat is closed and reopened
+  }, [isOpen, messages.length]);
 
 
   useEffect(() => {
@@ -86,7 +86,8 @@ export function ChatSection() {
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
-    if (!isOpen && messages.length === 0) { 
+     // If opening and no messages yet (after being closed), add initial message
+    if (!isOpen && messages.length === 0) {
         setMessages([initialMessage]);
     }
   };
@@ -95,28 +96,28 @@ export function ChatSection() {
     return (
       <Button
         variant="default"
-        size="icon"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary/90 text-primary-foreground"
+        size="lg" // Made FAB slightly larger
+        className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl z-50 bg-gradient-to-br from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity p-0 flex items-center justify-center"
         onClick={toggleChat}
         aria-label="Open chat"
       >
-        <MessageCircle className="h-7 w-7" />
+        <MessageCircle className="h-8 w-8" />
       </Button>
     );
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-full max-w-md h-[70vh] max-h-[600px] shadow-xl z-50 flex flex-col rounded-xl overflow-hidden bg-card">
-      <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-muted/50 dark:bg-card">
-        <CardTitle className="text-lg font-semibold flex items-center text-card-foreground">
-          <Bot className="h-6 w-6 mr-2 text-primary neon-icon" />
+    <Card className="fixed bottom-6 right-6 w-full max-w-md h-[70vh] max-h-[600px] shadow-2xl z-50 flex flex-col rounded-xl overflow-hidden border-none bg-card">
+      <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-gradient-to-br from-primary to-accent text-primary-foreground">
+        <CardTitle className="text-lg font-semibold flex items-center">
+          <Bot className="h-6 w-6 mr-2" /> {/* Removed neon-icon for header consistency */}
           QuantumFusion Assistant
         </CardTitle>
-        <Button variant="ghost" size="icon" onClick={toggleChat} aria-label="Close chat">
-          <X className="h-5 w-5 text-muted-foreground" />
+        <Button variant="ghost" size="icon" onClick={toggleChat} aria-label="Close chat" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/20">
+          <X className="h-5 w-5" />
         </Button>
       </CardHeader>
-      <CardContent className="flex-grow p-0 overflow-hidden">
+      <CardContent className="flex-grow p-0 overflow-hidden bg-background dark:bg-muted/10">
         <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map((msg) => (
@@ -127,19 +128,19 @@ export function ChatSection() {
                   msg.sender === 'user' ? 'justify-end' : 'justify-start'
                 )}
               >
-                {msg.sender === 'ai' && <Bot className="h-6 w-6 text-primary flex-shrink-0 self-start mt-1 neon-icon" />}
+                {msg.sender === 'ai' && <Bot className="h-6 w-6 text-primary flex-shrink-0 self-start mt-1" />}
                 <div
                   className={cn(
-                    "max-w-[75%] rounded-xl px-4 py-2.5 text-sm shadow-sm",
+                    "max-w-[75%] rounded-xl px-3.5 py-2.5 text-sm",
                     msg.sender === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-br-none'
-                      : 'bg-muted text-foreground rounded-bl-none dark:bg-secondary/70'
+                      ? 'bg-gradient-to-r from-primary to-blue-500 dark:from-primary dark:to-blue-600 text-primary-foreground rounded-br-none shadow-md'
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none shadow-md'
                   )}
                 >
                   <p className="whitespace-pre-wrap">{msg.text}</p>
                   <p className={cn(
-                      "text-xs mt-1",
-                      msg.sender === 'user' ? 'text-primary-foreground/70 text-right' : 'text-muted-foreground/70 text-left'
+                      "text-xs mt-1.5 opacity-80",
+                      msg.sender === 'user' ? 'text-primary-foreground/70 text-right' : 'text-slate-500 dark:text-slate-400 text-left'
                     )}>
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -149,8 +150,8 @@ export function ChatSection() {
             ))}
             {isLoading && (
               <div className="flex justify-start items-center space-x-2">
-                <Bot className="h-6 w-6 text-primary neon-icon" />
-                <div className="bg-muted dark:bg-secondary/70 rounded-xl px-4 py-2.5 text-sm shadow-sm">
+                <Bot className="h-6 w-6 text-primary" />
+                <div className="bg-slate-100 dark:bg-slate-700 rounded-xl px-4 py-2.5 text-sm shadow-md">
                   <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 </div>
               </div>
@@ -158,7 +159,7 @@ export function ChatSection() {
           </div>
         </ScrollArea>
       </CardContent>
-      <CardFooter className="p-4 border-t bg-muted/50 dark:bg-card">
+      <CardFooter className="p-3 border-t bg-background dark:bg-muted/20">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -171,7 +172,7 @@ export function ChatSection() {
             placeholder="Ask about QuantumFusion..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            className="flex-grow bg-background"
+            className="flex-grow bg-white dark:bg-background rounded-md border-slate-300 dark:border-slate-600 focus:border-primary focus:ring-primary"
             disabled={isLoading}
             onKeyPress={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -180,10 +181,10 @@ export function ChatSection() {
               }
             }}
           />
-          <Button type="button" variant="ghost" size="icon" disabled={isLoading} aria-label="Use microphone (visual placeholder)">
-            <Mic className="h-5 w-5 text-muted-foreground hover:text-primary" />
+          <Button type="button" variant="ghost" size="icon" disabled={isLoading} aria-label="Use microphone (visual placeholder)" className="text-muted-foreground hover:text-primary">
+            <Mic className="h-5 w-5" />
           </Button>
-          <Button type="submit" size="icon" disabled={isLoading || inputValue.trim() === ''} aria-label="Send message">
+          <Button type="submit" size="icon" disabled={isLoading || inputValue.trim() === ''} aria-label="Send message" className="bg-primary hover:bg-primary/90">
             <Send className="h-5 w-5" />
           </Button>
         </form>

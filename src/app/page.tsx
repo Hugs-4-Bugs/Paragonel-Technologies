@@ -10,7 +10,6 @@ import { TestimonialsSection } from '@/components/sections/testimonials-section'
 // import { TeamSection } from '@/components/sections/team-section'; // Full section on /team
 // import { BlogSection } from '@/components/sections/blog-section'; // Full section on /blog
 // import { ContactSection } from '@/components/sections/contact-section'; // Full section on /contact
-import { ChatSection } from '@/components/sections/chat-section'; // Import ChatSection
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -144,7 +143,7 @@ export default function HomePage() {
           </Button>
         </div>
       </section>
-      <ChatSection /> {/* Add ChatSection here */}
+      {/* ChatSection removed from here */}
     </>
   );
 }
