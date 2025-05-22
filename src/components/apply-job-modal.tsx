@@ -30,7 +30,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import type { Job, ApplicationFormValues as FormValues } from "@/types"; // Renamed for clarity
 import { formatApplicationEmail } from "@/ai/flows/format-application-email-flow";
-import { useState } from "react";
+import React, { useState, useEffect } from "react"; // Import React
 import { Loader2, Send, FileText, Briefcase } from "lucide-react";
 
 interface ApplyJobModalProps {
@@ -86,7 +86,7 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
   });
   
   // Update defaultValues when job changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (job) {
       form.reset({
         fullName: "",
