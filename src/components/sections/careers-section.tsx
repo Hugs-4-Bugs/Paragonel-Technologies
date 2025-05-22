@@ -5,7 +5,8 @@ import React, { useState, useMemo } from 'react';
 import type { Job } from '@/types';
 import { dummyJobs, locations as allLocations, departments as allDepartments } from '@/lib/data';
 import { JobCard } from '@/components/job-card';
-import { ApplyJobModal } from '@/components/apply-job-modal'; // Import the modal
+import { ApplyJobModal } from '@/components/apply-job-modal';
+import { JobDescriptionModal } from '@/components/job-description-modal'; // Import the new modal
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,13 +27,20 @@ export function CareersSection() {
   const [workArrangementFilter, setWorkArrangementFilter] = useState('Any');
   const [showOpenRoles, setShowOpenRoles] = useState(false); 
 
-  // State for the application modal
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [selectedJobForApplication, setSelectedJobForApplication] = useState<Job | null>(null);
+
+  const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+  const [selectedJobForDescription, setSelectedJobForDescription] = useState<Job | null>(null);
 
   const handleApplyNowClick = (job: Job) => {
     setSelectedJobForApplication(job);
     setIsApplyModalOpen(true);
+  };
+
+  const handleViewDetailsClick = (job: Job) => {
+    setSelectedJobForDescription(job);
+    setIsDescriptionModalOpen(true);
   };
 
   const filteredJobs = useMemo(() => {
@@ -175,6 +183,7 @@ export function CareersSection() {
                     <JobCard 
                         job={{...job, company: job.company === 'Innovatech Solutions' || job.company === 'FutureAI Corp' ? 'QuantumFusion Solutions' : job.company }} 
                         onApplyNowClick={handleApplyNowClick}
+                        onViewDetailsClick={handleViewDetailsClick} // Pass the new handler
                     />
                   </ScrollFadeIn>
                 ))}
@@ -202,6 +211,11 @@ export function CareersSection() {
         isOpen={isApplyModalOpen} 
         onOpenChange={setIsApplyModalOpen} 
         job={selectedJobForApplication} 
+      />
+      <JobDescriptionModal
+        isOpen={isDescriptionModalOpen}
+        onOpenChange={setIsDescriptionModalOpen}
+        job={selectedJobForDescription}
       />
     </section>
   );

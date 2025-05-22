@@ -33,6 +33,7 @@ export interface ApplicationFormValues {
   resume: FileList;
   linkedinProfile?: string;
   portfolioWebsite?: string;
+  codingProfileUrl?: string; // New field
 
   highestQualification: string;
   specialization: string;
@@ -44,9 +45,8 @@ export interface ApplicationFormValues {
   secondarySkills?: string;
 
   isFresher: boolean;
-  // For simplicity, capturing one work experience block. Can be array for multiple.
   companyName?: string;
-  jobTitleExperience?: string; // Renamed to avoid conflict with job.title
+  jobTitleExperience?: string;
   fromDate?: string;
   toDate?: string;
   isCurrentlyWorking?: boolean;
@@ -61,7 +61,6 @@ export interface ApplicationFormValues {
   acceptTerms: boolean;
   notifySimilarJobs: boolean;
 
-  // Hidden fields
   jobId: string;
-  jobTitle: string; // Job title being applied for
+  jobTitle: string;
 }

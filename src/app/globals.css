@@ -24,7 +24,7 @@ body {
     --muted-foreground: 234 40% 45%;
     --accent: 270 50% 40%; /* Indigo */
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84.2% 60.2%; /* Standard bright red for light mode */
     --destructive-foreground: 0 0% 98%;
     --border: 210 20% 85%; /* Lighter border */
     --input: 210 20% 85%;
@@ -62,7 +62,7 @@ body {
     --muted-foreground: 210 30% 75%;
     --accent: 270 50% 48%; /* Indigo, adjusted for dark theme */
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 70% 60%; /* Brighter red for dark mode */
     --destructive-foreground: 0 0% 98%;
     --border: 234 40% 45%;
     --input: 234 40% 45%;

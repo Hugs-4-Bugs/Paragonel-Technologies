@@ -33,7 +33,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import type { Job, ApplicationFormValues } from "@/types";
 import { formatApplicationEmail } from "@/ai/flows/format-application-email-flow";
-import { Loader2, Send, Briefcase, User, GraduationCap, BriefcaseBusiness, Info, AlertTriangle, ShieldCheck, BellDot } from "lucide-react";
+import { Loader2, Send, Briefcase, User, GraduationCap, BriefcaseBusiness, Info, AlertTriangle, ShieldCheck, BellDot, Link as LinkIcon } from "lucide-react";
 import { educationQualifications, noticePeriods, generateYearOptions, locations as preferredLocations } from "@/lib/data";
 
 interface ApplyJobModalProps {
@@ -58,6 +58,7 @@ const formSchema = z.object({
     ),
   linkedinProfile: z.string().url({ message: "Please enter a valid LinkedIn Profile URL." }).optional().or(z.literal('')),
   portfolioWebsite: z.string().url({ message: "Please enter a valid Portfolio Website URL." }).optional().or(z.literal('')),
+  codingProfileUrl: z.string().url({ message: "Please enter a valid Coding Profile URL." }).optional().or(z.literal('')),
   
   highestQualification: z.string().min(1, "Highest qualification is required."),
   specialization: z.string().min(2, "Specialization/Branch is required."),
@@ -124,6 +125,7 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
       phone: "",
       linkedinProfile: "",
       portfolioWebsite: "",
+      codingProfileUrl: "",
       highestQualification: "",
       specialization: "",
       university: "",
@@ -159,6 +161,7 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
         phone: "",
         linkedinProfile: "",
         portfolioWebsite: "",
+        codingProfileUrl: "",
         highestQualification: "",
         specialization: "",
         university: "",
@@ -185,7 +188,7 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
         resume: undefined as any,
       });
     }
-  }, [job, form, isOpen]); // Reset form when modal opens or job changes
+  }, [job, form, isOpen]);
 
   const readFileAsDataURL = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -204,16 +207,14 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
       const resumeFile = values.resume[0];
       const resumeDataUri = await readFileAsDataURL(resumeFile);
 
-      // Prepare input for AI flow
       const emailInput = {
         ...values,
         resumeDataUri,
         resumeFileName: resumeFile.name,
-        jobTitle: job.title, // Ensure this is the job title being applied for
+        jobTitle: job.title,
         jobId: job.id,
       };
       
-      // Remove FileList from object being sent to Genkit
       const { resume, ...inputForGenkit } = emailInput;
       
       const formattedEmail = await formatApplicationEmail(inputForGenkit);
@@ -221,7 +222,6 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
       console.log("SIMULATION: Application email ready to be sent to erprabhat72@gmail.com");
       console.log("Subject:", formattedEmail.emailSubject);
       console.log("Body (first 500 chars for brevity):", formattedEmail.emailBody.substring(0,500) + "...");
-      // To see full body: console.log("Full Body:", formattedEmail.emailBody);
 
       toast({
         title: "Application Submitted!",
@@ -248,7 +248,7 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl flex flex-col h-[95svh] sm:h-[90svh] shadow-2xl border-primary/30">
+      <DialogContent className="sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl flex flex-col h-[95svh] sm:h-[90svh] shadow-2xl border-primary/30 p-0">
         <DialogHeader className="p-6 border-b">
           <DialogTitle className="text-2xl md:text-3xl flex items-center font-bold text-foreground">
             <Briefcase className="mr-3 h-7 w-7 text-primary neon-icon" /> Apply for: {job.title}
@@ -262,7 +262,6 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-6">
               
-              {/* Personal Information Section */}
               <section className="space-y-6 p-6 rounded-lg border bg-card shadow-sm">
                 <h3 className="text-xl font-semibold flex items-center text-primary"><User className="mr-2 h-5 w-5"/>Personal Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -270,7 +269,8 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                   <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input type="tel" placeholder="+91 1234567890" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="linkedinProfile" render={({ field }) => (<FormItem><FormLabel>LinkedIn Profile URL (Optional)</FormLabel><FormControl><Input placeholder="https://linkedin.com/in/yourprofile" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="portfolioWebsite" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Portfolio Website URL (Optional)</FormLabel><FormControl><Input placeholder="https://yourportfolio.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="portfolioWebsite" render={({ field }) => (<FormItem><FormLabel>Portfolio Website URL (Optional)</FormLabel><FormControl><Input placeholder="https://yourportfolio.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="codingProfileUrl" render={({ field }) => (<FormItem><FormLabel>Coding Profile URL (Optional)</FormLabel><FormControl><Input placeholder="https://github.com/yourusername" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="resume" render={({ field: { onChange, value, ...rest } }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel>Resume (PDF, DOC, DOCX - Max 5MB)</FormLabel>
@@ -281,7 +281,6 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                 </div>
               </section>
 
-              {/* Education Details Section */}
               <section className="space-y-6 p-6 rounded-lg border bg-card shadow-sm">
                 <h3 className="text-xl font-semibold flex items-center text-primary"><GraduationCap className="mr-2 h-5 w-5"/>Education Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -293,14 +292,12 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                 </div>
               </section>
               
-              {/* Skills Section */}
               <section className="space-y-6 p-6 rounded-lg border bg-card shadow-sm">
-                <h3 className="text-xl font-semibold flex items-center text-primary"><GraduationCap className="mr-2 h-5 w-5"/>Skills</h3>
-                <FormField control={form.control} name="primarySkills" render={({ field }) => (<FormItem><FormLabel>Primary Skills (Comma separated)</FormLabel><FormControl><Textarea placeholder="e.g., Java, Python, React, AWS" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="secondarySkills" render={({ field }) => (<FormItem><FormLabel>Secondary Skills (Optional, Comma separated)</FormLabel><FormControl><Textarea placeholder="e.g., Communication, Teamwork, Git" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <h3 className="text-xl font-semibold flex items-center text-primary"><Info className="mr-2 h-5 w-5"/>Skills</h3>
+                <FormField control={form.control} name="primarySkills" render={({ field }) => (<FormItem><FormLabel>Primary Skills (Comma separated)</FormLabel><FormControl><Textarea placeholder="e.g., Java, Python, React, AWS" {...field} /></FormControl><FormDescription>List your core technical skills.</FormDescription><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="secondarySkills" render={({ field }) => (<FormItem><FormLabel>Secondary Skills (Optional, Comma separated)</FormLabel><FormControl><Textarea placeholder="e.g., Communication, Teamwork, Git" {...field} /></FormControl><FormDescription>List other relevant skills.</FormDescription><FormMessage /></FormItem>)} />
               </section>
 
-              {/* Work Experience Section */}
               <section className="space-y-6 p-6 rounded-lg border bg-card shadow-sm">
                 <div className="flex items-center justify-between">
                     <h3 className="text-xl font-semibold flex items-center text-primary"><BriefcaseBusiness className="mr-2 h-5 w-5"/>Work Experience</h3>
@@ -336,7 +333,6 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                 )}
               </section>
 
-              {/* Additional Information Section */}
               <section className="space-y-6 p-6 rounded-lg border bg-card shadow-sm">
                 <h3 className="text-xl font-semibold flex items-center text-primary"><Info className="mr-2 h-5 w-5"/>Additional Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -348,7 +344,6 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                 <FormField control={form.control} name="coverLetter" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Cover Letter (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us why you are a great fit for this role..." className="min-h-[120px]" {...field} /></FormControl><FormMessage /></FormItem>)} />
               </section>
 
-              {/* Declarations Section */}
               <section className="space-y-6 p-6 rounded-lg border bg-card shadow-sm">
                 <h3 className="text-xl font-semibold flex items-center text-primary"><ShieldCheck className="mr-2 h-5 w-5"/>Declarations</h3>
                 <FormField control={form.control} name="acceptTerms" render={({ field }) => (
@@ -380,7 +375,7 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
             <Button variant="outline" disabled={isSubmitting} size="lg">Cancel</Button>
           </DialogClose>
           <Button
-            type="submit" // This button is outside the form element, onClick will trigger form.handleSubmit
+            type="submit"
             onClick={form.handleSubmit(onSubmit)}
             disabled={isSubmitting}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
