@@ -38,6 +38,7 @@ export function BlogSection() {
                       alt={post.title}
                       width={600}
                       height={300}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       className="object-cover w-full h-52"
                       data-ai-hint={post.aiHint}
                     />
