@@ -1,3 +1,4 @@
+
 import type { Job } from '@/types';
 
 export const dummyJobs: Job[] = [
@@ -40,7 +41,7 @@ export const dummyJobs: Job[] = [
     title: 'Data Scientist',
     company: 'Quantum Dynamics',
     location: 'Boston, MA',
-    department: 'Engineering',
+    department: 'Data Science', // Corrected from Engineering for better filter diversity
     description: 'Analyze large datasets to extract meaningful insights and build predictive models. Apply machine learning techniques to solve complex business problems.',
     employmentType: 'Full-time',
     postedDate: '2024-07-15T11:00:00Z',
@@ -77,3 +78,9 @@ export const departments = [
   'All Departments',
   ...new Set(dummyJobs.map(job => job.department).sort())
 ];
+
+// Add other data structures if needed for Team, Portfolio, Blog, etc.
+// For example:
+// export const teamMembers = [ ... ];
+// export const portfolioItems = [ ... ];
+// export const blogPosts = [ ... ];
