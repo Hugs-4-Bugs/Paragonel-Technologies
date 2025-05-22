@@ -17,9 +17,10 @@ export function Hero() {
           </h1>
         </ScrollFadeIn>
         <ScrollFadeIn delay="200ms">
-          <p className="max-w-3xl mx-auto text-lg md:text-xl lg:text-2xl text-primary-foreground/90 mb-10">
+          <p className="text-xl sm:text-2xl md:text-3xl font-medium text-primary-foreground tracking-normal mb-4">
             Shaping the Future for Tomorrow.
-            <br className="hidden sm:block" />
+          </p>
+          <p className="max-w-2xl mx-auto text-base sm:text-lg md:text-lg text-primary-foreground/80 mb-10 leading-relaxed">
             Innovative IT solutions in AI, Cloud Computing, DevOps, and SaaS Platforms.
           </p>
         </ScrollFadeIn>
