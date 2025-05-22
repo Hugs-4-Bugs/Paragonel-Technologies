@@ -7,23 +7,23 @@ This is the official website for QuantumFusion Solutions, an innovative IT compa
 
 ## Core Features
 
-*   **Sticky Navigation Bar**: Easy access to all main sections, with a responsive burger menu for mobile/tablet.
+*   **Sticky Navigation Bar**: Easy access to all main sections, with a responsive burger menu for mobile/tablet. Includes Home, About, Services, Portfolio, Team, Careers, Blog, Testimonials, FAQ, Contact, Login, and Signup.
 *   **Dynamic Hero Section**: Featuring the company tagline "Shaping the Future for Tomorrow" with an animated gradient background.
 *   **Comprehensive Sections**:
-    *   **About Us**: Mission, vision, company story, and values.
+    *   **About Us**: Mission, vision, company story, and values presented with a timeline.
     *   **Services**: Detailed pages for AI Solutions, Cloud Infrastructure, DevOps Automation, and SaaS Platforms.
     *   **Portfolio**: Carousel showcasing successful projects.
-    *   **Team**: Profile cards for team members, including the Founder & CEO.
-    *   **Careers**: Interactive job board with filtering (Location, Department, Employment Type, Work Arrangement) and a "View Open Roles" toggle.
+    *   **Team**: Profile cards for team members, including the Founder & CEO (Prabhat Kumar).
+    *   **Careers**: Interactive job board (initially hidden, toggled by "View Open Roles") with filtering (Location, Department, Employment Type, Work Arrangement) and job cards.
     *   **Blog**: Listing of articles with individual detail pages.
-    *   **Testimonials**: Client success stories presented in a carousel.
+    *   **Testimonials**: Client success stories presented in a smooth slider.
     *   **FAQ**: Accordion-style question and answer section.
     *   **Contact**: Form for inquiries and detailed contact information.
-*   **AI-Powered Chat Assistant**: A globally accessible chat widget (powered by Genkit) to answer user questions about QuantumFusion Solutions.
+*   **AI-Powered Chat Assistant**: A globally accessible chat widget (powered by Genkit) that opens automatically and answers user questions about QuantumFusion Solutions. Includes information about the company's LinkedIn profile.
 *   **AI Content Curation**:
-    *   Personalized content recommendations based on simulated user behavior.
-    *   Dynamic tech news section fetching plausible recent headlines.
-*   **User Authentication UI**: Frontend forms for Login, Signup, Forgot Password, and Reset Password (backend integration required).
+    *   Personalized content recommendations based on simulated user behavior (e.g., viewed job titles).
+    *   Dynamic tech news section fetching plausible recent headlines related to AI, Cloud, DevOps, and SaaS.
+*   **User Authentication UI**: Frontend forms for Login, Signup, Forgot Password, and Reset Password (backend integration required). Visual placeholders for OTP/email link flows.
 *   **Newsletter Subscription**: Integrated into the footer.
 *   **Visual Design**:
     *   Sleek, ultra-modern aesthetic.
@@ -66,13 +66,20 @@ Follow these instructions to set up and run the project on your local machine.
     nvm use --lts
     ```
 *   **Package Manager**: `npm` (comes with Node.js), `yarn`, or `pnpm`. This project uses `npm` by default as per `package.json` scripts.
+*   **Firebase CLI** (Required for Firebase deployment):
+    ```bash
+    npm install -g firebase-tools
+    # or
+    # yarn global add firebase-tools
+    ```
+    After installation, log in: `firebase login`.
 
 ### 1. Clone the Repository
 
 If you haven't already, clone the project to your local machine:
 ```bash
 git clone <your-repository-url>
-cd <project-directory-name>
+cd <project-directory-name> # Should be 'quantumfusion-solutions-website' or similar
 ```
 
 ### 2. Install Dependencies
@@ -136,7 +143,7 @@ This command compiles and optimizes your application for deployment. The output 
 
 ## Deployment
 
-You can deploy this Next.js application to various hosting platforms. Vercel and Netlify are popular choices.
+You can deploy this Next.js application to various hosting platforms.
 
 ### General Configuration for Deployment
 
@@ -144,7 +151,7 @@ You can deploy this Next.js application to various hosting platforms. Vercel and
 *   **Build Command**: The standard build command is `npm run build` or `next build`.
 *   **Output Directory**: For Next.js, this is typically `.next`.
 
-### Vercel
+### Deploying to Vercel
 
 Vercel is highly recommended for Next.js projects as it's developed by the creators of Next.js.
 1.  Connect your Git repository to Vercel.
@@ -155,7 +162,7 @@ Vercel is highly recommended for Next.js projects as it's developed by the creat
 3.  Configure your `GOOGLE_API_KEY` in the Vercel project settings (Environment Variables).
 4.  Deploy. Vercel handles Next.js features like Server Components and API Routes (used by Genkit's Next.js plugin) automatically.
 
-### Netlify
+### Deploying to Netlify
 
 1.  Connect your Git repository to Netlify.
 2.  Configure the build settings:
@@ -163,6 +170,39 @@ Vercel is highly recommended for Next.js projects as it's developed by the creat
     *   **Publish directory**: `.next`.
 3.  Configure your `GOOGLE_API_KEY` in Netlify's site settings (Build & deploy > Environment > Environment variables).
 4.  Netlify's Next.js runtime should handle the necessary configurations for deploying Next.js apps, including API routes that Genkit might use.
+
+### Deploying to Firebase
+
+Firebase can host Next.js applications, leveraging Firebase Hosting for static assets and Cloud Run for the Next.js server-side rendering and Genkit flows.
+
+1.  **Firebase Project**: Ensure you have a Firebase project created at [Firebase Console](https://console.firebase.google.com/).
+2.  **Initialize Firebase**: In your project root, run:
+    ```bash
+    firebase init hosting
+    ```
+    *   When prompted, select "Use an existing project" and choose your Firebase project.
+    *   When asked "What do you want to use as your public directory?", Next.js apps usually output to `.next`, but Firebase's framework-aware CLI handles this. If prompted specifically for framework support for Next.js, select it. It might suggest "web frameworks" or similar.
+    *   It will likely detect you're using Next.js and ask if you want to set up deploys to Cloud Run. Say **yes**. This is crucial for server-side features.
+    *   Choose your preferred region for the Cloud Run service.
+    *   It may ask to overwrite existing `firebase.json` or `.firebaserc` if you're re-initializing. Be cautious if you have custom configurations.
+    *   The CLI should generate/update `firebase.json` to include a `frameworksBackend` section (for Cloud Run) and configure hosting rewrites.
+
+3.  **Set Environment Variables for Backend (Cloud Run)**:
+    Your Genkit flows need the `GOOGLE_API_KEY`. This needs to be set for the Cloud Run service that Firebase creates.
+    *   You can set this via the Google Cloud Console: Go to your Cloud Run service, edit the revision, and add the environment variable `GOOGLE_API_KEY` with your key.
+    *   Alternatively, for a more automated approach, you can use `firebase-tools` or `gcloud` CLI to set secrets, but for a single key, the console is straightforward.
+    *   Firebase Functions also have `firebase functions:config:set yourservice.google_api_key="YOUR_KEY"`, but since modern Next.js on Firebase typically uses Cloud Run via `frameworksBackend`, managing env vars through Cloud Run console or `gcloud` is more direct. Check your `firebase.json` to see how it's configured.
+
+4.  **Deploy**:
+    ```bash
+    firebase deploy
+    ```
+    This command will build your Next.js app (if not already built or configured to build during deploy) and deploy it to Firebase Hosting and the associated Cloud Run service.
+
+5.  **Free Tier Considerations**:
+    *   Firebase Hosting, Cloud Run, and Google AI (Gemini) all have free tiers.
+    *   For low to moderate traffic, your app can often run for free.
+    *   Monitor your usage in the Firebase and Google Cloud consoles. Costs will apply if you exceed free tier limits.
 
 ## Available Scripts
 
