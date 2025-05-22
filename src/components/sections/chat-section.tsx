@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { MessageCircle, Send, Mic, X, Loader2, Bot, User } from 'lucide-react';
 import { companyQnaFlow, type CompanyQnaInput, type CompanyQnaOutput } from '@/ai/flows/company-qna-flow';
 import { cn } from '@/lib/utils';
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 
 interface ChatMessage {
   id: string;
@@ -23,6 +24,7 @@ export function ChatSection() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast(); // Initialize useToast
 
   const initialMessage: ChatMessage = {
     id: 'initial-ai-message',
@@ -181,7 +183,21 @@ export function ChatSection() {
               }
             }}
           />
-          <Button type="button" variant="ghost" size="icon" disabled={isLoading} aria-label="Use microphone (visual placeholder)" className="text-muted-foreground hover:text-primary">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            disabled={isLoading}
+            aria-label="Use microphone"
+            className="text-muted-foreground hover:text-primary"
+            onClick={() => {
+              toast({
+                title: "Voice Input",
+                description: "This feature is coming soon!",
+                variant: "default", 
+              });
+            }}
+          >
             <Mic className="h-5 w-5" />
           </Button>
           <Button type="submit" size="icon" disabled={isLoading || inputValue.trim() === ''} aria-label="Send message" className="bg-primary hover:bg-primary/90">
