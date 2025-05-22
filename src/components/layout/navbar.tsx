@@ -124,10 +124,12 @@ export function Navbar() {
                         data-ai-hint="company logo abstract mobile"
                       />
                   </Link>
+                  {/* Removed the redundant close button from here
                   <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
                     <X className="h-6 w-6" />
                     <span className="sr-only">Close menu</span>
                   </Button>
+                  */}
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col space-y-1 p-6">
