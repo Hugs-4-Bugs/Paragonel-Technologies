@@ -76,7 +76,7 @@ export function AiContent() {
         )}
 
         {!isLoading && !error && recommendations.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center">
             {recommendations.map((rec, index) => (
               <ScrollFadeIn key={index} delay={`${index * 100}ms`}>
                 <Card className="h-full flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300">
