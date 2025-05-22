@@ -2,73 +2,107 @@
 import type { Job, BlogPost } from '@/types';
 
 export const dummyJobs: Job[] = [
-  {
-    id: '1',
+ {
+    id: 'A1B2C3',
     title: 'Senior Software Engineer (Frontend)',
     company: 'QuantumFusion Solutions',
     location: 'San Francisco, CA',
     department: 'Engineering',
     description: 'Join our dynamic team to build next-generation web applications using modern frontend technologies. Lead frontend development projects and mentor junior engineers.',
-    employmentType: 'Full-time',
+    employmentType: 'Full-Time',
     salaryRange: '$150,000 - $180,000',
     postedDate: '2024-07-20T10:00:00Z',
     companyLogoUrl: 'https://placehold.co/100x100.png',
   },
   {
-    id: '2',
+    id: 'D4E5F6',
     title: 'Product Manager, AI Platforms',
     company: 'QuantumFusion Solutions',
     location: 'New York, NY',
     department: 'Product',
     description: 'Define and drive the product strategy for our cutting-edge AI platforms. Work closely with engineering, design, and marketing teams to deliver innovative solutions.',
-    employmentType: 'Full-time',
+    employmentType: 'Full-Time',
     postedDate: '2024-07-18T14:30:00Z',
     companyLogoUrl: 'https://placehold.co/100x100.png',
   },
   {
-    id: '3',
+    id: 'G7H8I9',
     title: 'UX/UI Designer',
     company: 'QuantumFusion Solutions',
     location: 'Remote',
     department: 'Design',
     description: 'Craft intuitive and visually appealing user experiences for our suite of creative tools. Collaborate with product managers and developers to bring ideas to life.',
-    employmentType: 'Full-time',
+    employmentType: 'Full-Time',
     salaryRange: '$90,000 - $120,000',
     postedDate: '2024-07-22T09:00:00Z',
   },
   {
-    id: '4',
+    id: 'J0K1L2',
     title: 'Data Scientist',
     company: 'QuantumFusion Solutions',
     location: 'Boston, MA',
     department: 'Data Science',
     description: 'Analyze large datasets to extract meaningful insights and build predictive models. Apply machine learning techniques to solve complex business problems.',
-    employmentType: 'Full-time',
+    employmentType: 'Full-Time',
     postedDate: '2024-07-15T11:00:00Z',
     companyLogoUrl: 'https://placehold.co/100x100.png',
   },
   {
-    id: '5',
+    id: 'M3N4O5',
     title: 'Marketing Specialist (Digital)',
     company: 'QuantumFusion Solutions',
     location: 'San Francisco, CA',
     department: 'Marketing',
     description: 'Develop and execute digital marketing campaigns to drive brand awareness and lead generation. Manage SEO/SEM, social media, and email marketing efforts.',
-    employmentType: 'Part-time',
+    employmentType: 'Part-Time',
     postedDate: '2024-07-25T16:00:00Z',
   },
   {
-    id: '6',
+    id: 'P6Q7R8',
     title: 'Backend Developer (Node.js)',
     company: 'QuantumFusion Solutions',
     location: 'Remote',
     department: 'Engineering',
     description: 'Design and implement scalable backend services and APIs. Work with Node.js, microservices architecture, and cloud platforms like AWS or Google Cloud.',
-    employmentType: 'Full-time',
+    employmentType: 'Full-Time',
     salaryRange: '$130,000 - $160,000',
     postedDate: '2024-07-19T08:00:00Z',
   },
 ];
+
+// Function to generate a unique ID (simple incrementing string for demo)
+// This function is no longer used with the fixed dummy data, but kept for potential future dynamic job additions
+
+// A more robust ID generation function would be needed for actual unique IDs
+export const generateUniqueId = (): string => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
+};
+
+// Function to add a new job
+export const addJob = (newJob: Omit<Job, 'id' | 'postedDate'>): Job => {
+  const jobWithId: Job = {
+    ...newJob,
+    id: generateUniqueId(),
+    postedDate: new Date().toISOString(), // Add current timestamp
+  };
+  dummyJobs.push(jobWithId);
+  return jobWithId;
+};
+
+// Function to update an existing job
+export const updateJob = (updatedJob: Job): Job | undefined => {
+  const index = dummyJobs.findIndex(job => job.id === updatedJob.id);
+  if (index !== -1) {
+    dummyJobs[index] = { ...updatedJob, postedDate: new Date().toISOString() }; // Update timestamp
+    return dummyJobs[index];
+  }
+  return undefined; // Job not found
+};
 
 // Robust generation of unique locations for filters and dropdowns
 const jobSpecificLocations = dummyJobs

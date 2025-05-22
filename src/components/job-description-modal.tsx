@@ -30,8 +30,13 @@ export function JobDescriptionModal({ isOpen, onOpenChange, job }: JobDescriptio
   const timeAgo = formatDistanceToNow(postedDate, { addSuffix: true });
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+ <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-20">
+ <span className="sr-only">Close</span>
+      </DialogClose>
       <DialogContent className="sm:max-w-2xl lg:max-w-3xl flex flex-col h-[90svh] sm:h-[85vh] shadow-2xl p-0">
+ {/* Close button is now outside DialogContent */}
+
         <DialogHeader className="p-6 border-b sticky top-0 bg-background z-10">
           <div className="flex items-start space-x-4">
             {job.companyLogoUrl ? (
@@ -103,13 +108,7 @@ export function JobDescriptionModal({ isOpen, onOpenChange, job }: JobDescriptio
 
           </div>
         </ScrollArea>
-        
-        <div className="p-6 border-t sticky bottom-0 bg-background z-10 flex justify-end gap-3">
-          <DialogClose asChild>
-            <Button variant="outline" size="lg">Close</Button>
-          </DialogClose>
-          {/* Removed apply button from here as it's on the card */}
-        </div>
+ {/* Apply button is now on the card, and close button is outside DialogContent */}
       </DialogContent>
     </Dialog>
   );

@@ -248,8 +248,8 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl flex flex-col h-[95svh] sm:h-[90svh] shadow-2xl border-primary/30 p-0">
-        <DialogHeader className="p-6 border-b">
+      <DialogContent className="sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl flex flex-col h-[95svh] sm:h-[90svh] shadow-2xl border-primary/30 p-0 overflow-hidden">
+        <DialogHeader className="p-6 border-b flex-shrink-0">
           <DialogTitle className="text-2xl md:text-3xl flex items-center font-bold text-foreground">
             <Briefcase className="mr-3 h-7 w-7 text-primary neon-icon" /> Apply for: {job.title}
           </DialogTitle>
@@ -257,11 +257,11 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
             Fill in your details carefully to apply for the {job.title} position at QuantumFusion Solutions.
           </DialogDescription>
         </DialogHeader>
-        
-        <ScrollArea className="flex-grow px-1 pr-3">
+
+        <ScrollArea className="flex-grow px-6 py-4">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-6">
-              
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
               <section className="space-y-6 p-6 rounded-lg border bg-card shadow-sm">
                 <h3 className="text-xl font-semibold flex items-center text-primary"><User className="mr-2 h-5 w-5"/>Personal Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -291,7 +291,7 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                   <FormField control={form.control} name="marks" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Marks / Percentage / CGPA</FormLabel><FormControl><Input placeholder="e.g., 85% or 8.5 CGPA" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
               </section>
-              
+
               <section className="space-y-6 p-6 rounded-lg border bg-card shadow-sm">
                 <h3 className="text-xl font-semibold flex items-center text-primary"><Info className="mr-2 h-5 w-5"/>Skills</h3>
                 <FormField control={form.control} name="primarySkills" render={({ field }) => (<FormItem><FormLabel>Primary Skills (Comma separated)</FormLabel><FormControl><Textarea placeholder="e.g., Java, Python, React, AWS" {...field} /></FormControl><FormDescription>List your core technical skills.</FormDescription><FormMessage /></FormItem>)} />
@@ -363,16 +363,16 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                      </FormItem>
                 )} />
               </section>
-              
+
               <input type="hidden" {...form.register("jobId")} />
               <input type="hidden" {...form.register("jobTitle")} />
             </form>
           </Form>
-        </ScrollArea>
-        
-        <DialogFooter className="p-6 border-t sticky bottom-0 bg-background z-10">
-          <DialogClose asChild>
-            <Button variant="outline" disabled={isSubmitting} size="lg">Cancel</Button>
+      </ScrollArea>
+
+      <DialogFooter className="p-6 border-t flex justify-end gap-3 sticky bottom-0 bg-background z-10">
+        <DialogClose asChild>
+          <Button variant="outline" disabled={isSubmitting} size="lg">Cancel</Button>
           </DialogClose>
           <Button
             type="submit"
