@@ -1,6 +1,7 @@
 
 import { Hero } from '@/components/sections/hero';
 import { AiContent } from '@/components/sections/ai-content';
+import { TechNewsSection } from '@/components/sections/tech-news-section';
 import { AboutSection } from '@/components/sections/about-section';
 import { ServicesSection } from '@/components/sections/services-section';
 import { TestimonialsSection } from '@/components/sections/testimonials-section';
@@ -43,6 +44,9 @@ export default function HomePage() {
       
       <AiContent /> 
       <Separator className="my-0 container mx-auto max-w-7xl" />
+
+      <TechNewsSection />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <TestimonialsSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
@@ -66,7 +70,7 @@ export default function HomePage() {
       </section>
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
-      <BlogSection /> {/* Consider making this a snippet or linking to a full blog page */}
+      <BlogSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <FaqSection />

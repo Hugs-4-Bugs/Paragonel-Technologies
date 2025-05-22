@@ -12,7 +12,7 @@ const teamMembers = [
     id: '1',
     name: 'Prabhat Kumar',
     title: 'Founder & CEO',
-    imageUrl: 'https://placehold.co/300x300.png',
+    imageUrl: 'https://placehold.co/300x300.png', // Replace with actual image path in public/
     aiHint: 'professional photo ceo prabhat kumar',
     bio: 'Prabhat Kumar, with a Bachelor of Engineering in Computer Science, is the visionary Founder & CEO of QuantumFusion Solutions. He leads the company with a passion for innovation, driving its mission to deliver cutting-edge AI, Cloud, DevOps, and SaaS solutions that shape the future of technology.',
     socials: { linkedin: '#', twitter: '#' },
