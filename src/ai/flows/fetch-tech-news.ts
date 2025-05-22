@@ -23,7 +23,7 @@ const NewsItemSchema = z.object({
   title: z.string().describe('The headline of the news item.'),
   summary: z.string().describe('A brief summary of the news item.'),
   source: z.string().optional().describe('The source of the news (e.g., TechCrunch, Reuters).'),
-  link: z.string().url().optional().describe('A URL to the full news article.'),
+  link: z.string().optional().describe('A URL to the full news article.'), // Removed .url() here
   publishedDate: z.string().optional().describe('An estimated publication date (e.g., "2 days ago", "2024-08-15").'),
 });
 
