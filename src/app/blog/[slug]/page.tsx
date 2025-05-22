@@ -60,7 +60,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <div className="section-padding bg-background">
-      <div className="container max-w-4xl px-4 md:px-6">
+      <div className="container mx-auto max-w-4xl px-4 md:px-6">
         <ScrollFadeIn className="mb-8">
           <Button variant="outline" asChild>
             <Link href="/blog">

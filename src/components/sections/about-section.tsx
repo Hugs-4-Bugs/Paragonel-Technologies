@@ -9,7 +9,7 @@ import { Users, Rocket, Target, Award, Milestone, Brain, Cloud, GitFork } from '
 export function AboutSection() {
   return (
     <section className="section-padding bg-background">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             About <span className="text-primary">QuantumFusion Solutions</span>

@@ -55,7 +55,7 @@ const testimonials = [
 export function TestimonialsSection() {
   return (
     <section className="section-padding bg-secondary/30 dark:bg-secondary/10">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             Client <span className="text-primary">Success Stories</span>

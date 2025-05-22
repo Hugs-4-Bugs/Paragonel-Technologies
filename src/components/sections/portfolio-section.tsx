@@ -13,6 +13,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { Badge } from '@/components/ui/badge'; // Ensure Badge is imported
 
 const portfolioItems = [
   {
@@ -52,7 +53,7 @@ const portfolioItems = [
 export function PortfolioSection() {
   return (
     <section className="section-padding bg-background">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             Our <span className="text-primary">Portfolio</span>
@@ -106,17 +107,5 @@ export function PortfolioSection() {
         </ScrollFadeIn>
       </div>
     </section>
-  );
-}
-
-// Basic Badge component if not already defined globally or in ui
-function Badge({ className, variant = 'default', ...props }: React.HTMLAttributes<HTMLDivElement> & {variant?: string}) {
-  return (
-    <span
-      className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full
-        ${variant === 'secondary' ? 'bg-secondary text-secondary-foreground' : 'bg-primary text-primary-foreground'}
-        ${className}`}
-      {...props}
-    />
   );
 }

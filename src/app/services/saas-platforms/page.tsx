@@ -22,7 +22,7 @@ const saasFeatures = [
 export default function SaaSPlatformsPage() {
   return (
     <div className="section-padding bg-background">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-4 md:px-6">
         <ScrollFadeIn>
           <header className="text-center mb-16">
             <Layers className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />

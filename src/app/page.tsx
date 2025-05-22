@@ -21,7 +21,7 @@ export default function HomePage() {
       <Hero />
       
       <section id="about-snippet" className="section-padding bg-background">
-        <div className="container max-w-5xl text-center">
+        <div className="container mx-auto max-w-5xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Welcome to <span className="text-primary">QuantumFusion Solutions</span>
           </h2>
@@ -33,25 +33,25 @@ export default function HomePage() {
           </Button>
         </div>
       </section>
-      <Separator className="my-0 container max-w-7xl" />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <ServicesSection />
-      <Separator className="my-0 container max-w-7xl" />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <PortfolioSection />
-      <Separator className="my-0 container max-w-7xl" />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <AiContent /> 
-      <Separator className="my-0 container max-w-7xl" />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <TestimonialsSection />
-      <Separator className="my-0 container max-w-7xl" />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <TeamSection />
-      <Separator className="my-0 container max-w-7xl" />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <section id="careers-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
-        <div className="container max-w-5xl text-center">
+        <div className="container mx-auto max-w-5xl text-center">
           <Briefcase className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Propel Your Career with Us
@@ -64,16 +64,16 @@ export default function HomePage() {
           </Button>
         </div>
       </section>
-      <Separator className="my-0 container max-w-7xl" />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <BlogSection /> {/* Consider making this a snippet or linking to a full blog page */}
-      <Separator className="my-0 container max-w-7xl" />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <FaqSection />
-      <Separator className="my-0 container max-w-7xl" />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <section id="contact-snippet" className="section-padding bg-background">
-        <div className="container max-w-5xl text-center">
+        <div className="container mx-auto max-w-5xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Innovate?
           </h2>
