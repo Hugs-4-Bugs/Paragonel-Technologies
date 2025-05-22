@@ -2,17 +2,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { NewsletterSubscription } from '@/components/sections/newsletter-subscription';
-import { Facebook, Linkedin, Twitter } from 'lucide-react'; // Assuming you might add these later
+import { Facebook, Linkedin, Twitter, Instagram } from 'lucide-react'; // Added Instagram
 
 const footerNavLinks = [
   { href: "/about", label: "About Us" },
   { href: "/services", label: "Services" },
   { href: "/portfolio", label: "Portfolio" },
+  { href: "/team", label: "Team" },
   { href: "/careers", label: "Careers" },
-  { href: "/contact", label: "Contact" },
-  { href: "/faq", label: "FAQ" },
   { href: "/blog", label: "Blog" },
   { href: "/testimonials", label: "Testimonials" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export function Footer() {
@@ -24,12 +25,12 @@ export function Footer() {
           <div className="md:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-4">
               <Image
-                src="https://placehold.co/200x50.png?text=QuantumFusion+Solutions"
+                src="https://placehold.co/160x40.png"
                 alt="QuantumFusion Solutions Logo"
-                width={200}
-                height={50}
+                width={160}
+                height={40}
                 className="h-10 w-auto"
-                data-ai-hint="company logo"
+                data-ai-hint="company logo abstract"
               />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
@@ -41,7 +42,7 @@ export function Footer() {
           <div>
             <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              {footerNavLinks.slice(0, 4).map(link => ( // Show first 4, rest in another column or manage differently
+              {footerNavLinks.slice(0, 5).map(link => (
                 <li key={link.href}>
                   <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     {link.label}
@@ -53,9 +54,9 @@ export function Footer() {
           
            {/* Column 3: More Quick Links */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4 lg:invisible">‎</h4> {/* Placeholder for alignment if needed */}
+            <h4 className="font-semibold text-foreground mb-4 lg:invisible">‎</h4> {/* Placeholder for alignment */}
              <ul className="space-y-2">
-              {footerNavLinks.slice(4).map(link => (
+              {footerNavLinks.slice(5).map(link => (
                 <li key={link.href}>
                   <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     {link.label}
@@ -86,6 +87,9 @@ export function Footer() {
             </Link>
             <Link href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Facebook">
               <Facebook className="h-5 w-5 neon-icon" />
+            </Link>
+            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Instagram">
+              <Instagram className="h-5 w-5 neon-icon" />
             </Link>
           </div>
         </div>

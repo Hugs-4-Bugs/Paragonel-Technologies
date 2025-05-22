@@ -7,13 +7,22 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const navLinks = [
+const mainNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
   { href: "/portfolio", label: "Portfolio" },
+];
+
+const moreNavLinks = [
   { href: "/team", label: "Team" },
   { href: "/careers", label: "Careers" },
   { href: "/blog", label: "Blog" },
@@ -21,6 +30,8 @@ const navLinks = [
   { href: "/faq", label: "FAQ" },
   { href: "/contact", label: "Contact" },
 ];
+
+const allNavLinks = [...mainNavLinks, ...moreNavLinks];
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -30,35 +41,44 @@ export function Navbar() {
       <div className="container flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center space-x-2">
           <Image
-            src="https://placehold.co/200x50.png?text=QuantumFusion+Solutions"
+            src="https://placehold.co/160x40.png" 
             alt="QuantumFusion Solutions Logo"
-            width={200}
-            height={50}
+            width={160}
+            height={40}
             className="h-10 w-auto md:h-12"
-            data-ai-hint="company logo"
+            data-ai-hint="company logo abstract"
+            priority
           />
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-5">
-          {navLinks.slice(0, 6).map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              {link.label}
-            </Link>
+        <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+          {mainNavLinks.map((link) => (
+            <Button variant="link" asChild key={link.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3">
+              <Link href={link.href}>{link.label}</Link>
+            </Button>
           ))}
-           {navLinks.length > 6 && (
-             <Link
-                href="/contact" // Fallback, ideally a "More" dropdown or ensure all fit
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-              >
-                More...
-              </Link>
+          {moreNavLinks.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="link" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3">
+                  More <ChevronDown className="ml-1 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {moreNavLinks.map((link) => (
+                  <DropdownMenuItem key={link.href} asChild>
+                    <Link href={link.href} className="w-full justify-start">
+                      {link.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-          <ThemeToggleButton />
+          <div className="pl-2">
+            <ThemeToggleButton />
+          </div>
         </nav>
 
         {/* Mobile Navigation Trigger */}
@@ -76,12 +96,12 @@ export function Navbar() {
                 <SheetTitle className="flex items-center justify-between">
                   <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
                      <Image
-                        src="https://placehold.co/180x45.png?text=QFS+Mobile"
+                        src="https://placehold.co/150x38.png"
                         alt="QuantumFusion Solutions Logo Mobile"
-                        width={180}
-                        height={45}
+                        width={150}
+                        height={38}
                         className="h-9 w-auto"
-                        data-ai-hint="company logo mobile"
+                        data-ai-hint="company logo abstract mobile"
                       />
                   </Link>
                   <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
@@ -91,7 +111,7 @@ export function Navbar() {
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col space-y-1 p-6">
-                {navLinks.map((link) => (
+                {allNavLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}

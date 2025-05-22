@@ -1,7 +1,7 @@
+
 import type { Job } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Briefcase, MapPin, Users, CalendarDays, DollarSign } from 'lucide-react';
 import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
@@ -24,8 +24,8 @@ export function JobCard({ job }: JobCardProps) {
                 alt={`${job.company} logo`} 
                 width={50} 
                 height={50} 
-                className="rounded-md border"
-                data-ai-hint="company logo"
+                className="rounded-md border object-contain"
+                data-ai-hint="company logo minimal" // generic hint
               />
           ) : (
             <div className="w-[50px] h-[50px] bg-muted rounded-md flex items-center justify-center">

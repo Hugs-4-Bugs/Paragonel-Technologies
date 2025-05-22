@@ -5,46 +5,46 @@ import Image from 'next/image';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Zap } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel"; // Assuming you have a carousel component
+} from "@/components/ui/carousel";
 
 const portfolioItems = [
   {
     id: '1',
     title: 'AI-Driven Recruitment Platform for TechCorp',
     category: 'Talent Acquisition',
-    imageUrl: 'https://placehold.co/600x400/3498DB/FFFFFF.png?text=Project+Alpha',
-    aiHint: 'software interface',
+    imageUrl: 'https://placehold.co/600x400.png',
+    aiHint: 'AI recruitment dashboard',
     description: 'Developed a cutting-edge platform that reduced hiring time by 40% using AI matchmaking and automated workflows.',
   },
   {
     id: '2',
     title: 'Career Path Visualization Tool for EduFuture',
     category: 'Career Development',
-    imageUrl: 'https://placehold.co/600x400/663399/FFFFFF.png?text=Project+Beta',
-    aiHint: 'data visualization',
+    imageUrl: 'https://placehold.co/600x400.png',
+    aiHint: 'career graph',
     description: 'Created an interactive tool helping students visualize and plan their career paths based on skills and interests.',
   },
   {
     id: '3',
     title: 'Personalized Learning Portal for SkillUp',
     category: 'EdTech Solutions',
-    imageUrl: 'https://placehold.co/600x400/1A237E/FFFFFF.png?text=Project+Gamma',
-    aiHint: 'online learning platform',
+    imageUrl: 'https://placehold.co/600x400.png',
+    aiHint: 'edtech saas ui',
     description: 'Built a SaaS platform offering personalized learning journeys and skill assessments for professionals.',
   },
    {
     id: '4',
     title: 'Remote Team Collaboration Suite',
     category: 'Productivity Tools',
-    imageUrl: 'https://placehold.co/600x400/2ECC71/FFFFFF.png?text=Project+Delta',
-    aiHint: 'collaboration software',
+    imageUrl: 'https://placehold.co/600x400.png',
+    aiHint: 'team productivity app',
     description: 'Designed and launched a comprehensive suite of tools for enhancing remote team productivity and communication.',
   },
 ];

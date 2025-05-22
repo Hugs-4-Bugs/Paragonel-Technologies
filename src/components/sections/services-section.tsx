@@ -6,39 +6,39 @@ import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Brain, Cloud, GitFork, Layers, ArrowRight } from 'lucide-react'; // Replaced Briefcase, Users, Lightbulb with GitFork and Layers
+import { Brain, Cloud, GitFork, Layers, ArrowRight } from 'lucide-react';
 
 const services = [
   {
     icon: Brain,
     title: 'AI Solutions',
     description: 'Unlock the power of Artificial Intelligence with our custom machine learning models, natural language processing, and computer vision solutions tailored to your business needs.',
-    imgSrc: 'https://placehold.co/600x350/3498DB/FFFFFF.png?text=AI+Solutions',
-    aiHint: 'artificial intelligence brain',
-    link: '/services/ai-solutions', // Placeholder link
+    imgSrc: 'https://placehold.co/600x350.png',
+    aiHint: 'AI neural network',
+    link: '/services/ai-solutions', 
   },
   {
     icon: Cloud,
     title: 'Cloud Infrastructure',
     description: 'Optimize your operations with our secure, scalable, and cost-effective cloud infrastructure services, including migration, management, and cloud-native development.',
-    imgSrc: 'https://placehold.co/600x350/663399/FFFFFF.png?text=Cloud+Infrastructure',
-    aiHint: 'cloud computing network',
+    imgSrc: 'https://placehold.co/600x350.png',
+    aiHint: 'cloud data server',
     link: '/services/cloud-infrastructure',
   },
   {
     icon: GitFork,
     title: 'DevOps Automation',
     description: 'Accelerate your software delivery lifecycle with our comprehensive DevOps automation services, including CI/CD pipelines, infrastructure as code, and automated testing.',
-    imgSrc: 'https://placehold.co/600x350/1A237E/FFFFFF.png?text=DevOps+Automation',
-    aiHint: 'automation gears',
+    imgSrc: 'https://placehold.co/600x350.png',
+    aiHint: 'devops cycle',
     link: '/services/devops-automation',
   },
   {
     icon: Layers,
     title: 'SaaS Platforms',
     description: 'Develop and launch robust, scalable, and user-friendly SaaS platforms with our end-to-end development services, from ideation and design to deployment and maintenance.',
-    imgSrc: 'https://placehold.co/600x350/2ECC71/FFFFFF.png?text=SaaS+Platforms',
-    aiHint: 'software application interface',
+    imgSrc: 'https://placehold.co/600x350.png',
+    aiHint: 'saas dashboard ui',
     link: '/services/saas-platforms',
   },
 ];

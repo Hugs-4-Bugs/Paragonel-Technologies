@@ -18,8 +18,8 @@ const testimonials = [
     id: '1',
     name: 'Javier M.',
     title: 'CTO, Alpha Dynamics',
-    avatarUrl: 'https://placehold.co/100x100/3498DB/FFFFFF.png?text=JM',
-    aiHint: 'executive portrait',
+    avatarUrl: 'https://placehold.co/100x100.png',
+    aiHint: 'client headshot executive',
     feedback: "QuantumFusion Solutions transformed our legacy systems with their AI and Cloud expertise. Our efficiency has skyrocketed!",
     rating: 5,
   },
@@ -27,8 +27,8 @@ const testimonials = [
     id: '2',
     name: 'Priya S.',
     title: 'Head of Innovation, Beta Health',
-    // No avatar, fallback will be used
-    aiHint: 'manager avatar',
+    avatarUrl: 'https://placehold.co/100x100.png', // Added placeholder
+    aiHint: 'client headshot manager',
     feedback: 'The DevOps automation implemented by QuantumFusion has been a game-changer for our development cycles. True professionals.',
     rating: 5,
   },
@@ -36,8 +36,8 @@ const testimonials = [
     id: '3',
     name: 'Kenji T.',
     title: 'Founder, Gamma SaaS Co.',
-    avatarUrl: 'https://placehold.co/100x100/663399/FFFFFF.png?text=KT',
-    aiHint: 'founder portrait',
+    avatarUrl: 'https://placehold.co/100x100.png',
+    aiHint: 'client headshot founder',
     feedback: 'Their SaaS platform development was top-notch, from concept to launch. The QuantumFusion team is incredibly skilled and supportive.',
     rating: 4,
   },
@@ -45,8 +45,8 @@ const testimonials = [
     id: '4',
     name: 'Linda Chen',
     title: 'CIO, Delta Corp',
-    avatarUrl: 'https://placehold.co/100x100/1A237E/FFFFFF.png?text=LC',
-    aiHint: 'cio avatar',
+    avatarUrl: 'https://placehold.co/100x100.png',
+    aiHint: 'client headshot cio',
     feedback: 'Working with QuantumFusion Solutions felt like a true partnership. Their insights and technical execution are unparalleled.',
     rating: 5,
   },
@@ -71,11 +71,11 @@ export function TestimonialsSection() {
               align: "start",
               loop: true,
             }}
-            className="w-full max-w-5xl mx-auto" // Increased max-width for potentially two items
+            className="w-full max-w-5xl mx-auto"
           >
             <CarouselContent>
               {testimonials.map((testimonial, index) => (
-                <CarouselItem key={index} className="md:basis-1/2"> {/* Show 2 per slide on medium screens */}
+                <CarouselItem key={index} className="md:basis-1/2">
                   <div className="p-2 md:p-4 h-full">
                     <Card className="h-full flex flex-col justify-between shadow-lg bg-card hover:shadow-xl transition-shadow duration-300">
                       <CardHeader className="items-center pt-8 pb-4">

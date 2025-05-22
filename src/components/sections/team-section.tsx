@@ -5,15 +5,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Linkedin, Twitter, Github, UserCircle, Brain, CloudCog, Settings2, Layers2 } from 'lucide-react';
+import { Linkedin, Twitter, Github, UserCircle, Brain, CloudCog, Layers2 } from 'lucide-react';
 
 const teamMembers = [
   {
     id: '1',
     name: 'Dr. Aris Thorne',
     title: 'Founder & CEO, AI Visionary',
-    imageUrl: 'https://placehold.co/300x300/3498DB/FFFFFF.png?text=AT',
-    aiHint: 'ceo portrait',
+    imageUrl: 'https://placehold.co/300x300.png',
+    aiHint: 'professional photo ceo',
     bio: 'A pioneer in applied AI, Dr. Thorne leads QuantumFusion Solutions with a vision to integrate intelligent systems into the fabric of modern enterprise.',
     socials: { linkedin: '#', twitter: '#' },
     icon: Brain,
@@ -22,8 +22,8 @@ const teamMembers = [
     id: '2',
     name: 'Zara Kael',
     title: 'CTO, Cloud & DevOps Architect',
-    imageUrl: 'https://placehold.co/300x300/663399/FFFFFF.png?text=ZK',
-    aiHint: 'cto portrait',
+    imageUrl: 'https://placehold.co/300x300.png',
+    aiHint: 'professional photo cto',
     bio: 'Zara is the driving force behind our robust cloud infrastructures and streamlined DevOps practices, ensuring scalability and resilience.',
     socials: { linkedin: '#', github: '#' },
     icon: CloudCog,
@@ -32,8 +32,8 @@ const teamMembers = [
     id: '3',
     name: 'Liam Vance',
     title: 'Head of SaaS Platforms',
-    // No image, fallback will be used
-    aiHint: 'manager portrait',
+    imageUrl: 'https://placehold.co/300x300.png', // Added placeholder
+    aiHint: 'professional photo manager',
     bio: 'Liam orchestrates the development of innovative SaaS solutions, focusing on user experience and market impact.',
     socials: { linkedin: '#' },
     icon: Layers2,
@@ -42,8 +42,8 @@ const teamMembers = [
     id: '4',
     name: 'Dr. Lena Petrova',
     title: 'Principal AI Researcher',
-    imageUrl: 'https://placehold.co/300x300/1A237E/FFFFFF.png?text=LP',
-    aiHint: 'researcher portrait',
+    imageUrl: 'https://placehold.co/300x300.png',
+    aiHint: 'professional photo researcher',
     bio: 'Dr. Petrova leads our R&D in machine learning, pushing the boundaries of what AI can achieve for businesses.',
     socials: { linkedin: '#', github: '#' },
     icon: Brain,

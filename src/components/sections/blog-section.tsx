@@ -15,11 +15,11 @@ const blogPosts = [
     date: 'August 5, 2024',
     author: 'Dr. Evelyn Reed',
     excerpt: 'Exploring how artificial intelligence is revolutionizing the recruitment landscape, from automated screening to predictive hiring.',
-    imageUrl: 'https://placehold.co/600x400/3498DB/FFFFFF.png?text=AI+Recruitment',
-    aiHint: 'artificial intelligence technology',
+    imageUrl: 'https://placehold.co/600x400.png',
+    aiHint: 'AI hiring concept',
     category: 'AI & Recruitment',
     comments: 12,
-    slug: '/blog/future-of-ai-talent-acquisition', // Placeholder slug
+    slug: '/blog/future-of-ai-talent-acquisition',
   },
   {
     id: '2',
@@ -27,8 +27,8 @@ const blogPosts = [
     date: 'July 28, 2024',
     author: 'Aisha Khan',
     excerpt: 'Tips and strategies for professionals looking to thrive and adapt in an ever-evolving digital job market.',
-    imageUrl: 'https://placehold.co/600x400/663399/FFFFFF.png?text=Career+Path',
-    aiHint: 'career guidance',
+    imageUrl: 'https://placehold.co/600x400.png',
+    aiHint: 'digital future career',
     category: 'Career Development',
     comments: 8,
     slug: '/blog/navigating-career-path-digital-age',
@@ -38,9 +38,9 @@ const blogPosts = [
     title: 'The Power of Personalized Learning for Skill Enhancement',
     date: 'July 15, 2024',
     author: 'Marcus Chen',
-    excerpt: 'How QuantumLeap\'s personalized learning modules help individuals acquire new skills and stay ahead.',
-    imageUrl: 'https://placehold.co/600x400/1A237E/FFFFFF.png?text=Personalized+Learning',
-    aiHint: 'online education',
+    excerpt: 'How QuantumFusion Solutions\' personalized learning modules help individuals acquire new skills and stay ahead.',
+    imageUrl: 'https://placehold.co/600x400.png',
+    aiHint: 'online learning interface',
     category: 'EdTech',
     comments: 5,
     slug: '/blog/power-of-personalized-learning',
@@ -56,7 +56,7 @@ export function BlogSection() {
             Our <span className="text-primary">Blog</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Stay informed with the latest insights, trends, and news from the world of career development and technology.
+            Stay informed with the latest insights, trends, and news from QuantumFusion Solutions and the tech world.
           </p>
         </ScrollFadeIn>
 
@@ -70,7 +70,7 @@ export function BlogSection() {
                       src={post.imageUrl}
                       alt={post.title}
                       width={600}
-                      height={300} // Adjusted for typical blog image aspect ratio
+                      height={300}
                       className="object-cover w-full h-52"
                       data-ai-hint={post.aiHint}
                     />
@@ -105,9 +105,10 @@ export function BlogSection() {
           ))}
         </div>
         
-        {/* Placeholder for pagination or "Load More" button */}
         <ScrollFadeIn className="text-center mt-12">
-            <Button variant="outline" size="lg">View All Posts (Placeholder)</Button>
+            <Button variant="outline" size="lg" asChild>
+              <Link href="/blog">View All Posts</Link>
+            </Button>
         </ScrollFadeIn>
       </div>
     </section>

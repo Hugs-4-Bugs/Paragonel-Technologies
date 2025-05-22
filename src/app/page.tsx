@@ -1,18 +1,18 @@
 
 import { Hero } from '@/components/sections/hero';
-import { CareersSection } from '@/components/sections/careers-section';
-import { AiContent } from '@/components/sections/ai-content'; // This might need to be re-evaluated or repurposed
+import { AiContent } from '@/components/sections/ai-content';
 import { AboutSection } from '@/components/sections/about-section';
 import { ServicesSection } from '@/components/sections/services-section';
 import { TestimonialsSection } from '@/components/sections/testimonials-section';
 import { FaqSection } from '@/components/sections/faq-section';
 import { PortfolioSection } from '@/components/sections/portfolio-section';
 import { TeamSection } from '@/components/sections/team-section';
-import { BlogSection } from '@/components/sections/blog-section'; // Basic placeholder
-import { ContactSection } from '@/components/sections/contact-section'; // Snippet or link
+import { BlogSection } from '@/components/sections/blog-section';
+import { ContactSection } from '@/components/sections/contact-section';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Briefcase } from 'lucide-react';
 
 
 export default function HomePage() {
@@ -41,9 +41,8 @@ export default function HomePage() {
       <PortfolioSection />
       <Separator className="my-0 container max-w-7xl" />
       
-      {/* Temporarily repurpose AiContent or remove if not fitting the new scope */}
-      {/* <AiContent /> 
-      <Separator className="my-0 container max-w-7xl" /> */}
+      <AiContent /> 
+      <Separator className="my-0 container max-w-7xl" />
       
       <TestimonialsSection />
       <Separator className="my-0 container max-w-7xl" />
@@ -51,10 +50,23 @@ export default function HomePage() {
       <TeamSection />
       <Separator className="my-0 container max-w-7xl" />
 
-      <CareersSection />
+      <section id="careers-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
+        <div className="container max-w-5xl text-center">
+          <Briefcase className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Propel Your Career with Us
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
+            Join a team of innovators at QuantumFusion Solutions and contribute to groundbreaking projects. We offer a dynamic environment where your talent can thrive.
+          </p>
+          <Button asChild size="lg" variant="default" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+            <Link href="/careers">Explore Open Roles</Link>
+          </Button>
+        </div>
+      </section>
       <Separator className="my-0 container max-w-7xl" />
       
-      <BlogSection /> {/* Consider making this a snippet */}
+      <BlogSection /> {/* Consider making this a snippet or linking to a full blog page */}
       <Separator className="my-0 container max-w-7xl" />
 
       <FaqSection />
