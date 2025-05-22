@@ -10,11 +10,11 @@ import { Linkedin, Twitter, Github, UserCircle, Brain, CloudCog, Layers2 } from 
 const teamMembers = [
   {
     id: '1',
-    name: 'Dr. Aris Thorne',
-    title: 'Founder & CEO, AI Visionary',
+    name: 'Prabhat Kumar',
+    title: 'Founder & CEO',
     imageUrl: 'https://placehold.co/300x300.png',
-    aiHint: 'professional photo ceo',
-    bio: 'A pioneer in applied AI, Dr. Thorne leads QuantumFusion Solutions with a vision to integrate intelligent systems into the fabric of modern enterprise.',
+    aiHint: 'professional photo ceo prabhat kumar',
+    bio: 'Prabhat Kumar, with a Bachelor of Engineering in Computer Science, is the visionary Founder & CEO of QuantumFusion Solutions. He leads the company with a passion for innovation, driving its mission to deliver cutting-edge AI, Cloud, DevOps, and SaaS solutions that shape the future of technology.',
     socials: { linkedin: '#', twitter: '#' },
     icon: Brain,
   },
@@ -32,7 +32,7 @@ const teamMembers = [
     id: '3',
     name: 'Liam Vance',
     title: 'Head of SaaS Platforms',
-    imageUrl: 'https://placehold.co/300x300.png', // Added placeholder
+    imageUrl: 'https://placehold.co/300x300.png', 
     aiHint: 'professional photo manager',
     bio: 'Liam orchestrates the development of innovative SaaS solutions, focusing on user experience and market impact.',
     socials: { linkedin: '#' },
