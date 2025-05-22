@@ -4,36 +4,42 @@
 import Image from 'next/image';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, Cloud, Users, Briefcase, Lightbulb } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Brain, Cloud, GitFork, Layers, ArrowRight } from 'lucide-react'; // Replaced Briefcase, Users, Lightbulb with GitFork and Layers
 
 const services = [
   {
     icon: Brain,
-    title: 'AI-Powered Job Matching',
-    description: 'Leveraging advanced AI algorithms to connect candidates with their ideal roles and help companies find top talent.',
-    imgSrc: 'https://placehold.co/600x400/3498DB/FFFFFF.png?text=AI+Matching',
-    aiHint: 'artificial intelligence',
+    title: 'AI Solutions',
+    description: 'Unlock the power of Artificial Intelligence with our custom machine learning models, natural language processing, and computer vision solutions tailored to your business needs.',
+    imgSrc: 'https://placehold.co/600x350/3498DB/FFFFFF.png?text=AI+Solutions',
+    aiHint: 'artificial intelligence brain',
+    link: '/services/ai-solutions', // Placeholder link
   },
   {
-    icon: Users,
-    title: 'Personalized Career Coaching',
-    description: 'Data-driven insights and expert guidance to help individuals navigate their career paths and achieve professional growth.',
-    imgSrc: 'https://placehold.co/600x400/663399/FFFFFF.png?text=Career+Coaching',
-    aiHint: 'career coaching',
+    icon: Cloud,
+    title: 'Cloud Infrastructure',
+    description: 'Optimize your operations with our secure, scalable, and cost-effective cloud infrastructure services, including migration, management, and cloud-native development.',
+    imgSrc: 'https://placehold.co/600x350/663399/FFFFFF.png?text=Cloud+Infrastructure',
+    aiHint: 'cloud computing network',
+    link: '/services/cloud-infrastructure',
   },
   {
-    icon: Briefcase,
-    title: 'Enterprise Talent Solutions',
-    description: 'Comprehensive solutions for businesses, including talent sourcing, employer branding, and workforce analytics.',
-    imgSrc: 'https://placehold.co/600x400/1A237E/FFFFFF.png?text=Talent+Solutions',
-    aiHint: 'business solution',
+    icon: GitFork,
+    title: 'DevOps Automation',
+    description: 'Accelerate your software delivery lifecycle with our comprehensive DevOps automation services, including CI/CD pipelines, infrastructure as code, and automated testing.',
+    imgSrc: 'https://placehold.co/600x350/1A237E/FFFFFF.png?text=DevOps+Automation',
+    aiHint: 'automation gears',
+    link: '/services/devops-automation',
   },
   {
-    icon: Lightbulb,
-    title: 'Skill Development Platform',
-    description: 'Curated learning resources and skill assessments to help users upskill and stay competitive in the job market.',
-    imgSrc: 'https://placehold.co/600x400/2ECC71/FFFFFF.png?text=Skill+Development',
-    aiHint: 'online learning',
+    icon: Layers,
+    title: 'SaaS Platforms',
+    description: 'Develop and launch robust, scalable, and user-friendly SaaS platforms with our end-to-end development services, from ideation and design to deployment and maintenance.',
+    imgSrc: 'https://placehold.co/600x350/2ECC71/FFFFFF.png?text=SaaS+Platforms',
+    aiHint: 'software application interface',
+    link: '/services/saas-platforms',
   },
 ];
 
@@ -43,37 +49,44 @@ export function ServicesSection() {
       <div className="container px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Our <span className="text-primary">Services</span>
+            Our Core <span className="text-primary">Services</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            QuantumLeap offers a suite of innovative services designed to empower your career journey and streamline talent acquisition.
+            QuantumFusion Solutions delivers a comprehensive suite of IT services designed to propel your business into the future.
           </p>
         </ScrollFadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           {services.map((service, index) => (
             <ScrollFadeIn key={index} delay={`${index * 100}ms`}>
-              <Card className="h-full overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
-                <CardHeader className="pb-4">
+              <Card className="h-full overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col group">
+                <CardHeader className="pb-2">
                   <div className="flex items-start space-x-4">
-                    <div className="p-3 bg-primary/10 rounded-full">
-                      <service.icon className="h-8 w-8 text-primary neon-icon" />
+                    <div className="p-3 bg-primary/10 rounded-full group-hover:bg-primary/20 transition-colors">
+                      <service.icon className="h-8 w-8 text-primary neon-icon group-hover:scale-110 transition-transform" />
                     </div>
                     <div>
                       <CardTitle className="text-2xl mb-1">{service.title}</CardTitle>
-                      <CardDescription>{service.description}</CardDescription>
+                      <CardDescription className="text-sm leading-relaxed">{service.description}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-grow pt-0">
-                   <Image
-                    src={service.imgSrc}
-                    alt={service.title}
-                    width={600}
-                    height={300} // Adjust height as needed
-                    className="rounded-md object-cover w-full h-48 mt-4"
-                    data-ai-hint={service.aiHint}
-                  />
+                <CardContent className="flex-grow pt-2 flex flex-col">
+                   <div className="relative w-full h-48 mt-4 rounded-md overflow-hidden group-hover:opacity-90 transition-opacity">
+                     <Image
+                        src={service.imgSrc}
+                        alt={service.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover"
+                        data-ai-hint={service.aiHint}
+                      />
+                   </div>
+                   <Button asChild variant="link" className="mt-auto self-start p-0 text-primary group-hover:underline">
+                     <Link href={service.link}>
+                       Learn More <ArrowRight className="ml-1 h-4 w-4" />
+                     </Link>
+                   </Button>
                 </CardContent>
               </Card>
             </ScrollFadeIn>

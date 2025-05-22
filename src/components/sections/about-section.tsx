@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Rocket, Target, Award, Milestone } from 'lucide-react';
+import { Users, Rocket, Target, Award, Milestone, Brain, Cloud, GitFork } from 'lucide-react'; // Added new icons
 
 export function AboutSection() {
   return (
@@ -12,31 +12,31 @@ export function AboutSection() {
       <div className="container px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            About <span className="text-primary">QuantumLeap</span>
+            About <span className="text-primary">QuantumFusion Solutions</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Pioneering the future of career development and talent acquisition through innovative technology and personalized experiences.
+            Pioneering the future of IT with intelligent solutions in AI, Cloud Computing, DevOps, and SaaS Platforms.
           </p>
         </ScrollFadeIn>
 
         <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
           <ScrollFadeIn>
             <Image
-              src="https://placehold.co/600x400/3498DB/FFFFFF.png?text=Our+Journey"
-              alt="QuantumLeap Team Collaboration"
+              src="https://placehold.co/600x450/3498DB/FFFFFF.png?text=QuantumFusion+Team"
+              alt="QuantumFusion Solutions Team Collaboration"
               width={600}
-              height={400}
+              height={450}
               className="rounded-xl shadow-2xl object-cover"
-              data-ai-hint="team collaboration"
+              data-ai-hint="teamwork office"
             />
           </ScrollFadeIn>
           <ScrollFadeIn delay="200ms">
             <h2 className="text-3xl font-bold mb-6">Our Story</h2>
             <p className="text-muted-foreground mb-4 leading-relaxed">
-              Founded with the vision to revolutionize how talent connects with opportunity, QuantumLeap has been dedicated to creating a platform that empowers individuals and organizations alike. We believe in the power of technology to unlock human potential.
+              Founded with the vision to fuse cutting-edge technology with strategic business insights, QuantumFusion Solutions empowers organizations to navigate the complexities of the digital age. We believe in the transformative power of AI, the scalability of the Cloud, the efficiency of DevOps, and the agility of SaaS.
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              Our journey started with a simple idea: to make career exploration more intuitive, insightful, and inspiring. Today, we leverage cutting-edge AI and a user-centric approach to deliver on that promise.
+              Our journey began with a commitment to innovation and a passion for solving complex challenges. Today, we partner with businesses globally, helping them achieve quantum leaps in performance and market leadership.
             </p>
           </ScrollFadeIn>
         </div>
@@ -50,7 +50,7 @@ export function AboutSection() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  To empower individuals to achieve their career aspirations and help organizations find the perfect talent by providing an intelligent, seamless, and inspiring platform.
+                  To deliver transformative IT solutions that drive innovation, efficiency, and sustainable growth for our clients worldwide.
                 </p>
               </CardContent>
             </Card>
@@ -63,7 +63,7 @@ export function AboutSection() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  To be the leading force in shaping the future of work, where every connection between talent and opportunity is meaningful, efficient, and transformative.
+                  To be the leading catalyst in our clients' digital transformation journeys, shaping a future where technology and human ingenuity converge.
                 </p>
               </CardContent>
             </Card>
@@ -76,11 +76,11 @@ export function AboutSection() {
               </CardHeader>
               <CardContent>
                 <ul className="text-muted-foreground space-y-1 list-disc list-inside text-left pl-4">
-                  <li>Innovation</li>
-                  <li>Integrity</li>
-                  <li>User-Centricity</li>
-                  <li>Collaboration</li>
-                  <li>Excellence</li>
+                  <li>Innovation First</li>
+                  <li>Client Centricity</li>
+                  <li>Unwavering Integrity</li>
+                  <li>Collaborative Spirit</li>
+                  <li>Pursuit of Excellence</li>
                 </ul>
               </CardContent>
             </Card>
@@ -88,21 +88,21 @@ export function AboutSection() {
         </div>
 
         <ScrollFadeIn className="mb-12">
-            <h2 className="text-3xl font-bold text-center mb-10">Company Timeline</h2>
+            <h2 className="text-3xl font-bold text-center mb-10">Our Journey: Milestones</h2>
             <div className="relative">
-                {/* Desktop Timeline */}
                 <div className="hidden md:block border-l-2 border-primary absolute h-full top-0 left-1/2 transform -translate-x-1/2"></div>
                 
                 {[
-                    { year: "2021", title: "Conceptualization", description: "QuantumLeap idea was born.", side: "left" },
-                    { year: "2022", title: "Platform Development", description: "Core platform and AI engine built.", side: "right" },
-                    { year: "2023", title: "Beta Launch", description: "Launched to early adopters, gathered feedback.", side: "left" },
-                    { year: "2024", title: "Public Release", description: "Official launch with enhanced features.", side: "right" },
+                    { year: "2020", title: "Inception & Vision", description: "QuantumFusion Solutions founded with a focus on next-gen IT.", icon: Rocket, side: "left" },
+                    { year: "2021", title: "AI Lab Established", description: "Launched dedicated AI research and development wing.", icon: Brain, side: "right" },
+                    { year: "2022", title: "Cloud Partnerships", description: "Forged strategic alliances with major cloud providers.", icon: Cloud, side: "left" },
+                    { year: "2023", title: "DevOps Excellence", description: "Recognized for DevOps automation and CI/CD implementations.", icon: GitFork, side: "right" },
+                    { year: "2024", title: "Global Expansion", description: "Expanded operations to serve a wider international client base.", icon: Milestone, side: "left" },
                 ].map((item, index) => (
                     <div key={index} className={`mb-8 flex md:justify-between items-center w-full ${item.side === 'left' ? 'md:flex-row-reverse' : 'md:flex-row'}`}>
                         <div className="order-1 md:w-5/12"></div>
                         <div className="z-20 flex items-center order-1 bg-primary shadow-xl w-12 h-12 rounded-full md:w-10 md:h-10">
-                            <Milestone className="mx-auto font-semibold text-lg text-white w-6 h-6" />
+                            <item.icon className="mx-auto font-semibold text-lg text-white w-6 h-6 neon-icon" />
                         </div>
                         <div className={`order-1 rounded-lg shadow-xl w-full md:w-5/12 px-6 py-4 ${item.side === 'left' ? 'bg-card md:text-right' : 'bg-card'}`}>
                             <p className="font-bold text-primary text-xl">{item.year}</p>

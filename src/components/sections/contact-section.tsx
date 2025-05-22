@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Phone, MapPin, Send, Loader2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Loader2, Briefcase } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import Link from 'next/link';
 
 
 export function ContactSection() {
@@ -35,7 +36,7 @@ export function ContactSection() {
     console.log('Form data submitted:', formData);
     toast({
       title: "Message Sent!",
-      description: "Thank you for reaching out. We'll get back to you soon.",
+      description: "Thank you for reaching out to QuantumFusion Solutions. We'll get back to you soon.",
       variant: "default", 
     });
     setFormData({ name: '', email: '', subject: '', message: '' });
@@ -51,7 +52,7 @@ export function ContactSection() {
             Get In <span className="text-primary">Touch</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            We're here to help and answer any question you might have. We look forward to hearing from you!
+            We're excited to discuss how QuantumFusion Solutions can elevate your business. Reach out to us for inquiries, partnerships, or career opportunities.
           </p>
         </ScrollFadeIn>
 
@@ -66,23 +67,23 @@ export function ContactSection() {
                   <div className="grid sm:grid-cols-2 gap-6">
                     <div className="space-y-1.5">
                       <Label htmlFor="name">Full Name</Label>
-                      <Input id="name" name="name" placeholder="John Doe" value={formData.name} onChange={handleChange} required />
+                      <Input id="name" name="name" placeholder="Your Name" value={formData.name} onChange={handleChange} required />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="email">Email Address</Label>
-                      <Input id="email" name="email" type="email" placeholder="you@example.com" value={formData.email} onChange={handleChange} required />
+                      <Input id="email" name="email" type="email" placeholder="your.email@example.com" value={formData.email} onChange={handleChange} required />
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="subject">Subject</Label>
-                    <Input id="subject" name="subject" placeholder="Regarding..." value={formData.subject} onChange={handleChange} required />
+                    <Input id="subject" name="subject" placeholder="Inquiry about AI Solutions" value={formData.subject} onChange={handleChange} required />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="message">Message</Label>
-                    <Textarea id="message" name="message" placeholder="Your message here..." rows={5} value={formData.message} onChange={handleChange} required />
+                    <Textarea id="message" name="message" placeholder="Tell us how we can help..." rows={5} value={formData.message} onChange={handleChange} required />
                   </div>
                   <div>
-                    <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isSubmitting}>
+                    <Button type="submit" size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSubmitting}>
                       {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...
@@ -108,28 +109,31 @@ export function ContactSection() {
                 <div className="flex items-start space-x-4">
                   <MapPin className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
-                    <h4 className="font-semibold text-foreground">Our Office</h4>
-                    <p>123 Innovation Drive, Tech City, CA 94000</p>
+                    <h4 className="font-semibold text-foreground">Our Headquarters</h4>
+                    <p>123 Innovation Drive, Tech City, CA 94000, USA</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <Mail className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-foreground">Email Us</h4>
-                    <a href="mailto:info@quantumleap.com" className="hover:text-primary transition-colors">info@quantumleap.com</a>
+                    <a href="mailto:contact@quantumfusionsolutions.com" className="hover:text-primary transition-colors">contact@quantumfusionsolutions.com</a>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <Phone className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-foreground">Call Us</h4>
-                    <a href="tel:+1234567890" className="hover:text-primary transition-colors">+1 (234) 567-890</a>
+                    <a href="tel:+14155550100" className="hover:text-primary transition-colors">+1 (415) 555-0100</a>
                   </div>
                 </div>
-                <div className="pt-4">
-                    <h4 className="font-semibold text-foreground mb-2">Office Hours</h4>
-                    <p>Monday - Friday: 9:00 AM - 6:00 PM (PST)</p>
-                    <p>Saturday - Sunday: Closed</p>
+                 <div className="flex items-start space-x-4 pt-4 border-t mt-4">
+                  <Briefcase className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
+                  <div>
+                    <h4 className="font-semibold text-foreground">Careers</h4>
+                    <p>Interested in joining our team? <Link href="/careers" className="text-primary hover:underline">View open positions.</Link></p>
+                    <a href="mailto:careers@quantumfusionsolutions.com" className="hover:text-primary transition-colors text-sm">careers@quantumfusionsolutions.com</a>
+                  </div>
                 </div>
               </CardContent>
             </Card>

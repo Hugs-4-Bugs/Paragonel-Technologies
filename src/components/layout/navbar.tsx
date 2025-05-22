@@ -2,11 +2,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { CodeXml, Menu, X } from "lucide-react"; // Using a generic tech icon
+import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -26,17 +27,21 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-6">
+      <div className="container flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center space-x-2">
-          <CodeXml className="h-7 w-7 text-primary neon-icon" />
-          <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-            QuantumLeap
-          </span>
+          <Image
+            src="https://placehold.co/200x50.png?text=QuantumFusion+Solutions"
+            alt="QuantumFusion Solutions Logo"
+            width={200}
+            height={50}
+            className="h-10 w-auto md:h-12"
+            data-ai-hint="company logo"
+          />
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          {navLinks.slice(0, 5).map((link) => ( // Show first 5 links, rest can be in a dropdown or footer for desktop if too many
+        <nav className="hidden md:flex items-center space-x-5">
+          {navLinks.slice(0, 6).map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -45,13 +50,12 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-           {/* Example for more links dropdown - not fully implemented here to keep it concise */}
-          {navLinks.length > 5 && (
+           {navLinks.length > 6 && (
              <Link
-                href="/contact" // Or a dedicated "More" page
+                href="/contact" // Fallback, ideally a "More" dropdown or ensure all fit
                 className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               >
-                More... 
+                More...
               </Link>
           )}
           <ThemeToggleButton />
@@ -71,10 +75,14 @@ export function Navbar() {
               <SheetHeader className="p-6 border-b">
                 <SheetTitle className="flex items-center justify-between">
                   <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
-                    <CodeXml className="h-7 w-7 text-primary neon-icon" />
-                    <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-                      QuantumLeap
-                    </span>
+                     <Image
+                        src="https://placehold.co/180x45.png?text=QFS+Mobile"
+                        alt="QuantumFusion Solutions Logo Mobile"
+                        width={180}
+                        height={45}
+                        className="h-9 w-auto"
+                        data-ai-hint="company logo mobile"
+                      />
                   </Link>
                   <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
                     <X className="h-6 w-6" />

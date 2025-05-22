@@ -13,28 +13,33 @@ import { HelpCircle } from 'lucide-react';
 const faqItems = [
   {
     id: 'faq1',
-    question: 'What is QuantumLeap?',
-    answer: 'QuantumLeap is an innovative platform that uses AI to connect talented individuals with their ideal career opportunities and helps companies find the best candidates efficiently.',
+    question: 'What is QuantumFusion Solutions?',
+    answer: 'QuantumFusion Solutions is a premier IT company specializing in AI Solutions, Cloud Infrastructure, DevOps Automation, and SaaS Platforms. We help businesses innovate and achieve digital transformation.',
   },
   {
     id: 'faq2',
-    question: 'How does the AI job matching work?',
-    answer: 'Our AI algorithms analyze your profile, skills, experience, and preferences, along with job requirements and company culture, to provide highly relevant and personalized job matches.',
+    question: 'What industries do you serve?',
+    answer: 'We serve a diverse range of industries including tech, finance, healthcare, retail, and manufacturing, providing tailored IT solutions to meet specific sector challenges.',
   },
   {
     id: 'faq3',
-    question: 'Is QuantumLeap free for job seekers?',
-    answer: 'Yes, creating a profile, browsing jobs, and applying for positions on QuantumLeap is completely free for job seekers. We also offer optional premium services for enhanced career support.',
+    question: 'How does QuantumFusion Solutions approach AI development?',
+    answer: 'Our AI development process is collaborative and iterative. We work closely with clients to understand their needs, develop custom AI models, and integrate them seamlessly into their existing workflows for maximum impact.',
   },
   {
     id: 'faq4',
-    question: 'How can companies benefit from QuantumLeap?',
-    answer: 'Companies can leverage QuantumLeap to access a diverse talent pool, streamline their recruitment process with AI-powered tools, improve employer branding, and make data-driven hiring decisions.',
+    question: 'Can you help migrate our infrastructure to the cloud?',
+    answer: 'Absolutely. QuantumFusion Solutions offers comprehensive cloud migration services, from initial assessment and strategy to execution and post-migration support, ensuring a smooth transition to platforms like AWS, Azure, or GCP.',
   },
   {
     id: 'faq5',
-    question: 'What kind of support do you offer?',
-    answer: 'We offer comprehensive support for both job seekers and employers, including a help center, email support, and personalized assistance for premium users and enterprise clients.',
+    question: 'What kind of DevOps services do you offer?',
+    answer: 'We provide end-to-end DevOps services, including CI/CD pipeline automation, infrastructure as code (IaC), containerization (Docker, Kubernetes), monitoring, and security integration to accelerate your software delivery lifecycle.',
+  },
+  {
+    id: 'faq6',
+    question: 'How can I apply for a job at QuantumFusion Solutions?',
+    answer: 'Please visit our Careers page to view current openings and submit your application. We are always looking for talented individuals to join our team!',
   },
 ];
 
@@ -48,7 +53,7 @@ export function FaqSection() {
             Frequently Asked <span className="text-primary">Questions</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Find quick answers to common questions about QuantumLeap and our services.
+            Find quick answers to common questions about QuantumFusion Solutions and our services.
           </p>
         </ScrollFadeIn>
 

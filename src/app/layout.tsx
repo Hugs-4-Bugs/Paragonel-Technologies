@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -17,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'QuantumLeap - Innovate Your Career',
-  description: 'Discover exciting opportunities and personalized content with QuantumLeap.',
+  title: 'QuantumFusion Solutions - Shaping The Future For Tomorrow',
+  description: 'Innovative IT solutions in AI, Cloud Computing, DevOps, and SaaS Platforms by QuantumFusion Solutions.',
 };
 
 export default function RootLayout({
