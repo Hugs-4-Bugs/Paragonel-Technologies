@@ -1,5 +1,5 @@
 
-import type { Job } from '@/types';
+import type { Job, BlogPost } from '@/types'; // Ensure BlogPost is imported if used here, or remove if not
 
 export const dummyJobs: Job[] = [
   {
@@ -72,26 +72,15 @@ export const dummyJobs: Job[] = [
 
 export const locations = [
   'All Locations',
-  ...new Set(dummyJobs.map(job => job.location).sort())
+  ...new Set(dummyJobs.map(job => job.location).sort()),
+  'Anywhere', // Added for preferred location
+  'Remote' // Ensure Remote is available if used as a specific location
 ];
 export const departments = [
   'All Departments',
   ...new Set(dummyJobs.map(job => job.department).sort())
 ];
 
-export interface BlogPost {
-  id: string;
-  title: string;
-  date: string;
-  author: string;
-  excerpt: string;
-  content?: string; // Full content for detail page
-  imageUrl: string;
-  aiHint: string;
-  category: string;
-  comments: number;
-  slug: string;
-}
 
 export const blogPosts: BlogPost[] = [
   {
@@ -134,3 +123,20 @@ export const blogPosts: BlogPost[] = [
     slug: 'power-of-personalized-learning',
   },
 ];
+
+export const educationQualifications = [
+  '10th', '12th', 'Diploma', 'Graduation', 'Post Graduation', 'PhD', 'Other'
+];
+
+export const noticePeriods = [
+  'Immediately', '15 Days', '30 Days', '45 Days', '60 Days', '90 Days', 'More than 90 Days'
+];
+
+export const generateYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let year = currentYear; year >= 1980; year--) {
+    years.push(year.toString());
+  }
+  return years;
+};

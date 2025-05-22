@@ -29,12 +29,39 @@ export interface BlogPost {
 export interface ApplicationFormValues {
   fullName: string;
   email: string;
-  phone?: string;
-  linkedinProfile?: string;
+  phone: string;
   resume: FileList;
-  experienceLevel: "fresher" | "experienced";
-  workExperience?: string;
+  linkedinProfile?: string;
+  portfolioWebsite?: string;
+
+  highestQualification: string;
+  specialization: string;
+  university: string;
+  passingYear: string;
+  marks: string;
+
+  primarySkills: string;
+  secondarySkills?: string;
+
+  isFresher: boolean;
+  // For simplicity, capturing one work experience block. Can be array for multiple.
+  companyName?: string;
+  jobTitleExperience?: string; // Renamed to avoid conflict with job.title
+  fromDate?: string;
+  toDate?: string;
+  isCurrentlyWorking?: boolean;
+  jobDescription?: string;
+  
   coverLetter?: string;
+  preferredJobLocation: string;
+  currentCTC?: string;
+  expectedSalary: string;
+  noticePeriod: string;
+
+  acceptTerms: boolean;
+  notifySimilarJobs: boolean;
+
+  // Hidden fields
   jobId: string;
-  jobTitle: string;
+  jobTitle: string; // Job title being applied for
 }
