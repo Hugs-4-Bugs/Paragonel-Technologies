@@ -9,7 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { MessageCircle, Send, Mic, X, Loader2, Bot, User } from 'lucide-react';
 import { companyQnaFlow, type CompanyQnaInput, type CompanyQnaOutput } from '@/ai/flows/company-qna-flow';
 import { cn } from '@/lib/utils';
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatMessage {
   id: string;
@@ -24,7 +24,7 @@ export function ChatSection() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast(); // Initialize useToast
+  const { toast } = useToast();
 
   const initialMessage: ChatMessage = {
     id: 'initial-ai-message',
@@ -88,7 +88,6 @@ export function ChatSection() {
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
-     // If opening and no messages yet (after being closed), add initial message
     if (!isOpen && messages.length === 0) {
         setMessages([initialMessage]);
     }
@@ -98,8 +97,8 @@ export function ChatSection() {
     return (
       <Button
         variant="default"
-        size="lg" // Made FAB slightly larger
-        className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl z-50 bg-gradient-to-br from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity p-0 flex items-center justify-center"
+        size="lg"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-16 w-16 rounded-full shadow-2xl z-50 bg-gradient-to-br from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity p-0 flex items-center justify-center"
         onClick={toggleChat}
         aria-label="Open chat"
       >
@@ -109,10 +108,10 @@ export function ChatSection() {
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-full max-w-md h-[70vh] max-h-[600px] shadow-2xl z-50 flex flex-col rounded-xl overflow-hidden border-none bg-card">
+    <Card className="fixed bottom-4 right-4 w-[calc(100%-2rem)] sm:w-full max-w-sm sm:max-w-md h-[calc(100svh-5rem)] sm:h-[70vh] max-h-[500px] sm:max-h-[600px] shadow-2xl z-50 flex flex-col rounded-xl overflow-hidden border-none bg-card">
       <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-gradient-to-br from-primary to-accent text-primary-foreground">
         <CardTitle className="text-lg font-semibold flex items-center">
-          <Bot className="h-6 w-6 mr-2" /> {/* Removed neon-icon for header consistency */}
+          <Bot className="h-6 w-6 mr-2" />
           QuantumFusion Assistant
         </CardTitle>
         <Button variant="ghost" size="icon" onClick={toggleChat} aria-label="Close chat" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/20">
@@ -194,7 +193,7 @@ export function ChatSection() {
               toast({
                 title: "Voice Input",
                 description: "This feature is coming soon!",
-                variant: "default", 
+                variant: "default",
               });
             }}
           >
