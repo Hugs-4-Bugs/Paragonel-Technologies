@@ -70,12 +70,17 @@ export const dummyJobs: Job[] = [
   },
 ];
 
-export const locations = [
-  'All Locations',
-  ...new Set(dummyJobs.map(job => job.location).sort()),
-  'Anywhere', // Added for preferred location
-  'Remote' // Ensure Remote is available if used as a specific location
-];
+// Combine predefined locations with locations from jobs, ensure uniqueness, and sort.
+const predefinedLocations = ['All Locations', 'Anywhere', 'Remote'];
+const jobDerivedLocations = dummyJobs.map(job => job.location);
+const combinedUniqueLocations = Array.from(new Set([...predefinedLocations, ...jobDerivedLocations]));
+
+export const locations = combinedUniqueLocations.sort((a, b) => {
+  if (a === 'All Locations') return -1; // Always put 'All Locations' first
+  if (b === 'All Locations') return 1;
+  return a.localeCompare(b); // Sort other locations alphabetically
+});
+
 export const departments = [
   'All Departments',
   ...new Set(dummyJobs.map(job => job.department).sort())
