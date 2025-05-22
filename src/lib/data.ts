@@ -1,5 +1,5 @@
 
-import type { Job, BlogPost } from '@/types'; // Ensure BlogPost is imported if used here, or remove if not
+import type { Job, BlogPost } from '@/types';
 
 export const dummyJobs: Job[] = [
   {
@@ -70,16 +70,25 @@ export const dummyJobs: Job[] = [
   },
 ];
 
-// Combine predefined locations with locations from jobs, ensure uniqueness, and sort.
-const predefinedLocations = ['All Locations', 'Anywhere', 'Remote'];
-const jobDerivedLocations = dummyJobs.map(job => job.location);
-const combinedUniqueLocations = Array.from(new Set([...predefinedLocations, ...jobDerivedLocations]));
+// Robust generation of unique locations for filters and dropdowns
+const jobSpecificLocations = dummyJobs
+  .map(job => String(job.location || "").trim()) // Ensure string, trim whitespace
+  .filter(Boolean); // Remove any empty strings that might result
 
-export const locations = combinedUniqueLocations.sort((a, b) => {
-  if (a === 'All Locations') return -1; // Always put 'All Locations' first
-  if (b === 'All Locations') return 1;
-  return a.localeCompare(b); // Sort other locations alphabetically
+const baseFilterLocations = ['All Locations', 'Anywhere', 'Remote'];
+const allUniqueLocations = Array.from(new Set([...baseFilterLocations, ...jobSpecificLocations]));
+
+export const locations = allUniqueLocations.sort((a, b) => {
+  const specialOrder = ['All Locations', 'Anywhere', 'Remote'];
+  const aIndex = specialOrder.indexOf(a);
+  const bIndex = specialOrder.indexOf(b);
+
+  if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex; // Sort by special order
+  if (aIndex !== -1) return -1; // a is special, b is not (so a comes first)
+  if (bIndex !== -1) return 1;  // b is special, a is not (so b comes first)
+  return a.localeCompare(b); // Alphabetical for all other locations
 });
+
 
 export const departments = [
   'All Departments',
@@ -145,3 +154,9 @@ export const generateYearOptions = () => {
   }
   return years;
 };
+
+// For the preferred job location dropdown in the ApplyJobModal
+// It uses the main `locations` array but filters out "All Locations" in the modal component itself.
+// So no separate export needed here if `locations` is correctly deduplicated and sorted.
+// If a truly different list is needed for preferred locations, it can be defined here.
+// For now, `apply-job-modal.tsx` imports `locations as preferredLocations` and filters.
