@@ -3,24 +3,22 @@
 
 import React, { useState, useMemo } from 'react';
 import type { Job } from '@/types';
-import { dummyJobs, locations as allLocations, departments as allDepartments } from '@/lib/data'; // Ensure data matches QuantumFusion needs
+import { dummyJobs, locations as allLocations, departments as allDepartments } from '@/lib/data';
 import { JobCard } from '@/components/job-card';
+import { ApplyJobModal } from '@/components/apply-job-modal'; // Import the modal
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Filter, Briefcase, ChevronDown, ChevronUp, Laptop, Building } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const employmentTypes = ['All Types', 'Full-time', 'Part-time', 'Contract', 'Internship'];
 const workArrangements = ['Any', 'Remote', 'Onsite'];
 
-
 export function CareersSection() { 
-  const [jobs, setJobs] = useState<Job[]>(dummyJobs); // Potentially update dummyJobs for QuantumFusion
+  const [jobs, setJobs] = useState<Job[]>(dummyJobs);
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('All Locations');
   const [departmentFilter, setDepartmentFilter] = useState('All Departments');
@@ -28,12 +26,21 @@ export function CareersSection() {
   const [workArrangementFilter, setWorkArrangementFilter] = useState('Any');
   const [showOpenRoles, setShowOpenRoles] = useState(false); 
 
+  // State for the application modal
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [selectedJobForApplication, setSelectedJobForApplication] = useState<Job | null>(null);
+
+  const handleApplyNowClick = (job: Job) => {
+    setSelectedJobForApplication(job);
+    setIsApplyModalOpen(true);
+  };
+
   const filteredJobs = useMemo(() => {
     if (!showOpenRoles) return []; 
 
     return jobs.filter(job => {
       const matchesSearchTerm = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                job.company.toLowerCase().includes(searchTerm.toLowerCase()) || // Company name might be fixed for QuantumFusion
+                                job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 job.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesLocation = locationFilter === 'All Locations' || job.location === locationFilter;
       const matchesDepartment = departmentFilter === 'All Departments' || job.department === departmentFilter;
@@ -49,7 +56,6 @@ export function CareersSection() {
       } else if (workArrangementFilter === 'Onsite') {
         matchesWorkArrangement = !jobLocationLower.includes('remote') && !jobTitleLower.includes('remote') && !jobDescriptionLower.includes('remote');
       }
-
 
       return matchesSearchTerm && matchesLocation && matchesDepartment && matchesEmploymentType && matchesWorkArrangement;
     });
@@ -166,8 +172,10 @@ export function CareersSection() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredJobs.map((job, index) => (
                   <ScrollFadeIn key={job.id} delay={`${index * 100}ms`}>
-                    {/* Ensure JobCard uses 'QuantumFusion Solutions' or a generic placeholder if company varies */}
-                    <JobCard job={{...job, company: job.company === 'Innovatech Solutions' || job.company === 'FutureAI Corp' ? 'QuantumFusion Solutions' : job.company }} />
+                    <JobCard 
+                        job={{...job, company: job.company === 'Innovatech Solutions' || job.company === 'FutureAI Corp' ? 'QuantumFusion Solutions' : job.company }} 
+                        onApplyNowClick={handleApplyNowClick}
+                    />
                   </ScrollFadeIn>
                 ))}
               </div>
@@ -190,6 +198,11 @@ export function CareersSection() {
           </>
         )}
       </div>
+      <ApplyJobModal 
+        isOpen={isApplyModalOpen} 
+        onOpenChange={setIsApplyModalOpen} 
+        job={selectedJobForApplication} 
+      />
     </section>
   );
 }

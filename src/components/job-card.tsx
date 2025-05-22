@@ -8,9 +8,10 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface JobCardProps {
   job: Job;
+  onApplyNowClick: (job: Job) => void; // Callback to open modal
 }
 
-export function JobCard({ job }: JobCardProps) {
+export function JobCard({ job, onApplyNowClick }: JobCardProps) {
   const postedDate = new Date(job.postedDate);
   const timeAgo = formatDistanceToNow(postedDate, { addSuffix: true });
 
@@ -25,7 +26,7 @@ export function JobCard({ job }: JobCardProps) {
                 width={50} 
                 height={50} 
                 className="rounded-md border object-contain"
-                data-ai-hint="company logo minimal" // generic hint
+                data-ai-hint="company logo minimal"
               />
           ) : (
             <div className="w-[50px] h-[50px] bg-muted rounded-md flex items-center justify-center">
@@ -66,7 +67,12 @@ export function JobCard({ job }: JobCardProps) {
             <CalendarDays className="w-3 h-3 mr-1.5 neon-icon" />
             Posted {timeAgo}
         </div>
-        <Button variant="default" size="sm" className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 py-2 shadow-md hover:shadow-lg transition-shadow">
+        <Button 
+          variant="default" 
+          size="sm" 
+          className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 py-2 shadow-md hover:shadow-lg transition-shadow"
+          onClick={() => onApplyNowClick(job)}
+        >
           Apply Now
         </Button>
       </CardFooter>

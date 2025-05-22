@@ -25,3 +25,16 @@ export interface BlogPost {
   comments: number;
   slug: string;
 }
+
+export interface ApplicationFormValues {
+  fullName: string;
+  email: string;
+  phone?: string;
+  linkedinProfile?: string;
+  resume: FileList;
+  experienceLevel: "fresher" | "experienced";
+  workExperience?: string;
+  coverLetter?: string;
+  jobId: string;
+  jobTitle: string;
+}
