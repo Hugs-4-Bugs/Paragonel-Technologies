@@ -7,47 +7,14 @@ import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MessageSquare, ArrowRight } from 'lucide-react';
+import { blogPosts } from '@/lib/data'; // Import blogPosts from data.ts
+import { Badge } from '@/components/ui/badge'; // Ensure Badge is imported from ui
 
-const blogPosts = [
-  {
-    id: '1',
-    title: 'The Future of AI in Talent Acquisition',
-    date: 'August 5, 2024',
-    author: 'Dr. Evelyn Reed',
-    excerpt: 'Exploring how artificial intelligence is revolutionizing the recruitment landscape, from automated screening to predictive hiring.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    aiHint: 'AI hiring concept',
-    category: 'AI & Recruitment',
-    comments: 12,
-    slug: '/blog/future-of-ai-talent-acquisition',
-  },
-  {
-    id: '2',
-    title: 'Navigating Your Career Path in the Digital Age',
-    date: 'July 28, 2024',
-    author: 'Aisha Khan',
-    excerpt: 'Tips and strategies for professionals looking to thrive and adapt in an ever-evolving digital job market.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    aiHint: 'digital future career',
-    category: 'Career Development',
-    comments: 8,
-    slug: '/blog/navigating-career-path-digital-age',
-  },
-  {
-    id: '3',
-    title: 'The Power of Personalized Learning for Skill Enhancement',
-    date: 'July 15, 2024',
-    author: 'Marcus Chen',
-    excerpt: 'How QuantumFusion Solutions\' personalized learning modules help individuals acquire new skills and stay ahead.',
-    imageUrl: 'https://placehold.co/600x400.png',
-    aiHint: 'online learning interface',
-    category: 'EdTech',
-    comments: 5,
-    slug: '/blog/power-of-personalized-learning',
-  },
-];
 
 export function BlogSection() {
+  // Display only the first 3 posts for the homepage snippet
+  const displayedPosts = blogPosts.slice(0, 3);
+
   return (
     <section className="section-padding bg-background">
       <div className="container px-4 md:px-6">
@@ -61,10 +28,10 @@ export function BlogSection() {
         </ScrollFadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {blogPosts.map((post, index) => (
+          {displayedPosts.map((post, index) => (
             <ScrollFadeIn key={post.id} delay={`${index * 100}ms`}>
               <Card className="h-full flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <Link href={post.slug} aria-label={`Read more about ${post.title}`}>
+                <Link href={`/blog/${post.slug}`} aria-label={`Read more about ${post.title}`}>
                   <CardHeader className="p-0">
                     <Image
                       src={post.imageUrl}
@@ -78,7 +45,7 @@ export function BlogSection() {
                 </Link>
                 <CardContent className="flex-grow p-6">
                   <Badge variant="outline" className="mb-2">{post.category}</Badge>
-                  <Link href={post.slug} aria-label={`Read more about ${post.title}`}>
+                  <Link href={`/blog/${post.slug}`} aria-label={`Read more about ${post.title}`}>
                     <CardTitle className="text-xl mb-2 hover:text-primary transition-colors">{post.title}</CardTitle>
                   </Link>
                   <CardDescription className="text-sm line-clamp-3 mb-3">{post.excerpt}</CardDescription>
@@ -95,7 +62,7 @@ export function BlogSection() {
                 </CardContent>
                 <CardFooter className="p-6 pt-0">
                   <Button asChild variant="link" className="p-0 text-primary">
-                    <Link href={post.slug}>
+                    <Link href={`/blog/${post.slug}`}>
                       Read More <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                   </Button>
@@ -105,25 +72,14 @@ export function BlogSection() {
           ))}
         </div>
         
-        <ScrollFadeIn className="text-center mt-12">
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/blog">View All Posts</Link>
-            </Button>
-        </ScrollFadeIn>
+        {blogPosts.length > 3 && (
+          <ScrollFadeIn className="text-center mt-12">
+              <Button variant="outline" size="lg" asChild>
+                <Link href="/blog">View All Posts</Link>
+              </Button>
+          </ScrollFadeIn>
+        )}
       </div>
     </section>
-  );
-}
-
-// Basic Badge component if not already defined globally or in ui
-function Badge({ className, variant = 'default', ...props }: React.HTMLAttributes<HTMLDivElement> & {variant?: string}) {
-  return (
-    <span
-      className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full
-        ${variant === 'outline' ? 'border border-border text-foreground' : 
-          (variant === 'secondary' ? 'bg-secondary text-secondary-foreground' : 'bg-primary text-primary-foreground')}
-        ${className}`}
-      {...props}
-    />
   );
 }
