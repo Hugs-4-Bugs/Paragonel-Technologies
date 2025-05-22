@@ -1,0 +1,57 @@
+
+'use server';
+/**
+ * @fileOverview A QuantumFusion Solutions Q&A AI agent.
+ *
+ * - companyQnaFlow - A function that answers questions about QuantumFusion Solutions.
+ * - CompanyQnaInput - The input type for the companyQnaFlow function.
+ * - CompanyQnaOutput - The return type for the companyQnaFlow function.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+const CompanyQnaInputSchema = z.object({
+  question: z.string().describe('The user_s question about QuantumFusion Solutions.'),
+});
+export type CompanyQnaInput = z.infer<typeof CompanyQnaInputSchema>;
+
+const CompanyQnaOutputSchema = z.object({
+  answer: z.string().describe('The AI-generated answer to the user_s question.'),
+});
+export type CompanyQnaOutput = z.infer<typeof CompanyQnaOutputSchema>;
+
+export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQnaOutput> {
+  return companyQnaFlowInternal(input);
+}
+
+const prompt = ai.definePrompt({
+  name: 'companyQnaPrompt',
+  input: {schema: CompanyQnaInputSchema},
+  output: {schema: CompanyQnaOutputSchema},
+  prompt: `You are a helpful and knowledgeable assistant for QuantumFusion Solutions, an innovative IT company focused on AI, Cloud Computing, DevOps, and SaaS Platforms.
+The company's mission is to deliver transformative IT solutions that drive innovation, efficiency, and sustainable growth. Their vision is to be the leading catalyst in clients' digital transformation journeys.
+Key services include: AI Solutions (machine learning, NLP, computer vision), Cloud Infrastructure (migration, management, cloud-native development on AWS, Azure, GCP), DevOps Automation (CI/CD, IaC, automated testing), and SaaS Platforms (end-to-end development).
+The company was founded by Prabhat Kumar.
+
+Answer the following user question concisely and professionally based on the information about QuantumFusion Solutions:
+
+User Question: {{{question}}}
+
+Answer:`,
+});
+
+const companyQnaFlowInternal = ai.defineFlow(
+  {
+    name: 'companyQnaFlowInternal',
+    inputSchema: CompanyQnaInputSchema,
+    outputSchema: CompanyQnaOutputSchema,
+  },
+  async (input) => {
+    const {output} = await prompt(input);
+    if (!output || !output.answer) {
+      return { answer: "I'm sorry, I couldn't find an answer to that question right now." };
+    }
+    return output;
+  }
+);

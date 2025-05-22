@@ -2,18 +2,19 @@
 import { Hero } from '@/components/sections/hero';
 import { AiContent } from '@/components/sections/ai-content';
 import { TechNewsSection } from '@/components/sections/tech-news-section';
-import { AboutSection } from '@/components/sections/about-section';
+// import { AboutSection } from '@/components/sections/about-section'; // Full section on /about
 import { ServicesSection } from '@/components/sections/services-section';
 import { TestimonialsSection } from '@/components/sections/testimonials-section';
-import { FaqSection } from '@/components/sections/faq-section';
-import { PortfolioSection } from '@/components/sections/portfolio-section';
-import { TeamSection } from '@/components/sections/team-section';
-import { BlogSection } from '@/components/sections/blog-section';
-import { ContactSection } from '@/components/sections/contact-section';
+// import { FaqSection } from '@/components/sections/faq-section'; // Full section on /faq
+// import { PortfolioSection } from '@/components/sections/portfolio-section'; // Full section on /portfolio
+// import { TeamSection } from '@/components/sections/team-section'; // Full section on /team
+// import { BlogSection } from '@/components/sections/blog-section'; // Full section on /blog
+// import { ContactSection } from '@/components/sections/contact-section'; // Full section on /contact
+import { ChatSection } from '@/components/sections/chat-section'; // Import ChatSection
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, Users, BookOpen, HelpCircle, LayoutDashboard, Mail, Brain } from 'lucide-react';
 
 
 export default function HomePage() {
@@ -23,6 +24,7 @@ export default function HomePage() {
       
       <section id="about-snippet" className="section-padding bg-background">
         <div className="container mx-auto max-w-5xl text-center">
+          <Brain className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Welcome to <span className="text-primary">QuantumFusion Solutions</span>
           </h2>
@@ -39,7 +41,20 @@ export default function HomePage() {
       <ServicesSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
-      <PortfolioSection />
+      <section id="portfolio-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
+        <div className="container mx-auto max-w-5xl text-center">
+          <LayoutDashboard className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Our Innovative <span className="text-primary">Projects</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
+            Explore our portfolio of successful projects and see how we leverage technology to solve complex challenges.
+          </p>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/portfolio">View Our Portfolio</Link>
+          </Button>
+        </div>
+      </section>
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <AiContent /> 
@@ -51,7 +66,20 @@ export default function HomePage() {
       <TestimonialsSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
-      <TeamSection />
+      <section id="team-snippet" className="section-padding bg-background">
+        <div className="container mx-auto max-w-5xl text-center">
+          <Users className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Meet Our <span className="text-primary">Innovators</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
+            The brilliant minds behind QuantumFusion Solutions, dedicated to driving technological excellence and client success.
+          </p>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/team">Discover Our Team</Link>
+          </Button>
+        </div>
+      </section>
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <section id="careers-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
@@ -70,16 +98,43 @@ export default function HomePage() {
       </section>
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
-      <BlogSection />
+      <section id="blog-snippet" className="section-padding bg-background">
+        <div className="container mx-auto max-w-5xl text-center">
+          <BookOpen className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Latest <span className="text-primary">Insights</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
+            Stay informed with articles, trends, and news from our experts and the tech world.
+          </p>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/blog">Read Our Blog</Link>
+          </Button>
+        </div>
+      </section>
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
-      <FaqSection />
+      <section id="faq-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
+        <div className="container mx-auto max-w-5xl text-center">
+          <HelpCircle className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Have <span className="text-primary">Questions?</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
+            Find answers to common questions about our services, processes, and company.
+          </p>
+          <Button asChild size="lg" variant="outline">
+            <Link href="/faq">Visit Our FAQ</Link>
+          </Button>
+        </div>
+      </section>
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <section id="contact-snippet" className="section-padding bg-background">
         <div className="container mx-auto max-w-5xl text-center">
+          <Mail className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Innovate?
+            Ready to <span className="text-primary">Innovate?</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
             Let's discuss how QuantumFusion Solutions can help your business achieve its technological goals.
@@ -89,6 +144,7 @@ export default function HomePage() {
           </Button>
         </div>
       </section>
+      <ChatSection /> {/* Add ChatSection here */}
     </>
   );
 }

@@ -7,11 +7,12 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -31,14 +32,21 @@ const moreNavLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
-const allNavLinks = [...mainNavLinks, ...moreNavLinks];
+const authNavLinks = [
+  { href: "/auth/login", label: "Login", icon: LogIn },
+  { href: "/auth/signup", label: "Sign Up", icon: UserPlus },
+];
+
+// Combined for mobile menu
+const allNavLinksForMobile = [...mainNavLinks, ...moreNavLinks, ...authNavLinks];
+
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
+      <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center space-x-2">
           <Image
             src="https://placehold.co/160x40.png" 
@@ -76,7 +84,19 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <div className="pl-2">
+          <div className="flex items-center space-x-2 pl-3">
+            <Button variant="outline" asChild size="sm">
+                <Link href="/auth/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login
+                </Link>
+            </Button>
+            <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Link href="/auth/signup">
+                     <UserPlus className="mr-2 h-4 w-4" />
+                    Sign Up
+                </Link>
+            </Button>
             <ThemeToggleButton />
           </div>
         </nav>
@@ -111,14 +131,17 @@ export function Navbar() {
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col space-y-1 p-6">
-                {allNavLinks.map((link) => (
+                {allNavLinksForMobile.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
+                    className="block px-3 py-2.5 rounded-md text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    {link.label}
+                    <div className="flex items-center">
+                      {link.icon && <link.icon className="mr-3 h-5 w-5 text-primary" />}
+                      {link.label}
+                    </div>
                   </Link>
                 ))}
               </nav>
