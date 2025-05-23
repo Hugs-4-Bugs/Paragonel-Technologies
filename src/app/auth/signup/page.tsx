@@ -27,7 +27,11 @@ import { useRouter } from 'next/navigation';
 const signupSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+  password: z.string()
+    .min(8, { message: "Password must be at least 8 characters." })
+    .regex(/(?=.*[A-Z])/, { message: "Password must contain at least one uppercase letter." })
+    .regex(/(?=.*\d)/, { message: "Password must contain at least one digit." })
+    .regex(/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/, { message: "Password must contain at least one special character." }),
   confirmPassword: z.string(),
   otp: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -128,16 +132,10 @@ export default function SignupPage() {
       return;
     }
     setIsSubmitting(true);
-    // Simulate API call delay if needed
-    // await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // AuthContext signup now handles adding to simulated DB and auto-login
-    // It also handles toast for duplicate email
+    // Pass the password to the signup function in AuthContext
     signup(values.email, values.password);
     
-    // Redirection is handled within the signup/login function in AuthContext
-    // Toasts for success/failure are also handled by AuthContext
-
+    // Redirection and success/failure toasts are handled by AuthContext
     setIsSubmitting(false);
   }
 
@@ -272,6 +270,9 @@ export default function SignupPage() {
                           </Button>
                         </div>
                       </FormControl>
+                      <FormDescription>
+                        Must be 8+ characters, with uppercase, digit, & special character.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
