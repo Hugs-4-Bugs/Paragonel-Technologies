@@ -7,30 +7,53 @@ This is the official website for QuantumFusion Solutions, an innovative IT compa
 
 ## Core Features
 
-*   **Sticky Navigation Bar**: Easy access to all main sections, with a responsive burger menu for mobile/tablet. Includes Home, About, Services, Portfolio, Team, Careers, Blog, Testimonials, FAQ, Contact, Login, and Signup.
-*   **Dynamic Hero Section**: Featuring the company tagline "Shaping the Future for Tomorrow" with an animated gradient background.
+*   **Sticky Navigation Bar**: Easy access to all main sections, with a responsive burger menu for mobile/tablet. Includes Home, About, Services, Portfolio, Team, Careers, Blog, Testimonials, FAQ, Contact. Login and Signup options are also integrated.
+*   **Dynamic Hero Section**: Featuring the company tagline "Shaping the Future for Tomorrow" with an animated gradient background and distinct styling for slogan and description.
 *   **Comprehensive Sections**:
-    *   **About Us**: Mission, vision, company story, and values presented with a timeline.
-    *   **Services**: Detailed pages for AI Solutions, Cloud Infrastructure, DevOps Automation, and SaaS Platforms.
-    *   **Portfolio**: Carousel showcasing successful projects.
-    *   **Team**: Profile cards for team members, including the Founder & CEO (Prabhat Kumar).
-    *   **Careers**: Interactive job board (initially hidden, toggled by "View Open Roles") with filtering (Location, Department, Employment Type, Work Arrangement) and job cards.
-    *   **Blog**: Listing of articles with individual detail pages.
-    *   **Testimonials**: Client success stories presented in a smooth slider.
-    *   **FAQ**: Accordion-style question and answer section.
-    *   **Contact**: Form for inquiries and detailed contact information.
-*   **AI-Powered Chat Assistant**: A globally accessible chat widget (powered by Genkit) that opens automatically and answers user questions about QuantumFusion Solutions. Includes information about the company's LinkedIn profile.
+    *   **About Us**: Mission, vision, company story, and values presented with a timeline/infographic format.
+    *   **Services**: Overview section linking to detailed individual pages for AI Solutions, Cloud Infrastructure, DevOps Automation, and SaaS Platforms.
+    *   **Portfolio**: Carousel showcasing successful projects with mockups/previews.
+    *   **Team**: Clean profile cards for team members, including the Founder & CEO (Prabhat Kumar). Clicking a card opens a modal with a detailed bio and social links.
+    *   **Careers**:
+        *   Interactive job board initially hidden, toggled by a "View Open Roles" button.
+        *   Advanced filtering by Location, Department, Job ID, Employment Type, Date Posted, and Work Arrangement (Remote/Onsite).
+        *   Job cards display key information. Clicking a job card opens a modal with the full job description.
+        *   "Apply Now" button on job cards opens a detailed job application form within a modal. This form includes:
+            *   Personal Information (Name, Email, Phone, LinkedIn, Portfolio, Coding Profile URL).
+            *   Resume Upload (PDF/DOCX, max 5MB).
+            *   Education Details (Highest Qualification, Specialization, University, Passing Year, Marks/CGPA).
+            *   Skills (Primary, Secondary).
+            *   Work Experience (conditional fields for experienced candidates including company, title, duration, responsibilities; fresher option available).
+            *   Additional Inputs (Cover Letter, Preferred Location, Current & Expected CTC, Notice Period).
+            *   Mandatory policy acceptance and optional job notification opt-in.
+        *   Application details are formatted by an AI flow for simulated email notifications to admin (`erprabhat72@gmail.com`) and a confirmation to the applicant.
+    *   **Blog**: Listing of articles with links to individual detail pages for full content.
+    *   **Testimonials**: Client success stories presented in a smooth, interactive slider.
+    *   **FAQ**: Accordion-style question and answer section for common queries.
+    *   **Contact**: Form for inquiries and detailed company contact information.
+*   **AI-Powered Chat Assistant**: A globally accessible chat widget, powered by Genkit, that opens automatically on page load. It answers user questions about QuantumFusion Solutions, its services, careers, and provides links (e.g., to the company's LinkedIn profile) in a clickable format.
 *   **AI Content Curation**:
-    *   Personalized content recommendations based on simulated user behavior (e.g., viewed job titles).
-    *   Dynamic tech news section fetching plausible recent headlines related to AI, Cloud, DevOps, and SaaS.
-*   **User Authentication UI**: Frontend forms for Login, Signup, Forgot Password, and Reset Password (backend integration required). Visual placeholders for OTP/email link flows.
-*   **Newsletter Subscription**: Integrated into the footer.
-*   **Visual Design**:
-    *   Sleek, ultra-modern aesthetic.
-    *   Dark/Light theme toggle.
-    *   Subtle animations on scroll and hover (ScrollFadeIn).
+    *   **Personalized Recommendations**: The homepage features a section suggesting relevant articles or case studies based on simulated user behavior (e.g., viewed job titles), powered by a Genkit flow.
+    *   **Dynamic Tech News**: The homepage includes a section that fetches and displays plausible recent tech news headlines and summaries related to AI, Cloud, DevOps, and SaaS, generated by a Genkit flow.
+*   **User Authentication UI & Simulated Flow**:
+    *   Frontend forms for Login, Signup, Forgot Password, and Reset Password using ShadCN UI and `react-hook-form`.
+    *   The **Signup process** includes a simulated email OTP verification UI flow before registration can be completed. Password complexity rules are enforced with user feedback.
+    *   **Simulated Login/Signup**: Uses client-side state (`AuthContext`) and `localStorage` for basic session persistence. Successful signup attempts to auto-login the user.
+    *   **Protected Job Application**: The job application process is protected. Non-logged-in users attempting to apply for a job are redirected to the login page. After successful login/signup, they are redirected back, if appropriate.
+*   **Newsletter Subscription**: Integrated into the footer for users to subscribe to updates.
+*   **Cookie Consent System**:
+    *   A banner appears on first visit with "Accept All," "Reject Non-Essential," and "Customize Settings" options.
+    *   The "Customize" option opens a settings panel allowing users to toggle preferences for Functional, Performance, Analytics, and Marketing cookies (Essential cookies are always active).
+    *   User preferences are stored in `localStorage`.
+    *   Theme persistence (dark/light mode) is linked to "Functional Cookies" consent.
+    *   Simulated loading of conditional scripts (analytics, marketing) based on consent is logged to the console.
+    *   A link in the footer allows users to reopen and modify their cookie settings at any time.
+*   **Visual Design & UX**:
+    *   Sleek, ultra-modern aesthetic with a professional feel.
+    *   Dark/Light theme toggle with persistence based on cookie consent.
+    *   Subtle animations on scroll (`ScrollFadeIn`) and hover effects.
     *   Neon glow accents on icons.
-    *   Responsive design for desktop, tablet, and mobile.
+    *   Fully responsive design for desktop, tablet, and mobile devices, ensuring a consistent and optimized experience.
 
 ## Tech Stack
 
@@ -42,7 +65,7 @@ This is the official website for QuantumFusion Solutions, an innovative IT compa
     *   Lucide Icons (for iconography)
 *   **Artificial Intelligence**:
     *   Genkit (Google AI SDK for JavaScript/TypeScript)
-    *   Google AI (Gemini models for chat and content generation)
+    *   Google AI (Gemini models for chat, content generation, and email formatting)
 *   **Styling & Animations**:
     *   Tailwind CSS
     *   `tailwindcss-animate`
@@ -50,6 +73,9 @@ This is the official website for QuantumFusion Solutions, an innovative IT compa
 *   **Form Handling**:
     *   `react-hook-form`
     *   `zod` (for schema validation)
+*   **State Management**:
+    *   React Context API (for Authentication and Cookie Consent)
+    *   React `useState`, `useEffect` hooks.
 
 ## Getting Started (Local Development on macOS)
 
@@ -143,7 +169,7 @@ This command compiles and optimizes your application for deployment. The output 
 
 ## Deployment
 
-You can deploy this Next.js application to various hosting platforms.
+You can deploy this Next.js application to various hosting platforms. All listed platforms have free tiers suitable for personal projects or low-traffic sites.
 
 ### General Configuration for Deployment
 
@@ -151,7 +177,7 @@ You can deploy this Next.js application to various hosting platforms.
 *   **Build Command**: The standard build command is `npm run build` or `next build`.
 *   **Output Directory**: For Next.js, this is typically `.next`.
 
-### Deploying to Vercel
+### Deploying to Vercel (Recommended for Next.js)
 
 Vercel is highly recommended for Next.js projects as it's developed by the creators of Next.js.
 1.  Connect your Git repository to Vercel.
