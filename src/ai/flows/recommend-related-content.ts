@@ -54,6 +54,10 @@ const recommendRelatedContentFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    // Ensure the output is not null and conforms to the schema, otherwise return empty array.
+    if (!output || !output.recommendations) {
+      return { recommendations: [] };
+    }
+    return output;
   }
 );
