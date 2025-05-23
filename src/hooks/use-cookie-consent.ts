@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 
 export interface CookiePreferences {
-  essential: true; // Essential cookies are always true and cannot be changed by the user
+  essential: true;
   functional: boolean;
   analytics: boolean;
   marketing: boolean;
-  performance: boolean; // Added Performance Cookies
+  performance: boolean;
 }
 
 export type CookieCategory = keyof Omit<CookiePreferences, 'essential'>;
@@ -21,10 +21,26 @@ const defaultPreferences: CookiePreferences = {
   functional: false,
   analytics: false,
   marketing: false,
-  performance: false, // Default for performance
+  performance: false,
 };
 
-export function useCookieConsent() {
+interface CookieConsentContextType {
+  isMounted: boolean;
+  consentGiven: boolean | null;
+  preferences: CookiePreferences;
+  showBanner: boolean;
+  showSettingsModal: boolean;
+  acceptAll: () => void;
+  rejectNonEssential: () => void;
+  savePreferences: (newPrefs: CookiePreferences) => void;
+  openSettings: () => void;
+  closeSettings: () => void;
+  setPreferences: React.Dispatch<React.SetStateAction<CookiePreferences>>;
+}
+
+const CookieConsentContext = createContext<CookieConsentContextType | undefined>(undefined);
+
+export const CookieConsentProvider = ({ children }: { children: ReactNode }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [consentGiven, setConsentGiven] = useState<boolean | null>(null);
   const [preferences, setPreferences] = useState<CookiePreferences>(defaultPreferences);
@@ -36,53 +52,57 @@ export function useCookieConsent() {
     const storedConsent = localStorage.getItem(COOKIE_CONSENT_KEY);
     const storedPreferences = localStorage.getItem(COOKIE_PREFERENCES_KEY);
 
-    if (storedConsent === 'true') {
-      setConsentGiven(true);
+    if (storedConsent === 'true' || storedConsent === 'false') {
+      setConsentGiven(true); // A decision has been made
       setShowBanner(false);
+      if (storedPreferences) {
+        try {
+          const parsedPrefs = JSON.parse(storedPreferences) as CookiePreferences;
+          // Ensure essential is always true and merge stored prefs
+          setPreferences({ ...defaultPreferences, ...parsedPrefs, essential: true });
+        } catch (error) {
+          console.error("Error parsing stored cookie preferences:", error);
+          // Fallback based on the consent type if preferences are corrupt
+          setPreferences(storedConsent === 'true'
+            ? { essential: true, functional: true, analytics: true, marketing: true, performance: true }
+            : { ...defaultPreferences, essential: true });
+        }
+      } else {
+        // If no preferences stored but consent was given, derive prefs from consent type
+        const newPrefs = storedConsent === 'true'
+          ? { essential: true, functional: true, analytics: true, marketing: true, performance: true }
+          : { ...defaultPreferences, essential: true }; // Consent 'false' implies only essential
+        setPreferences(newPrefs);
+        localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify(newPrefs));
+      }
+    } else {
+      // No stored consent decision
+      setConsentGiven(false); // No decision made yet
+      setShowBanner(true);
+      // If there are stored preferences despite no overall consent decision (e.g., user customized then left), load them.
+      // Otherwise, use defaults.
       if (storedPreferences) {
         try {
           const parsedPrefs = JSON.parse(storedPreferences) as CookiePreferences;
           setPreferences({ ...defaultPreferences, ...parsedPrefs, essential: true });
         } catch (error) {
-          console.error("Error parsing stored cookie preferences:", error);
-          setPreferences({ ...defaultPreferences, essential: true });
-          localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ ...defaultPreferences, essential: true }));
-        }
-      } else {
-        const allAccepted = { essential: true, functional: true, analytics: true, marketing: true, performance: true };
-        setPreferences(allAccepted);
-        localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify(allAccepted));
-      }
-    } else if (storedConsent === 'false') { 
-      setConsentGiven(true); 
-      setShowBanner(false);
-      if (storedPreferences) {
-         try {
-          const parsedPrefs = JSON.parse(storedPreferences) as CookiePreferences;
-          setPreferences({ ...defaultPreferences, ...parsedPrefs, essential: true });
-        } catch (error) {
-          setPreferences({ ...defaultPreferences, essential: true });
-          localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ ...defaultPreferences, essential: true }));
+           console.error("Error parsing stored cookie preferences without consent flag:", error);
+           setPreferences({ ...defaultPreferences, essential: true });
         }
       } else {
         setPreferences({ ...defaultPreferences, essential: true });
-        localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ ...defaultPreferences, essential: true }));
       }
-    }
-    else {
-      setConsentGiven(false);
-      setShowBanner(true);
-      setPreferences({ ...defaultPreferences, essential: true });
     }
   }, []);
 
-  const updateConsent = useCallback((newPreferences: CookiePreferences, consentDecisionMade: boolean) => {
+  const updateConsentAndStorage = useCallback((newPreferences: CookiePreferences, consentDecisionMade: boolean) => {
     const prefsToSave = { ...newPreferences, essential: true };
     setPreferences(prefsToSave);
     localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify(prefsToSave));
+
     if (consentDecisionMade) {
-      localStorage.setItem(COOKIE_CONSENT_KEY, 'true');
-      setConsentGiven(true);
+      localStorage.setItem(COOKIE_CONSENT_KEY, 'true'); 
+      setConsentGiven(true); 
       setShowBanner(false);
     }
   }, []);
@@ -93,11 +113,11 @@ export function useCookieConsent() {
       functional: true,
       analytics: true,
       marketing: true,
-      performance: true, // Accept performance cookies
+      performance: true,
     };
-    updateConsent(allAcceptedPrefs, true);
+    updateConsentAndStorage(allAcceptedPrefs, true);
     setShowSettingsModal(false);
-  }, [updateConsent]);
+  }, [updateConsentAndStorage]);
 
   const rejectNonEssential = useCallback(() => {
     const onlyEssentialPrefs: CookiePreferences = {
@@ -105,17 +125,16 @@ export function useCookieConsent() {
       functional: false,
       analytics: false,
       marketing: false,
-      performance: false, // Reject performance cookies
+      performance: false,
     };
-    updateConsent(onlyEssentialPrefs, true);
-    localStorage.setItem(COOKIE_CONSENT_KEY, 'false'); 
+    updateConsentAndStorage(onlyEssentialPrefs, true);
     setShowSettingsModal(false);
-  }, [updateConsent]);
+  }, [updateConsentAndStorage]);
 
   const savePreferences = useCallback((newPrefs: CookiePreferences) => {
-    updateConsent(newPrefs, true);
+    updateConsentAndStorage(newPrefs, true);
     setShowSettingsModal(false);
-  }, [updateConsent]);
+  }, [updateConsentAndStorage]);
 
   const openSettings = useCallback(() => {
     setShowBanner(false); 
@@ -125,11 +144,12 @@ export function useCookieConsent() {
   const closeSettings = useCallback(() => {
     setShowSettingsModal(false);
     if (!consentGiven) { 
-      setShowBanner(true); 
+      setShowBanner(true);
     }
   }, [consentGiven]);
 
-  return {
+
+  const value = {
     isMounted,
     consentGiven,
     preferences,
@@ -142,4 +162,14 @@ export function useCookieConsent() {
     closeSettings,
     setPreferences, 
   };
-}
+
+  return <CookieConsentContext.Provider value={value}>{children}</CookieConsentContext.Provider>;
+};
+
+export const useCookieConsent = (): CookieConsentContextType => {
+  const context = useContext(CookieConsentContext);
+  if (context === undefined) {
+    throw new Error('useCookieConsent must be used within a CookieConsentProvider');
+  }
+  return context;
+};

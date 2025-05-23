@@ -9,7 +9,8 @@ import { Footer } from '@/components/layout/footer';
 import { ChatSection } from '@/components/sections/chat-section';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { CookieSettingsModal } from '@/components/cookie-consent/CookieSettingsModal';
-import { CookieConsentManager } from '@/components/cookie-consent/CookieConsentManager'; // We'll create this small client component
+import { CookieConsentManager } from '@/components/cookie-consent/CookieConsentManager';
+import { CookieConsentProvider } from '@/hooks/use-cookie-consent'; // Import the provider
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,22 +35,24 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
-        <CookieConsentManager> {/* Wrap ThemeProvider to allow it to access consent */}
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark" // Default theme if functional cookies are off or not set
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Navbar />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-            <ChatSection />
-            <Toaster />
-            <CookieConsentBanner />
-            <CookieSettingsModal />
-          </ThemeProvider>
-        </CookieConsentManager>
+        <CookieConsentProvider> {/* Wrap the components that need cookie consent context */}
+          <CookieConsentManager>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Navbar />
+              <main className="flex-grow">{children}</main>
+              <Footer />
+              <ChatSection />
+              <Toaster />
+              <CookieConsentBanner />
+              <CookieSettingsModal />
+            </ThemeProvider>
+          </CookieConsentManager>
+        </CookieConsentProvider>
       </body>
     </html>
   );
