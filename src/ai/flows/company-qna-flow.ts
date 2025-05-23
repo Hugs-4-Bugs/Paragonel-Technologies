@@ -37,7 +37,7 @@ Key services include:
 - DevOps Automation: Focusing on CI/CD pipelines, Infrastructure as Code (IaC), and automated testing.
 - SaaS Platforms: Offering end-to-end development of Software-as-a-Service applications.
 The company was founded by Prabhat Kumar.
-The company's official LinkedIn page is: https://www.linkedin.com/company/106575838/
+The company's official LinkedIn page is: https://www.linkedin.com/company/106575838/admin/inbox/thread/2-OTQ5ODNjNjAtNDE0Yi00YTI3LWI5YTEtOGI5ZmQ0ZDNkMTAwXzEwMA==/
 
 Answer the following user question concisely and professionally based on the information about QuantumFusion Solutions.
 If the question is about careers or job openings, mention that they can find more information on the Careers page of the website or on the company's LinkedIn profile.

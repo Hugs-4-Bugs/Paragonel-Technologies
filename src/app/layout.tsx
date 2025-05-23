@@ -6,7 +6,10 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
-import { ChatSection } from '@/components/sections/chat-section'; // Import ChatSection
+import { ChatSection } from '@/components/sections/chat-section';
+import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
+import { CookieSettingsModal } from '@/components/cookie-consent/CookieSettingsModal';
+import { CookieConsentManager } from '@/components/cookie-consent/CookieConsentManager'; // We'll create this small client component
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -31,18 +34,22 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Navbar />
-          <main className="flex-grow">{children}</main>
-          <Footer />
-          <ChatSection /> {/* Add ChatSection here for global visibility */}
-          <Toaster />
-        </ThemeProvider>
+        <CookieConsentManager> {/* Wrap ThemeProvider to allow it to access consent */}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark" // Default theme if functional cookies are off or not set
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Navbar />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+            <ChatSection />
+            <Toaster />
+            <CookieConsentBanner />
+            <CookieSettingsModal />
+          </ThemeProvider>
+        </CookieConsentManager>
       </body>
     </html>
   );

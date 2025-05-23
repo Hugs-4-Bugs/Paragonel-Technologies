@@ -219,14 +219,23 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
       
       const formattedEmail = await formatApplicationEmail(inputForGenkit);
 
-      console.log("SIMULATION: Application email ready to be sent to erprabhat72@gmail.com");
-      console.log("Subject:", formattedEmail.emailSubject);
-      console.log("Body (first 500 chars for brevity):", formattedEmail.emailBody.substring(0,500) + "...");
+      // --- START: Simulated API Call to Backend ---
+      console.log("SIMULATION: Sending application data to backend endpoint...");
+      console.log("Data being sent:", {
+        ...values,
+        resumeDataUri, // Consider if you want to send base64 or handle file upload differently
+        resumeFileName: resumeFile.name,
+        formattedEmailSubject: formattedEmail.emailSubject,
+        formattedEmailBody: formattedEmail.emailBody,
+      });
+      // Simulate a network request delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log("SIMULATION: Backend received data. Email sent to erprabhat72@gmail.com (simulated).");
+      // --- END: Simulated API Call to Backend ---
 
       toast({
         title: "Application Submitted!",
-        description: "Thank you! Your application for " + job.title + " has been submitted successfully.",
-        variant: "default",
+        description: `Thank you! Your application for "${job.title}" has been submitted successfully.`,
       });
       form.reset();
       onOpenChange(false);

@@ -1,8 +1,13 @@
 
+"use client"; // Add "use client" because openSettings will be a client-side interaction
+
 import Image from "next/image";
 import Link from "next/link";
 import { NewsletterSubscription } from '@/components/sections/newsletter-subscription';
-import { Facebook, Linkedin, Twitter, Instagram } from 'lucide-react'; // Added Instagram
+import { Facebook, Linkedin, Twitter, Instagram, Settings } from 'lucide-react';
+import { useCookieConsent } from "@/hooks/use-cookie-consent"; // Import the hook
+import { Button } from "@/components/ui/button"; // Import Button for the settings link
+
 
 const footerNavLinks = [
   { href: "/about", label: "About Us" },
@@ -17,6 +22,8 @@ const footerNavLinks = [
 ];
 
 export function Footer() {
+  const { openSettings, isMounted } = useCookieConsent();
+
   return (
     <footer className="border-t border-border/40 bg-background">
       <div className="container px-4 md:px-6 py-12">
@@ -75,9 +82,16 @@ export function Footer() {
         </div>
         
         <div className="border-t border-border/40 pt-8 flex flex-col sm:flex-row items-center justify-between">
-           <p className="text-sm text-muted-foreground text-center sm:text-left mb-4 sm:mb-0">
-            &copy; {new Date().getFullYear()} QuantumFusion Solutions. All rights reserved.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-x-4 gap-y-2 text-sm text-muted-foreground text-center sm:text-left mb-4 sm:mb-0">
+            <p>
+              &copy; {new Date().getFullYear()} QuantumFusion Solutions. All rights reserved.
+            </p>
+            {isMounted && (
+              <Button variant="link" size="sm" onClick={openSettings} className="p-0 text-muted-foreground hover:text-primary">
+                <Settings className="h-4 w-4 mr-1.5" /> Cookie Settings
+              </Button>
+            )}
+          </div>
           <div className="flex space-x-4">
             <Link href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="LinkedIn">
               <Linkedin className="h-5 w-5 neon-icon" />
