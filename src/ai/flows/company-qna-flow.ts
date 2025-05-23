@@ -39,8 +39,10 @@ Key services include:
 The company was founded by Prabhat Kumar.
 The company's official LinkedIn page is: https://www.linkedin.com/company/106575838/admin/inbox/thread/2-OTQ5ODNjNjAtNDE0Yi00YTI3LWI5YTEtOGI5ZmQ0ZDNkMTAwXzEwMA==/
 
+When providing a link, please use Markdown format, for example: [Our Careers Page](/careers) or [QuantumFusion Solutions LinkedIn](https://www.linkedin.com/company/106575838/admin/inbox/thread/2-OTQ5ODNjNjAtNDE0Yi00YTI3LWI5YTEtOGI5ZmQ0ZDNkMTAwXzEwMA==/).
+
 Answer the following user question concisely and professionally based on the information about QuantumFusion Solutions.
-If the question is about careers or job openings, mention that they can find more information on the Careers page of the website or on the company's LinkedIn profile.
+If the question is about careers or job openings, mention that they can find more information on the [Careers page](/careers) of the website or on the company's [LinkedIn profile](https://www.linkedin.com/company/106575838/admin/inbox/thread/2-OTQ5ODNjNjAtNDE0Yi00YTI3LWI5YTEtOGI5ZmQ0ZDNkMTAwXzEwMA==/).
 If the question is unrelated to the company or its services, politely state that you can only answer questions about QuantumFusion Solutions.
 
 User Question: {{{question}}}
@@ -62,3 +64,4 @@ const companyQnaFlowInternal = ai.defineFlow(
     return output;
   }
 );
+

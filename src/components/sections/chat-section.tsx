@@ -18,6 +18,44 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+// Simple Markdown link parser: [text](url)
+const renderMessageWithLinks = (text: string) => {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    // Add text before the link
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+    // Add the link
+    const anchorText = match[1];
+    const url = match[2];
+    parts.push(
+      <a
+        key={match.index}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary underline hover:text-primary/80"
+      >
+        {anchorText}
+      </a>
+    );
+    lastIndex = linkRegex.lastIndex;
+  }
+
+  // Add any remaining text after the last link
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? <>{parts.map((part, i) => <React.Fragment key={i}>{part}</React.Fragment>)}</> : text;
+};
+
+
 export function ChatSection() {
   const [isOpen, setIsOpen] = useState(true); // Auto-open chat
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -37,7 +75,7 @@ export function ChatSection() {
     if (isOpen && messages.length === 0) {
       setMessages([initialMessage]);
     }
-  }, [isOpen, messages.length]);
+  }, [isOpen]);
 
 
   useEffect(() => {
@@ -98,7 +136,7 @@ export function ChatSection() {
       <Button
         variant="default"
         size="lg"
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-16 w-16 rounded-full shadow-2xl z-50 bg-gradient-to-br from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity p-0 flex items-center justify-center"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-16 w-16 rounded-full shadow-2xl z-[100] bg-gradient-to-br from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity p-0 flex items-center justify-center"
         onClick={toggleChat}
         aria-label="Open chat"
       >
@@ -108,7 +146,10 @@ export function ChatSection() {
   }
 
   return (
-    <Card className="fixed bottom-4 right-4 w-[calc(100%-2rem)] sm:w-full max-w-sm sm:max-w-md h-[calc(100svh-5rem)] sm:h-[70vh] max-h-[500px] sm:max-h-[600px] shadow-2xl z-50 flex flex-col rounded-xl overflow-hidden border-none bg-card">
+    <Card className={cn(
+        "fixed bottom-4 right-4 w-[calc(100%-2rem)] sm:w-full max-w-sm sm:max-w-md h-[calc(100svh-5rem)] sm:h-[70vh] max-h-[500px] sm:max-h-[600px] shadow-2xl z-[100] flex flex-col rounded-xl overflow-hidden border-none bg-card",
+        "md:bottom-6 md:right-6 md:w-full md:max-w-md md:max-h-[600px]"
+      )}>
       <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-gradient-to-br from-primary to-accent text-primary-foreground">
         <CardTitle className="text-lg font-semibold flex items-center">
           <Bot className="h-6 w-6 mr-2" />
@@ -138,7 +179,7 @@ export function ChatSection() {
                       : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-none shadow-md'
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                  <div className="whitespace-pre-wrap">{renderMessageWithLinks(msg.text)}</div>
                   <p className={cn(
                       "text-xs mt-1.5 opacity-80",
                       msg.sender === 'user' ? 'text-primary-foreground/70 text-right' : 'text-slate-500 dark:text-slate-400 text-left'
@@ -193,7 +234,6 @@ export function ChatSection() {
               toast({
                 title: "Voice Input",
                 description: "This feature is coming soon!",
-                variant: "default",
               });
             }}
           >
