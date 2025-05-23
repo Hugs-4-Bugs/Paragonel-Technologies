@@ -1,23 +1,24 @@
 
 'use server';
 /**
- * @fileOverview Formats a detailed job application into an email.
+ * @fileOverview Formats a detailed job application into an email for admin and a confirmation email for the applicant.
  *
- * - formatApplicationEmailFlow - A function that takes detailed application data and formats an email.
+ * - formatApplicationEmailFlow - A function that takes detailed application data and formats emails.
  * - FormatApplicationEmailInput - The input type for the flow.
  * - FormatApplicationEmailOutput - The return type for the flow.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { ApplicationFormValues } from '@/types'; // Assuming this type has all fields
+// Assuming ApplicationFormValues is correctly imported if needed for internal logic,
+// but the flow input is defined by FormatApplicationEmailInputSchema.
 
 const FormatApplicationEmailInputSchema = z.object({
   fullName: z.string(),
   email: z.string().email(),
   phone: z.string(),
   resumeFileName: z.string().describe("The original file name of the resume."),
-  resumeDataUri: z.string().describe("The resume file content as a Base64 data URI."),
+  resumeDataUri: z.string().describe("The resume file content as a Base64 data URI (for reference, not for direct email body inclusion)."),
   linkedinProfile: z.string().url().optional().or(z.literal('')),
   portfolioWebsite: z.string().url().optional().or(z.literal('')),
   codingProfileUrl: z.string().url().optional().or(z.literal('')),
@@ -55,8 +56,10 @@ const FormatApplicationEmailInputSchema = z.object({
 export type FormatApplicationEmailInput = z.infer<typeof FormatApplicationEmailInputSchema>;
 
 const FormatApplicationEmailOutputSchema = z.object({
-  emailSubject: z.string().describe("The subject line for the email."),
-  emailBody: z.string().describe("The formatted body of the email, suitable for sending."),
+  adminEmailSubject: z.string().describe("The subject line for the email to the admin/hiring manager."),
+  adminEmailBody: z.string().describe("The formatted body of the email to the admin/hiring manager."),
+  applicantConfirmationSubject: z.string().describe("The subject line for the confirmation email to the applicant."),
+  applicantConfirmationBody: z.string().describe("The formatted body of the confirmation email to the applicant."),
 });
 export type FormatApplicationEmailOutput = z.infer<typeof FormatApplicationEmailOutputSchema>;
 
@@ -71,68 +74,72 @@ const prompt = ai.definePrompt({
   input: {schema: FormatApplicationEmailInputSchema},
   output: {schema: FormatApplicationEmailOutputSchema},
   prompt: `
-You are an expert HR assistant at QuantumFusion Solutions, tasked with formatting a job application into a professional email.
-The email should be prepared to be sent to the hiring manager at erprabhat72@gmail.com.
+You are an expert HR assistant at QuantumFusion Solutions. Your task is to format a job application into two emails:
+1. A detailed email for the hiring manager (erprabhat72@gmail.com).
+2. A confirmation email for the applicant.
 
-Format the following comprehensive application details into a clear, concise, and well-structured email.
-
-**Job Applied For:**
-- Title: {{{jobTitle}}}
-- ID: {{{jobId}}}
-
-**Applicant Personal Information:**
+**Applicant Details (Use this for both emails as needed):**
+- Job Applied For: {{{jobTitle}}} (ID: {{{jobId}}})
 - Name: {{{fullName}}}
 - Email: {{{email}}}
 - Phone: {{{phone}}}
 {{#if linkedinProfile}}- LinkedIn: {{{linkedinProfile}}}{{/if}}
 {{#if portfolioWebsite}}- Portfolio: {{{portfolioWebsite}}}{{/if}}
 {{#if codingProfileUrl}}- Coding Profile: {{{codingProfileUrl}}}{{/if}}
-- Resume Attached: {{{resumeFileName}}} (Represented by resumeDataUri, do NOT include the data URI itself in the email body)
+- Resume Attached: {{{resumeFileName}}} (Do NOT include the resumeDataUri in email bodies)
 
-**Education Details:**
-- Highest Qualification: {{{highestQualification}}}
-- Specialization/Branch: {{{specialization}}}
-- University/College: {{{university}}}
-- Passing Year: {{{passingYear}}}
-- Marks/Percentage/CGPA: {{{marks}}}
+- Education:
+  - Qualification: {{{highestQualification}}}
+  - Specialization: {{{specialization}}}
+  - University: {{{university}}}
+  - Passing Year: {{{passingYear}}}
+  - Marks/CGPA: {{{marks}}}
 
-**Skills:**
-- Primary Skills: {{{primarySkills}}}
-{{#if secondarySkills}}- Secondary Skills: {{{secondarySkills}}}{{/if}}
+- Skills:
+  - Primary: {{{primarySkills}}}
+  {{#if secondarySkills}}- Secondary: {{{secondarySkills}}}{{/if}}
 
-**Work Experience:**
-{{#if isFresher}}
-- Experience Level: Fresher
-{{else}}
-- Experience Level: Experienced
-  {{#if companyName}}- Company Name: {{{companyName}}}{{/if}}
-  {{#if jobTitleExperience}}- Job Title/Designation: {{{jobTitleExperience}}}{{/if}}
-  {{#if fromDate}}- Period: {{{fromDate}}} to {{#if isCurrentlyWorking}}Present{{else}}{{{toDate}}}{{/if}}{{/if}}
-  {{#if jobDescription}}- Roles & Responsibilities: {{{jobDescription}}}{{/if}}
-{{/if}}
+- Work Experience:
+  {{#if isFresher}}
+  - Level: Fresher
+  {{else}}
+  - Level: Experienced
+    {{#if companyName}}- Company: {{{companyName}}}{{/if}}
+    {{#if jobTitleExperience}}- Role: {{{jobTitleExperience}}}{{/if}}
+    {{#if fromDate}}- Period: {{{fromDate}}} to {{#if isCurrentlyWorking}}Present{{else}}{{{toDate}}}{{/if}}{{/if}}
+    {{#if jobDescription}}- Responsibilities: {{{jobDescription}}}{{/if}}
+  {{/if}}
 
-**Additional Information:**
-{{#if coverLetter}}
-- Cover Letter Snippet (if long, summarize or state it's attached/available):
-{{{coverLetter}}}
-{{else}}
-- Cover Letter: Not provided
-{{/if}}
-- Preferred Job Location: {{{preferredJobLocation}}}
-{{#if currentCTC}}- Current CTC: {{{currentCTC}}}{{/if}}
-- Expected Salary: {{{expectedSalary}}}
-- Notice Period: {{{noticePeriod}}}
+- Additional Information:
+  {{#if coverLetter}}- Cover Letter Snippet: {{{coverLetter}}}{{/if}}
+  - Preferred Location: {{{preferredJobLocation}}}
+  {{#if currentCTC}}- Current CTC: {{{currentCTC}}}{{/if}}
+  - Expected Salary: {{{expectedSalary}}}
+  - Notice Period: {{{noticePeriod}}}
 
-**Declarations:**
-- Accepted Terms & Conditions: {{#if acceptTerms}}Yes{{else}}No (This should ideally be Yes for submission){{/if}}
-- Notify for Similar Jobs: {{#if notifySimilarJobs}}Yes{{else}}No{{/if}}
+- Declarations:
+  - Accepted Terms: {{#if acceptTerms}}Yes{{/if}}
+  - Notify for Similar Jobs: {{#if notifySimilarJobs}}Yes{{else}}No{{/if}}
 
-**Email Generation Guidelines:**
-1.  Create a concise and informative Subject Line including the Job Title and Applicant's Name.
-2.  The email body should start with "Dear Hiring Manager,".
-3.  Present all the above information in a clean, readable, and professional format. Use clear headings for sections.
-4.  End the email body with "Sincerely,\\nThe QuantumFusion Solutions Application System".
-5.  Do NOT include the resumeDataUri in the email body text. Only mention the resumeFileName.
+**Instructions for Email to Hiring Manager (erprabhat72@gmail.com):**
+1.  **Subject Line**: "Job Application: {{{jobTitle}}} - {{{fullName}}}"
+2.  **Body**:
+    - Start with "Dear Hiring Manager,".
+    - Present all the applicant details listed above in a clear, well-structured, professional format. Use headings for sections.
+    - Mention that the resume ("{{{resumeFileName}}}") is attached (or would be if this were a real email system).
+    - End with "Sincerely,\nThe QuantumFusion Solutions Application System".
+
+**Instructions for Confirmation Email to Applicant ({{{email}}}):**
+1.  **Subject Line**: "Your Application for {{{jobTitle}}} at QuantumFusion Solutions Received"
+2.  **Body**:
+    - Start with "Dear {{{fullName}}},".
+    - Thank them for applying for the "{{{jobTitle}}}" position.
+    - Confirm that their application has been received.
+    - Briefly mention, "Our hiring team will review your application and contact you if your profile matches our requirements."
+    - Optionally, mention, "In the meantime, you can explore more about us at [Our Website Link - e.g., https://yourcompany.com] or follow us on [LinkedIn Link - e.g., https://linkedin.com/company/yourcompany]." (Use placeholders if actual links aren't available in context).
+    - End with "Best regards,\nThe QuantumFusion Solutions Hiring Team".
+
+Provide the output strictly in the specified JSON format.
 `,
 });
 
@@ -144,13 +151,22 @@ const formatApplicationEmailFlow = ai.defineFlow(
   },
   async (input) => {
     const {output} = await prompt(input);
-    if (!output || !output.emailBody || !output.emailSubject) {
+    if (!output || !output.adminEmailBody || !output.adminEmailSubject || !output.applicantConfirmationBody || !output.applicantConfirmationSubject) {
       console.error("AI failed to generate complete email content for application:", input.fullName, "for job:", input.jobTitle);
+      // Fallback for critical failure
+      const fallbackAdminSubject = `Application Received (AI Format Error): ${input.jobTitle} - ${input.fullName}`;
+      const fallbackAdminBody = `Error: AI failed to format application for ${input.fullName} (Email: ${input.email}) for position ${input.jobTitle}. Review raw data or contact support.`;
+      const fallbackApplicantSubject = `Application Confirmation Error - ${input.jobTitle}`;
+      const fallbackApplicantBody = `Dear ${input.fullName},\n\nWe encountered an issue processing the specific details for your application for the ${input.jobTitle} position. Please rest assured your intent to apply has been noted. Our team will follow up if needed.\n\nBest regards,\nQuantumFusion Solutions`;
+      
       return { 
-        emailSubject: `Application Received: ${input.jobTitle} - ${input.fullName} (Error in AI Formatting)`,
-        emailBody: `Error: The AI failed to format the application details for ${input.fullName} (Email: ${input.email}) for the position of ${input.jobTitle}. Please review the raw data if available or contact support.`
+        adminEmailSubject: output?.adminEmailSubject || fallbackAdminSubject,
+        adminEmailBody: output?.adminEmailBody || fallbackAdminBody,
+        applicantConfirmationSubject: output?.applicantConfirmationSubject || fallbackApplicantSubject,
+        applicantConfirmationBody: output?.applicantConfirmationBody || fallbackApplicantBody,
       };
     }
     return output;
   }
 );
+

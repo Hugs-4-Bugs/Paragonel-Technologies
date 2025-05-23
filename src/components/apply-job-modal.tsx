@@ -29,11 +29,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import type { Job, ApplicationFormValues } from "@/types";
-import { formatApplicationEmail } from "@/ai/flows/format-application-email-flow";
-import { Loader2, Send, Briefcase, User, GraduationCap, BriefcaseBusiness, Info, AlertTriangle, ShieldCheck, BellDot, Link as LinkIcon } from "lucide-react";
+import { formatApplicationEmail, type FormatApplicationEmailOutput } from "@/ai/flows/format-application-email-flow";
+import { Loader2, Send, Briefcase, User, GraduationCap, BriefcaseBusiness, Info, ShieldCheck, BellDot, Link as LinkIcon } from "lucide-react";
 import { educationQualifications, noticePeriods, generateYearOptions, locations as preferredLocations } from "@/lib/data";
 
 interface ApplyJobModalProps {
@@ -76,7 +75,7 @@ const formSchema = z.object({
   toDate: z.string().optional(),
   isCurrentlyWorking: z.boolean().optional().default(false),
   jobDescription: z.string().optional(),
-
+  
   coverLetter: z.string().optional(),
   preferredJobLocation: z.string().min(1, "Preferred job location is required."),
   currentCTC: z.string().optional(),
@@ -209,33 +208,34 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
 
       const emailInput = {
         ...values,
-        resumeDataUri,
+        resumeDataUri, // For Genkit flow context if needed, but not directly in email body
         resumeFileName: resumeFile.name,
         jobTitle: job.title,
         jobId: job.id,
       };
       
+      // Exclude the FileList object from Genkit input
       const { resume, ...inputForGenkit } = emailInput;
       
-      const formattedEmail = await formatApplicationEmail(inputForGenkit);
+      const emailOutput: FormatApplicationEmailOutput = await formatApplicationEmail(inputForGenkit);
 
-      // --- START: Simulated API Call to Backend ---
-      console.log("SIMULATION: Sending application data to backend endpoint...");
-      console.log("Data being sent:", {
-        ...values,
-        resumeDataUri, // Consider if you want to send base64 or handle file upload differently
-        resumeFileName: resumeFile.name,
-        formattedEmailSubject: formattedEmail.emailSubject,
-        formattedEmailBody: formattedEmail.emailBody,
-      });
-      // Simulate a network request delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log("SIMULATION: Backend received data. Email sent to erprabhat72@gmail.com (simulated).");
-      // --- END: Simulated API Call to Backend ---
+      // --- START: Simulated Email Sending ---
+      console.log("SIMULATION: Application data and prepared emails:");
+      
+      console.log("\n--- Email to Admin (erprabhat72@gmail.com) ---");
+      console.log("Subject:", emailOutput.adminEmailSubject);
+      console.log("Body:\n", emailOutput.adminEmailBody);
+      console.log("Resume to attach (simulated):", resumeFile.name);
+
+      console.log("\n--- Confirmation Email to Applicant (" + values.email + ") ---");
+      console.log("Subject:", emailOutput.applicantConfirmationSubject);
+      console.log("Body:\n", emailOutput.applicantConfirmationBody);
+      // --- END: Simulated Email Sending ---
 
       toast({
         title: "Application Submitted!",
-        description: `Thank you! Your application for "${job.title}" has been submitted successfully.`,
+        description: `Thank you, ${values.fullName}! Your application for "${job.title}" has been received. A confirmation email will be sent to you shortly (simulated).`,
+        duration: 5000,
       });
       form.reset();
       onOpenChange(false);
@@ -283,7 +283,7 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                   <FormField control={form.control} name="resume" render={({ field: { onChange, value, ...rest } }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel>Resume (PDF, DOC, DOCX - Max 5MB)</FormLabel>
-                        <FormControl><Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => onChange(e.target.files)} {...rest} /></FormControl>
+                        <FormControl><Input type="file" accept=".pdf,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(e) => onChange(e.target.files)} {...rest} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -373,18 +373,19 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                 )} />
               </section>
 
+              {/* Hidden fields for job ID and title */}
               <input type="hidden" {...form.register("jobId")} />
               <input type="hidden" {...form.register("jobTitle")} />
             </form>
           </Form>
       </ScrollArea>
 
-      <DialogFooter className="p-6 border-t flex justify-end gap-3 sticky bottom-0 bg-background z-10">
+      <DialogFooter className="p-6 border-t flex-shrink-0 flex justify-end gap-3 sticky bottom-0 bg-background z-10">
         <DialogClose asChild>
           <Button variant="outline" disabled={isSubmitting} size="lg">Cancel</Button>
           </DialogClose>
           <Button
-            type="submit"
+            type="button" // Changed from submit to prevent direct form submission, handled by onClick
             onClick={form.handleSubmit(onSubmit)}
             disabled={isSubmitting}
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -401,3 +402,4 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
     </Dialog>
   );
 }
+
