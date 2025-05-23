@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { NewsletterSubscription } from '@/components/sections/newsletter-subscription';
 import { Facebook, Linkedin, Twitter, Instagram, Settings } from 'lucide-react';
-import { useCookieConsent } from "@/hooks/use-cookie-consent"; // Import the hook
+import { useCookieConsent } from "@/hooks/use-cookie-consent.tsx"; // Import the hook
 import { Button } from "@/components/ui/button"; // Import Button for the settings link
 
 
@@ -32,7 +32,7 @@ export function Footer() {
           <div className="md:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-4">
               <Image
-                src="https://placehold.co/160x40.png"
+                src="https://placehold.co/160x40.png?text=QuantumFusion+Solutions"
                 alt="QuantumFusion Solutions Logo"
                 width={160}
                 height={40}

@@ -10,7 +10,7 @@ import { ChatSection } from '@/components/sections/chat-section';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { CookieSettingsModal } from '@/components/cookie-consent/CookieSettingsModal';
 import { CookieConsentManager } from '@/components/cookie-consent/CookieConsentManager';
-import { CookieConsentProvider } from '@/hooks/use-cookie-consent'; // Import the provider
+import { CookieConsentProvider } from '@/hooks/use-cookie-consent.tsx'; // Import the provider
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

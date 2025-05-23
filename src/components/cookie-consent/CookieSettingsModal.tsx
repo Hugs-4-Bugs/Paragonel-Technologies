@@ -13,7 +13,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useCookieConsent, type CookiePreferences, type CookieCategory } from "@/hooks/use-cookie-consent";
+import { useCookieConsent, type CookiePreferences, type CookieCategory } from "@/hooks/use-cookie-consent.tsx";
 import { Separator } from "@/components/ui/separator";
 import { ShieldCheck, Settings, BarChart2, Megaphone, Sparkles, Gauge } from "lucide-react"; // Added Gauge
 

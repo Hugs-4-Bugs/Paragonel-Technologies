@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useCookieConsent } from '@/hooks/use-cookie-consent';
+import { useCookieConsent } from '@/hooks/use-cookie-consent.tsx';
 
 // This component is primarily for client-side effects based on cookie consent
 export function CookieConsentManager({ children }: { children: React.ReactNode }) {

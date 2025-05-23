@@ -4,7 +4,7 @@
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
 import type { ThemeProviderProps as NextThemesProviderProps } from "next-themes/dist/types";
-import { useCookieConsent } from "@/hooks/use-cookie-consent"; // Import the hook
+import { useCookieConsent } from "@/hooks/use-cookie-consent.tsx"; // Import the hook
 
 const THEME_STORAGE_KEY = "theme"; // next-themes default storage key
 
