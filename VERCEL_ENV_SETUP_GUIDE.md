@@ -11,6 +11,7 @@ This guide provides step-by-step instructions on how to configure your `GOOGLE_A
 
 ## Step-by-Step Instructions
 
+
 1.  **Log in to Vercel**:
     *   Go to [vercel.com](https://vercel.com/) and log in to your account.
 
