@@ -8,6 +8,7 @@ export interface CookiePreferences {
   functional: boolean;
   analytics: boolean;
   marketing: boolean;
+  performance: boolean; // Added Performance Cookies
 }
 
 export type CookieCategory = keyof Omit<CookiePreferences, 'essential'>;
@@ -20,6 +21,7 @@ const defaultPreferences: CookiePreferences = {
   functional: false,
   analytics: false,
   marketing: false,
+  performance: false, // Default for performance
 };
 
 export function useCookieConsent() {
@@ -40,21 +42,19 @@ export function useCookieConsent() {
       if (storedPreferences) {
         try {
           const parsedPrefs = JSON.parse(storedPreferences) as CookiePreferences;
-          // Ensure essential is always true
           setPreferences({ ...defaultPreferences, ...parsedPrefs, essential: true });
         } catch (error) {
           console.error("Error parsing stored cookie preferences:", error);
-          setPreferences({ ...defaultPreferences, essential: true }); // Fallback to default with essential true
+          setPreferences({ ...defaultPreferences, essential: true });
           localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ ...defaultPreferences, essential: true }));
         }
       } else {
-        // If consent was given but no specific preferences, assume all were accepted initially
-        const allAccepted = { essential: true, functional: true, analytics: true, marketing: true };
+        const allAccepted = { essential: true, functional: true, analytics: true, marketing: true, performance: true };
         setPreferences(allAccepted);
         localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify(allAccepted));
       }
-    } else if (storedConsent === 'false') { // Explicitly rejected non-essential
-      setConsentGiven(true); // Consent process completed, non-essentials rejected
+    } else if (storedConsent === 'false') { 
+      setConsentGiven(true); 
       setShowBanner(false);
       if (storedPreferences) {
          try {
@@ -65,13 +65,11 @@ export function useCookieConsent() {
           localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ ...defaultPreferences, essential: true }));
         }
       } else {
-        // Fallback if rejected but no specific prefs stored (shouldn't happen ideally)
         setPreferences({ ...defaultPreferences, essential: true });
         localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ ...defaultPreferences, essential: true }));
       }
     }
     else {
-      // No consent decision made yet
       setConsentGiven(false);
       setShowBanner(true);
       setPreferences({ ...defaultPreferences, essential: true });
@@ -95,6 +93,7 @@ export function useCookieConsent() {
       functional: true,
       analytics: true,
       marketing: true,
+      performance: true, // Accept performance cookies
     };
     updateConsent(allAcceptedPrefs, true);
     setShowSettingsModal(false);
@@ -106,9 +105,10 @@ export function useCookieConsent() {
       functional: false,
       analytics: false,
       marketing: false,
+      performance: false, // Reject performance cookies
     };
     updateConsent(onlyEssentialPrefs, true);
-    localStorage.setItem(COOKIE_CONSENT_KEY, 'false'); // Explicitly mark as rejected for clarity
+    localStorage.setItem(COOKIE_CONSENT_KEY, 'false'); 
     setShowSettingsModal(false);
   }, [updateConsent]);
 
@@ -118,14 +118,14 @@ export function useCookieConsent() {
   }, [updateConsent]);
 
   const openSettings = useCallback(() => {
-    setShowBanner(false); // Hide banner if settings are opened from it
+    setShowBanner(false); 
     setShowSettingsModal(true);
   }, []);
 
   const closeSettings = useCallback(() => {
     setShowSettingsModal(false);
-    if (!consentGiven) { // If user closes modal without saving from initial prompt
-      setShowBanner(true); // Re-show banner
+    if (!consentGiven) { 
+      setShowBanner(true); 
     }
   }, [consentGiven]);
 
@@ -140,6 +140,6 @@ export function useCookieConsent() {
     savePreferences,
     openSettings,
     closeSettings,
-    setPreferences, // Expose setPreferences for direct updates if needed (e.g., from modal toggles)
+    setPreferences, 
   };
 }

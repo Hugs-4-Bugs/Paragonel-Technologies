@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useCookieConsent, type CookiePreferences, type CookieCategory } from "@/hooks/use-cookie-consent";
 import { Separator } from "@/components/ui/separator";
-import { ShieldCheck, Settings, BarChart2, Megaphone, Sparkles } from "lucide-react";
+import { ShieldCheck, Settings, BarChart2, Megaphone, Sparkles, Gauge } from "lucide-react"; // Added Gauge
 
 interface CookieCategoryDetail {
   id: CookieCategory | 'essential';
@@ -29,26 +29,32 @@ const cookieCategoriesDetails: CookieCategoryDetail[] = [
   {
     id: 'essential',
     title: 'Essential Cookies',
-    description: 'These cookies are necessary for the website to function properly. They include cookies for user authentication, session management, and security. They cannot be disabled.',
+    description: 'These cookies are strictly necessary for the website to function properly. They enable core functionalities such as user authentication, session management, security features, and remembering your cookie consent preferences. They cannot be disabled.',
     icon: ShieldCheck,
     isEssential: true,
   },
   {
     id: 'functional',
     title: 'Functional Cookies',
-    description: 'These cookies enhance website functionality and personalization, such as remembering your theme preferences or form inputs for a smoother experience.',
+    description: 'These cookies allow the website to remember choices you make (such as your username, language, or theme preferences) and provide enhanced, more personal features. Disabling these may affect certain functionalities.',
     icon: Sparkles,
+  },
+  {
+    id: 'performance', // Added Performance Cookies
+    title: 'Performance Cookies',
+    description: 'These cookies help improve website speed and performance by collecting anonymous data on how quickly pages load and respond. This helps us optimize the site for a smoother user experience.',
+    icon: Gauge,
   },
   {
     id: 'analytics',
     title: 'Analytics Cookies',
-    description: 'These cookies help us understand how visitors interact with our website by collecting anonymous data. This allows us to improve site performance and user experience.',
+    description: 'These cookies collect information about how you use our website, such as which pages you visit and which links you click. All data is anonymized and aggregated. This helps us understand user behavior and improve our website.',
     icon: BarChart2,
   },
   {
     id: 'marketing',
-    title: 'Marketing Cookies',
-    description: 'These cookies are used to track visitors across websites to display relevant and engaging advertisements. They may be set by us or third-party advertising partners.',
+    title: 'Marketing & Advertising Cookies',
+    description: 'These cookies are used to track your browsing activity across websites to build a profile of your interests and show you relevant advertisements on other sites. They may be set by us or by third-party advertising partners.',
     icon: Megaphone,
   },
 ];
