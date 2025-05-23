@@ -1,5 +1,4 @@
-
-"use client";
+"use client"; // Make this entire page a Client Component
 
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -17,15 +16,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn, Eye, EyeOff, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react"; // Removed useEffect as it's not used here
 import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation'; // useSearchParams can now be used directly
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }), // Keep password required for login form
+  password: z.string().min(1, { message: "Password is required." }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -34,9 +33,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
-  const { toast } = useToast(); // Although login in AuthContext now handles toasts
+  const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // Can use this directly now
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -48,21 +47,28 @@ export default function LoginPage() {
 
   async function onSubmit(values: LoginFormValues) {
     setIsSubmitting(true);
-    // Simulate API call delay if needed, though AuthContext login is synchronous for now
-    // await new Promise(resolve => setTimeout(resolve, 1000)); 
     
-    // AuthContext login now handles credential checking and toast messages
-    login(values.email, values.password); 
+    login(values.email, values.password); // AuthContext handles toast & redirection
     
-    // No need for separate success/failure toasts here as AuthContext handles it
-    // The redirection logic is also handled within the login function in AuthContext
-
-    setIsSubmitting(false); // This might run before redirection completes if login is truly async
+    // setIsSubmitting(false) might not be necessary here if login redirects immediately
+    // or if the component unmounts. If login simulation is quick, it's fine.
+    // For a real API call, you'd setSubmitting(false) in the .finally() block.
+    // Since our login is synchronous for now, we can set it false if needed.
+    setIsSubmitting(false); 
   }
+
+  // Example: Reading a 'redirectUrl' from searchParams, though not used by AuthContext currently for redirection
+  // useEffect(() => {
+  //   const redirect = searchParams.get('redirectUrl');
+  //   if (redirect) {
+  //     console.log("Redirect URL from params:", redirect);
+  //     // You could store this and use it in AuthContext if needed
+  //   }
+  // }, [searchParams]);
 
   return (
     <div className="section-padding bg-background flex items-center justify-center min-h-[calc(100vh-10rem)]">
-       <ScrollFadeIn className="w-full max-w-md">
+      <ScrollFadeIn className="w-full max-w-md">
         <Card className="shadow-xl">
           <CardHeader className="text-center">
             <LogIn className="mx-auto h-12 w-12 text-primary mb-4 neon-icon" />
