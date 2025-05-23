@@ -17,25 +17,36 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserPlus, Eye, EyeOff } from "lucide-react";
+import { UserPlus, Eye, EyeOff, MailCheck, ShieldCheck, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
+import { useToast } from "@/hooks/use-toast";
 
 const signupSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   confirmPassword: z.string(),
+  otp: z.string().optional(), // OTP field
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"], // path of error
+  path: ["confirmPassword"],
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
+const SIMULATED_OTP = "123456"; // For demo purposes
+
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [emailForOtp, setEmailForOtp] = useState("");
+
+  const { toast } = useToast();
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -44,16 +55,90 @@ export default function SignupPage() {
       email: "",
       password: "",
       confirmPassword: "",
+      otp: "",
     },
   });
 
+  const handleSendOtp = async () => {
+    const emailValue = form.getValues("email");
+    const emailState = form.getFieldState("email");
+
+    if (!emailValue || emailState.invalid) {
+      form.setError("email", { type: "manual", message: "Please enter a valid email to send OTP." });
+      toast({ title: "Email Required", description: "Please enter a valid email address first.", variant: "destructive" });
+      return;
+    }
+
+    setIsSendingOtp(true);
+    setEmailForOtp(emailValue); // Store email for OTP context
+    console.log("Simulating: Sending OTP to", emailValue);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setOtpSent(true);
+    setIsSendingOtp(false);
+    toast({
+      title: "OTP Sent (Simulated)",
+      description: `An OTP has been sent to ${emailValue}. Please check your inbox. (Simulated OTP: ${SIMULATED_OTP})`,
+    });
+  };
+
+  const handleVerifyOtp = async () => {
+    const otpValue = form.getValues("otp");
+    if (!otpValue || otpValue.length !== 6) {
+        form.setError("otp", { type: "manual", message: "Please enter a valid 6-digit OTP."});
+        toast({ title: "Invalid OTP", description: "Please enter a valid 6-digit OTP.", variant: "destructive" });
+        return;
+    }
+    setIsVerifyingOtp(true);
+    console.log("Simulating: Verifying OTP", otpValue, "for email", emailForOtp);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    if (otpValue === SIMULATED_OTP) {
+      setOtpVerified(true);
+      setOtpSent(false); // Hide OTP input after successful verification
+      setIsVerifyingOtp(false);
+      toast({
+        title: "OTP Verified Successfully!",
+        description: "Your email has been verified. You can now complete the signup.",
+        variant: "default",
+      });
+    } else {
+      setOtpVerified(false);
+      setIsVerifyingOtp(false);
+      form.setError("otp", { type: "manual", message: "Invalid OTP. Please try again or resend."});
+      toast({
+        title: "OTP Verification Failed",
+        description: "The OTP you entered is incorrect. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   function onSubmit(values: SignupFormValues) {
+    if (!otpVerified) {
+      toast({
+        title: "Email Verification Required",
+        description: "Please verify your email address with OTP before signing up.",
+        variant: "destructive",
+      });
+      // Optionally, trigger OTP flow if not started
+      if (!otpSent && !isSendingOtp) {
+        // It might be better to just guide the user to click "Send OTP"
+        form.setError("email", {type: "manual", message: "Please verify your email with OTP."});
+      }
+      return;
+    }
     console.log("Signup form submitted:", values);
     // Here you would typically call your backend API to register the user
-    // and handle OTP sending.
-    alert("Signup successful (simulated)! Check console for data. OTP functionality not implemented.");
+    alert("Signup successful (simulated)! A confirmation email has been sent (simulated). Check console for data.");
     form.reset();
+    setOtpVerified(false); // Reset OTP status for next signup
+    setOtpSent(false);
+    setEmailForOtp("");
   }
+
+  const watchEmail = form.watch("email");
 
   return (
     <div className="section-padding bg-background flex items-center justify-center min-h-[calc(100vh-10rem)]">
@@ -86,13 +171,83 @@ export default function SignupPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email Address</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="your.email@example.com" {...field} />
-                      </FormControl>
+                      <div className="flex items-center space-x-2">
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="your.email@example.com" 
+                            {...field} 
+                            disabled={otpSent || otpVerified} // Disable email field after OTP is sent/verified
+                          />
+                        </FormControl>
+                        {!otpSent && !otpVerified && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleSendOtp}
+                            disabled={isSendingOtp || !watchEmail || form.getFieldState("email").invalid}
+                            className="flex-shrink-0"
+                          >
+                            {isSendingOtp ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <MailCheck className="h-4 w-4" />
+                            )}
+                            <span className="ml-2 hidden sm:inline">Send OTP</span>
+                          </Button>
+                        )}
+                         {otpVerified && (
+                            <ShieldCheck className="h-5 w-5 text-green-500 flex-shrink-0" title="Email Verified" />
+                        )}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {otpSent && !otpVerified && (
+                  <FormField
+                    control={form.control}
+                    name="otp"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Enter OTP sent to {emailForOtp}</FormLabel>
+                        <div className="flex items-center space-x-2">
+                          <FormControl>
+                            <Input placeholder="6-digit OTP" {...field} maxLength={6} />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            onClick={handleVerifyOtp}
+                            disabled={isVerifyingOtp || field.value?.length !== 6}
+                            className="flex-shrink-0"
+                          >
+                            {isVerifyingOtp ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                               <ShieldCheck className="h-4 w-4" />
+                            )}
+                             <span className="ml-2 hidden sm:inline">Verify OTP</span>
+                          </Button>
+                        </div>
+                        <FormDescription>
+                          Didn't receive OTP?{" "}
+                          <Button 
+                            type="button" 
+                            variant="link" 
+                            className="p-0 h-auto text-xs" 
+                            onClick={handleSendOtp} 
+                            disabled={isSendingOtp}
+                          >
+                            {isSendingOtp ? "Resending..." : "Resend OTP"}
+                          </Button>
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -141,11 +296,12 @@ export default function SignupPage() {
                     </FormItem>
                   )}
                 />
-                 <FormDescription className="text-xs text-center text-muted-foreground pt-2">
-                    An OTP will be sent to your email for verification (simulation).
-                </FormDescription>
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                  Sign Up
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  disabled={!otpVerified || isSendingOtp || isVerifyingOtp}
+                >
+                  {otpVerified ? "Sign Up" : "Verify Email to Sign Up"}
                 </Button>
               </form>
             </Form>
@@ -163,3 +319,5 @@ export default function SignupPage() {
     </div>
   );
 }
+
+    
