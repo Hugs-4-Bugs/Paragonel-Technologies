@@ -21,11 +21,11 @@ import { useState, useEffect } from "react";
 import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useSearchParams } from 'next/navigation'; // Correct import for useSearchParams
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }),
+  password: z.string().min(1, { message: "Password is required." }), // Keep password required for login form
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -34,7 +34,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
-  const { toast } = useToast();
+  const { toast } = useToast(); // Although login in AuthContext now handles toasts
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -48,27 +48,16 @@ export default function LoginPage() {
 
   async function onSubmit(values: LoginFormValues) {
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Simulate API call delay if needed, though AuthContext login is synchronous for now
+    // await new Promise(resolve => setTimeout(resolve, 1000)); 
     
-    // In a real app, you'd verify credentials against a backend.
-    // For simulation, any non-empty email/password is considered valid.
-    if (values.email && values.password) {
-      login(values.email); // AuthContext login
-      toast({
-        title: "Login Successful!",
-        description: "Welcome back to QuantumFusion Solutions.",
-      });
-      // Redirection logic is handled within the login function in AuthContext
-    } else {
-      // This case should ideally be caught by Zod, but as a fallback:
-      toast({
-        title: "Login Failed",
-        description: "Invalid email or password.",
-        variant: "destructive",
-      });
-    }
-    setIsSubmitting(false);
+    // AuthContext login now handles credential checking and toast messages
+    login(values.email, values.password); 
+    
+    // No need for separate success/failure toasts here as AuthContext handles it
+    // The redirection logic is also handled within the login function in AuthContext
+
+    setIsSubmitting(false); // This might run before redirection completes if login is truly async
   }
 
   return (

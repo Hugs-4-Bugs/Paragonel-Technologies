@@ -21,7 +21,7 @@ import { UserPlus, Eye, EyeOff, MailCheck, ShieldCheck, Loader2 } from "lucide-r
 import { useState } from "react";
 import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/auth-context"; // Import useAuth
+import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from 'next/navigation';
 
 const signupSchema = z.object({
@@ -50,7 +50,7 @@ export default function SignupPage() {
   const [emailForOtp, setEmailForOtp] = useState("");
 
   const { toast } = useToast();
-  const { signup } = useAuth(); // Get signup from AuthContext
+  const { signup } = useAuth();
   const router = useRouter();
 
   const form = useForm<SignupFormValues>({
@@ -99,7 +99,7 @@ export default function SignupPage() {
 
     if (otpValue === SIMULATED_OTP) {
       setOtpVerified(true);
-      setOtpSent(false);
+      setOtpSent(false); // Hide OTP input section
       setIsVerifyingOtp(false);
       toast({
         title: "OTP Verified Successfully!",
@@ -128,20 +128,16 @@ export default function SignupPage() {
       return;
     }
     setIsSubmitting(true);
-    console.log("SIMULATION: Signup form submitted:", values);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Simulate API call delay if needed
+    // await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Simulate successful signup & auto-login
-    signup(values.email); // AuthContext signup (which also handles login)
-    toast({
-      title: "Signup Successful!",
-      description: "Your account has been created and you're now logged in. A confirmation email has been simulated.",
-    });
+    // AuthContext signup now handles adding to simulated DB and auto-login
+    // It also handles toast for duplicate email
+    signup(values.email, values.password);
+    
     // Redirection is handled within the signup/login function in AuthContext
-    // form.reset(); // Resetting form might be good, but redirection happens
-    // setOtpVerified(false);
-    // setOtpSent(false);
-    // setEmailForOtp("");
+    // Toasts for success/failure are also handled by AuthContext
+
     setIsSubmitting(false);
   }
 
@@ -226,7 +222,7 @@ export default function SignupPage() {
                           <Button
                             type="button"
                             onClick={handleVerifyOtp}
-                            disabled={isVerifyingOtp || field.value?.length !== 6 || isSubmitting}
+                            disabled={isVerifyingOtp || !field.value || field.value.length !== 6 || isSubmitting}
                             className="flex-shrink-0"
                           >
                             {isVerifyingOtp ? (
