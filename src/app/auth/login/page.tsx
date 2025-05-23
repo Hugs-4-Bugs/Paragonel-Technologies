@@ -20,7 +20,7 @@ import { useState } from "react"; // Removed useEffect as it's not used here
 import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
 import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useSearchParams } from 'next/navigation'; // useSearchParams can now be used directly
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -67,6 +67,7 @@ export default function LoginPage() {
   // }, [searchParams]);
 
   return (
+
     <div className="section-padding bg-background flex items-center justify-center min-h-[calc(100vh-10rem)]">
       <ScrollFadeIn className="w-full max-w-md">
         <Card className="shadow-xl">
@@ -137,5 +138,6 @@ export default function LoginPage() {
         </Card>
       </ScrollFadeIn>
     </div>
+
   );
 }
