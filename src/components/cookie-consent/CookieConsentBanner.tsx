@@ -14,7 +14,7 @@ export function CookieConsentBanner() {
   }
 
   return (
-    <div 
+    <div
       className={cn(
         "fixed bottom-0 left-0 right-0 z-[200] p-4 md:p-6 bg-background/90 dark:bg-card/95 backdrop-blur-md shadow-2xl border-t border-border/50",
         "transform transition-transform duration-500 ease-out",
@@ -25,18 +25,21 @@ export function CookieConsentBanner() {
       aria-label="Cookie Consent Banner"
       aria-describedby="cookie-consent-description"
     >
-      <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
-        <div className="flex-grow text-sm text-foreground">
+      <div className="container mx-auto flex flex-col gap-4">
+        {/* Text Block */}
+        <div className="text-sm text-foreground">
           <div className="flex items-center mb-2">
             <Cookie className="h-6 w-6 mr-2 text-primary neon-icon" />
             <h2 className="text-lg font-semibold">Our Cookie Policy</h2>
           </div>
           <p id="cookie-consent-description" className="text-muted-foreground leading-relaxed">
-            We use cookies to enhance your experience, analyze site traffic, and for marketing purposes. 
+            We use cookies to enhance your experience, analyze site traffic, and for marketing purposes.
             You can customize your preferences or accept all cookies. Essential cookies are always active for site functionality.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-shrink-0">
+
+        {/* Button Group */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto sm:self-end md:self-start lg:self-end">
           <Button
             onClick={acceptAll}
             className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
