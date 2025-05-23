@@ -10,18 +10,18 @@ import { JobDescriptionModal } from '@/components/job-description-modal';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Briefcase, ChevronDown, ChevronUp, Laptop, Building } from 'lucide-react';
+import { Search, Filter, Briefcase, ChevronDown, ChevronUp, Laptop, Building, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useAuth } from '@/contexts/auth-context'; // Import useAuth
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useAuth } from '@/contexts/auth-context';
+import { useRouter } from 'next/navigation';
 
 const employmentTypes = ['All Types', 'Full-time', 'Part-time', 'Contract', 'Internship'];
 const workArrangements = ['Any', 'Remote', 'Onsite'];
 
 export function CareersSection() { 
-  const [jobs, setJobs] = useState<Job[]>(dummyJobs);
+  const [jobs, setJobs] = useState<Job[]>([]); // Initialize with empty array
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('All Locations');
   const [departmentFilter, setDepartmentFilter] = useState('All Departments');
@@ -37,38 +37,25 @@ export function CareersSection() {
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
   const [selectedJobForDescription, setSelectedJobForDescription] = useState<Job | null>(null);
 
-  const { isAuthenticated, isLoading: authLoading } = useAuth(); // Get auth state
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
-  const handleApplyNowClick = (job: Job) => {
-    if (authLoading) return; // Don't do anything if auth state is still loading
-
-    if (!isAuthenticated) {
-      localStorage.setItem('actionAfterLogin', 'applyJob');
-      // Optionally, store job.id if you want to redirect to a specific job detail page
-      // localStorage.setItem('pendingApplyJobId', job.id); 
-      router.push('/auth/login');
-    } else {
-      setSelectedJobForApplication(job);
-      setIsApplyModalOpen(true);
-    }
-  };
-
-  const handleViewDetailsClick = (job: Job) => {
-    setSelectedJobForDescription(job);
-    setIsDescriptionModalOpen(true);
-  };
-
+  // Effect to initialize jobs from dummyJobs on mount
   useEffect(() => {
-    const updatedJobs = dummyJobs.map(job => ({
+    const initialJobs = dummyJobs.map(job => ({
       ...job,
       postedDate: job.postedDate || new Date().toISOString(), // Ensure postedDate exists
     }));
-    setJobs(updatedJobs);
-    
-    // Check if we need to auto-open apply modal after login
+    setJobs(initialJobs);
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // Effect to handle opening the apply modal after login
+  useEffect(() => {
+    // Ensure jobs have been loaded and user is authenticated before proceeding
+    if (jobs.length === 0 || !isAuthenticated) return;
+
     const actionAfterLogin = localStorage.getItem('actionAfterLogin');
-    if (isAuthenticated && actionAfterLogin === 'applyJobModalOpen') {
+    if (actionAfterLogin === 'applyJobModalOpen') {
         const pendingJobId = localStorage.getItem('pendingApplyJobId');
         if (pendingJobId) {
             const jobToApply = jobs.find(j => j.id === pendingJobId);
@@ -80,8 +67,27 @@ export function CareersSection() {
         localStorage.removeItem('actionAfterLogin');
         localStorage.removeItem('pendingApplyJobId');
     }
+  // Listen to changes in isAuthenticated and ensure jobs are loaded
+  }, [isAuthenticated, jobs, router]);
 
-  }, [isAuthenticated, jobs]); // Re-run if isAuthenticated or jobs change
+
+  const handleApplyNowClick = (job: Job) => {
+    if (authLoading) return; 
+
+    if (!isAuthenticated) {
+      localStorage.setItem('pendingApplyJobId', job.id); 
+      localStorage.setItem('actionAfterLogin', 'applyJobModalOpen'); 
+      router.push('/auth/login');
+    } else {
+      setSelectedJobForApplication(job);
+      setIsApplyModalOpen(true);
+    }
+  };
+
+  const handleViewDetailsClick = (job: Job) => {
+    setSelectedJobForDescription(job);
+    setIsDescriptionModalOpen(true);
+  };
 
 
   const filteredJobs = useMemo(() => {
