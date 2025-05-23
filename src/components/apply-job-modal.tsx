@@ -34,6 +34,7 @@ import type { Job, ApplicationFormValues } from "@/types";
 import { formatApplicationEmail, type FormatApplicationEmailOutput } from "@/ai/flows/format-application-email-flow";
 import { Loader2, Send, Briefcase, User, GraduationCap, BriefcaseBusiness, Info, ShieldCheck, BellDot, Link as LinkIcon } from "lucide-react";
 import { educationQualifications, noticePeriods, generateYearOptions, locations as preferredLocations } from "@/lib/data";
+import { useAuth } from "@/contexts/auth-context"; // Import useAuth
 
 interface ApplyJobModalProps {
   isOpen: boolean;
@@ -42,7 +43,7 @@ interface ApplyJobModalProps {
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_FILE_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"]; // PDF, DOCX, DOC
+const ACCEPTED_FILE_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"];
 
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
@@ -115,48 +116,18 @@ const passingYearOptions = generateYearOptions();
 export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user: authUser, isAuthenticated } = useAuth(); // Get authenticated user
 
   const form = useForm<ApplicationFormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      fullName: "",
-      email: "",
-      phone: "",
-      linkedinProfile: "",
-      portfolioWebsite: "",
-      codingProfileUrl: "",
-      highestQualification: "",
-      specialization: "",
-      university: "",
-      passingYear: "",
-      marks: "",
-      primarySkills: "",
-      secondarySkills: "",
-      isFresher: false,
-      companyName: "",
-      jobTitleExperience: "",
-      fromDate: "",
-      toDate: "",
-      isCurrentlyWorking: false,
-      jobDescription: "",
-      coverLetter: "",
-      preferredJobLocation: "",
-      currentCTC: "",
-      expectedSalary: "",
-      noticePeriod: "",
-      acceptTerms: false,
-      notifySimilarJobs: false,
-      jobId: job?.id || "",
-      jobTitle: job?.title || "",
-      resume: undefined as any,
-    },
+    // Default values will be set/reset in useEffect
   });
   
   useEffect(() => {
     if (job) {
       form.reset({
-        fullName: "",
-        email: "",
+        fullName: authUser?.displayName || "", // Pre-fill if available, assuming displayName exists
+        email: authUser?.email || "", // Pre-fill email if user is logged in
         phone: "",
         linkedinProfile: "",
         portfolioWebsite: "",
@@ -187,7 +158,19 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
         resume: undefined as any,
       });
     }
-  }, [job, form, isOpen]);
+     // If modal is closed, reset the form to clear values for next opening
+     if (!isOpen) {
+        form.reset({
+            fullName: "", email: "", phone: "", linkedinProfile: "", portfolioWebsite: "", codingProfileUrl: "",
+            highestQualification: "", specialization: "", university: "", passingYear: "", marks: "",
+            primarySkills: "", secondarySkills: "", isFresher: false, companyName: "", jobTitleExperience: "",
+            fromDate: "", toDate: "", isCurrentlyWorking: false, jobDescription: "", coverLetter: "",
+            preferredJobLocation: "", currentCTC: "", expectedSalary: "", noticePeriod: "",
+            acceptTerms: false, notifySimilarJobs: false,
+            jobId: "", jobTitle: "", resume: undefined as any,
+        });
+    }
+  }, [job, form, isOpen, authUser]);
 
   const readFileAsDataURL = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -208,37 +191,31 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
 
       const emailInput = {
         ...values,
-        resumeDataUri, // For Genkit flow context if needed, but not directly in email body
+        resumeDataUri,
         resumeFileName: resumeFile.name,
         jobTitle: job.title,
         jobId: job.id,
       };
       
-      // Exclude the FileList object from Genkit input
       const { resume, ...inputForGenkit } = emailInput;
       
       const emailOutput: FormatApplicationEmailOutput = await formatApplicationEmail(inputForGenkit);
 
-      // --- START: Simulated Email Sending ---
-      console.log("SIMULATION: Application data and prepared emails:");
-      
-      console.log("\n--- Email to Admin (erprabhat72@gmail.com) ---");
+      console.log("SIMULATION: Email to Admin (erprabhat72@gmail.com) ---");
       console.log("Subject:", emailOutput.adminEmailSubject);
       console.log("Body:\n", emailOutput.adminEmailBody);
       console.log("Resume to attach (simulated):", resumeFile.name);
 
-      console.log("\n--- Confirmation Email to Applicant (" + values.email + ") ---");
+      console.log("SIMULATION: Confirmation Email to Applicant (" + values.email + ") ---");
       console.log("Subject:", emailOutput.applicantConfirmationSubject);
       console.log("Body:\n", emailOutput.applicantConfirmationBody);
-      // --- END: Simulated Email Sending ---
 
       toast({
         title: "Application Submitted!",
         description: `Thank you, ${values.fullName}! Your application for "${job.title}" has been received. A confirmation email will be sent to you shortly (simulated).`,
         duration: 5000,
       });
-      form.reset();
-      onOpenChange(false);
+      onOpenChange(false); // This will trigger the useEffect to reset the form
     } catch (error) {
       console.error("Error submitting application:", error);
       toast({
@@ -275,7 +252,7 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                 <h3 className="text-xl font-semibold flex items-center text-primary"><User className="mr-2 h-5 w-5"/>Personal Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                   <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Prabhat Kumar" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} readOnly={isAuthenticated && !!authUser?.email} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input type="tel" placeholder="+91 1234567890" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="linkedinProfile" render={({ field }) => (<FormItem><FormLabel>LinkedIn Profile URL (Optional)</FormLabel><FormControl><Input placeholder="https://linkedin.com/in/yourprofile" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="portfolioWebsite" render={({ field }) => (<FormItem><FormLabel>Portfolio Website URL (Optional)</FormLabel><FormControl><Input placeholder="https://yourportfolio.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -373,7 +350,6 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                 )} />
               </section>
 
-              {/* Hidden fields for job ID and title */}
               <input type="hidden" {...form.register("jobId")} />
               <input type="hidden" {...form.register("jobTitle")} />
             </form>
@@ -385,9 +361,9 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
           <Button variant="outline" disabled={isSubmitting} size="lg">Cancel</Button>
           </DialogClose>
           <Button
-            type="button" // Changed from submit to prevent direct form submission, handled by onClick
+            type="button" 
             onClick={form.handleSubmit(onSubmit)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || (isAuthenticated && !authUser)} // Disable if auth but no user object (edge case)
             className="bg-primary hover:bg-primary/90 text-primary-foreground"
             size="lg"
           >
@@ -402,4 +378,3 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
     </Dialog>
   );
 }
-

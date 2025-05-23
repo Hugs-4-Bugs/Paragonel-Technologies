@@ -7,7 +7,7 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/auth-context"; // Import useAuth
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
@@ -37,19 +38,31 @@ const authNavLinks = [
   { href: "/auth/signup", label: "Sign Up", icon: UserPlus },
 ];
 
-// Combined for mobile menu
-const allNavLinksForMobile = [...mainNavLinks, ...moreNavLinks, ...authNavLinks];
-
-
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { isAuthenticated, user, logout, isLoading } = useAuth(); // Get auth state
+
+  // Combined for mobile menu - adjusted for auth state
+  const getMobileNavLinks = () => {
+    if (isLoading) return []; // Or a loading state for links
+    if (isAuthenticated) {
+      return [
+        ...mainNavLinks,
+        ...moreNavLinks,
+        { href: "#", label: "Logout", icon: LogOut, action: logout },
+      ];
+    }
+    return [...mainNavLinks, ...moreNavLinks, ...authNavLinks];
+  };
+
+  const allNavLinksForMobile = getMobileNavLinks();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center space-x-2">
           <Image
-            src="https://placehold.co/160x40.png" 
+            src="https://placehold.co/160x40.png?text=QuantumFusion+Solutions" 
             alt="QuantumFusion Solutions Logo"
             width={160}
             height={40}
@@ -85,18 +98,44 @@ export function Navbar() {
             </DropdownMenu>
           )}
           <div className="flex items-center space-x-2 pl-3">
-            <Button variant="outline" asChild size="sm">
-                <Link href="/auth/login">
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Login
-                </Link>
-            </Button>
-            <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Link href="/auth/signup">
-                     <UserPlus className="mr-2 h-4 w-4" />
-                    Sign Up
-                </Link>
-            </Button>
+            {isLoading ? (
+              <div className="h-9 w-32 bg-muted animate-pulse rounded-md"></div> // Placeholder for loading state
+            ) : isAuthenticated && user ? (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center space-x-2">
+                      <UserCircle className="h-5 w-5" />
+                      <span className="text-sm font-medium text-muted-foreground truncate max-w-[100px]">{user.email}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {/* Add profile/dashboard links here if needed */}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive-foreground focus:bg-destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" asChild size="sm">
+                    <Link href="/auth/login">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Login
+                    </Link>
+                </Button>
+                <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Link href="/auth/signup">
+                         <UserPlus className="mr-2 h-4 w-4" />
+                        Sign Up
+                    </Link>
+                </Button>
+              </>
+            )}
             <ThemeToggleButton />
           </div>
         </nav>
@@ -116,7 +155,7 @@ export function Navbar() {
                 <SheetTitle className="flex items-center justify-between">
                   <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
                      <Image
-                        src="https://placehold.co/150x38.png"
+                        src="https://placehold.co/150x38.png?text=QFS+Mobile"
                         alt="QuantumFusion Solutions Logo Mobile"
                         width={150}
                         height={38}
@@ -124,27 +163,35 @@ export function Navbar() {
                         data-ai-hint="company logo abstract mobile"
                       />
                   </Link>
-                  {/* Removed the redundant close button from here
-                  <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
-                    <X className="h-6 w-6" />
-                    <span className="sr-only">Close menu</span>
-                  </Button>
-                  */}
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col space-y-1 p-6">
-                {allNavLinksForMobile.map((link) => (
-                  <Link
+                {isLoading && <p className="text-muted-foreground p-3">Loading...</p>}
+                {!isLoading && allNavLinksForMobile.map((link) => (
+                  <Button
+                    variant="ghost"
+                    asChild={!link.action} // Use asChild if it's a regular Link
                     key={link.href}
-                    href={link.href}
-                    className="block px-3 py-2.5 rounded-md text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="justify-start px-3 py-2.5 text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => {
+                      if (link.action) {
+                        link.action();
+                      }
+                      setIsMobileMenuOpen(false);
+                    }}
                   >
-                    <div className="flex items-center">
-                      {link.icon && <link.icon className="mr-3 h-5 w-5 text-primary" />}
-                      {link.label}
-                    </div>
-                  </Link>
+                    {link.action ? (
+                      <div className="flex items-center w-full">
+                        {link.icon && <link.icon className="mr-3 h-5 w-5 text-primary" />}
+                        {link.label}
+                      </div>
+                    ) : (
+                      <Link href={link.href} className="flex items-center w-full">
+                        {link.icon && <link.icon className="mr-3 h-5 w-5 text-primary" />}
+                        {link.label}
+                      </Link>
+                    )}
+                  </Button>
                 ))}
               </nav>
             </SheetContent>

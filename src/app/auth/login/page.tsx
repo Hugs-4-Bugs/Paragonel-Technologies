@@ -16,19 +16,27 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogIn, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { LogIn, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
+import { useAuth } from "@/contexts/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter, useSearchParams } from 'next/navigation'; // Correct import for useSearchParams
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(1, { message: "Password is required." }), // Min 1 for login, more strict on signup
+  password: z.string().min(1, { message: "Password is required." }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -38,12 +46,29 @@ export default function LoginPage() {
     },
   });
 
-  function onSubmit(values: LoginFormValues) {
-    console.log("Login form submitted:", values);
-    // Here you would typically call your backend API to authenticate the user
-    alert("Login successful (simulated)! Check console for data.");
-    form.reset();
-    // Potentially redirect user: router.push('/');
+  async function onSubmit(values: LoginFormValues) {
+    setIsSubmitting(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // In a real app, you'd verify credentials against a backend.
+    // For simulation, any non-empty email/password is considered valid.
+    if (values.email && values.password) {
+      login(values.email); // AuthContext login
+      toast({
+        title: "Login Successful!",
+        description: "Welcome back to QuantumFusion Solutions.",
+      });
+      // Redirection logic is handled within the login function in AuthContext
+    } else {
+      // This case should ideally be caught by Zod, but as a fallback:
+      toast({
+        title: "Login Failed",
+        description: "Invalid email or password.",
+        variant: "destructive",
+      });
+    }
+    setIsSubmitting(false);
   }
 
   return (
@@ -100,8 +125,8 @@ export default function LoginPage() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                  Log In
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Log In'}
                 </Button>
               </form>
             </Form>

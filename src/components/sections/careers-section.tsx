@@ -1,21 +1,21 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { Job } from '@/types';
 import { dummyJobs, locations as allLocations, departments as allDepartments } from '@/lib/data';
 import { JobCard } from '@/components/job-card';
 import { ApplyJobModal } from '@/components/apply-job-modal';
-import { JobDescriptionModal } from '@/components/job-description-modal'; // Import the new modal
+import { JobDescriptionModal } from '@/components/job-description-modal';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useEffect } from 'react';
 import { Search, Filter, Briefcase, ChevronDown, ChevronUp, Laptop, Building } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
+import { useAuth } from '@/contexts/auth-context'; // Import useAuth
+import { useRouter } from 'next/navigation'; // Import useRouter
 
 const employmentTypes = ['All Types', 'Full-time', 'Part-time', 'Contract', 'Internship'];
 const workArrangements = ['Any', 'Remote', 'Onsite'];
@@ -25,9 +25,9 @@ export function CareersSection() {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('All Locations');
   const [departmentFilter, setDepartmentFilter] = useState('All Departments');
- const [jobIdFilter, setJobIdFilter] = useState(''); // New state for Job ID filter
- const [employmentTypeFilter, setEmploymentTypeFilter] = useState('All Types');
- const [dateFilter, setDateFilter] = useState('Any time');
+  const [jobIdFilter, setJobIdFilter] = useState('');
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState('All Types');
+  const [dateFilter, setDateFilter] = useState('Any time');
   const [workArrangementFilter, setWorkArrangementFilter] = useState('Any');
   const [showOpenRoles, setShowOpenRoles] = useState(false); 
 
@@ -37,9 +37,21 @@ export function CareersSection() {
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
   const [selectedJobForDescription, setSelectedJobForDescription] = useState<Job | null>(null);
 
+  const { isAuthenticated, isLoading: authLoading } = useAuth(); // Get auth state
+  const router = useRouter();
+
   const handleApplyNowClick = (job: Job) => {
-    setSelectedJobForApplication(job);
-    setIsApplyModalOpen(true);
+    if (authLoading) return; // Don't do anything if auth state is still loading
+
+    if (!isAuthenticated) {
+      localStorage.setItem('actionAfterLogin', 'applyJob');
+      // Optionally, store job.id if you want to redirect to a specific job detail page
+      // localStorage.setItem('pendingApplyJobId', job.id); 
+      router.push('/auth/login');
+    } else {
+      setSelectedJobForApplication(job);
+      setIsApplyModalOpen(true);
+    }
   };
 
   const handleViewDetailsClick = (job: Job) => {
@@ -50,26 +62,40 @@ export function CareersSection() {
   useEffect(() => {
     const updatedJobs = dummyJobs.map(job => ({
       ...job,
-      postedDate: new Date().toISOString(),
+      postedDate: job.postedDate || new Date().toISOString(), // Ensure postedDate exists
     }));
     setJobs(updatedJobs);
-  }, []);
+    
+    // Check if we need to auto-open apply modal after login
+    const actionAfterLogin = localStorage.getItem('actionAfterLogin');
+    if (isAuthenticated && actionAfterLogin === 'applyJobModalOpen') {
+        const pendingJobId = localStorage.getItem('pendingApplyJobId');
+        if (pendingJobId) {
+            const jobToApply = jobs.find(j => j.id === pendingJobId);
+            if (jobToApply) {
+                setSelectedJobForApplication(jobToApply);
+                setIsApplyModalOpen(true);
+            }
+        }
+        localStorage.removeItem('actionAfterLogin');
+        localStorage.removeItem('pendingApplyJobId');
+    }
+
+  }, [isAuthenticated, jobs]); // Re-run if isAuthenticated or jobs change
+
 
   const filteredJobs = useMemo(() => {
     if (!showOpenRoles) return [];
 
-    // Apply Job ID filter first if it's not empty
     let filtered = jobs;
     if (jobIdFilter) {
- filtered = filtered.filter(job => job.id === jobIdFilter);
+      filtered = filtered.filter(job => job.id === jobIdFilter);
     } else {
- // If Job ID filter is not active, apply other filters
       filtered = filtered.filter(job => {
         const matchesSearchTerm = 
-                                  // Check if title, company, or description matches search term
-                                  job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                  job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                  job.description.toLowerCase().includes(searchTerm.toLowerCase());
+          job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.description.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesLocation = locationFilter === 'All Locations' || job.location === locationFilter;
         const matchesDepartment = departmentFilter === 'All Departments' || job.department === departmentFilter;
         const matchesEmploymentType = employmentTypeFilter === 'All Types' || job.employmentType === employmentTypeFilter;
@@ -89,7 +115,6 @@ export function CareersSection() {
       });
     }
 
- // Apply date filter
     if (dateFilter !== 'Any time') {
       const now = new Date();
       let cutoffDate = new Date(now);
@@ -102,14 +127,12 @@ export function CareersSection() {
           cutoffDate.setDate(now.getDate() - 7);
           break;
         case 'Past 24 hours':
-          cutoffDate.setDate(now.getDate() - 1); // Simple 24-hour approximation
+          cutoffDate.setDate(now.getDate() - 1);
           break;
       }
-
       filtered = filtered.filter(job => new Date(job.postedDate) >= cutoffDate);
     }
-
- return filtered;
+    return filtered;
   }, [jobs, searchTerm, locationFilter, departmentFilter, jobIdFilter, employmentTypeFilter, workArrangementFilter, dateFilter, showOpenRoles]);
 
   return (
@@ -139,24 +162,18 @@ export function CareersSection() {
 
         {showOpenRoles && (
           <>
-            <ScrollFadeIn delay="100ms" className="mb-8 p-6 bg-card rounded-xl shadow-lg grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start"
->
-              {/* Search Input */}
+            <ScrollFadeIn delay="100ms" className="mb-8 p-6 bg-card rounded-xl shadow-lg grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
               <div className="relative lg:col-span-2 xl:col-span-1">
-                <Label htmlFor="search" className="block text-sm font-medium text-foreground mb-1">Search Jobs</Label
->
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform mt-3 h-5 w-5 text-muted-foreground neon-icon" /
->
+                <Label htmlFor="search" className="block text-sm font-medium text-foreground mb-1">Search Jobs</Label>
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform mt-3 h-5 w-5 text-muted-foreground neon-icon" />
                 <Input
                   id="search"
                   type="text"
                   placeholder="Keywords (e.g., AI, Python)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-full" /
->
+                  className="pl-10 pr-4 py-2 w-full" />
               </div>
-              {/* Job ID Filter Input */}
               <div className="relative">
                 <Label htmlFor="jobId" className="block text-sm font-medium text-foreground mb-1">Filter by Job ID</Label>
                 <Input
@@ -165,13 +182,10 @@ export function CareersSection() {
                   placeholder="Enter Job ID (e.g., ABC123)"
                   value={jobIdFilter}
                   onChange={(e) => setJobIdFilter(e.target.value)}
-                  className="pl-3 pr-4 py-2 w-full" /
->
-              </div> {/* This div now contains only the Job ID filter */}
-              {/* Location Filter */}
+                  className="pl-3 pr-4 py-2 w-full" />
+              </div>
               <div>
                 <Label htmlFor="location" className="block text-sm font-medium text-foreground mb-1">Location</Label>
-
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
                   <SelectTrigger id="location" className="w-full">
                     <SelectValue placeholder="Select location" />
@@ -183,10 +197,8 @@ export function CareersSection() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Department Filter */}
               <div>
-                <Label htmlFor="department" className="block text-sm font-medium text-foreground mb-1">Department</Label
->
+                <Label htmlFor="department" className="block text-sm font-medium text-foreground mb-1">Department</Label>
                 <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                   <SelectTrigger id="department" className="w-full">
                     <SelectValue placeholder="Select department" />
@@ -198,7 +210,6 @@ export function CareersSection() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Filter by Date */}
               <div>
                 <Label className="block text-sm font-medium text-foreground mb-1">Filter by Date</Label>
                 <RadioGroup
@@ -219,9 +230,7 @@ export function CareersSection() {
                   ))}
                 </RadioGroup>
               </div>
-              {/* Employment Type and Work Arrangement Filters */}
               <div className="flex flex-col lg:flex-row lg:col-span-2 gap-6 items-start w-full">
-                {/* Employment Type */}
                 <div className="flex-1">
                   <Label htmlFor="employmentType" className="block text-sm font-medium text-foreground mb-1">Employment Type</Label>
                   <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
@@ -235,13 +244,12 @@ export function CareersSection() {
                     </SelectContent>
                   </Select>
                 </div>
-                {/* Work Arrangement */}
                 <div className="flex-1">
                   <Label className="block text-sm font-medium text-foreground mb-1">Work Arrangement</Label>
                   <RadioGroup
                     defaultValue="Any"
                     onValueChange={setWorkArrangementFilter}
-                    className="flex space-x-4 items-center h-[38px]" // Align with select trigger height
+                    className="flex space-x-4 items-center h-[38px]"
                   >
                     {workArrangements.map((type) => (
                       <div key={type} className="flex items-center space-x-2">
@@ -258,15 +266,19 @@ export function CareersSection() {
               </div>
             </ScrollFadeIn>
 
-            {filteredJobs.length > 0 ? (
+            {authLoading ? (
+                 <div className="text-center py-12">
+                    <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+                    <p className="text-muted-foreground mt-4">Loading job opportunities...</p>
+                </div>
+            ) : filteredJobs.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredJobs.map((job, index) => (
                   <ScrollFadeIn key={job.id} delay={`${index * 100}ms`}>
                     <JobCard 
                         job={{...job, company: job.company === 'Innovatech Solutions' || job.company === 'FutureAI Corp' ? 'QuantumFusion Solutions' : job.company }} 
-
                         onApplyNowClick={handleApplyNowClick}
-                        onViewDetailsClick={handleViewDetailsClick} // Pass the new handler
+                        onViewDetailsClick={handleViewDetailsClick}
                     />
                   </ScrollFadeIn>
                 ))}
@@ -282,6 +294,8 @@ export function CareersSection() {
                     setDepartmentFilter('All Departments');
                     setEmploymentTypeFilter('All Types');
                     setWorkArrangementFilter('Any');
+                    setDateFilter('Any time');
+                    setJobIdFilter('');
                  }}>
                     Clear All Filters
                 </Button>
@@ -303,4 +317,3 @@ export function CareersSection() {
     </section>
   );
 }
-

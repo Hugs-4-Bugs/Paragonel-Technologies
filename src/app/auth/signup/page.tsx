@@ -21,13 +21,15 @@ import { UserPlus, Eye, EyeOff, MailCheck, ShieldCheck, Loader2 } from "lucide-r
 import { useState } from "react";
 import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/auth-context"; // Import useAuth
+import { useRouter } from 'next/navigation';
 
 const signupSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   confirmPassword: z.string(),
-  otp: z.string().optional(), // OTP field
+  otp: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -35,7 +37,7 @@ const signupSchema = z.object({
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
-const SIMULATED_OTP = "123456"; // For demo purposes
+const SIMULATED_OTP = "123456";
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -44,9 +46,12 @@ export default function SignupPage() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailForOtp, setEmailForOtp] = useState("");
 
   const { toast } = useToast();
+  const { signup } = useAuth(); // Get signup from AuthContext
+  const router = useRouter();
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -70,15 +75,14 @@ export default function SignupPage() {
     }
 
     setIsSendingOtp(true);
-    setEmailForOtp(emailValue); // Store email for OTP context
-    console.log("Simulating: Sending OTP to", emailValue);
-    // Simulate API call
+    setEmailForOtp(emailValue);
+    console.log("SIMULATION: Sending OTP to", emailValue);
     await new Promise(resolve => setTimeout(resolve, 1500));
     setOtpSent(true);
     setIsSendingOtp(false);
     toast({
       title: "OTP Sent (Simulated)",
-      description: `An OTP has been sent to ${emailValue}. Please check your inbox. (Simulated OTP: ${SIMULATED_OTP})`,
+      description: `An OTP has been sent to ${emailValue}. (Simulated OTP: ${SIMULATED_OTP})`,
     });
   };
 
@@ -90,13 +94,12 @@ export default function SignupPage() {
         return;
     }
     setIsVerifyingOtp(true);
-    console.log("Simulating: Verifying OTP", otpValue, "for email", emailForOtp);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    console.log("SIMULATION: Verifying OTP", otpValue, "for email", emailForOtp);
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     if (otpValue === SIMULATED_OTP) {
       setOtpVerified(true);
-      setOtpSent(false); // Hide OTP input after successful verification
+      setOtpSent(false);
       setIsVerifyingOtp(false);
       toast({
         title: "OTP Verified Successfully!",
@@ -115,27 +118,31 @@ export default function SignupPage() {
     }
   };
 
-  function onSubmit(values: SignupFormValues) {
+  async function onSubmit(values: SignupFormValues) {
     if (!otpVerified) {
       toast({
         title: "Email Verification Required",
         description: "Please verify your email address with OTP before signing up.",
         variant: "destructive",
       });
-      // Optionally, trigger OTP flow if not started
-      if (!otpSent && !isSendingOtp) {
-        // It might be better to just guide the user to click "Send OTP"
-        form.setError("email", {type: "manual", message: "Please verify your email with OTP."});
-      }
       return;
     }
-    console.log("Signup form submitted:", values);
-    // Here you would typically call your backend API to register the user
-    alert("Signup successful (simulated)! A confirmation email has been sent (simulated). Check console for data.");
-    form.reset();
-    setOtpVerified(false); // Reset OTP status for next signup
-    setOtpSent(false);
-    setEmailForOtp("");
+    setIsSubmitting(true);
+    console.log("SIMULATION: Signup form submitted:", values);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Simulate successful signup & auto-login
+    signup(values.email); // AuthContext signup (which also handles login)
+    toast({
+      title: "Signup Successful!",
+      description: "Your account has been created and you're now logged in. A confirmation email has been simulated.",
+    });
+    // Redirection is handled within the signup/login function in AuthContext
+    // form.reset(); // Resetting form might be good, but redirection happens
+    // setOtpVerified(false);
+    // setOtpSent(false);
+    // setEmailForOtp("");
+    setIsSubmitting(false);
   }
 
   const watchEmail = form.watch("email");
@@ -177,7 +184,7 @@ export default function SignupPage() {
                             type="email" 
                             placeholder="your.email@example.com" 
                             {...field} 
-                            disabled={otpSent || otpVerified} // Disable email field after OTP is sent/verified
+                            disabled={otpSent || otpVerified || isSendingOtp || isSubmitting}
                           />
                         </FormControl>
                         {!otpSent && !otpVerified && (
@@ -185,7 +192,7 @@ export default function SignupPage() {
                             type="button"
                             variant="outline"
                             onClick={handleSendOtp}
-                            disabled={isSendingOtp || !watchEmail || form.getFieldState("email").invalid}
+                            disabled={isSendingOtp || !watchEmail || form.getFieldState("email").invalid || isSubmitting}
                             className="flex-shrink-0"
                           >
                             {isSendingOtp ? (
@@ -214,12 +221,12 @@ export default function SignupPage() {
                         <FormLabel>Enter OTP sent to {emailForOtp}</FormLabel>
                         <div className="flex items-center space-x-2">
                           <FormControl>
-                            <Input placeholder="6-digit OTP" {...field} maxLength={6} />
+                            <Input placeholder="6-digit OTP" {...field} maxLength={6} disabled={isVerifyingOtp || isSubmitting}/>
                           </FormControl>
                           <Button
                             type="button"
                             onClick={handleVerifyOtp}
-                            disabled={isVerifyingOtp || field.value?.length !== 6}
+                            disabled={isVerifyingOtp || field.value?.length !== 6 || isSubmitting}
                             className="flex-shrink-0"
                           >
                             {isVerifyingOtp ? (
@@ -237,7 +244,7 @@ export default function SignupPage() {
                             variant="link" 
                             className="p-0 h-auto text-xs" 
                             onClick={handleSendOtp} 
-                            disabled={isSendingOtp}
+                            disabled={isSendingOtp || isSubmitting}
                           >
                             {isSendingOtp ? "Resending..." : "Resend OTP"}
                           </Button>
@@ -256,13 +263,14 @@ export default function SignupPage() {
                       <FormLabel>Password</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input type={showPassword ? "text" : "password"} placeholder="********" {...field} />
+                          <Input type={showPassword ? "text" : "password"} placeholder="********" {...field} disabled={isSubmitting}/>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                             onClick={() => setShowPassword(!showPassword)}
+                             disabled={isSubmitting}
                           >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
@@ -280,13 +288,14 @@ export default function SignupPage() {
                       <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
                          <div className="relative">
-                          <Input type={showConfirmPassword ? "text" : "password"} placeholder="********" {...field} />
+                          <Input type={showConfirmPassword ? "text" : "password"} placeholder="********" {...field} disabled={isSubmitting} />
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            disabled={isSubmitting}
                           >
                             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
@@ -299,9 +308,9 @@ export default function SignupPage() {
                 <Button 
                   type="submit" 
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                  disabled={!otpVerified || isSendingOtp || isVerifyingOtp}
+                  disabled={!otpVerified || isSendingOtp || isVerifyingOtp || isSubmitting}
                 >
-                  {otpVerified ? "Sign Up" : "Verify Email to Sign Up"}
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (otpVerified ? "Sign Up" : "Verify Email to Sign Up")}
                 </Button>
               </form>
             </Form>
@@ -319,5 +328,3 @@ export default function SignupPage() {
     </div>
   );
 }
-
-    
