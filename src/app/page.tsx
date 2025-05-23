@@ -1,19 +1,38 @@
 
+import dynamic from 'next/dynamic';
 import { Hero } from '@/components/sections/hero';
-import { AiContent } from '@/components/sections/ai-content';
-import { TechNewsSection } from '@/components/sections/tech-news-section';
-// import { AboutSection } from '@/components/sections/about-section'; // Full section on /about
+// Sections that are above the fold or very light can be imported statically
 import { ServicesSection } from '@/components/sections/services-section';
-import { TestimonialsSection } from '@/components/sections/testimonials-section';
-// import { FaqSection } from '@/components/sections/faq-section'; // Full section on /faq
-// import { PortfolioSection } from '@/components/sections/portfolio-section'; // Full section on /portfolio
-// import { TeamSection } from '@/components/sections/team-section'; // Full section on /team
-// import { BlogSection } from '@/components/sections/blog-section'; // Full section on /blog
-// import { ContactSection } from '@/components/sections/contact-section'; // Full section on /contact
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Briefcase, Users, BookOpen, HelpCircle, LayoutDashboard, Mail, Brain } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton'; // For a more consistent loading state
+
+// Dynamically import sections that are further down or involve client-side data fetching/JS
+const AiContent = dynamic(() => 
+  import('@/components/sections/ai-content').then(mod => mod.AiContent), 
+  { 
+    loading: () => <div className="container mx-auto px-4 md:px-6 section-padding"><Skeleton className="h-32 w-full" /></div>,
+    // ssr: false // Often good for client-side heavy components // Removed ssr: false
+  }
+);
+
+const TechNewsSection = dynamic(() => 
+  import('@/components/sections/tech-news-section').then(mod => mod.TechNewsSection), 
+  { 
+    loading: () => <div className="container mx-auto px-4 md:px-6 section-padding"><Skeleton className="h-32 w-full" /></div>,
+    // ssr: false // Removed ssr: false
+  }
+);
+
+const TestimonialsSection = dynamic(() => 
+  import('@/components/sections/testimonials-section').then(mod => mod.TestimonialsSection), 
+  { 
+    loading: () => <div className="container mx-auto px-4 md:px-6 section-padding"><Skeleton className="h-32 w-full" /></div>,
+    // ssr: false // Removed ssr: false
+  }
+);
 
 
 export default function HomePage() {
@@ -22,7 +41,7 @@ export default function HomePage() {
       <Hero />
       
       <section id="about-snippet" className="section-padding bg-background">
-        <div className="container mx-auto max-w-5xl text-center">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <Brain className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Welcome to <span className="text-primary">QuantumFusion Solutions</span>
@@ -41,7 +60,7 @@ export default function HomePage() {
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <section id="portfolio-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
-        <div className="container mx-auto max-w-5xl text-center">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <LayoutDashboard className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Our Innovative <span className="text-primary">Projects</span>
@@ -66,7 +85,7 @@ export default function HomePage() {
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <section id="team-snippet" className="section-padding bg-background">
-        <div className="container mx-auto max-w-5xl text-center">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <Users className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Meet Our <span className="text-primary">Innovators</span>
@@ -82,7 +101,7 @@ export default function HomePage() {
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <section id="careers-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
-        <div className="container mx-auto max-w-5xl text-center">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <Briefcase className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Propel Your Career with Us
@@ -98,7 +117,7 @@ export default function HomePage() {
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <section id="blog-snippet" className="section-padding bg-background">
-        <div className="container mx-auto max-w-5xl text-center">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <BookOpen className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Latest <span className="text-primary">Insights</span>
@@ -114,7 +133,7 @@ export default function HomePage() {
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <section id="faq-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
-        <div className="container mx-auto max-w-5xl text-center">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <HelpCircle className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Have <span className="text-primary">Questions?</span>
@@ -130,7 +149,7 @@ export default function HomePage() {
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <section id="contact-snippet" className="section-padding bg-background">
-        <div className="container mx-auto max-w-5xl text-center">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <Mail className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to <span className="text-primary">Innovate?</span>
@@ -143,7 +162,6 @@ export default function HomePage() {
           </Button>
         </div>
       </section>
-      {/* ChatSection removed from here */}
     </>
   );
 }
