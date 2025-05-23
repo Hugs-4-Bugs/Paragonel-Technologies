@@ -39,7 +39,13 @@ export function CookieConsentBanner() {
         </div>
 
         {/* Button Group */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto sm:self-end md:self-start lg:self-end">
+        {/* 
+          - flex flex-col sm:flex-row: Buttons stack vertically on small screens, go horizontal on 'sm' and up.
+          - gap-3: Spacing between buttons.
+          - sm:justify-end: On 'sm' screens and up (when horizontal), align the buttons to the right.
+          - w-full: The button group div itself takes full width to allow justify-end to work correctly.
+        */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end w-full">
           <Button
             onClick={acceptAll}
             className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
