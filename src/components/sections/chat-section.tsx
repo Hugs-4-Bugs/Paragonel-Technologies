@@ -57,7 +57,7 @@ const renderMessageWithLinks = (text: string) => {
 
 
 export function ChatSection() {
-  const [isOpen, setIsOpen] = useState(true); // Auto-open chat
+  const [isOpen, setIsOpen] = useState(false); // Initially closed
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -72,10 +72,20 @@ export function ChatSection() {
   };
 
   useEffect(() => {
+    // Auto-open chat after a delay
+    const timer = setTimeout(() => {
+      setIsOpen(true);
+    }, 2000); // 2-second delay
+
+    return () => clearTimeout(timer); // Cleanup timeout on component unmount
+  }, []);
+
+
+  useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([initialMessage]);
     }
-  }, [isOpen]);
+  }, [isOpen, messages.length]); // Added messages.length to dependencies
 
 
   useEffect(() => {
@@ -126,7 +136,7 @@ export function ChatSection() {
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
-    if (!isOpen && messages.length === 0) {
+    if (!isOpen && messages.length === 0) { // If opening and no messages, add initial
         setMessages([initialMessage]);
     }
   };
@@ -247,3 +257,4 @@ export function ChatSection() {
     </Card>
   );
 }
+
