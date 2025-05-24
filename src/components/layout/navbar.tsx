@@ -7,14 +7,16 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2 } from "lucide-react"; // Added Settings2 for Profile
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar imports
 import { useAuth } from "@/contexts/auth-context"; 
 
 const mainNavLinks = [
@@ -49,7 +51,7 @@ export function Navbar() {
     
     let links = [...mainNavLinks, ...moreNavLinks];
     if (isAuthenticated && user) {
-      links.push({ href: "/profile", label: "My Profile", icon: UserCircle });
+      links.push({ href: "/profile", label: "My Profile", icon: UserCircle }); // UserCircle for mobile consistency
       links.push({ href: "#", label: "Logout", icon: LogOut, action: () => { logout(); setIsMobileMenuOpen(false); } });
     } else {
       links.push(...authNavLinksBase);
@@ -58,6 +60,12 @@ export function Navbar() {
   };
 
   const allNavLinksForMobile = getMobileNavLinks();
+
+  const getUserInitial = () => {
+    if (user?.fullName) return user.fullName.charAt(0).toUpperCase();
+    if (user?.email) return user.email.charAt(0).toUpperCase();
+    return '?';
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -106,13 +114,23 @@ export function Navbar() {
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center space-x-2">
-                      <UserCircle className="h-5 w-5 text-primary" />
-                      <span className="text-sm font-medium text-muted-foreground truncate max-w-[100px]">{user.fullName || user.email}</span>
-                      <ChevronDown className="h-4 w-4" />
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                      <Avatar className="h-9 w-9">
+                        {/* <AvatarImage src={user.profilePictureUrl} alt={user.fullName || user.email} /> Placeholder for future image */}
+                        <AvatarFallback>{getUserInitial()}</AvatarFallback>
+                      </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.fullName || "User"}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                        <Link href="/profile" className="cursor-pointer">
                          <Settings2 className="mr-2 h-4 w-4" />
@@ -178,7 +196,7 @@ export function Navbar() {
                   <Button
                     variant="ghost"
                     asChild={!link.action} 
-                    key={link.href + (link.label || '')} // Ensure unique key
+                    key={link.href + (link.label || '')} 
                     className="justify-start px-3 py-2.5 text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
                     onClick={() => {
                       if (link.action) {
