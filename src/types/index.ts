@@ -10,6 +10,7 @@ export interface Job {
   salaryRange?: string;
   postedDate: string; // ISO string format for date
   companyLogoUrl?: string;
+  requiredSkills: string[]; // Added for job matching
 }
 
 export interface BlogPost {

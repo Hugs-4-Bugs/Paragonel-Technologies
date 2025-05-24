@@ -12,6 +12,7 @@ This document provides an overview of the project structure and guidance on wher
     *   **`src/app/auth/`**: Pages related to user authentication (login, signup, etc.).
     *   **`src/app/blog/[slug]/page.tsx`**: Dynamic route for individual blog posts.
     *   **`src/app/services/[service-name]/page.tsx`**: Dynamic or static routes for individual service detail pages.
+    *   **`src/app/profile/page.tsx`**: User profile page for logged-in users.
 *   **`src/components/`**: Reusable React components.
     *   **`src/components/layout/`**: Components for overall site structure (Navbar, Footer).
     *   **`src/components/sections/`**: Components for specific content sections on pages (Hero, About, Services, Team, Careers, Blog, Testimonials, FAQ, Contact, Chat, AI Content, Tech News, Newsletter).
@@ -21,19 +22,20 @@ This document provides an overview of the project structure and guidance on wher
     *   **`src/components/job-card.tsx`**: Component for displaying individual job listings.
     *   **`src/components/job-description-modal.tsx`**: Modal for displaying full job descriptions.
 *   **`src/ai/`**: Genkit AI flows and configuration.
-    *   **`src/ai/flows/`**: TypeScript files defining individual Genkit flows (e.g., `company-qna-flow.ts`, `format-application-email-flow.ts`).
+    *   **`src/ai/flows/`**: TypeScript files defining individual Genkit flows (e.g., `company-qna-flow.ts`, `format-application-email-flow.ts`, `generate-job-match-email-flow.ts`).
     *   **`src/ai/genkit.ts`**: Genkit initialization and global AI model configuration.
     *   **`src/ai/dev.ts`**: File used by the Genkit development server to register flows.
 *   **`src/lib/`**: Utility functions, constants, and data.
     *   **`src/lib/utils.ts`**: General utility functions (e.g., `cn` for classnames).
     *   **`src/lib/data.ts`**: Static data for the site (e.g., dummy job listings, blog posts, dropdown options).
+    *   **`src/lib/firebase.ts`**: Firebase initialization and Firestore instance.
 *   **`src/contexts/`**: React Context API providers.
     *   **`src/contexts/auth-context.tsx`**: Manages simulated user authentication state.
 *   **`src/hooks/`**: Custom React hooks.
     *   **`src/hooks/use-cookie-consent.tsx`**: Manages cookie consent state and logic.
     *   **`src/hooks/use-toast.ts`**: For displaying toast notifications.
 *   **`src/types/`**: TypeScript type definitions.
-    *   **`src/types/index.ts`**: Defines interfaces for `Job`, `BlogPost`, `ApplicationFormValues`, etc.
+    *   **`src/types/index.ts`**: Defines interfaces for `Job`, `BlogPost`, `ApplicationFormValues`, `UserProfile`, etc.
 *   **`public/`**: Static assets like images and favicons.
     *   Place your company logo here (e.g., `qfs-logo.png`).
 *   **`package.json`**: Project dependencies and scripts.
@@ -41,6 +43,7 @@ This document provides an overview of the project structure and guidance on wher
 *   **`tailwind.config.ts`**: Tailwind CSS configuration.
 *   **`README.md`**: General project information, setup, and deployment instructions.
 *   **`PROJECT_STRUCTURE_AND_MODIFICATION_GUIDE.md`**: This file.
+*   **`VERCEL_ENV_SETUP_GUIDE.md`**: Guide for setting up environment variables on Vercel.
 
 ---
 
@@ -108,7 +111,7 @@ This document provides an overview of the project structure and guidance on wher
 *   **Job Listings Page Structure & Filters**:
     *   `src/components/sections/careers-section.tsx` handles the layout, filter UI, and logic for displaying jobs.
 *   **Job Data (Dummy Jobs)**:
-    *   `src/lib/data.ts` (the `dummyJobs` array). Update existing jobs or add new ones here. The `postedDate` field will be used to show how long ago a job was posted.
+    *   `src/lib/data.ts` (the `dummyJobs` array). Update existing jobs or add new ones here. The `postedDate` field will be used to show how long ago a job was posted. Each job now also includes a `requiredSkills: string[]` array.
 *   **Job Card Display**:
     *   The visual representation of each job is in `src/components/job-card.tsx`.
 *   **Job Description Modal**:
@@ -128,7 +131,7 @@ This document provides an overview of the project structure and guidance on wher
     *   `src/app/blog/[slug]/page.tsx` dynamically renders individual posts based on the slug.
     *   It fetches data from `src/lib/data.ts`.
 *   **Blog Snippet on Homepage**:
-    *   Handled by `src/components/sections/blog-section.tsx` (if a dedicated snippet component exists) or directly in `src/app/page.tsx`.
+    *   Handled by `src/components/sections/blog-section.tsx` or directly in `src/app/page.tsx`.
 
 ### 10. Testimonials Section
 
@@ -155,11 +158,11 @@ This document provides an overview of the project structure and guidance on wher
 ### 14. User Authentication (Simulated Frontend Flow)
 
 *   **Core Authentication Logic & State (Context)**:
-    *   `src/contexts/auth-context.tsx` manages `isAuthenticated`, `user` state, simulated `login`, `logout`, `signup` functions, and `localStorage` persistence.
+    *   `src/contexts/auth-context.tsx` manages `isAuthenticated`, `user` (now includes `uid` and `fullName`) state, simulated `login`, `logout`, `signup` functions, and `localStorage` persistence.
 *   **Login Page**:
     *   UI and form handling: `src/app/auth/login/page.tsx`.
 *   **Signup Page**:
-    *   UI, form handling, and simulated OTP flow: `src/app/auth/signup/page.tsx`. Password complexity rules are defined in its Zod schema.
+    *   UI, form handling, and simulated OTP flow: `src/app/auth/signup/page.tsx`. Password complexity rules are defined in its Zod schema. `fullName` is now part of signup.
 *   **Forgot Password Page**:
     *   UI and form handling: `src/app/auth/forgot-password/page.tsx`.
 *   **Reset Password Page**:
@@ -167,14 +170,21 @@ This document provides an overview of the project structure and guidance on wher
 *   **Protected Job Application Flow**:
     *   Logic to check authentication and redirect to login if needed is in `src/components/sections/careers-section.tsx`.
 
-### 15. Cookie Consent System
+### 15. User Profile Section
+
+*   **Profile Page**: `src/app/profile/page.tsx`.
+*   **Data Storage**: Profile data (phone, skills, resume URL) is fetched from and saved to Firestore under `users/{uid}`.
+*   **Functionality**: Users can view their basic info (name, email from auth context) and update their phone, skills, and resume URL. Displays a placeholder for applied jobs.
+*   **Firebase Configuration**: `src/lib/firebase.ts` initializes Firebase. Environment variables for Firebase config must be set in `.env` locally and in hosting provider settings.
+
+### 16. Cookie Consent System
 
 *   **Core Logic, State Management, & localStorage**:
-    *   `src/hooks/use-cookie-consent.tsx`.
+    *   `src/hooks/use-cookie-consent.tsx` (uses React Context).
 *   **Consent Banner UI**:
     *   `src/components/cookie-consent/CookieConsentBanner.tsx`.
 *   **Settings Modal UI (Toggles & Descriptions)**:
-    *   `src/components/cookie-consent/CookieSettingsModal.tsx`.
+    *   `src/components/cookie-consent/CookieSettingsModal.tsx`. Includes Essential, Functional, Performance, Analytics, and Marketing cookie categories.
 *   **Simulation of Conditional Script Loading**:
     *   `src/components/cookie-consent/CookieConsentManager.tsx` (logs to console based on consent).
 *   **Integration into Main Layout**:
@@ -182,15 +192,15 @@ This document provides an overview of the project structure and guidance on wher
 *   **Theme Persistence Linkage**:
     *   `src/components/theme-provider.tsx` checks functional cookie consent for theme persistence.
 
-### 16. AI-Powered Features (Genkit)
+### 17. AI-Powered Features (Genkit)
 
 *   **Genkit Initialization & Model Choice**:
     *   `src/ai/genkit.ts`.
 *   **Flow Registration for Development Server**:
     *   `src/ai/dev.ts` (imports all flow files).
 *   **Company Q&A Chatbot**:
-    *   **Flow Logic & Prompt**: `src/ai/flows/company-qna-flow.ts`. Modify the prompt here to change how the AI answers questions about the company.
-    *   **Chat UI & Client-side Invocation**: `src/components/sections/chat-section.tsx`.
+    *   **Flow Logic & Prompt**: `src/ai/flows/company-qna-flow.ts`. Modify the prompt here to change how the AI answers questions about the company. Includes LinkedIn URL.
+    *   **Chat UI & Client-side Invocation**: `src/components/sections/chat-section.tsx`. Globally available, auto-opens, and displays user/AI messages with clickable links.
 *   **AI Content Recommendations (Homepage)**:
     *   **Flow Logic & Prompt**: `src/ai/flows/recommend-related-content.ts`.
     *   **UI & Client-side Invocation**: `src/components/sections/ai-content.tsx`.
@@ -198,12 +208,16 @@ This document provides an overview of the project structure and guidance on wher
     *   **Flow Logic & Prompt**: `src/ai/flows/fetch-tech-news.ts`.
     *   **UI & Client-side Invocation**: `src/components/sections/tech-news-section.tsx`.
 *   **Application Email Formatting (for Job Applications)**:
-    *   **Flow Logic & Prompt**: `src/ai/flows/format-application-email-flow.ts`. This flow formats details for both admin and applicant emails.
+    *   **Flow Logic & Prompt**: `src/ai/flows/format-application-email-flow.ts`. This flow formats details for both admin and applicant emails, including all fields from the detailed application form.
     *   **Invocation**: Called from `src/components/apply-job-modal.tsx` upon form submission.
+*   **Job Match Notification Email Logic**:
+    *   **Flow Logic & Prompt**: `src/ai/flows/generate-job-match-email-flow.ts`. This flow takes a `jobId` and `userId`, performs skill matching (user skills from Firestore, job skills from `dummyJobs`), and if a >=70% match occurs, formats a notification email.
+    *   **Backend Trigger Required**: This flow demonstrates the *logic* for matching and email formatting. A separate backend process (e.g., Firebase Cloud Function) would be needed to automatically trigger this flow for all users when a new job is posted.
 *   **Environment Variables**:
     *   Your `GOOGLE_API_KEY` for Genkit needs to be in a `.env` file at the project root for local development, and set in your hosting provider's environment settings for deployment.
+    *   Firebase configuration variables (`NEXT_PUBLIC_FIREBASE_...`) also need to be set for the Profile section.
 
-### 17. Images & Static Assets
+### 18. Images & Static Assets
 
 *   **Company Logo, Favicon, Other Key Images**:
     *   Store these in the `public/` directory.
@@ -212,10 +226,10 @@ This document provides an overview of the project structure and guidance on wher
     *   Update the `src` attribute in various components.
     *   Update the `data-ai-hint` attribute on these images to provide better context if using AI image generation tools later.
 
-### 18. Data (Jobs, Blog Posts, Dropdown Options)
+### 19. Data (Jobs, Blog Posts, Dropdown Options)
 
 *   **Central Data File**: `src/lib/data.ts` is the primary source for:
-    *   `dummyJobs`: Job listings.
+    *   `dummyJobs`: Job listings, now including `requiredSkills`.
     *   `blogPosts`: Blog content.
     *   `locations`, `departments`, `educationQualifications`, `noticePeriods`: Options for filters and forms.
     *   `generateYearOptions()`: For passing year dropdowns.

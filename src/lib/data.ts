@@ -13,6 +13,7 @@ export const dummyJobs: Job[] = [
     salaryRange: '$150,000 - $180,000',
     postedDate: '2024-07-20T10:00:00Z',
     companyLogoUrl: 'https://placehold.co/100x100.png',
+    requiredSkills: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS', 'GraphQL'],
   },
   {
     id: 'D4E5F6',
@@ -24,6 +25,7 @@ export const dummyJobs: Job[] = [
     employmentType: 'Full-Time',
     postedDate: '2024-07-18T14:30:00Z',
     companyLogoUrl: 'https://placehold.co/100x100.png',
+    requiredSkills: ['Product Management', 'AI/ML Fundamentals', 'Agile Methodologies', 'Roadmapping', 'Market Analysis'],
   },
   {
     id: 'G7H8I9',
@@ -35,6 +37,7 @@ export const dummyJobs: Job[] = [
     employmentType: 'Full-Time',
     salaryRange: '$90,000 - $120,000',
     postedDate: '2024-07-22T09:00:00Z',
+    requiredSkills: ['UX Design', 'UI Design', 'Figma', 'Prototyping', 'User Research'],
   },
   {
     id: 'J0K1L2',
@@ -46,6 +49,7 @@ export const dummyJobs: Job[] = [
     employmentType: 'Full-Time',
     postedDate: '2024-07-15T11:00:00Z',
     companyLogoUrl: 'https://placehold.co/100x100.png',
+    requiredSkills: ['Python', 'Machine Learning', 'Statistical Analysis', 'SQL', 'Data Visualization'],
   },
   {
     id: 'M3N4O5',
@@ -56,6 +60,7 @@ export const dummyJobs: Job[] = [
     description: 'Develop and execute digital marketing campaigns to drive brand awareness and lead generation. Manage SEO/SEM, social media, and email marketing efforts.',
     employmentType: 'Part-Time',
     postedDate: '2024-07-25T16:00:00Z',
+    requiredSkills: ['Digital Marketing', 'SEO', 'SEM', 'Social Media Marketing', 'Content Creation'],
   },
   {
     id: 'P6Q7R8',
@@ -67,6 +72,7 @@ export const dummyJobs: Job[] = [
     employmentType: 'Full-Time',
     salaryRange: '$130,000 - $160,000',
     postedDate: '2024-07-19T08:00:00Z',
+    requiredSkills: ['Node.js', 'Express.js', 'Microservices', 'AWS', 'Databases (SQL/NoSQL)'],
   },
 ];
 
