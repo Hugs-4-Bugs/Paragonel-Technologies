@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +33,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [appliedJobs, setAppliedJobs] = useState<string[]>([]);
+  const [appliedJobs, setAppliedJobs] = useState<string[]>([]); // This is a placeholder display
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -64,10 +64,11 @@ export default function ProfilePage() {
               skills: data.skills ? data.skills.join(', ') : '',
               resumeUrl: data.resumeUrl || '',
             });
+            // The 'appliedJobs' array in Firestore would be populated by a backend process
+            // when a user applies for a job. This frontend only displays it.
             setAppliedJobs(data.appliedJobs || []);
           } else {
-            // No profile yet, form will have default empty values
-             reset({ phone: '', skills: '', resumeUrl: '' }); // Ensure reset if no data
+            reset({ phone: '', skills: '', resumeUrl: '' });
           }
         } catch (error) {
           console.error("Error fetching profile data:", error);
@@ -81,8 +82,12 @@ export default function ProfilePage() {
         }
       };
       fetchProfileData();
+    } else if (!authLoading && !user) {
+      // If authentication is resolved and there's no user,
+      // set isLoadingData to false as there's no profile to fetch.
+      setIsLoadingData(false);
     }
-  }, [user, reset, toast]);
+  }, [user, authLoading, reset, toast]);
 
   const onSubmit = async (data: ProfileFormValues) => {
     if (!user || !user.uid) {
@@ -91,14 +96,14 @@ export default function ProfilePage() {
     }
     setIsSaving(true);
     try {
-      const profileDataToSave: UserProfile = {
+      const profileDataToSave: Partial<UserProfile> = { // Use Partial as we are not updating all fields here
         uid: user.uid,
-        fullName: user.fullName || 'N/A', // From AuthContext
-        email: user.email, // From AuthContext
+        fullName: user.fullName || 'N/A',
+        email: user.email,
         phone: data.phone || '',
         skills: data.skills ? data.skills.split(',').map(s => s.trim()).filter(s => s) : [],
         resumeUrl: data.resumeUrl || '',
-        // appliedJobs are not updated here, only displayed
+        // appliedJobs are not updated here by the profile save. This would be managed by the application submission flow.
         updatedAt: serverTimestamp(),
       };
 
@@ -119,7 +124,8 @@ export default function ProfilePage() {
     }
   };
   
-  if (authLoading || (!isAuthenticated && !user)) {
+  // Main page loader while auth state is being determined or if user is not authenticated (before redirect)
+  if (authLoading || (!isAuthenticated && !user && typeof window !== 'undefined')) { // Added typeof window !== 'undefined' for safety though redirect should happen
     return (
       <div className="section-padding flex items-center justify-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -194,6 +200,15 @@ export default function ProfilePage() {
 
             <section className="mt-12 p-6 rounded-lg border bg-muted/10 shadow-sm">
               <h3 className="text-xl font-semibold flex items-center text-primary mb-4"><Briefcase className="mr-2 h-5 w-5"/>Applied Jobs</h3>
+              {/* 
+                Applied Jobs Display:
+                - The 'appliedJobs' array in Firestore would ideally be populated by a backend process 
+                  when a user successfully applies for a job. This frontend section only displays it.
+                - Automatic removal of jobs older than 90 days is a backend/database task, 
+                  typically handled by a scheduled function (e.g., Firebase Cloud Function) that
+                  would also require storing application timestamps. This cannot be fully implemented 
+                  on the frontend.
+              */}
               {isLoadingData ? (
                  <div className="text-center text-muted-foreground">Loading applied jobs...</div>
               ) : appliedJobs.length > 0 ? (
@@ -205,7 +220,7 @@ export default function ProfilePage() {
                   ))}
                 </ul>
               ) : (
-                <p className="text-muted-foreground">You haven't applied to any jobs yet through our new system, or we couldn't fetch your past applications.</p>
+                <p className="text-muted-foreground">You haven't applied to any jobs yet, or we couldn't fetch your application history.</p>
               )}
             </section>
           </CardContent>
