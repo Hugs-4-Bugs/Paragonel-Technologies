@@ -132,10 +132,11 @@ export default function SignupPage() {
       return;
     }
     setIsSubmitting(true);
-    // Pass the password to the signup function in AuthContext
-    signup(values.email, values.password);
+    // Pass fullName, email, and password to the signup function in AuthContext
+    signup(values.fullName, values.email, values.password); 
     
     // Redirection and success/failure toasts are handled by AuthContext
+    // No need to call router.push here directly if AuthContext handles it.
     setIsSubmitting(false);
   }
 

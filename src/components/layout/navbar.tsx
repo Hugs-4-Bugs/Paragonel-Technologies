@@ -7,7 +7,7 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2 } from "lucide-react"; // Added Settings2 for Profile
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/contexts/auth-context"; // Import useAuth
+import { useAuth } from "@/contexts/auth-context"; 
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
@@ -33,26 +33,28 @@ const moreNavLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
-const authNavLinks = [
+// For mobile, auth links are dynamically added based on auth state
+const authNavLinksBase = [
   { href: "/auth/login", label: "Login", icon: LogIn },
   { href: "/auth/signup", label: "Sign Up", icon: UserPlus },
 ];
 
+
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isAuthenticated, user, logout, isLoading } = useAuth(); // Get auth state
+  const { isAuthenticated, user, logout, isLoading } = useAuth(); 
 
-  // Combined for mobile menu - adjusted for auth state
   const getMobileNavLinks = () => {
-    if (isLoading) return []; // Or a loading state for links
-    if (isAuthenticated) {
-      return [
-        ...mainNavLinks,
-        ...moreNavLinks,
-        { href: "#", label: "Logout", icon: LogOut, action: logout },
-      ];
+    if (isLoading) return []; 
+    
+    let links = [...mainNavLinks, ...moreNavLinks];
+    if (isAuthenticated && user) {
+      links.push({ href: "/profile", label: "My Profile", icon: UserCircle });
+      links.push({ href: "#", label: "Logout", icon: LogOut, action: () => { logout(); setIsMobileMenuOpen(false); } });
+    } else {
+      links.push(...authNavLinksBase);
     }
-    return [...mainNavLinks, ...moreNavLinks, ...authNavLinks];
+    return links;
   };
 
   const allNavLinksForMobile = getMobileNavLinks();
@@ -99,19 +101,24 @@ export function Navbar() {
           )}
           <div className="flex items-center space-x-2 pl-3">
             {isLoading ? (
-              <div className="h-9 w-32 bg-muted animate-pulse rounded-md"></div> // Placeholder for loading state
+              <div className="h-9 w-32 bg-muted animate-pulse rounded-md"></div> 
             ) : isAuthenticated && user ? (
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="flex items-center space-x-2">
-                      <UserCircle className="h-5 w-5" />
-                      <span className="text-sm font-medium text-muted-foreground truncate max-w-[100px]">{user.email}</span>
+                      <UserCircle className="h-5 w-5 text-primary" />
+                      <span className="text-sm font-medium text-muted-foreground truncate max-w-[100px]">{user.fullName || user.email}</span>
                       <ChevronDown className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {/* Add profile/dashboard links here if needed */}
+                    <DropdownMenuItem asChild>
+                       <Link href="/profile" className="cursor-pointer">
+                         <Settings2 className="mr-2 h-4 w-4" />
+                         My Profile
+                       </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive focus:text-destructive-foreground focus:bg-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
@@ -170,8 +177,8 @@ export function Navbar() {
                 {!isLoading && allNavLinksForMobile.map((link) => (
                   <Button
                     variant="ghost"
-                    asChild={!link.action} // Use asChild if it's a regular Link
-                    key={link.href}
+                    asChild={!link.action} 
+                    key={link.href + (link.label || '')} // Ensure unique key
                     className="justify-start px-3 py-2.5 text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground"
                     onClick={() => {
                       if (link.action) {

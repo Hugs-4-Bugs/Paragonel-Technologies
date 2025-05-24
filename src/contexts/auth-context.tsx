@@ -6,13 +6,14 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
 interface User {
+  uid: string; // Added UID
   email: string;
-  // Add other user properties as needed, e.g., name, id
+  fullName?: string; // Added fullName
 }
 
 // Simulate a simple in-memory store for registered users
 interface RegisteredUser extends User {
-  password?: string; // Store password for simulation - DO NOT DO THIS IN PRODUCTION
+  password?: string; 
 }
 let simulatedUserDatabase: RegisteredUser[] = [];
 
@@ -22,7 +23,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password?: string, redirectPath?: string) => void;
   logout: () => void;
-  signup: (email: string, password?: string, redirectPath?: string) => void;
+  signup: (fullName: string, email: string, password?: string, redirectPath?: string) => void; // Added fullName
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,12 +36,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    setIsLoading(true);
     try {
       const storedAuth = localStorage.getItem('isAuthenticated');
       const storedUser = localStorage.getItem('user');
       if (storedAuth === 'true' && storedUser) {
-        setIsAuthenticated(true);
-        setUser(JSON.parse(storedUser));
+        const parsedUser: User = JSON.parse(storedUser);
+        if (parsedUser && parsedUser.uid && parsedUser.email) { // Validate stored user
+            setIsAuthenticated(true);
+            setUser(parsedUser);
+        } else {
+            // Clear invalid stored data
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem('user');
+        }
       }
     } catch (error) {
       console.error("Error reading auth state from localStorage:", error);
@@ -51,13 +60,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (email: string, password?: string, redirectPath: string = '/') => {
-    // Find user in our simulated database
     const foundUser = simulatedUserDatabase.find(
-      (u) => u.email === email && (password ? u.password === password : true) // Allow login without password if not provided (e.g., post-signup)
+      (u) => u.email === email && (password ? u.password === password : true)
     );
 
     if (foundUser) {
-      const loggedInUser: User = { email: foundUser.email };
+      // Ensure uid and fullName are correctly set from foundUser
+      const loggedInUser: User = { 
+        uid: foundUser.uid, 
+        email: foundUser.email,
+        fullName: foundUser.fullName 
+      };
       setIsAuthenticated(true);
       setUser(loggedInUser);
       localStorage.setItem('isAuthenticated', 'true');
@@ -73,8 +86,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (actionAfterLogin === 'applyJobModalOpen') {
         router.push('/careers');
-      } else {
+      } else if (redirectPath) {
         router.push(redirectPath);
+      } else {
+        router.push('/');
       }
     } else {
       toast({
@@ -85,8 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signup = (email: string, password?: string, redirectPath: string = '/') => {
-    // Check if user already exists in our simulated database
+  const signup = (fullName: string, email: string, password?: string, redirectPath: string = '/') => {
     if (simulatedUserDatabase.find((u) => u.email === email)) {
       toast({
         title: "Signup Failed",
@@ -96,14 +110,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Add new user to simulated database
-    const newUser: RegisteredUser = { email, password };
+    // Simulate UID generation (replace with actual Firebase Auth UID in a real app)
+    const uid = email.replace(/[^a-zA-Z0-9]/g, "") + Date.now(); 
+
+    const newUser: RegisteredUser = { uid, email, fullName, password };
     simulatedUserDatabase.push(newUser);
     console.log("SIMULATION: User signed up and added to simulated DB:", newUser);
     
     // Auto-login after signup
     login(email, password, redirectPath); 
-    // The toast for successful signup is handled by the signup page itself or the login function now
     console.log("SIMULATION: Signup confirmation email sent to:", email);
   };
 

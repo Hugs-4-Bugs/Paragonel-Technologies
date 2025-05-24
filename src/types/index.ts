@@ -33,7 +33,7 @@ export interface ApplicationFormValues {
   resume: FileList;
   linkedinProfile?: string;
   portfolioWebsite?: string;
-  codingProfileUrl?: string; // New field
+  codingProfileUrl?: string; 
 
   highestQualification: string;
   specialization: string;
@@ -63,4 +63,16 @@ export interface ApplicationFormValues {
 
   jobId: string;
   jobTitle: string;
+}
+
+// New type for User Profile data in Firestore
+export interface UserProfile {
+  uid: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  skills?: string[]; // Stored as an array of strings
+  resumeUrl?: string; // URL to a resume, not the file itself
+  appliedJobs?: string[]; // Array of job IDs
+  updatedAt?: any; // Firestore Timestamp type, use 'any' for client-side flexibility initially
 }
