@@ -1,4 +1,3 @@
-
 # Guide: Setting Up GOOGLE_API_KEY on Vercel
 
 This guide provides step-by-step instructions on how to configure your `GOOGLE_API_KEY` as an environment variable in your Vercel project. This key is essential for the Genkit AI features (like Personalized Insights, Tech News, and the Q&A Chatbot) to function correctly when your QuantumFusion Solutions website is deployed on Vercel.
