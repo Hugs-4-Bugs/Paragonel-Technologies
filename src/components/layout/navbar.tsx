@@ -72,11 +72,12 @@ export function Navbar() {
       <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center space-x-2">
           <Image
-            src="https://placehold.co/160x40.png?text=QuantumFusion+Solutions" 
+            // src="/images/logo.png" 
+            src="/images/QuantumFusion-Logo.png" 
             alt="QuantumFusion Solutions Logo"
-            width={160}
-            height={40}
-            className="h-10 w-auto md:h-12"
+            width={200}
+            height={120}
+            className="h-20 w-25 md:h-25 md:w-25, rounded-lg"
             data-ai-hint="company logo abstract"
             priority
           />

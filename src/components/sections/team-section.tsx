@@ -8,7 +8,7 @@ import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button'; // Added this import
-import { Linkedin, Twitter, Github, UserCircle, Brain, CloudCog, Layers2 } from 'lucide-react';
+import { Linkedin, Twitter, Github, Instagram, Globe, UserCircle, Brain, CloudCog, Layers2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 interface TeamMember {
@@ -22,6 +22,8 @@ interface TeamMember {
     linkedin?: string;
     twitter?: string;
     github?: string;
+    instagram?: string;
+    globe?: string; // Changed from 'profile' to 'globe' for clarity
   };
   icon: LucideIcon;
 }
@@ -31,37 +33,37 @@ const teamMembers: TeamMember[] = [
     id: '1',
     name: 'Prabhat Kumar',
     title: 'Founder & CEO',
-    imageUrl: '/prabhat-kumar.png',
+    imageUrl: '/images/Prabhat.png',
     aiHint: 'Prabhat Kumar Founder CEO QuantumFusion Solutions',
     bio: 'Prabhat Kumar, with a Bachelor of Engineering in Computer Science, is the visionary Founder & CEO of QuantumFusion Solutions. He leads the company with a passion for innovation, driving its mission to deliver cutting-edge AI, Cloud, DevOps, and SaaS solutions that shape the future of technology.',
-    socials: { linkedin: '#', twitter: '#' },
+    socials: { linkedin: 'https://www.linkedin.com/in/prabhat-kumar-6963661a4/', github: 'https://github.com/Hugs-4-Bugs', instagram: 'https://www.instagram.com/_s_4_sharma/', globe: 'https://prabhatkr.vercel.app/' },
     icon: Brain,
   },
   {
     id: '2',
-    name: 'Zara Kael',
+    name: 'Vivek Sharma',
     title: 'CTO, Cloud & DevOps Architect',
-    imageUrl: 'https://placehold.co/300x300.png',
+    imageUrl: '/images/Vivek.png',
     aiHint: 'professional photo cto tech executive',
     bio: 'Zara is the driving force behind our robust cloud infrastructures and streamlined DevOps practices, ensuring scalability and resilience for all client projects. She has over 15 years of experience in enterprise IT and cloud architecture, specializing in AWS and Azure.',
-    socials: { linkedin: '#', github: '#' },
+    socials: { linkedin: '', instagram: 'https://www.instagram.com/viveksharma75_/' },
     icon: CloudCog,
   },
   {
     id: '3',
-    name: 'Liam Vance',
+    name: 'Ajay Pal',
     title: 'Head of SaaS Platforms',
-    imageUrl: 'https://placehold.co/300x300.png',
+    imageUrl: '/images/Ajay.png',
     aiHint: 'professional photo manager saas product',
     bio: 'Liam orchestrates the development of innovative SaaS solutions, focusing on user experience and market impact. He is passionate about building products that solve real-world problems and achieve commercial success. Liam champions agile methodologies and user-centric design.',
-    socials: { linkedin: '#' },
+    socials: { linkedin: 'https://www.linkedin.com/in/ajay-pal-21b8ab269/', instagram: 'https://www.instagram.com/6549ima_j_a_y_p_a_l/' },
     icon: Layers2,
   },
   {
     id: '4',
     name: 'Dr. Lena Petrova',
     title: 'Principal AI Researcher',
-    imageUrl: 'https://placehold.co/300x300.png',
+    imageUrl: '/images/Lena.png',
     aiHint: 'professional photo researcher ai scientist',
     bio: 'Dr. Petrova leads our R&D in machine learning and natural language processing, pushing the boundaries of what AI can achieve for businesses. She holds a PhD in Artificial Intelligence and has published numerous papers in leading AI journals.',
     socials: { linkedin: '#', github: '#' },
@@ -140,6 +142,16 @@ export function TeamSection() {
                     {member.socials?.github && (
                       <Link href={member.socials.github} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} GitHub Profile`} onClick={(e) => e.stopPropagation()}>
                         <Github className="h-5 w-5 text-muted-foreground hover:text-primary neon-icon transition-colors" />
+                      </Link>
+                    )}
+                    {member.socials?.instagram && (
+                      <Link href={member.socials.instagram} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} Instagram Profile`} onClick={(e) => e.stopPropagation()}>
+                        <Instagram className="h-5 w-5 text-muted-foreground hover:text-primary neon-icon transition-colors" />
+                      </Link>
+                    )}
+                    {member.socials?.globe && (
+                      <Link href={member.socials.globe} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} Instagram Profile`} onClick={(e) => e.stopPropagation()}>
+                        <Globe className="h-5 w-5 text-muted-foreground hover:text-primary neon-icon transition-colors" />
                       </Link>
                     )}
                   </CardFooter>

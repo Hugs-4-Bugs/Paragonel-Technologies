@@ -22,7 +22,7 @@ export function AboutSection() {
         <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
           <ScrollFadeIn>
             <Image
-              src="https://placehold.co/600x450.png"
+              src="/images/about.png"
               alt="QuantumFusion Solutions Team Collaboration"
               width={600}
               height={450}

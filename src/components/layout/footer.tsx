@@ -32,11 +32,11 @@ export function Footer() {
           <div className="md:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-4">
               <Image
-                src="https://placehold.co/160x40.png?text=QuantumFusion+Solutions"
+                src="/images/QuantumFusion-Logo.png" 
                 alt="QuantumFusion Solutions Logo"
-                width={160}
-                height={40}
-                className="h-10 w-auto"
+                width={220}
+                height={150}
+                className="h-20 w-30 md:h-40 md:w-40, align-center, rounded-3xl"
                 data-ai-hint="company logo abstract"
               />
             </Link>

@@ -38,7 +38,7 @@ export default function CloudInfrastructurePage() {
         <ScrollFadeIn delay="200ms">
            <div className="relative w-full h-72 md:h-96 rounded-xl overflow-hidden shadow-2xl mb-16">
             <Image
-              src="https://placehold.co/1200x500.png"
+              src="/images/cloud-abstract.png"
               alt="Abstract cloud computing network"
               fill
               sizes="(max-width: 768px) 100vw, 50vw"

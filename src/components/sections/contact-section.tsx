@@ -110,7 +110,7 @@ export function ContactSection() {
                   <MapPin className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-foreground">Our Headquarters</h4>
-                    <p>123 Innovation Drive, Tech City, CA 94000, USA</p>
+                    <p>HSR Layout, Bangalore, 560102, India</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
@@ -124,7 +124,7 @@ export function ContactSection() {
                   <Phone className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-foreground">Call Us</h4>
-                    <a href="tel:+14155550100" className="hover:text-primary transition-colors">+1 (415) 555-0100</a>
+                    <a href="tel:+14155550100" className="hover:text-primary transition-colors">+91 7250063206</a>
                   </div>
                 </div>
                  <div className="flex items-start space-x-4 pt-4 border-t mt-4">
