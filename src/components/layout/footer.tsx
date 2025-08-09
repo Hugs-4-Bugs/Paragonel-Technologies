@@ -93,16 +93,16 @@ export function Footer() {
             )}
           </div>
           <div className="flex space-x-4">
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="LinkedIn">
+            <Link href="https://www.linkedin.com/company/quantumfusion-solutions/?viewAsMember=true" className="text-muted-foreground hover:text-primary transition-colors" aria-label="LinkedIn">
               <Linkedin className="h-5 w-5 neon-icon" />
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Twitter">
+            <Link href="https://x.com/kattyPrabhat" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Twitter">
               <Twitter className="h-5 w-5 neon-icon" />
             </Link>
             <Link href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Facebook">
               <Facebook className="h-5 w-5 neon-icon" />
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Instagram">
+            <Link href="https://www.instagram.com/_s_4_sharma/" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Instagram">
               <Instagram className="h-5 w-5 neon-icon" />
             </Link>
           </div>
