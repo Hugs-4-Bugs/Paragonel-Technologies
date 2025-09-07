@@ -35,6 +35,11 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    
+    /* Neumorphic 3D Card Variables for Light Theme */
+    --background-card-neumorphic: 220 13% 95%; /* Slightly darker background than the body for the card itself */
+    --shadow-color-dark: 220 13% 80%;       /* Darker shadow for the extruded effect */
+    --shadow-color-light: 0 0% 100%;         /* White for the highlight */
 
     /* Sidebar variables (kept for shadcn/ui components compatibility, can be adjusted if sidebar is used) */
     --sidebar-background: 0 0% 98%;
@@ -73,6 +78,11 @@ body {
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
+    /* Neumorphic 3D Card Variables for Dark Theme */
+    --background-card-neumorphic: 234 63% 35%; /* Card background slightly lighter than body */
+    --shadow-color-dark: 234 63% 25%;       /* Darker shadow for the extrusion */
+    --shadow-color-light: 234 63% 45%;       /* Lighter highlight */
+    
     /* Dark Sidebar variables */
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
