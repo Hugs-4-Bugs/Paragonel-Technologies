@@ -37,7 +37,7 @@ export async function recommendRelatedContent(
 
 const prompt = ai.definePrompt({
   name: 'recommendRelatedContentPrompt',
-  model: 'gemini-pro',
+  model: 'gemini-1.5-flash-latest',
   input: {schema: RecommendRelatedContentInputSchema},
   output: {schema: RecommendRelatedContentOutputSchema},
   prompt: `You are a content curator for QuantumFusion Solutions, an innovative IT company specializing in AI, Cloud, DevOps, and SaaS.

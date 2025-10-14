@@ -54,7 +54,7 @@ function findJobById(jobId: string): Job | undefined {
 
 const emailFormattingPrompt = ai.definePrompt({
     name: 'formatJobMatchEmailPrompt',
-    model: 'gemini-pro',
+    model: 'gemini-1.5-flash-latest',
     input: { schema: z.object({
         jobTitle: z.string(),
         jobCompany: z.string(),

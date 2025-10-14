@@ -42,7 +42,7 @@ export async function fetchTechNews(
 
 const prompt = ai.definePrompt({
   name: 'fetchTechNewsPrompt',
-  model: 'gemini-pro',
+  model: 'gemini-1.5-flash-latest',
   input: {schema: FetchTechNewsInputSchema},
   output: {schema: FetchTechNewsOutputSchema},
   prompt: `You are a tech news curator for QuantumFusion Solutions, an IT company specializing in AI, Cloud, DevOps, and SaaS.
