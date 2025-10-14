@@ -1,4 +1,5 @@
-// 'use server';
+
+'use server';
 /**
  * @fileOverview Summarizes a job description to quickly understand key requirements and responsibilities.
  *
@@ -6,8 +7,6 @@
  * - SummarizeJobDescriptionInput - The input type for the summarizeJobDescription function.
  * - SummarizeJobDescriptionOutput - The return type for the summarizeJobDescription function.
  */
-
-'use server';
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
@@ -30,6 +29,7 @@ export async function summarizeJobDescription(
 
 const prompt = ai.definePrompt({
   name: 'summarizeJobDescriptionPrompt',
+  model: 'gemini-pro',
   input: {schema: SummarizeJobDescriptionInputSchema},
   output: {schema: SummarizeJobDescriptionOutputSchema},
   prompt: `You are an expert in recruiting. You will be provided with a job description, and you will summarize it, extracting the key requirements and responsibilities. The summary should be concise and easy to understand.

@@ -71,6 +71,7 @@ export async function formatApplicationEmail(
 
 const prompt = ai.definePrompt({
   name: 'formatDetailedApplicationEmailPrompt',
+  model: 'gemini-pro',
   input: {schema: FormatApplicationEmailInputSchema},
   output: {schema: FormatApplicationEmailOutputSchema},
   prompt: `
@@ -169,4 +170,3 @@ const formatApplicationEmailFlow = ai.defineFlow(
     return output;
   }
 );
-

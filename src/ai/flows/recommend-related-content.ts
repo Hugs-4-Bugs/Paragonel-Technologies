@@ -37,6 +37,7 @@ export async function recommendRelatedContent(
 
 const prompt = ai.definePrompt({
   name: 'recommendRelatedContentPrompt',
+  model: 'gemini-pro',
   input: {schema: RecommendRelatedContentInputSchema},
   output: {schema: RecommendRelatedContentOutputSchema},
   prompt: `You are a content curator for QuantumFusion Solutions, an innovative IT company specializing in AI, Cloud, DevOps, and SaaS.
@@ -59,7 +60,6 @@ const recommendRelatedContentFlow = ai.defineFlow(
   },
   async (input) => {
     const {output} = await prompt(input);
-    // If output is null or recommendations array is missing, return a default/fallback.
     if (!output || !output.recommendations) {
         console.warn("AI failed to generate recommendations. Returning empty array.");
         return { recommendations: [] };

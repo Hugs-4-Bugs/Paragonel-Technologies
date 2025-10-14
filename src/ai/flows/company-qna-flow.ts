@@ -27,6 +27,7 @@ export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQna
 
 const prompt = ai.definePrompt({
   name: 'companyQnaPrompt',
+  model: 'gemini-pro',
   input: {schema: CompanyQnaInputSchema},
   output: {schema: CompanyQnaOutputSchema},
   prompt: `You are a helpful and knowledgeable assistant for QuantumFusion Solutions, an innovative IT company focused on AI, Cloud Computing, DevOps, and SaaS Platforms.
@@ -64,4 +65,3 @@ const companyQnaFlowInternal = ai.defineFlow(
     return output;
   }
 );
-
