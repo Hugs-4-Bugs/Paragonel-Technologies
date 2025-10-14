@@ -23,7 +23,7 @@ const NewsItemSchema = z.object({
   title: z.string().describe('The headline of the news item.'),
   summary: z.string().describe('A brief summary of the news item.'),
   source: z.string().optional().describe('The source of the news (e.g., TechCrunch, Reuters).'),
-  link: z.string().optional().describe('A URL to the full news article.'), // Removed .url() here
+  link: z.string().optional().describe('A URL to the full news article.'),
   publishedDate: z.string().optional().describe('An estimated publication date (e.g., "2 days ago", "2024-08-15").'),
 });
 
@@ -60,6 +60,9 @@ Example:
 - Title: "QuantumFusion Solutions Announces Breakthrough in AI-Powered Predictive Analytics for Retail"
 - Summary: "The new platform helps retailers optimize inventory and reduce waste by up to 30%."
 - Source: "TechNova Insights"
+- PublishedDate: "2 days ago"
+
+It is critical that you ALWAYS generate the requested number of news items. Do not return an empty list.
 `,
 });
 
@@ -72,7 +75,6 @@ const fetchTechNewsFlow = ai.defineFlow(
   async (input) => {
     try {
       const {output} = await prompt(input);
-      // Ensure the output is not null and conforms to the schema, otherwise return empty array.
       if (!output || !output.newsItems) {
         console.warn("AI failed to generate tech news. Returning empty array.");
         return { newsItems: [] };
@@ -80,7 +82,6 @@ const fetchTechNewsFlow = ai.defineFlow(
       return output;
     } catch (error) {
         console.error("Error in fetchTechNewsFlow:", error);
-        // Return a safe, empty response on any error.
         return { newsItems: [] };
     }
   }
