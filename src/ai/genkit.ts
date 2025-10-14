@@ -5,8 +5,9 @@ import {googleAI} from '@genkit-ai/google-genai';
 export const ai = genkit({
   plugins: [
     googleAI({
-      // The new plugin handles model resolution more reliably.
-      // We'll let Genkit use the default model configured by the plugin.
+      // Explicitly set a default model to prevent errors.
+      // 'gemini-pro' is a stable and reliable choice.
+      defaultModel: 'gemini-pro',
     }),
   ],
 });
