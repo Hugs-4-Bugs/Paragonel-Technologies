@@ -53,12 +53,18 @@ const recommendRelatedContentFlow = ai.defineFlow(
     outputSchema: RecommendRelatedContentOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    // Ensure the output is not null and conforms to the schema, otherwise return empty array.
-    if (!output || !output.recommendations) {
-      console.warn("AI failed to generate recommendations. Returning empty array.");
+    try {
+      const {output} = await prompt(input);
+      // Ensure the output is not null and conforms to the schema, otherwise return empty array.
+      if (!output || !output.recommendations) {
+        console.warn("AI failed to generate recommendations. Returning empty array.");
+        return { recommendations: [] };
+      }
+      return output;
+    } catch (error) {
+      console.error("Error in recommendRelatedContentFlow:", error);
+      // Return a safe, empty response on any error.
       return { recommendations: [] };
     }
-    return output;
   }
 );
