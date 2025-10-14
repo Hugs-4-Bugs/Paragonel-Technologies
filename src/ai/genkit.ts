@@ -1,13 +1,12 @@
 
-import {genkit, type GenkitOptions} from 'genkit';
-import {googleAI, type GoogleAIOptions} from '@genkit-ai/googleai';
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 
 export const ai = genkit({
   plugins: [
     googleAI({
-      // Using a known, stable model identifier to prevent 404 errors.
-      // This is the definitive fix for the content generation issue.
-      model: 'gemini-pro',
+      // The new plugin handles model resolution more reliably.
+      // We'll let Genkit use the default model configured by the plugin.
     }),
   ],
 });
