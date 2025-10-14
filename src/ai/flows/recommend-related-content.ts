@@ -1,3 +1,4 @@
+
 // RecommendRelatedContent story implementation.
 'use server';
 /**
@@ -39,9 +40,13 @@ const prompt = ai.definePrompt({
   name: 'recommendRelatedContentPrompt',
   input: {schema: RecommendRelatedContentInputSchema},
   output: {schema: RecommendRelatedContentOutputSchema},
-  prompt: `You are a content curator for a job platform. Based on the job titles the user has viewed, recommend blog posts or case studies that might be of interest to them.
+  prompt: `You are a content curator for QuantumFusion Solutions, an innovative IT company specializing in AI, Cloud, DevOps, and SaaS.
+Based on the job titles a user has shown interest in, your task is to recommend 3-4 relevant and engaging blog posts, articles, or case studies that would appeal to them.
+The recommendations should be related to our company's work and expertise.
 
-Job Titles: {{jobTitles}}
+The user is interested in the following roles: {{#each jobTitles}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}.
+
+Generate a list of compelling, one-sentence recommendations. For example, if the user viewed "AI Specialist", you could suggest: "Read our case study on how we built a predictive analytics engine for a top e-commerce client."
 
 Recommendations:`,
 });

@@ -44,16 +44,22 @@ const prompt = ai.definePrompt({
   name: 'fetchTechNewsPrompt',
   input: {schema: FetchTechNewsInputSchema},
   output: {schema: FetchTechNewsOutputSchema},
-  prompt: `You are a tech news curator. Generate {{count}} recent and plausible news headlines and short summaries related to the following technology domains: {{#each domains}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}.
+  prompt: `You are a tech news curator for QuantumFusion Solutions, an IT company specializing in AI, Cloud, DevOps, and SaaS.
+Your task is to generate {{count}} recent and plausible news headlines and short summaries related to our core domains: {{#each domains}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}.
 
-For each news item, provide:
+The news should be highly relevant to our business and clients. Focus on breakthroughs, significant company partnerships (fictional or real), or major industry trends that impact our services.
+
+For each news item, you MUST provide:
 1.  A compelling title.
 2.  A concise summary (1-2 sentences).
-3.  A fictional but plausible source name (e.g., "TechNova Insights", "Future Systems Journal").
+3.  A fictional but plausible source name (e.g., "QuantumLeap Insights", "Future Systems Journal", "DevOps Weekly").
 4.  A placeholder URL (e.g., "https://example.com/news/item-{{@index}}").
 5.  An estimated recent publication date (e.g., "Yesterday", "August 25, 2024").
 
-Ensure the news sounds current and relevant to professionals in the tech industry. Focus on breakthroughs, significant updates, or major trends.
+Example:
+- Title: "QuantumFusion Solutions Announces Breakthrough in AI-Powered Predictive Analytics for Retail"
+- Summary: "The new platform helps retailers optimize inventory and reduce waste by up to 30%."
+- Source: "TechNova Insights"
 `,
 });
 
