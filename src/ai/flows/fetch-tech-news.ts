@@ -67,6 +67,7 @@ const fetchTechNewsFlow = ai.defineFlow(
     const {output} = await prompt(input);
     // Ensure the output is not null and conforms to the schema, otherwise return empty array.
     if (!output || !output.newsItems) {
+      console.warn("AI failed to generate tech news. Returning empty array.");
       return { newsItems: [] };
     }
     return output;
