@@ -23,11 +23,23 @@ if (typeof window !== 'undefined') {
       "To re-enable, create a new Firebase project, add the web app config to your .env file, and uncomment the code in src/lib/firebase.ts and src/app/profile/page.tsx."
     );
   } else if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
+    // This block will now only run if the config keys exist.
+    // Uncomment this block once you have a new Firebase project and keys.
+    /*
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+    } catch (e) {
+      console.error("Error initializing Firebase:", e);
+    }
+    */
   } else {
+    // This block will also only run if config keys exist.
+    // Uncomment this block once you have a new Firebase project and keys.
+    /*
     app = getApp();
     db = getFirestore(app);
+    */
   }
 }
 
