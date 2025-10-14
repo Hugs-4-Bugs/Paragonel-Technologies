@@ -11,38 +11,30 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp | undefined;
-let db: Firestore | undefined;
+let app: FirebaseApp;
+let db: Firestore;
 
 // Client-side check for missing configuration
 if (typeof window !== 'undefined') {
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
     console.warn(
       "Firebase configuration is missing or incomplete. " +
-      "The original Firebase project was deleted. Profile saving/loading is disabled. " +
-      "To re-enable, create a new Firebase project, add the web app config to your .env file, and uncomment the code in src/lib/firebase.ts and src/app/profile/page.tsx."
+      "Please create a Firebase project and add the configuration to your .env file."
     );
-  } else if (!getApps().length) {
-    // This block will now only run if the config keys exist.
-    // Uncomment this block once you have a new Firebase project and keys.
-    /*
-    try {
-      app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-    } catch (e) {
-      console.error("Error initializing Firebase:", e);
-    }
-    */
   } else {
-    // This block will also only run if config keys exist.
-    // Uncomment this block once you have a new Firebase project and keys.
-    /*
-    app = getApp();
-    db = getFirestore(app);
-    */
+    if (!getApps().length) {
+      try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+      } catch (e) {
+        console.error("Error initializing Firebase:", e);
+      }
+    } else {
+      app = getApp();
+      db = getFirestore(app);
+    }
   }
 }
 
-// Export undefined instances since the project is deleted.
-// This will prevent crashes, but features depending on them will not work.
+// @ts-ignore
 export { app, db };
