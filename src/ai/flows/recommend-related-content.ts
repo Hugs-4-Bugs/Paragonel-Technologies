@@ -1,5 +1,4 @@
 
-// RecommendRelatedContent story implementation.
 'use server';
 /**
  * @fileOverview Recommends blog posts or case studies related to jobs a user has viewed.
@@ -15,7 +14,7 @@ import {z} from 'genkit';
 const RecommendRelatedContentInputSchema = z.object({
   jobTitles: z
     .array(z.string())
-    .describe('An array of job titles the user has viewed.'),
+    .describe('An array of job titles the user has shown interest in.'),
 });
 export type RecommendRelatedContentInput = z.infer<
   typeof RecommendRelatedContentInputSchema
@@ -41,14 +40,15 @@ const prompt = ai.definePrompt({
   input: {schema: RecommendRelatedContentInputSchema},
   output: {schema: RecommendRelatedContentOutputSchema},
   prompt: `You are a content curator for QuantumFusion Solutions, an innovative IT company specializing in AI, Cloud, DevOps, and SaaS.
-Based on the job titles a user has shown interest in, your task is to recommend 3-4 relevant and engaging blog posts, articles, or case studies that would appeal to them.
+Based on the job titles a user has shown interest in, your task is to generate 3-4 relevant and engaging recommendations for blog posts, articles, or case studies that would appeal to them.
 The recommendations should be related to our company's work and expertise.
 
 The user is interested in the following roles: {{#each jobTitles}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}.
 
 Generate a list of compelling, one-sentence recommendations. For example, if the user viewed "AI Specialist", you could suggest: "Read our case study on how we built a predictive analytics engine for a top e-commerce client."
 
-Recommendations:`,
+It is critical that you ALWAYS generate 3-4 recommendations. Do not return an empty list. Create plausible and interesting titles, even if they are fictional.
+`,
 });
 
 const recommendRelatedContentFlow = ai.defineFlow(
@@ -60,7 +60,6 @@ const recommendRelatedContentFlow = ai.defineFlow(
   async input => {
     try {
       const {output} = await prompt(input);
-      // Ensure the output is not null and conforms to the schema, otherwise return empty array.
       if (!output || !output.recommendations) {
         console.warn("AI failed to generate recommendations. Returning empty array.");
         return { recommendations: [] };
@@ -68,7 +67,6 @@ const recommendRelatedContentFlow = ai.defineFlow(
       return output;
     } catch (error) {
       console.error("Error in recommendRelatedContentFlow:", error);
-      // Return a safe, empty response on any error.
       return { recommendations: [] };
     }
   }
