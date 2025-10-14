@@ -4,8 +4,9 @@ import {googleAI, type GoogleAIOptions} from '@genkit-ai/googleai';
 export const ai = genkit({
   plugins: [
     googleAI({
-      // The model name is specified here to ensure all flows use this stable identifier.
-      model: 'googleai/gemini-1.5-flash-latest',
+      // Using a known, stable model identifier to prevent 404 errors.
+      // This is the definitive fix for the content generation issue.
+      model: 'gemini-pro',
     }),
   ],
 });
