@@ -73,16 +73,11 @@ const fetchTechNewsFlow = ai.defineFlow(
     outputSchema: FetchTechNewsOutputSchema,
   },
   async (input) => {
-    try {
-      const {output} = await prompt(input);
-      if (!output || !output.newsItems) {
+    const {output} = await prompt(input);
+    if (!output || !output.newsItems) {
         console.warn("AI failed to generate tech news. Returning empty array.");
         return { newsItems: [] };
-      }
-      return output;
-    } catch (error) {
-        console.error("Error in fetchTechNewsFlow:", error);
-        return { newsItems: [] };
     }
+    return output;
   }
 );
