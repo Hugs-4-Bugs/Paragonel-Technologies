@@ -42,6 +42,7 @@ export async function fetchTechNews(
 
 const prompt = ai.definePrompt({
   name: 'fetchTechNewsPrompt',
+  model: 'gemini-pro',
   input: {schema: FetchTechNewsInputSchema},
   output: {schema: FetchTechNewsOutputSchema},
   prompt: `You are a tech news curator for QuantumFusion Solutions, an IT company specializing in AI, Cloud, DevOps, and SaaS.
@@ -55,12 +56,6 @@ For each news item, you MUST provide:
 3.  A fictional but plausible source name (e.g., "QuantumLeap Insights", "Future Systems Journal", "DevOps Weekly").
 4.  A placeholder URL (e.g., "https://example.com/news/item-{{@index}}").
 5.  An estimated recent publication date (e.g., "Yesterday", "August 25, 2024").
-
-Example:
-- Title: "QuantumFusion Solutions Announces Breakthrough in AI-Powered Predictive Analytics for Retail"
-- Summary: "The new platform helps retailers optimize inventory and reduce waste by up to 30%."
-- Source: "TechNova Insights"
-- PublishedDate: "2 days ago"
 
 It is critical that you ALWAYS generate the requested number of news items. Do not return an empty list.
 `,
