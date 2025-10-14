@@ -71,7 +71,7 @@ export async function formatApplicationEmail(
 
 const prompt = ai.definePrompt({
   name: 'formatDetailedApplicationEmailPrompt',
-  model: 'gemini-pro',
+  model: 'gemini-1.5-flash-latest',
   input: {schema: FormatApplicationEmailInputSchema},
   output: {schema: FormatApplicationEmailOutputSchema},
   prompt: `
@@ -153,19 +153,7 @@ const formatApplicationEmailFlow = ai.defineFlow(
   async (input) => {
     const {output} = await prompt(input);
     if (!output || !output.adminEmailBody || !output.adminEmailSubject || !output.applicantConfirmationBody || !output.applicantConfirmationSubject) {
-      console.error("AI failed to generate complete email content for application:", input.fullName, "for job:", input.jobTitle);
-      // Fallback for critical failure
-      const fallbackAdminSubject = `Application Received (AI Format Error): ${input.jobTitle} - ${input.fullName}`;
-      const fallbackAdminBody = `Error: AI failed to format application for ${input.fullName} (Email: ${input.email}) for position ${input.jobTitle}. Review raw data or contact support.`;
-      const fallbackApplicantSubject = `Application Confirmation Error - ${input.jobTitle}`;
-      const fallbackApplicantBody = `Dear ${input.fullName},\n\nWe encountered an issue processing the specific details for your application for the ${input.jobTitle} position. Please rest assured your intent to apply has been noted. Our team will follow up if needed.\n\nBest regards,\nQuantumFusion Solutions`;
-      
-      return { 
-        adminEmailSubject: output?.adminEmailSubject || fallbackAdminSubject,
-        adminEmailBody: output?.adminEmailBody || fallbackAdminBody,
-        applicantConfirmationSubject: output?.applicantConfirmationSubject || fallbackApplicantSubject,
-        applicantConfirmationBody: output?.applicantConfirmationBody || fallbackApplicantBody,
-      };
+      throw new Error("AI failed to generate complete email content.");
     }
     return output;
   }
