@@ -68,7 +68,7 @@ export async function formatApplicationEmail(
 
 const prompt = ai.definePrompt({
   name: 'formatDetailedApplicationEmailPrompt',
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-pro',
   input: {schema: FormatApplicationEmailInputSchema},
   output: {schema: FormatApplicationEmailOutputSchema},
   prompt: `
@@ -97,18 +97,9 @@ const formatApplicationEmailFlow = ai.defineFlow(
     outputSchema: FormatApplicationEmailOutputSchema,
   },
   async (input) => {
-    try {
-      const {output} = await prompt(input);
-      if (!output) throw new Error("AI output failure");
-      return output;
-    } catch (error) {
-      console.error("formatApplicationEmail AI Error:", error);
-      return {
-        adminEmailSubject: `New Job Application: ${input.jobTitle} - ${input.fullName}`,
-        adminEmailBody: `New application received for ${input.jobTitle}. Name: ${input.fullName}, Email: ${input.email}. Please review in the dashboard.`,
-        applicantConfirmationSubject: `Application Received: ${input.jobTitle} at QuantumFusion Solutions`,
-        applicantConfirmationBody: `Dear ${input.fullName}, thank you for your application. Our team will review your profile shortly.`,
-      };
+    const {output} = await prompt(input);
+    if (!output || !output.adminEmailBody || !output.adminEmailSubject || !output.applicantConfirmationBody || !output.applicantConfirmationSubject) {
+      throw new Error("AI failed to generate complete email content.");
     }
   }
 );

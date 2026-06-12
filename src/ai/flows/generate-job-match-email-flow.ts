@@ -29,7 +29,10 @@ const GenerateJobMatchEmailOutputSchema = z.object({
 export type GenerateJobMatchEmailOutput = z.infer<typeof GenerateJobMatchEmailOutputSchema>;
 
 async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
-  if (!db) return null;
+  if (!db) {
+    console.error("Firebase DB is not initialized. Cannot fetch user profile.");
+    return null;
+  }
   try {
     const userDocRef = doc(db, 'users', userId);
     const docSnap = await getDoc(userDocRef);
@@ -47,7 +50,7 @@ function findJobById(jobId: string): Job | undefined {
 
 const emailFormattingPrompt = ai.definePrompt({
     name: 'formatJobMatchEmailPrompt',
-    model: 'googleai/gemini-2.0-flash',
+    model: 'googleai/gemini-pro',
     input: { schema: z.object({
         jobTitle: z.string(),
         jobCompany: z.string(),
