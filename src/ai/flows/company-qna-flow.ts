@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A QuantumFusion Solutions Q&A AI agent.
@@ -27,7 +26,7 @@ export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQna
 
 const prompt = ai.definePrompt({
   name: 'companyQnaPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-2.0-flash',
   input: {schema: CompanyQnaInputSchema},
   output: {schema: CompanyQnaOutputSchema},
   prompt: `You are a helpful and knowledgeable assistant for QuantumFusion Solutions, an innovative IT company focused on AI, Cloud Computing, DevOps, and SaaS Platforms.
