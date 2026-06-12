@@ -1,10 +1,6 @@
 'use server';
 /**
  * @fileOverview Recommends blog posts or case studies related to jobs a user has viewed.
- *
- * - recommendRelatedContent - A function that recommends related content.
- * - RecommendRelatedContentInput - The input type for the recommendRelatedContent function.
- * - RecommendRelatedContentOutput - The return type for the recommendRelatedContent function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -65,7 +61,6 @@ const recommendRelatedContentFlow = ai.defineFlow(
       return output;
     } catch (error) {
       console.error("recommendRelatedContent AI Error:", error);
-      // Fallback data
       return {
         recommendations: [
           "Discover how we integrated machine learning to revolutionize talent acquisition workflows.",

@@ -1,10 +1,6 @@
 'use server';
 /**
  * @fileOverview Fetches or generates recent tech news related to specified domains.
- *
- * - fetchTechNews - A function that provides recent tech news summaries.
- * - FetchTechNewsInput - The input type for the fetchTechNews function.
- * - FetchTechNewsOutput - The return type for the fetchTechNews function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -23,7 +19,7 @@ const NewsItemSchema = z.object({
   summary: z.string().describe('A brief summary of the news item.'),
   source: z.string().optional().describe('The source of the news (e.g., TechCrunch, Reuters).'),
   link: z.string().optional().describe('A URL to the full news article.'),
-  publishedDate: z.string().optional().describe('An estimated publication date (e.g., "2 days ago", "2024-08-15").'),
+  publishedDate: z.string().optional().describe('An estimated publication date (e.g., "Yesterday", "2 days ago").'),
 });
 
 const FetchTechNewsOutputSchema = z.object({
@@ -75,7 +71,6 @@ const fetchTechNewsFlow = ai.defineFlow(
       return output;
     } catch (error) {
       console.error("fetchTechNews AI Error:", error);
-      // Fallback data to ensure UI always works
       return {
         newsItems: [
           {
