@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Recommends blog posts or case studies related to jobs a user has viewed.
@@ -32,7 +33,7 @@ export async function recommendRelatedContent(
 
 const prompt = ai.definePrompt({
   name: 'recommendRelatedContentPrompt',
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: RecommendRelatedContentInputSchema},
   output: {schema: RecommendRelatedContentOutputSchema},
   prompt: `You are a content curator for QuantumFusion Solutions, an innovative IT company specializing in AI, Cloud, DevOps, and SaaS.
