@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Formats a detailed job application into an email for admin and a confirmation email for the applicant.
@@ -10,15 +9,13 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-// Assuming ApplicationFormValues is correctly imported if needed for internal logic,
-// but the flow input is defined by FormatApplicationEmailInputSchema.
 
 const FormatApplicationEmailInputSchema = z.object({
   fullName: z.string(),
   email: z.string().email(),
   phone: z.string(),
   resumeFileName: z.string().describe("The original file name of the resume."),
-  resumeDataUri: z.string().describe("The resume file content as a Base64 data URI (for reference, not for direct email body inclusion)."),
+  resumeDataUri: z.string().describe("The resume file content as a Base64 data URI."),
   linkedinProfile: z.string().url().optional().or(z.literal('')),
   portfolioWebsite: z.string().url().optional().or(z.literal('')),
   codingProfileUrl: z.string().url().optional().or(z.literal('')),
@@ -79,68 +76,17 @@ You are an expert HR assistant at QuantumFusion Solutions. Your task is to forma
 1. A detailed email for the hiring manager (erprabhat72@gmail.com).
 2. A confirmation email for the applicant.
 
-**Applicant Details (Use this for both emails as needed):**
-- Job Applied For: {{{jobTitle}}} (ID: {{{jobId}}})
+**Applicant Details:**
+- Job: {{{jobTitle}}} (ID: {{{jobId}}})
 - Name: {{{fullName}}}
 - Email: {{{email}}}
 - Phone: {{{phone}}}
-{{#if linkedinProfile}}- LinkedIn: {{{linkedinProfile}}}{{/if}}
-{{#if portfolioWebsite}}- Portfolio: {{{portfolioWebsite}}}{{/if}}
-{{#if codingProfileUrl}}- Coding Profile: {{{codingProfileUrl}}}{{/if}}
-- Resume Attached: {{{resumeFileName}}} (Do NOT include the resumeDataUri in email bodies)
+- Education: {{{highestQualification}}} ({{{passingYear}}})
+- Primary Skills: {{{primarySkills}}}
 
-- Education:
-  - Qualification: {{{highestQualification}}}
-  - Specialization: {{{specialization}}}
-  - University: {{{university}}}
-  - Passing Year: {{{passingYear}}}
-  - Marks/CGPA: {{{marks}}}
-
-- Skills:
-  - Primary: {{{primarySkills}}}
-  {{#if secondarySkills}}- Secondary: {{{secondarySkills}}}{{/if}}
-
-- Work Experience:
-  {{#if isFresher}}
-  - Level: Fresher
-  {{else}}
-  - Level: Experienced
-    {{#if companyName}}- Company: {{{companyName}}}{{/if}}
-    {{#if jobTitleExperience}}- Role: {{{jobTitleExperience}}}{{/if}}
-    {{#if fromDate}}- Period: {{{fromDate}}} to {{#if isCurrentlyWorking}}Present{{else}}{{{toDate}}}{{/if}}{{/if}}
-    {{#if jobDescription}}- Responsibilities: {{{jobDescription}}}{{/if}}
-  {{/if}}
-
-- Additional Information:
-  {{#if coverLetter}}- Cover Letter Snippet: {{{coverLetter}}}{{/if}}
-  - Preferred Location: {{{preferredJobLocation}}}
-  {{#if currentCTC}}- Current CTC: {{{currentCTC}}}{{/if}}
-  - Expected Salary: {{{expectedSalary}}}
-  - Notice Period: {{{noticePeriod}}}
-
-- Declarations:
-  - Accepted Terms: {{#if acceptTerms}}Yes{{/if}}
-  - Notify for Similar Jobs: {{#if notifySimilarJobs}}Yes{{else}}No{{/if}}
-
-**Instructions for Email to Hiring Manager (erprabhat72@gmail.com):**
-1.  **Subject Line**: "Job Application: {{{jobTitle}}} - {{{fullName}}}"
-2.  **Body**:
-    - Start with "Dear Hiring Manager,".
-    - Present all the applicant details listed above in a clear, well-structured, professional format. Use headings for sections.
-    - Mention that the resume ("{{{resumeFileName}}}") is attached (or would be if this were a real email system).
-    - End with "Sincerely,\nThe QuantumFusion Solutions Application System".
-
-**Instructions for Confirmation Email to Applicant ({{{email}}}):**
-1.  **Subject Line**: "Your Application for {{{jobTitle}}} at QuantumFusion Solutions Received"
-2.  **Body**:
-    - Start with "Dear {{{fullName}}},".
-    - Thank them for applying for the "{{{jobTitle}}}" position.
-    - Confirm that their application has been received.
-    - Briefly mention, "Our hiring team will review your application and contact you if your profile matches our requirements."
-    - Optionally, mention, "In the meantime, you can explore more about us at [Our Website Link - e.g., https://yourcompany.com] or follow us on [LinkedIn Link - e.g., https://linkedin.com/company/yourcompany]." (Use placeholders if actual links aren't available in context).
-    - End with "Best regards,\nThe QuantumFusion Solutions Hiring Team".
-
-Provide the output strictly in the specified JSON format.
+**Instructions:**
+1.  **Hiring Manager Email**: Detailed, professional, listing all skills and experience.
+2.  **Applicant Confirmation**: Friendly, confirming receipt, and mentioning next steps.
 `,
 });
 
@@ -155,6 +101,5 @@ const formatApplicationEmailFlow = ai.defineFlow(
     if (!output || !output.adminEmailBody || !output.adminEmailSubject || !output.applicantConfirmationBody || !output.applicantConfirmationSubject) {
       throw new Error("AI failed to generate complete email content.");
     }
-    return output;
   }
 );

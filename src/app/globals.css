@@ -10,38 +10,31 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 98%; /* Off-white */
-    --foreground: 234 63% 15%; /* Dark Navy for text */
-    --card: 0 0% 100%; /* White */
+    --background: 0 0% 98%;
+    --foreground: 234 63% 15%;
+    --card: 0 0% 100%;
     --card-foreground: 234 63% 15%;
     --popover: 0 0% 100%;
     --popover-foreground: 234 63% 15%;
-    --primary: 207 68% 53%; /* Sky Blue */
-    --primary-foreground: 0 0% 100%; /* White text on primary */
-    --secondary: 210 40% 94%; /* Very light blue/gray */
+    --primary: 207 68% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 94%;
     --secondary-foreground: 234 63% 20%;
     --muted: 210 40% 90%;
     --muted-foreground: 234 40% 45%;
-    --accent: 270 50% 40%; /* Indigo */
+    --accent: 270 50% 40%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%; /* Standard bright red for light mode */
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 210 20% 85%; /* Lighter border */
+    --border: 210 20% 85%;
     --input: 210 20% 85%;
-    --ring: 207 68% 53%; /* Sky Blue for focus */
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --ring: 207 68% 53%;
     --radius: 0.5rem;
     
-    /* Neumorphic 3D Card Variables for Light Theme */
-    --background-card-neumorphic: 220 13% 95%; /* Slightly darker background than the body for the card itself */
-    --shadow-color-dark: 220 13% 80%;       /* Darker shadow for the extruded effect */
-    --shadow-color-light: 0 0% 100%;         /* White for the highlight */
+    --background-card-neumorphic: 220 13% 95%;
+    --shadow-color-dark: 220 13% 80%;
+    --shadow-color-light: 0 0% 100%;
 
-    /* Sidebar variables (kept for shadcn/ui components compatibility, can be adjusted if sidebar is used) */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -53,37 +46,28 @@ body {
   }
 
   .dark {
-    --background: 234 63% 30%; /* Dark Navy */
-    --foreground: 210 40% 96%; /* Lighter for better contrast */
-    --card: 234 55% 38%; /* Slightly Lighter Navy */
+    --background: 234 63% 30%;
+    --foreground: 210 40% 96%;
+    --card: 234 55% 38%;
     --card-foreground: 210 40% 96%;
     --popover: 234 50% 35%;
     --popover-foreground: 210 40% 96%;
-    --primary: 207 68% 53%; /* Sky Blue */
-    --primary-foreground: 210 40% 98%; /* Almost white */
-    --secondary: 234 50% 42%; /* Lighter Navy for secondary elements */
+    --primary: 207 68% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 234 50% 42%;
     --secondary-foreground: 210 40% 96%;
     --muted: 234 45% 48%;
     --muted-foreground: 210 30% 75%;
-    --accent: 270 50% 48%; /* Indigo, adjusted for dark theme */
+    --accent: 270 50% 48%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 70% 60%; /* Brighter red for dark mode */
-    --destructive-foreground: 0 0% 98%;
     --border: 234 40% 45%;
     --input: 234 40% 45%;
-    --ring: 207 68% 53%; /* Sky Blue for focus */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --ring: 207 68% 53%;
 
-    /* Neumorphic 3D Card Variables for Dark Theme */
-    --background-card-neumorphic: 234 63% 35%; /* Card background slightly lighter than body */
-    --shadow-color-dark: 234 63% 25%;       /* Darker shadow for the extrusion */
-    --shadow-color-light: 234 63% 45%;       /* Lighter highlight */
+    --background-card-neumorphic: 234 63% 35%;
+    --shadow-color-dark: 234 63% 25%;
+    --shadow-color-light: 234 63% 45%;
     
-    /* Dark Sidebar variables */
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -101,7 +85,6 @@ body {
   }
 }
 
-/* Animated Gradient Background */
 .animated-gradient-background {
   background: linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), hsl(207, 68%, 45%), hsl(270, 50%, 35%));
   background-size: 400% 400%;
@@ -109,18 +92,11 @@ body {
 }
 
 @keyframes gradientAnimation {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Scroll Fade-in Animation */
 .scroll-fade-in {
   opacity: 0;
   transform: translateY(30px);
@@ -133,7 +109,6 @@ body {
   transform: translateY(0);
 }
 
-/* Neon Icon Effect */
 .neon-icon {
   filter: drop-shadow(0 0 2px hsl(var(--primary) / 0.7))
           drop-shadow(0 0 5px hsl(var(--primary) / 0.5))
@@ -147,21 +122,115 @@ body {
           drop-shadow(0 0 12px hsl(var(--primary) / 0.5));
 }
 
-/* Section padding */
 .section-padding {
   @apply py-16 md:py-24;
 }
 
-/* Consistent heading styles */
-h1, h2, h3 {
-  @apply font-bold tracking-tight;
+h1, h2, h3 { @apply font-bold tracking-tight; }
+h1 { @apply text-4xl md:text-5xl lg:text-6xl; }
+h2 { @apply text-3xl md:text-4xl; }
+h3 { @apply text-2xl md:text-3xl; }
+
+@keyframes infinite-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
-h1 {
-  @apply text-4xl md:text-5xl lg:text-6xl;
+
+@keyframes card-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
 }
-h2 {
-  @apply text-3xl md:text-4xl;
+
+@keyframes liquid-glow-move {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(15%, 15%) scale(1.2); }
+  66% { transform: translate(-10%, 10%) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
 }
-h3 {
-  @apply text-2xl md:text-3xl;
+
+.glass-card-3d-wrapper {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.glass-card-premium {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms ease;
+  animation: card-float 5s ease-in-out infinite;
+}
+
+.glass-card-premium:hover {
+  transform: rotateY(8deg) rotateX(6deg) translateY(-12px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.liquid-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.liquid-glow-blue { background: radial-gradient(circle, #3b82f6 0%, transparent 70%); }
+.liquid-glow-cyan { background: radial-gradient(circle, #06b6d4 0%, transparent 70%); }
+.liquid-glow-purple { background: radial-gradient(circle, #a855f7 0%, transparent 70%); }
+
+.avatar-circle-glass {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.metric-pill-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--primary));
+  box-shadow: 0 0 10px hsla(var(--primary), 0.3);
+  display: inline-flex;
+  align-items: center;
+}
+
+.star-rating-gold {
+  color: #f59e0b;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4));
+}
+
+.animate-marquee-slow {
+  display: flex;
+  width: max-content;
+  animation: infinite-scroll 80s linear infinite;
+}
+
+.animate-marquee-slow:hover {
+  animation-play-state: paused;
+}
+
+@media (max-width: 768px) {
+  .animate-marquee-slow {
+    animation-duration: 50s;
+  }
 }

@@ -91,10 +91,6 @@
 'use server';
 /**
  * @fileOverview Fetches or generates recent tech news related to specified domains.
- *
- * - fetchTechNews - A function that provides recent tech news summaries.
- * - FetchTechNewsInput - The input type for the fetchTechNews function.
- * - FetchTechNewsOutput - The return type for the fetchTechNews function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -148,7 +144,7 @@ For each news item, you MUST provide:
 2.  A concise summary (1-2 sentences).
 3.  A fictional but plausible source name (e.g., "QuantumLeap Insights", "Future Systems Journal", "DevOps Weekly").
 4.  A placeholder URL (e.g., "https://example.com/news/item-{{@index}}").
-5.  An estimated recent publication date (e.g., "Yesterday", "August 25, 2024").
+5.  An estimated recent publication date (e.g., "Yesterday", "2 days ago").
 
 It is critical that you ALWAYS generate the requested number of news items. Do not return an empty list.`,
 });

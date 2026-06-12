@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A QuantumFusion Solutions Q&A AI agent.
@@ -12,12 +11,12 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const CompanyQnaInputSchema = z.object({
-  question: z.string().describe('The user_s question about QuantumFusion Solutions.'),
+  question: z.string().describe('The user question about QuantumFusion Solutions.'),
 });
 export type CompanyQnaInput = z.infer<typeof CompanyQnaInputSchema>;
 
 const CompanyQnaOutputSchema = z.object({
-  answer: z.string().describe('The AI-generated answer to the user_s question.'),
+  answer: z.string().describe('The AI-generated answer to the user question.'),
 });
 export type CompanyQnaOutput = z.infer<typeof CompanyQnaOutputSchema>;
 
@@ -58,10 +57,15 @@ const companyQnaFlowInternal = ai.defineFlow(
     outputSchema: CompanyQnaOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (!output || !output.answer) {
-      return { answer: "I'm sorry, I couldn't find an answer to that question right now." };
+    try {
+      const {output} = await prompt(input);
+      if (!output || !output.answer) {
+        return { answer: "I'm sorry, I'm having a bit of trouble processing that. QuantumFusion Solutions offers top-tier AI, Cloud, and SaaS solutions. You can check our [Services](/services) or [Careers](/careers) pages for more info!" };
+      }
+      return output;
+    } catch (error) {
+      console.error("AI Flow Error:", error);
+      return { answer: "I'm currently updating my knowledge base. QuantumFusion Solutions specializes in AI, Cloud, and DevOps. Please visit our [Contact Page](/contact) if you have specific inquiries!" };
     }
-    return output;
   }
 );
