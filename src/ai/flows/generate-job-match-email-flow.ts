@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow to check for a job match based on user skills and generate a notification email.
@@ -11,8 +10,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase'; // Assuming db is exported from your firebase setup
-import { dummyJobs, type Job } from '@/lib/data'; // Using dummyJobs for job data
+import { db } from '@/lib/firebase';
+import { dummyJobs, type Job } from '@/lib/data';
 import type { UserProfile } from '@/types';
 
 const GenerateJobMatchEmailInputSchema = z.object({
@@ -54,14 +53,14 @@ function findJobById(jobId: string): Job | undefined {
 
 const emailFormattingPrompt = ai.definePrompt({
     name: 'formatJobMatchEmailPrompt',
-    model: 'googleai/gemini-pro',
+    model: 'googleai/gemini-2.0-flash',
     input: { schema: z.object({
         jobTitle: z.string(),
         jobCompany: z.string(),
         jobLocation: z.string(),
-        jobUrl: z.string(), // Link to the careers page or specific job
+        jobUrl: z.string(),
         userFullName: z.string(),
-        matchedSkills: z.array(z.string()).optional(), // Optionally list some matched skills
+        matchedSkills: z.array(z.string()).optional(),
     })},
     output: { schema: z.object({
         subject: z.string(),
@@ -123,7 +122,7 @@ export async function generateJobMatchEmail(
 
   if (jobRequiredSkills.length === 0) {
     console.warn(`Job ${input.jobId} has no required skills defined.`);
-    return { shouldNotify: false }; // Cannot match if job has no skills listed
+    return { shouldNotify: false };
   }
 
   const matchedSkillCount = jobRequiredSkills.filter(reqSkill =>
@@ -133,10 +132,8 @@ export async function generateJobMatchEmail(
   const matchPercentage = (matchedSkillCount / jobRequiredSkills.length) * 100;
 
   if (matchPercentage >= 70) {
-    // For the link, we direct to the careers page. A more sophisticated link could go to the specific job.
-    // The website URL should ideally come from an environment variable or config.
-    const siteBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-quantumfusion-site.com'; // Replace with actual site URL
-    const jobUrl = `${siteBaseUrl}/careers`; // User would need to find the job by ID/title
+    const siteBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://your-quantumfusion-site.com';
+    const jobUrl = `${siteBaseUrl}/careers`;
 
     try {
         const {output: emailContent} = await emailFormattingPrompt({
@@ -145,7 +142,7 @@ export async function generateJobMatchEmail(
             jobLocation: job.location,
             jobUrl: jobUrl,
             userFullName: userProfile.fullName,
-            matchedSkills: jobRequiredSkills.filter(reqSkill => userSkills.includes(reqSkill)).slice(0,3) // Show some matched skills
+            matchedSkills: jobRequiredSkills.filter(reqSkill => userSkills.includes(reqSkill)).slice(0,3)
         });
 
         if (emailContent && emailContent.subject && emailContent.body) {
@@ -176,5 +173,5 @@ const generateJobMatchEmailFlow = ai.defineFlow(
     inputSchema: GenerateJobMatchEmailInputSchema,
     outputSchema: GenerateJobMatchEmailOutputSchema,
   },
-  generateJobMatchEmail // Use the exported async function directly
+  generateJobMatchEmail
 );

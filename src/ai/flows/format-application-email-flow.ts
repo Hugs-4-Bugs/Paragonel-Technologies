@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Formats a detailed job application into an email for admin and a confirmation email for the applicant.
@@ -10,8 +9,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-// Assuming ApplicationFormValues is correctly imported if needed for internal logic,
-// but the flow input is defined by FormatApplicationEmailInputSchema.
 
 const FormatApplicationEmailInputSchema = z.object({
   fullName: z.string(),
@@ -71,7 +68,7 @@ export async function formatApplicationEmail(
 
 const prompt = ai.definePrompt({
   name: 'formatDetailedApplicationEmailPrompt',
-  model: 'googleai/gemini-pro',
+  model: 'googleai/gemini-2.0-flash',
   input: {schema: FormatApplicationEmailInputSchema},
   output: {schema: FormatApplicationEmailOutputSchema},
   prompt: `
@@ -137,7 +134,7 @@ You are an expert HR assistant at QuantumFusion Solutions. Your task is to forma
     - Thank them for applying for the "{{{jobTitle}}}" position.
     - Confirm that their application has been received.
     - Briefly mention, "Our hiring team will review your application and contact you if your profile matches our requirements."
-    - Optionally, mention, "In the meantime, you can explore more about us at [Our Website Link - e.g., https://yourcompany.com] or follow us on [LinkedIn Link - e.g., https://linkedin.com/company/yourcompany]." (Use placeholders if actual links aren't available in context).
+    - Optionally, mention, "In the meantime, you can explore more about us at [Our Website Link] or follow us on LinkedIn."
     - End with "Best regards,\nThe QuantumFusion Solutions Hiring Team".
 
 Provide the output strictly in the specified JSON format.
