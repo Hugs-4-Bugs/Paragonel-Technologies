@@ -67,8 +67,6 @@ body {
     --muted-foreground: 210 30% 75%;
     --accent: 270 50% 48%; /* Indigo, adjusted for dark theme */
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 70% 60%; /* Brighter red for dark mode */
-    --destructive-foreground: 0 0% 98%;
     --border: 234 40% 45%;
     --input: 234 40% 45%;
     --ring: 207 68% 53%; /* Sky Blue for focus */
@@ -258,7 +256,7 @@ h3 {
 .animate-marquee-slow {
   display: flex;
   width: max-content;
-  animation: infinite-scroll 40s linear infinite;
+  animation: infinite-scroll 80s linear infinite;
 }
 
 .animate-marquee-slow:hover {
@@ -267,6 +265,6 @@ h3 {
 
 @media (max-width: 768px) {
   .animate-marquee-slow {
-    animation-duration: 25s;
+    animation-duration: 50s;
   }
 }
