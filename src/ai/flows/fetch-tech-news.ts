@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Fetches or generates recent tech news related to specified domains.
@@ -41,7 +42,7 @@ export async function fetchTechNews(
 
 const prompt = ai.definePrompt({
   name: 'fetchTechNewsPrompt',
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-1.5-flash',
   input: {schema: FetchTechNewsInputSchema},
   output: {schema: FetchTechNewsOutputSchema},
   prompt: `You are a tech news curator for QuantumFusion Solutions, an IT company specializing in AI, Cloud, DevOps, and SaaS.
@@ -54,9 +55,9 @@ For each news item, you MUST provide:
 2.  A concise summary (1-2 sentences).
 3.  A fictional but plausible source name (e.g., "QuantumLeap Insights", "Future Systems Journal", "DevOps Weekly").
 4.  A placeholder URL (e.g., "https://example.com/news/item-{{@index}}").
-5.  An estimated recent publication date (e.g., "Yesterday", "August 25, 2024").
+5.  An estimated recent publication date (e.g., "Yesterday", "2 days ago").
 
-It is critical that you ALWAYS generate the requested number of news items. Do not return an empty list.
+It is critical that you ALWAYS generate exactly {{count}} news items.
 `,
 });
 
@@ -67,11 +68,40 @@ const fetchTechNewsFlow = ai.defineFlow(
     outputSchema: FetchTechNewsOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (!output || !output.newsItems) {
-        console.warn("AI failed to generate tech news. Returning empty array.");
-        return { newsItems: [] };
+    try {
+      const {output} = await prompt(input);
+      if (!output || !output.newsItems || output.newsItems.length === 0) {
+        throw new Error("Empty AI output");
+      }
+      return output;
+    } catch (error) {
+      console.error("fetchTechNews AI Error:", error);
+      // Fallback data to ensure UI always works
+      return {
+        newsItems: [
+          {
+            title: "QuantumFusion Solutions Announces New AI-Powered DevOps Framework",
+            summary: "Our latest framework integrates generative AI to automate complex CI/CD workflows, reducing deployment times by up to 40%.",
+            source: "QuantumFusion Press",
+            link: "/services/devops-automation",
+            publishedDate: "Today"
+          },
+          {
+            title: "The Rise of Specialized SaaS: Why Multi-Tenant Architecture is Evolving",
+            summary: "Industry experts discuss how scalable SaaS platforms are moving towards deeper customization while maintaining core security.",
+            source: "Tech Insights Daily",
+            link: "/services/saas-platforms",
+            publishedDate: "Yesterday"
+          },
+          {
+            title: "Cloud Migration Trends: Navigating the Hybrid Cloud Landscape in 2025",
+            summary: "A deep dive into how businesses are leveraging AWS and Azure to create resilient and scalable global infrastructures.",
+            source: "Cloud Weekly",
+            link: "/services/cloud-infrastructure",
+            publishedDate: "2 days ago"
+          }
+        ]
+      };
     }
-    return output;
   }
 );
