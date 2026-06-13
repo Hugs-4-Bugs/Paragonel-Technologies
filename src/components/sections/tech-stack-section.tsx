@@ -67,10 +67,9 @@ const trustFactors = [
 ];
 
 export function TechStackSection() {
-  // This component now handles the Business Solutions and Why Choose Us logic
   return (
     <div className="space-y-20">
-      {/* Problems We Solve / Solutions Section */}
+      {/* 3. Problems We Solve / Solutions Section */}
       <section id="solutions" className="section-padding bg-background">
         <div className="container mx-auto px-4 md:px-6">
           <ScrollFadeIn className="text-center mb-16">
@@ -112,7 +111,7 @@ export function TechStackSection() {
         </div>
       </section>
 
-      {/* Why Choose Us Section */}
+      {/* 4. Why Choose Us Section */}
       <section className="section-padding bg-secondary/30 dark:bg-secondary/10 border-y border-zinc-100 dark:border-zinc-800">
         <div className="container mx-auto px-4 md:px-6">
           <ScrollFadeIn className="text-center mb-16">
@@ -143,18 +142,23 @@ export function CompactTechShowcase() {
   const techs = ["Java", "Spring Boot", "Python", "React", "Next.js", "PostgreSQL", "AWS", "Docker", "Kubernetes", "Firebase"];
   
   return (
-    <section className="py-12 bg-background border-t">
+    <section className="py-24 bg-background border-t border-zinc-100 dark:border-zinc-900">
       <div className="container mx-auto px-4 md:px-6">
-        <ScrollFadeIn className="text-center mb-8">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
-            Technologies We Work With
+        <ScrollFadeIn className="text-center mb-12">
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-3 block">
+            Technical Foundation
           </span>
+          <h2 className="text-2xl md:text-3xl font-bold">Technologies We Work With</h2>
         </ScrollFadeIn>
-        <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 opacity-40 hover:opacity-100 transition-opacity">
+        
+        <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
           {techs.map((tech) => (
-            <span key={tech} className="text-sm font-black tracking-tighter text-zinc-500 hover:text-primary transition-colors cursor-default">
+            <div 
+              key={tech} 
+              className="px-6 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:text-primary hover:border-primary/50 hover:shadow-lg transition-all cursor-default"
+            >
               {tech}
-            </span>
+            </div>
           ))}
         </div>
       </div>
