@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -14,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { dummyJobs } from '@/lib/data';
+import { dummyJobs, blogPosts } from '@/lib/data';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -42,33 +41,47 @@ export default function AdminDashboard() {
   );
   const { data: recentApps, loading: appsLoading } = useCollection(recentAppsQuery);
 
-  const handleSeedJobs = async () => {
-    if (!confirm(`This will add ${dummyJobs.length} sample jobs to your database. Continue?`)) return;
+  const handleSeedDatabase = async () => {
+    if (!confirm(`This will populate your database with ${dummyJobs.length} jobs and ${blogPosts.length} blog articles. Continue?`)) return;
     
     setIsSeeding(true);
     try {
+      // Seed Jobs
       const jobsCol = collection(db, 'jobs');
       for (const job of dummyJobs) {
-        // Remove the static ID to let Firestore generate one, but keep the jobId field
         const { id, ...jobData } = job;
         await addDoc(jobsCol, {
           ...jobData,
           isActive: true,
           status: 'Active',
-          postedDate: serverTimestamp(),
+          postedDate: new Date().toISOString(),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });
       }
+
+      // Seed Blogs
+      const blogsCol = collection(db, 'blogPosts');
+      for (const post of blogPosts) {
+        const { id, ...postData } = post;
+        await addDoc(blogsCol, {
+          ...postData,
+          status: 'Published',
+          publishedAt: serverTimestamp(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+
       toast({
         title: "Database Seeded!",
-        description: `Successfully added ${dummyJobs.length} job openings.`,
+        description: `Successfully added ${dummyJobs.length} roles and ${blogPosts.length} articles.`,
       });
     } catch (e) {
       console.error(e);
       toast({
         title: "Seeding Failed",
-        description: "Could not add sample jobs to database.",
+        description: "Could not add sample data. Ensure Firestore is enabled and rules allow writes.",
         variant: "destructive"
       });
     } finally {
@@ -118,9 +131,9 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-             <Button variant="outline" onClick={handleSeedJobs} disabled={isSeeding} className="border-primary text-primary hover:bg-primary/5">
+             <Button variant="outline" onClick={handleSeedDatabase} disabled={isSeeding} className="border-primary text-primary hover:bg-primary/5">
                 {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
-                Seed Sample Jobs
+                Seed All Sample Data
             </Button>
             <Button asChild variant="outline" className="shadow-sm">
               <Link href="/admin/jobs/new">
@@ -186,7 +199,7 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                       <div className="text-xs text-zinc-400 text-right">
-                        {new Date(app.appliedAt).toLocaleDateString()}
+                        {new Date(app.appliedAt?.seconds * 1000 || app.appliedAt).toLocaleDateString()}
                       </div>
                     </div>
                   ))}
