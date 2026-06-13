@@ -1,0 +1,168 @@
+
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useDoc, useFirestore } from '@/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, ArrowLeft, Download, Mail, Phone, Calendar, Briefcase, User, Info, Save, History } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { logActivity } from '@/lib/audit';
+
+export default function ApplicationDetail() {
+  const { id } = useParams();
+  const firestore = useFirestore();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [notes, setInternalNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const appRef = useMemo(() => firestore ? doc(firestore, 'jobApplications', id as string) : null, [firestore, id]);
+  const { data: app, loading } = useDoc(appRef);
+
+  useEffect(() => {
+    if (app) setInternalNotes(app.internalNotes || '');
+  }, [app]);
+
+  const handleSaveNotes = async () => {
+    if (!firestore) return;
+    setIsSaving(true);
+    try {
+      await updateDoc(doc(firestore, 'jobApplications', id as string), {
+        internalNotes: notes,
+        updatedAt: serverTimestamp()
+      });
+      await logActivity('admin', 'Updated internal notes on application', 'JobApplication', id as string);
+      toast({ title: "Notes Saved", description: "Internal evaluation recorded." });
+    } catch (e) {
+      toast({ title: "Failed to save notes", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (loading) return <div className="h-80 flex items-center justify-center"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>;
+  if (!app) return <div className="text-center p-20">Application not found.</div>;
+
+  return (
+    <div className="space-y-8 max-w-5xl mx-auto pb-20">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-black tracking-tight">{app.candidateName}</h1>
+          <p className="text-zinc-500 font-medium">{app.jobTitle}</p>
+        </div>
+        <Badge className="ml-auto bg-primary/10 text-primary hover:bg-primary/20 border-none font-black px-4 py-1">
+          {app.status || 'New'}
+        </Badge>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <Card className="border-none shadow-sm rounded-2xl bg-white dark:bg-zinc-900">
+            <CardHeader className="border-b bg-zinc-50/50 dark:bg-zinc-800/30">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Candidate Profile
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Email Address</p>
+                  <p className="font-bold flex items-center gap-2"><Mail className="h-4 w-4 text-zinc-400" /> {app.candidateEmail}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Phone Number</p>
+                  <p className="font-bold flex items-center gap-2"><Phone className="h-4 w-4 text-zinc-400" /> {app.candidatePhone}</p>
+                </div>
+              </div>
+              <div className="pt-4 border-t">
+                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-3">Skills Captured</p>
+                <div className="flex flex-wrap gap-2">
+                  {app.skills?.map((s: string) => (
+                    <Badge key={s} variant="outline" className="bg-zinc-50 dark:bg-zinc-800 text-xs py-1 px-3 border-zinc-200">
+                      {s}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm rounded-2xl bg-white dark:bg-zinc-900 overflow-hidden">
+            <CardHeader className="border-b bg-zinc-50/50 dark:bg-zinc-800/30">
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" />
+                Internal Evaluation & Notes
+              </CardTitle>
+              <CardDescription>Visible only to QuantumFusion team.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-8 space-y-6">
+              <Textarea 
+                placeholder="Add interview feedback, technical ratings, or screening notes here..."
+                className="min-h-[200px] border-zinc-200 focus-visible:ring-1 text-sm leading-relaxed"
+                value={notes}
+                onChange={(e) => setInternalNotes(e.target.value)}
+              />
+              <Button onClick={handleSaveNotes} disabled={isSaving} className="w-full h-12 font-bold shadow-xl shadow-primary/20">
+                {isSaving ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Save className="h-5 w-5 mr-2" />}
+                Persist Evaluation Notes
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-8">
+          <Card className="border-none shadow-xl rounded-2xl bg-zinc-900 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10"><Download className="h-20 w-20" /></div>
+            <CardHeader>
+              <CardTitle className="text-lg">Resume Document</CardTitle>
+              <CardDescription className="text-zinc-400">Supporting candidate file.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-zinc-800 rounded-xl flex items-center gap-4">
+                <div className="h-10 w-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                  <Download className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold truncate">Candidate_Resume.pdf</p>
+                  <p className="text-[10px] text-zinc-500">Secure Download Available</p>
+                </div>
+              </div>
+              <Button asChild className="w-full bg-white text-zinc-900 hover:bg-zinc-200 font-black h-12">
+                <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer">
+                  Download Resume
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm rounded-2xl">
+            <CardHeader className="p-6 border-b"><CardTitle className="text-sm font-bold">Metadata</CardTitle></CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="flex justify-between text-xs">
+                <span className="text-zinc-500 font-bold">Applied Date</span>
+                <span className="font-bold">{app.appliedAt?.seconds ? new Date(app.appliedAt.seconds * 1000).toLocaleString() : 'N/A'}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-zinc-500 font-bold">Applied Via</span>
+                <Badge variant="outline" className="text-[9px] uppercase font-black tracking-widest">{app.appliedVia || 'Form'}</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function useMemo(arg0: () => any, arg1: any[]) {
+    return React.useMemo(arg0, arg1);
+}

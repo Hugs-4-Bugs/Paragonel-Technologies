@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -17,25 +17,37 @@ import {
   Globe,
   MessageSquare,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  Users,
+  Search,
+  Mail,
+  History,
+  TrendingUp,
+  FileUser
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 
 const sidebarItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/applications', label: 'Applications', icon: FileUser },
   { href: '/admin/jobs', label: 'Jobs', icon: Briefcase },
+  { href: '/admin/leads', label: 'Leads', icon: Mail },
   { href: '/admin/blog', label: 'Blog', icon: BookOpen },
   { href: '/admin/services', label: 'Services', icon: Layers },
   { href: '/admin/portfolio', label: 'Portfolio', icon: Globe },
   { href: '/admin/testimonials', label: 'Testimonials', icon: MessageSquare },
+  { href: '/admin/newsletter', label: 'Newsletter', icon: Users },
+  { href: '/admin/activity', label: 'Audit Logs', icon: History },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState('');
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
@@ -100,6 +112,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <ScrollArea className="flex-1 py-6 px-3">
+            {!isCollapsed && (
+              <div className="px-3 mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                  <Input 
+                    placeholder="Global search..." 
+                    className="pl-10 h-10 rounded-xl bg-zinc-50 border-none focus-visible:ring-1"
+                    value={globalSearch}
+                    onChange={(e) => setGlobalSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
             <nav className="space-y-1.5">
               {sidebarItems.map((item) => {
                 const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));

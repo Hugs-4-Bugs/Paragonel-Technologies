@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Mail, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function NewsletterSubscription() {
   const { toast } = useToast();
@@ -16,22 +18,29 @@ export function NewsletterSubscription() {
     e.preventDefault();
     if (!email) return;
     setIsSubscribing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Newsletter subscription for:', email);
-    toast({
-      title: "Subscribed!",
-      description: "Thank you for subscribing to our newsletter.",
-    });
-    setEmail('');
-    setIsSubscribing(false);
+    
+    try {
+      if (db) {
+        await addDoc(collection(db, 'newsletterSubscribers'), {
+          email,
+          source: 'Website Footer',
+          subscribedAt: serverTimestamp(),
+        });
+      }
+      toast({ title: "Subscribed!", description: "Thank you for joining our community." });
+      setEmail('');
+    } catch (e) {
+      toast({ title: "Subscription Error", variant: "destructive" });
+    } finally {
+      setIsSubscribing(false);
+    }
   };
 
   return (
     <div className="py-8 px-4 bg-muted/50 dark:bg-muted/20 rounded-lg">
       <h3 className="text-xl font-semibold text-center text-foreground mb-1">Stay Updated</h3>
       <p className="text-sm text-center text-muted-foreground mb-4 max-w-md mx-auto">
-        Subscribe to our newsletter for the latest insights, news, and career opportunities.
+        Latest insights and career opportunities delivered to your inbox.
       </p>
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
         <Input
@@ -40,16 +49,11 @@ export function NewsletterSubscription() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="flex-grow bg-background focus:bg-background/90"
-          aria-label="Email for newsletter"
+          className="flex-grow bg-background"
         />
-        <Button type="submit" variant="default" className="sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSubscribing}>
-          {isSubscribing ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-          ) : (
-            <Mail className="mr-2 h-4 w-4" />
-          )}
-          Subscribe
+        <Button type="submit" disabled={isSubscribing}>
+          {isSubscribing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+          Join
         </Button>
       </form>
     </div>

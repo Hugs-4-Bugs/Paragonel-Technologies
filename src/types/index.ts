@@ -1,7 +1,7 @@
 
 export interface Job {
-  id: string; // Firestore Doc ID
-  jobId: string; // Custom Unique ID (e.g., ABC123)
+  id: string;
+  jobId: string;
   title: string;
   company: string;
   location: string;
@@ -15,9 +15,58 @@ export interface Job {
   deadline?: string;
   isActive: boolean;
   status: 'Active' | 'Draft';
-  postedDate: string; // ISO String
+  postedDate: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: any;
+}
+
+export interface JobApplication {
+  id: string;
+  applicationId: string;
+  jobId: string;
+  jobTitle: string;
+  candidateName: string;
+  candidateEmail: string;
+  candidatePhone: string;
+  skills?: string[];
+  experienceYears?: number;
+  resumeUrl: string;
+  status: 'New' | 'Reviewing' | 'Shortlisted' | 'Interview Scheduled' | 'Rejected' | 'Hired';
+  internalNotes?: string;
+  appliedAt: any;
+  appliedVia: 'form' | 'ai';
+  deletedAt?: any;
+}
+
+export interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+  message: string;
+  source: string;
+  status: 'New' | 'Contacted' | 'Qualified' | 'Closed';
+  internalNotes?: string;
+  createdAt: any;
+  deletedAt?: any;
+}
+
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  source: string;
+  subscribedAt: any;
+}
+
+export interface AuditLog {
+  id: string;
+  adminEmail: string;
+  action: string;
+  resourceType: string;
+  resourceId: string;
+  ipAddress?: string;
+  timestamp: any;
 }
 
 export interface BlogPost {
@@ -30,10 +79,17 @@ export interface BlogPost {
   excerpt: string;
   body: string;
   tags: string[];
-  status: 'Published' | 'Draft';
+  status: 'Published' | 'Draft' | 'Scheduled';
+  metaTitle?: string;
+  metaDescription?: string;
+  ogImageUrl?: string;
+  canonicalUrl?: string;
+  focusKeyword?: string;
+  publishAt?: any;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: any;
 }
 
 export interface ApplicationFormValues {
@@ -44,16 +100,13 @@ export interface ApplicationFormValues {
   linkedinProfile?: string;
   portfolioWebsite?: string;
   codingProfileUrl?: string; 
-
   highestQualification: string;
   specialization: string;
   university: string;
   passingYear: string;
   marks: string;
-
   primarySkills: string;
   secondarySkills?: string;
-
   isFresher: boolean;
   companyName?: string;
   jobTitleExperience?: string;
@@ -61,16 +114,13 @@ export interface ApplicationFormValues {
   toDate?: string;
   isCurrentlyWorking?: boolean;
   jobDescription?: string;
-  
   coverLetter?: string;
   preferredJobLocation: string;
   currentCTC?: string;
   expectedSalary: string;
   noticePeriod: string;
-
   acceptTerms: boolean;
   notifySimilarJobs: boolean;
-
   jobId: string;
   jobTitle: string;
 }

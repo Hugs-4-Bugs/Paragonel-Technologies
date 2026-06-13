@@ -7,7 +7,7 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2 } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Shield } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Added Avatar imports
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth-context"; 
 
 const mainNavLinks = [
@@ -35,12 +35,10 @@ const moreNavLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
-// For mobile, auth links are dynamically added based on auth state
 const authNavLinksBase = [
   { href: "/auth/login", label: "Login", icon: LogIn },
   { href: "/auth/signup", label: "Sign Up", icon: UserPlus },
 ];
-
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,7 +49,11 @@ export function Navbar() {
     
     let links = [...mainNavLinks, ...moreNavLinks];
     if (isAuthenticated && user) {
-      links.push({ href: "/profile", label: "My Profile", icon: UserCircle }); // UserCircle for mobile consistency
+      // Check if user is the admin
+      if (user.email === 'admin@quantumfusion.in') {
+        links.push({ href: "/admin", label: "Admin CMS", icon: Shield });
+      }
+      links.push({ href: "/profile", label: "My Profile", icon: UserCircle });
       links.push({ href: "#", label: "Logout", icon: LogOut, action: () => { logout(); setIsMobileMenuOpen(false); } });
     } else {
       links.push(...authNavLinksBase);
@@ -70,21 +72,18 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
-        {/* <Link href="/" className="flex items-center space-x-2 mb-0 ml-0"> */}
         <Link href="/" className="flex items-center space-x-2 mb-0 -ml-6">
           <Image
-            // src="/images/logo.png" 
             src="/images/QuantumFusion-Logo.png" 
             alt="QuantumFusion Solutions Logo"
             width={200}
             height={120}
-            className="h-20 w-25 md:h-25 md:w-25, rounded-lg"
+            className="h-20 w-25 md:h-25 md:w-25 rounded-lg"
             data-ai-hint="company logo abstract"
             priority
           />
         </Link>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
           {mainNavLinks.map((link) => (
             <Button variant="link" asChild key={link.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3">
@@ -118,7 +117,6 @@ export function Navbar() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
                       <Avatar className="h-9 w-9">
-                        {/* <AvatarImage src={user.profilePictureUrl} alt={user.fullName || user.email} /> Placeholder for future image */}
                         <AvatarFallback>{getUserInitial()}</AvatarFallback>
                       </Avatar>
                     </Button>
@@ -133,6 +131,14 @@ export function Navbar() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    {user.email === 'admin@quantumfusion.in' && (
+                      <DropdownMenuItem asChild>
+                         <Link href="/admin" className="cursor-pointer font-bold text-primary">
+                           <Shield className="mr-2 h-4 w-4" />
+                           Admin Panel
+                         </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                        <Link href="/profile" className="cursor-pointer">
                          <Settings2 className="mr-2 h-4 w-4" />
@@ -167,7 +173,6 @@ export function Navbar() {
           </div>
         </nav>
 
-        {/* Mobile Navigation Trigger */}
         <div className="md:hidden flex items-center">
           <ThemeToggleButton />
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -181,14 +186,7 @@ export function Navbar() {
               <SheetHeader className="p-6 border-b">
                 <SheetTitle className="flex items-center justify-between">
                   <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
-                     <Image
-                        src="https://placehold.co/150x38.png?text=QFS+Mobile"
-                        alt="QuantumFusion Solutions Logo Mobile"
-                        width={150}
-                        height={38}
-                        className="h-9 w-auto"
-                        data-ai-hint="company logo abstract mobile"
-                      />
+                    QuantumFusion
                   </Link>
                 </SheetTitle>
               </SheetHeader>

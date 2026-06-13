@@ -11,14 +11,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, MapPin, Send, Loader2, Briefcase } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function ContactSection() {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    subject: '',
+    company: '',
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,16 +32,28 @@ export function ContactSection() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    console.log('Form data submitted:', formData);
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for reaching out to QuantumFusion Solutions. We'll get back to you soon.",
-      variant: "default", 
-    });
-    setFormData({ name: '', email: '', subject: '', message: '' });
-    setIsSubmitting(false);
+    
+    try {
+      if (db) {
+        await addDoc(collection(db, 'leads'), {
+          ...formData,
+          source: 'Contact Page',
+          status: 'New',
+          createdAt: serverTimestamp(),
+          deletedAt: null,
+        });
+      }
+      
+      toast({
+        title: "Message Sent!",
+        description: "Thank you for reaching out to QuantumFusion Solutions. We'll get back to you soon.",
+      });
+      setFormData({ name: '', email: '', company: '', message: '' });
+    } catch (e) {
+      toast({ title: "Submission Error", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -75,8 +88,8 @@ export function ContactSection() {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input id="subject" name="subject" placeholder="Inquiry about AI Solutions" value={formData.subject} onChange={handleChange} required />
+                    <Label htmlFor="company">Company (Optional)</Label>
+                    <Input id="company" name="company" placeholder="Business Name" value={formData.company} onChange={handleChange} />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="message">Message</Label>
@@ -85,13 +98,9 @@ export function ContactSection() {
                   <div>
                     <Button type="submit" size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSubmitting}>
                       {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...
-                        </>
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
                       ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4" /> Send Message
-                        </>
+                        <><Send className="mr-2 h-4 w-4" /> Send Message</>
                       )}
                     </Button>
                   </div>
@@ -117,22 +126,14 @@ export function ContactSection() {
                   <Mail className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-foreground">Email Us</h4>
-                    <a href="mailto:contact@quantumfusionsolutions.com" className="hover:text-primary transition-colors">contact@quantumfusionsolutions.com</a>
+                    <a href="mailto:contact@quantumfusion.in" className="hover:text-primary transition-colors">contact@quantumfusion.in</a>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <Phone className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-foreground">Call Us</h4>
-                    <a href="tel:+14155550100" className="hover:text-primary transition-colors">+91 7250063206</a>
-                  </div>
-                </div>
-                 <div className="flex items-start space-x-4 pt-4 border-t mt-4">
-                  <Briefcase className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
-                  <div>
-                    <h4 className="font-semibold text-foreground">Careers</h4>
-                    <p>Interested in joining our team? <Link href="/careers" className="text-primary hover:underline">View open positions.</Link></p>
-                    <a href="mailto:careers@quantumfusionsolutions.com" className="hover:text-primary transition-colors text-sm">careers@quantumfusionsolutions.com</a>
+                    <a href="tel:+917250063206" className="hover:text-primary transition-colors">+91 7250063206</a>
                   </div>
                 </div>
               </CardContent>

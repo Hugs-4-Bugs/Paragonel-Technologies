@@ -1,171 +1,120 @@
 
 {
   "entities": {
-    "ChatSession": {
-      "title": "Chat Session",
-      "description": "Represents a chat conversation session between a user and QuantumAI.",
+    "Admin": {
+      "title": "Administrator",
+      "description": "System administrator account.",
       "type": "object",
       "properties": {
-        "userId": { "type": "string" },
-        "sessionId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "metadata": { "type": "object" }
-      },
-      "required": ["sessionId", "createdAt"]
-    },
-    "ChatMessage": {
-      "title": "Chat Message",
-      "description": "An individual message within a chat session.",
-      "type": "object",
-      "properties": {
-        "sessionId": { "type": "string" },
-        "role": { "type": "string", "enum": ["user", "ai"] },
-        "content": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
-      },
-      "required": ["sessionId", "role", "content", "timestamp"]
+        "email": { "type": "string", "format": "email" },
+        "fullName": { "type": "string" },
+        "role": { "type": "string", "enum": ["Founder", "HR"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     },
     "Job": {
       "title": "Job Opening",
       "description": "A job opening managed via Admin Panel.",
       "type": "object",
       "properties": {
+        "jobId": { "type": "string" },
         "title": { "type": "string" },
         "department": { "type": "string" },
         "location": { "type": "string" },
         "employmentType": { "type": "string" },
-        "experience": { "type": "string" },
+        "workArrangement": { "type": "string" },
+        "experienceRequired": { "type": "string" },
         "skills": { "type": "array", "items": { "type": "string" } },
-        "salaryRange": { "type": "string" },
         "description": { "type": "string" },
-        "deadline": { "type": "string" },
-        "status": { "type": "string", "enum": ["Active", "Draft"] },
         "isActive": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["title", "department", "location", "employmentType", "description"]
+        "deletedAt": { "type": "string", "format": "date-time" }
+      }
     },
     "JobApplication": {
       "title": "Job Application",
-      "description": "A job application submitted through the website or QuantumAI.",
+      "description": "Candidate application record (ATS).",
       "type": "object",
       "properties": {
-        "applicationId": { "type": "string" },
-        "jobId": { "type": "string" },
-        "jobTitle": { "type": "string" },
         "candidateName": { "type": "string" },
         "candidateEmail": { "type": "string" },
         "candidatePhone": { "type": "string" },
-        "skills": { "type": "array", "items": { "type": "string" } },
-        "experienceYears": { "type": "number" },
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
         "resumeUrl": { "type": "string" },
-        "status": { "type": "string", "enum": ["submitted", "reviewing", "shortlisted", "rejected"] },
+        "status": { "type": "string", "enum": ["New", "Reviewing", "Shortlisted", "Interview Scheduled", "Rejected", "Hired"] },
+        "internalNotes": { "type": "string" },
         "appliedAt": { "type": "string", "format": "date-time" },
-        "appliedVia": { "type": "string", "enum": ["form", "ai"] }
-      },
-      "required": ["applicationId", "jobId", "candidateEmail", "appliedAt"]
+        "deletedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Lead": {
+      "title": "Business Lead",
+      "description": "Inquiry from contact forms.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "company": { "type": "string" },
+        "message": { "type": "string" },
+        "source": { "type": "string" },
+        "status": { "type": "string", "enum": ["New", "Contacted", "Qualified", "Closed"] },
+        "internalNotes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "deletedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "NewsletterSubscriber": {
+      "title": "Newsletter Subscriber",
+      "description": "Email subscription for marketing.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "source": { "type": "string" },
+        "subscribedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "AuditLog": {
+      "title": "Audit Log",
+      "description": "Record of administrative actions.",
+      "type": "object",
+      "properties": {
+        "adminEmail": { "type": "string" },
+        "action": { "type": "string" },
+        "resourceType": { "type": "string" },
+        "resourceId": { "type": "string" },
+        "ipAddress": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
     },
     "BlogPost": {
       "title": "Blog Post",
-      "description": "An article published on the company blog.",
+      "description": "Article with SEO and scheduling.",
       "type": "object",
       "properties": {
         "title": { "type": "string" },
         "slug": { "type": "string" },
-        "category": { "type": "string" },
-        "author": { "type": "string" },
-        "thumbnailUrl": { "type": "string" },
-        "excerpt": { "type": "string" },
         "body": { "type": "string" },
-        "tags": { "type": "array", "items": { "type": "string" } },
-        "status": { "type": "string", "enum": ["Published", "Draft"] },
-        "publishedAt": { "type": "string", "format": "date-time" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["title", "slug", "body"]
-    },
-    "Service": {
-      "title": "Service",
-      "description": "A core service offered by the company.",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "iconName": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "slug": { "type": "string" },
-        "order": { "type": "number" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["title", "description", "slug"]
-    },
-    "PortfolioItem": {
-      "title": "Portfolio Item",
-      "description": "A project showcased in the portfolio.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "category": { "type": "string" },
-        "description": { "type": "string" },
-        "status": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "techs": { "type": "array", "items": { "type": "string" } },
-        "link": { "type": "string" }
-      },
-      "required": ["name", "category", "description"]
-    },
-    "Testimonial": {
-      "title": "Testimonial",
-      "description": "Feedback from a client.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "role": { "type": "string" },
-        "company": { "type": "string" },
-        "content": { "type": "string" },
-        "rating": { "type": "number" },
-        "avatarUrl": { "type": "string" }
-      },
-      "required": ["name", "content"]
+        "metaTitle": { "type": "string" },
+        "metaDescription": { "type": "string" },
+        "ogImageUrl": { "type": "string" },
+        "canonicalUrl": { "type": "string" },
+        "focusKeyword": { "type": "string" },
+        "publishAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["Published", "Draft", "Scheduled"] },
+        "deletedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
     "providers": ["password"]
   },
   "firestore": {
-    "/chatSessions/{sessionId}": {
-      "schema": "#/backend/entities/ChatSession",
-      "description": "Collection of active and past chat sessions."
-    },
-    "/chatSessions/{sessionId}/messages/{messageId}": {
-      "schema": "#/backend/entities/ChatMessage",
-      "description": "Messages belonging to a specific chat session."
-    },
-    "/jobs/{jobId}": {
-      "schema": "#/backend/entities/Job",
-      "description": "Job openings available at the company."
-    },
-    "/jobApplications/{applicationId}": {
-      "schema": "#/backend/entities/JobApplication",
-      "description": "Job applications received by the company."
-    },
-    "/blogPosts/{postId}": {
-      "schema": "#/backend/entities/BlogPost",
-      "description": "Articles published on the company blog."
-    },
-    "/services/{serviceId}": {
-      "schema": "#/backend/entities/Service",
-      "description": "Core services offered by QuantumFusion."
-    },
-    "/portfolio/{itemId}": {
-      "schema": "#/backend/entities/PortfolioItem",
-      "description": "Projects in the company portfolio."
-    },
-    "/testimonials/{testimonialId}": {
-      "schema": "#/backend/entities/Testimonial",
-      "description": "Client feedback and ratings."
-    }
+    "/admins/{adminId}": { "schema": "#/backend/entities/Admin", "description": "Admin users." },
+    "/jobs/{jobId}": { "schema": "#/backend/entities/Job", "description": "Job openings." },
+    "/jobApplications/{appId}": { "schema": "#/backend/entities/JobApplication", "description": "Job applications." },
+    "/leads/{leadId}": { "schema": "#/backend/entities/Lead", "description": "Business leads." },
+    "/newsletterSubscribers/{subId}": { "schema": "#/backend/entities/NewsletterSubscriber", "description": "Email list." },
+    "/adminActivityLogs/{logId}": { "schema": "#/backend/entities/AuditLog", "description": "Security logs." },
+    "/blogPosts/{postId}": { "schema": "#/backend/entities/BlogPost", "description": "Blog content." }
   }
 }

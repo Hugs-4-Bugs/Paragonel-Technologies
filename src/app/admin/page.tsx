@@ -15,10 +15,13 @@ import {
   Globe,
   MessageSquare,
   TrendingUp,
-  Activity
+  Activity,
+  Mail,
+  Users as UsersIcon,
+  Calendar
 } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, limit, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, limit, orderBy, addDoc, serverTimestamp, getCountFromServer } from 'firebase/firestore';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -26,7 +29,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { dummyJobs, blogPosts } from '@/lib/data';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, subDays } from 'date-fns';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -36,82 +39,28 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetch('/api/admin/auth/me').then(res => {
-      if (!res.ok) {
-        router.push('/admin/login');
-      }
+      if (!res.ok) router.push('/admin/login');
     });
   }, [router]);
 
-  const jobsQuery = useMemo(() => firestore ? query(collection(firestore, 'jobs'), where('isActive', '==', true)) : null, [firestore]);
-  const postsQuery = useMemo(() => firestore ? query(collection(firestore, 'blogPosts'), where('status', '==', 'Published')) : null, [firestore]);
-  const recentAppsQuery = useMemo(() => firestore ? query(collection(firestore, 'jobApplications'), orderBy('appliedAt', 'desc'), limit(6)) : null, [firestore]);
-  const totalAppsQuery = useMemo(() => firestore ? collection(firestore, 'jobApplications') : null, [firestore]);
-  const servicesQuery = useMemo(() => firestore ? collection(firestore, 'services') : null, [firestore]);
+  // Operational Queries
+  const jobsQuery = useMemo(() => firestore ? query(collection(firestore, 'jobs'), where('isActive', '==', true), where('deletedAt', '==', null)) : null, [firestore]);
+  const postsQuery = useMemo(() => firestore ? query(collection(firestore, 'blogPosts'), where('status', '==', 'Published'), where('deletedAt', '==', null)) : null, [firestore]);
+  const recentAppsQuery = useMemo(() => firestore ? query(collection(firestore, 'jobApplications'), where('deletedAt', '==', null), orderBy('appliedAt', 'desc'), limit(6)) : null, [firestore]);
+  const leadsQuery = useMemo(() => firestore ? query(collection(firestore, 'leads'), where('deletedAt', '==', null)) : null, [firestore]);
+  const subsQuery = useMemo(() => firestore ? collection(firestore, 'newsletterSubscribers') : null, [firestore]);
 
   const { data: activeJobs, loading: jobsLoading } = useCollection(jobsQuery);
   const { data: publishedPosts, loading: postsLoading } = useCollection(postsQuery);
   const { data: recentApps, loading: appsLoading } = useCollection(recentAppsQuery);
-  const { data: totalApps, loading: totalAppsLoading } = useCollection(totalAppsQuery);
-  const { data: services, loading: servicesLoading } = useCollection(servicesQuery);
-
-  const handleSeedDatabase = async () => {
-    if (!firestore) return;
-    if (!confirm(`This will populate your database with comprehensive sample data. Continue?`)) return;
-    
-    setIsSeeding(true);
-    try {
-      // Seed Jobs
-      const jobsCol = collection(firestore, 'jobs');
-      for (const job of dummyJobs) {
-        const { id, ...jobData } = job;
-        await addDoc(jobsCol, {
-          ...jobData,
-          isActive: true,
-          status: 'Active',
-          postedDate: new Date().toISOString(),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-      }
-
-      // Seed Blogs
-      const blogsCol = collection(firestore, 'blogPosts');
-      for (const post of blogPosts) {
-        const { id, ...postData } = post;
-        await addDoc(blogsCol, {
-          ...postData,
-          status: 'Published',
-          publishedAt: serverTimestamp(),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-      }
-
-      // Seed Services
-      const servicesCol = collection(firestore, 'services');
-      const sampleServices = [
-        { title: "AI Solutions", slug: "ai-solutions", description: "Custom machine learning models and LLM integration.", iconName: "Brain", order: 1, isActive: true },
-        { title: "Cloud Infrastructure", slug: "cloud-infrastructure", description: "Scalable AWS/GCP deployments and migration.", iconName: "Cloud", order: 2, isActive: true },
-        { title: "DevOps Automation", slug: "devops-automation", description: "CI/CD pipelines and automated scaling solutions.", iconName: "GitFork", order: 3, isActive: true },
-        { title: "SaaS Platforms", slug: "saas-platforms", description: "End-to-end development of modern SaaS products.", iconName: "Layers", order: 4, isActive: true }
-      ];
-      for (const s of sampleServices) {
-        await addDoc(servicesCol, { ...s, createdAt: serverTimestamp() });
-      }
-
-      toast({ title: "CMS Populated!", description: `Successfully added Sample Content.` });
-    } catch (e) {
-      toast({ title: "Seeding Failed", variant: "destructive" });
-    } finally {
-      setIsSeeding(false);
-    }
-  };
+  const { data: leads, loading: leadsLoading } = useCollection(leadsQuery);
+  const { data: subs, loading: subsLoading } = useCollection(subsQuery);
 
   const stats = [
     { label: 'Active Jobs', value: activeJobs?.length || 0, icon: Briefcase, color: 'text-blue-600', loading: jobsLoading },
-    { label: 'Live Articles', value: publishedPosts?.length || 0, icon: BookOpen, color: 'text-green-600', loading: postsLoading },
-    { label: 'Services', value: services?.length || 0, icon: Layers, color: 'text-purple-600', loading: servicesLoading },
-    { label: 'Applications', value: totalApps?.length || 0, icon: UserPlus, color: 'text-orange-600', loading: totalAppsLoading },
+    { label: 'Published Blogs', value: publishedPosts?.length || 0, icon: BookOpen, color: 'text-green-600', loading: postsLoading },
+    { label: 'Total Leads', value: leads?.length || 0, icon: Mail, color: 'text-purple-600', loading: leadsLoading },
+    { label: 'Subscribers', value: subs?.length || 0, icon: UsersIcon, color: 'text-orange-600', loading: subsLoading },
   ];
 
   return (
@@ -128,13 +77,14 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-             <Button variant="outline" onClick={handleSeedDatabase} disabled={isSeeding} className="border-primary text-primary hover:bg-primary/5 h-10 md:h-11 px-4 md:px-5 rounded-xl font-bold text-sm md:text-base">
-                {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
-                Populate CMS
-            </Button>
             <Button asChild className="h-10 md:h-11 px-4 md:px-5 rounded-xl font-bold shadow-xl shadow-primary/20 text-sm md:text-base">
               <Link href="/admin/jobs/new">
                 <PlusCircle className="mr-2 h-4 w-4" /> New Role
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-10 md:h-11 px-4 md:px-5 rounded-xl font-bold text-sm md:text-base border-primary/20">
+              <Link href="/admin/blog/new">
+                <PlusCircle className="mr-2 h-4 w-4" /> New Insight
               </Link>
             </Button>
           </div>
@@ -173,7 +123,9 @@ export default function AdminDashboard() {
                 <CardTitle className="text-lg font-bold">Recent Talent Activity</CardTitle>
                 <CardDescription className="text-xs">Live incoming job applications.</CardDescription>
               </div>
-              <TrendingUp className="h-5 w-5 text-primary opacity-20" />
+              <Button asChild size="sm" variant="ghost" className="text-primary font-bold">
+                <Link href="/admin/applications">View All <ChevronRight className="h-4 w-4 ml-1" /></Link>
+              </Button>
             </CardHeader>
             <CardContent className="p-5 md:p-6">
               {appsLoading ? (
@@ -183,22 +135,32 @@ export default function AdminDashboard() {
               ) : recentApps && recentApps.length > 0 ? (
                 <div className="space-y-3">
                   {recentApps.map((app: any) => (
-                    <div key={app.id} className="flex items-center p-3 md:p-4 bg-zinc-50/50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800 hover:border-primary/30 transition-colors">
-                      <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-sm mr-3 md:mr-4 shrink-0">
-                        {app.candidateName?.charAt(0) || 'A'}
+                    <Link key={app.id} href={`/admin/applications/${app.id}`}>
+                      <div className="flex items-center p-3 md:p-4 bg-zinc-50/50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800 hover:border-primary/30 transition-colors">
+                        <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-sm mr-3 md:mr-4 shrink-0">
+                          {app.candidateName?.charAt(0) || 'A'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-zinc-900 dark:text-zinc-100 text-sm truncate">
+                            {app.candidateName}
+                          </p>
+                          <p className="text-[10px] md:text-[11px] text-zinc-500 font-medium truncate">
+                            Applied for <span className="text-primary font-bold">{app.jobTitle}</span>
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={cn(
+                            "text-[8px] font-black uppercase px-2 py-0.5 rounded-full",
+                            app.status === 'New' ? "bg-blue-100 text-blue-600" : "bg-zinc-100 text-zinc-600"
+                          )}>
+                            {app.status || 'New'}
+                          </span>
+                          <div className="text-[9px] text-zinc-400 font-bold whitespace-nowrap">
+                            {app.appliedAt?.seconds ? formatDistanceToNow(app.appliedAt.seconds * 1000, { addSuffix: true }) : 'Just now'}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-zinc-900 dark:text-zinc-100 text-sm truncate">
-                          {app.candidateName}
-                        </p>
-                        <p className="text-[10px] md:text-[11px] text-zinc-500 font-medium truncate">
-                          Applied for <span className="text-primary font-bold">{app.jobTitle}</span>
-                        </p>
-                      </div>
-                      <div className="text-[9px] md:text-[10px] text-zinc-400 font-bold text-right hidden sm:block whitespace-nowrap ml-4">
-                        {app.appliedAt?.seconds ? formatDistanceToNow(app.appliedAt.seconds * 1000, { addSuffix: true }) : 'Just now'}
-                      </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (
@@ -215,12 +177,24 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             <Card className="shadow-sm border-zinc-200 dark:border-zinc-800 rounded-2xl">
               <CardHeader className="p-5 md:p-6 border-b">
-                <CardTitle className="text-lg font-bold">Quick CMS Navigation</CardTitle>
+                <CardTitle className="text-lg font-bold">Recent Leads</CardTitle>
               </CardHeader>
               <CardContent className="p-3 md:p-4 space-y-1">
-                <Button asChild variant="ghost" className="w-full justify-start font-bold h-11 rounded-xl"><Link href="/admin/services"><Layers className="mr-3 h-4 w-4 text-purple-600" /> Manage Services</Link></Button>
-                <Button asChild variant="ghost" className="w-full justify-start font-bold h-11 rounded-xl"><Link href="/admin/portfolio"><Globe className="mr-3 h-4 w-4 text-blue-600" /> Portfolio Hub</Link></Button>
-                <Button asChild variant="ghost" className="w-full justify-start font-bold h-11 rounded-xl"><Link href="/admin/testimonials"><MessageSquare className="mr-3 h-4 w-4 text-pink-600" /> Client Feedback</Link></Button>
+                {leadsLoading ? (
+                  <Skeleton className="h-20 w-full rounded-xl" />
+                ) : leads && leads.length > 0 ? (
+                  leads.slice(0, 3).map((lead: any) => (
+                    <div key={lead.id} className="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900 rounded-lg cursor-pointer">
+                      <p className="font-bold text-sm">{lead.name}</p>
+                      <p className="text-[10px] text-zinc-500 truncate">{lead.message}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-zinc-400 p-4 text-center">No leads yet.</p>
+                )}
+                <Button asChild variant="ghost" className="w-full justify-center text-primary font-bold text-xs pt-4 border-t rounded-none">
+                  <Link href="/admin/leads">Explore All Leads</Link>
+                </Button>
               </CardContent>
             </Card>
 
