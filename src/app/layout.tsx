@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -11,7 +10,8 @@ import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBa
 import { CookieSettingsModal } from '@/components/cookie-consent/CookieSettingsModal';
 import { CookieConsentManager } from '@/components/cookie-consent/CookieConsentManager';
 import { CookieConsentProvider } from '@/hooks/use-cookie-consent.tsx';
-import { AuthProvider } from '@/contexts/auth-context'; // Import AuthProvider
+import { AuthProvider } from '@/contexts/auth-context';
+import { FirebaseClientProvider } from '@/firebase';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,25 +36,27 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
-        <AuthProvider> {/* Wrap with AuthProvider */}
-          <CookieConsentProvider>
-            <CookieConsentManager>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="dark"
-                enableSystem
-                disableTransitionOnChange
-              >
-                <Navbar />
-                <main className="flex-grow">{children}</main>
-                <Footer />
-                <ChatSection />
-                <Toaster />
-                <CookieConsentBanner />
-                <CookieSettingsModal />
-              </ThemeProvider>
-            </CookieConsentManager>
-          </CookieConsentProvider>
+        <AuthProvider>
+          <FirebaseClientProvider>
+            <CookieConsentProvider>
+              <CookieConsentManager>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="dark"
+                  enableSystem
+                  disableTransitionOnChange
+                >
+                  <Navbar />
+                  <main className="flex-grow">{children}</main>
+                  <Footer />
+                  <ChatSection />
+                  <Toaster />
+                  <CookieConsentBanner />
+                  <CookieSettingsModal />
+                </ThemeProvider>
+              </CookieConsentManager>
+            </CookieConsentProvider>
+          </FirebaseClientProvider>
         </AuthProvider>
       </body>
     </html>
