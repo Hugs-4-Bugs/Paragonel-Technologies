@@ -1,0 +1,90 @@
+
+{
+  "company": {
+    "name": "QuantumFusion Solutions",
+    "founder": "Prabhat Sharma",
+    "founded": "2024",
+    "tagline": "Shaping the Future for Tomorrow",
+    "description": "QuantumFusion Solutions is an AI-native technology company that builds its own SaaS products and delivers custom digital platforms for clients. We specialize in AI integration, cloud infrastructure, DevOps automation, mobile apps, and full-stack SaaS development.",
+    "location": "Bangalore, India",
+    "email": "contact@quantumfusion.in",
+    "website": "https://quantumfusion-solutions.vercel.app",
+    "linkedin": "https://www.linkedin.com/company/quantumfusion-solutions",
+    "twitter": "https://x.com/kattyPrabhat"
+  },
+  "pages": [
+    { "name": "Home", "url": "/" },
+    { "name": "About", "url": "/about" },
+    { "name": "Services", "url": "/services" },
+    { "name": "Portfolio", "url": "/portfolio" },
+    { "name": "Blog", "url": "/blog" },
+    { "name": "Careers", "url": "/careers" },
+    { "name": "Team", "url": "/team" },
+    { "name": "Contact", "url": "/contact" },
+    { "name": "FAQ", "url": "/faq" },
+    { "name": "Testimonials", "url": "/testimonials" }
+  ],
+  "services": [
+    {
+      "name": "AI Solutions",
+      "url": "/services/ai-solutions",
+      "description": "Custom ML models, LLM integration, multi-agent systems, RAG pipelines, chatbots, voice agents, document automation."
+    },
+    {
+      "name": "Cloud Infrastructure",
+      "url": "/services/cloud-infrastructure",
+      "description": "AWS and GCP setup, migration, management, cost optimization, Terraform IaC."
+    },
+    {
+      "name": "DevOps Automation",
+      "url": "/services/devops-automation",
+      "description": "CI/CD pipelines, Docker, Kubernetes, infrastructure as code, automated testing."
+    },
+    {
+      "name": "SaaS Platforms",
+      "url": "/services/saas-platforms",
+      "description": "End-to-end custom SaaS platform development: design, backend, payments, deployment."
+    },
+    {
+      "name": "Mobile App Development",
+      "url": "/services",
+      "description": "Flutter cross-platform apps for Android and iOS integrated with Spring Boot backends."
+    },
+    {
+      "name": "Custom Platform Build",
+      "url": "/services",
+      "description": "Any domain: healthcare, fintech, e-commerce, restaurant tech. Full-stack delivery."
+    }
+  ],
+  "products": [
+    {
+      "name": "AcquisitionOS",
+      "status": "live",
+      "description": "AI-powered lead acquisition and CRM platform. Replaces 3-4 separate tools.",
+      "url": "/portfolio"
+    },
+    {
+      "name": "SystemFoundry",
+      "status": "live",
+      "description": "Visual AI-powered system architecture simulator for engineers.",
+      "url": "/portfolio"
+    },
+    {
+      "name": "CodeGuard AI",
+      "status": "published",
+      "description": "VS Code extension that detects expensive AWS infrastructure patterns in Terraform files in real time.",
+      "url": "/portfolio"
+    },
+    {
+      "name": "AaharAI",
+      "status": "in-development",
+      "description": "India-first AI nutrition and health companion for Android with regional food intelligence.",
+      "url": "/portfolio"
+    }
+  ],
+  "careers": {
+    "page_url": "/careers",
+    "description": "We are always looking for talented engineers, designers, and product thinkers.",
+    "apply_instruction": "Visit our Careers page to see open roles and apply."
+  }
+}
