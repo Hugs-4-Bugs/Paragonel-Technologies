@@ -1,219 +1,98 @@
 
-# QuantumFusion Solutions: Backend API Requirements Guide
+# QuantumFusion Solutions: Backend API Requirements Guide (Phase 2.1)
 
-This document outlines the high-level requirements for a backend system designed to support the QuantumFusion Solutions Next.js frontend application. This guide is technology-agnostic in terms of backend implementation (e.g., Java Spring Boot, Node.js/Express, Python/Django) but focuses on the functionalities and API endpoints the frontend would expect.
+This document specifies the technical requirements for a backend system (Java Spring Boot, Node.js, or Python) to support the full operational lifecycle of the QuantumFusion Solutions platform, including Recruiting (ATS), Lead Management, CMS, and Security Auditing.
 
-## I. Core Goals
+---
 
-1.  **User Authentication & Management**: Securely manage user accounts, registration, login, and password recovery.
-2.  **User Profile Management**: Allow users to create, view, and update their profiles.
-3.  **Job Application System**: Enable users to apply for jobs and store application data.
-4.  **Data Persistence**: Store all relevant data (users, profiles, applications) in a database.
-5.  **Email Notifications**: Send transactional emails for OTP verification, signup confirmation, application confirmation, and password resets.
-6.  **(Optional Advanced) Job Match Alerts**: Logic to notify users about relevant new jobs.
+## I. Core Data Models
 
-## II. Data Models (Conceptual)
+### 1. User & Admin (Authentication)
+*   **User**: Public job seeker account.
+*   **Admin**: Internal staff with roles: `Founder` or `HR`.
+*   **Fields**: `id`, `email`, `passwordHash`, `role`, `fullName`, `lastLoginAt`.
 
-The backend will need to manage the following primary data entities. Database schema design will depend on the chosen database technology.
+### 2. Job & Application (Recruiting/ATS)
+*   **Job**: `id`, `jobId` (String), `title`, `department`, `location`, `description`, `skills` (Array), `isActive` (Boolean), `salaryRange`, `employmentType`, `workArrangement`, `postedDate`.
+*   **JobApplication**: `id`, `applicationId`, `jobId`, `candidateName`, `candidateEmail`, `candidatePhone`, `resumeUrl` (S3/GCS Link), `skills` (Captured from resume), `status` (`New`, `Reviewing`, `Shortlisted`, `Interview Scheduled`, `Rejected`, `Hired`), `internalNotes` (Text), `appliedAt`.
 
-### 1. User
-   - `userId` (String, Primary Key, Unique)
-   - `fullName` (String)
-   - `email` (String, Unique, Indexed)
-   - `hashedPassword` (String) - Never store plain text passwords.
-   - `emailVerified` (Boolean, default: false)
-   - `createdAt` (Timestamp)
-   - `updatedAt` (Timestamp)
+### 3. Business Leads (CRM)
+*   **Lead**: `id`, `name`, `email`, `company`, `message`, `source` (e.g., "Contact Page", "Service Inquiry"), `status` (`New`, `Contacted`, `Qualified`, `Closed`), `internalNotes`, `createdAt`.
 
-### 2. UserProfile
-   - `profileId` (String, Primary Key, Unique) - Can be same as `userId`.
-   - `userId` (String, Foreign Key to User)
-   - `phone` (String, Optional)
-   - `skills` (Array of Strings, Optional)
-   - `resumeUrl` (String, URL, Optional) - Link to a resume hosted elsewhere.
-   - `codingProfileUrl` (String, URL, Optional)
-   - `linkedinProfile` (String, URL, Optional)
-   - `portfolioWebsite` (String, URL, Optional)
-   - `preferredJobLocation` (String, Optional)
-   - `currentCTC` (String, Optional)
-   - `expectedSalary` (String, Optional)
-   - `noticePeriod` (String, Optional)
-   - `jobNotificationOptIn` (Boolean, default: false)
-   - `updatedAt` (Timestamp)
+### 4. Content (CMS)
+*   **BlogPost**: `id`, `title`, `slug`, `author`, `body`, `excerpt`, `thumbnailUrl`, `category`, `tags`, `status` (`Published`, `Draft`, `Scheduled`), `publishAt` (Future date), `metaTitle`, `metaDescription`, `focusKeyword`, `canonicalUrl`.
+*   **Service**: `id`, `title`, `slug`, `description`, `iconName`, `imageUrl`, `isActive`, `order`.
+*   **PortfolioProject**: `id`, `name`, `category`, `description`, `imageUrl`, `techs` (Array), `link`, `status`, `createdAt`.
+*   **Testimonial**: `id`, `name`, `role`, `company`, `content`, `rating` (1-5), `avatarUrl`.
 
-### 3. OTP (One-Time Password)
-   - `otpId` (String, Primary Key)
-   - `userId` (String, Foreign Key to User, or email if user not yet created)
-   - `otpCode` (String, Hashed or Encrypted)
-   - `expiresAt` (Timestamp)
-   - `used` (Boolean, default: false)
-   - `purpose` (String, e.g., "EMAIL_VERIFICATION", "PASSWORD_RESET")
+### 5. Marketing & Governance
+*   **NewsletterSubscriber**: `id`, `email`, `source`, `subscribedAt`.
+*   **AuditLog**: `id`, `adminEmail`, `action`, `resourceType`, `resourceId`, `ipAddress`, `timestamp`.
 
-### 4. JobApplication
-   - `applicationId` (String, Primary Key, Unique)
-   - `userId` (String, Foreign Key to User)
-   - `jobId` (String) - Referring to the ID of the job (from `dummyJobs` or a future Jobs table)
-   - `jobTitle` (String)
-   - `fullName` (String) - At time of application
-   - `email` (String) - At time of application
-   - `phone` (String) - At time of application
-   - `resumeFileName` (String) - If a file is uploaded to backend storage.
-   - `resumeStoragePath` (String, Optional) - Path in backend storage if resume files are stored.
-   - `linkedinProfile` (String, URL, Optional)
-   - `portfolioWebsite` (String, URL, Optional)
-   - `codingProfileUrl` (String, URL, Optional)
-   - `highestQualification` (String)
-   - `specialization` (String)
-   - `university` (String)
-   - `passingYear` (String)
-   - `marks` (String)
-   - `primarySkills` (String) - Comma-separated or array
-   - `secondarySkills` (String, Optional)
-   - `isFresher` (Boolean)
-   - `companyName` (String, Optional)
-   - `jobTitleExperience` (String, Optional)
-   - `fromDate` (String/Date, Optional)
-   - `toDate` (String/Date, Optional)
-   - `isCurrentlyWorking` (Boolean, Optional)
-   - `jobDescription` (String, Text, Optional) - Experience details
-   - `coverLetter` (String, Text, Optional)
-   - `preferredJobLocation` (String)
-   - `currentCTC` (String, Optional)
-   - `expectedSalary` (String)
-   - `noticePeriod` (String)
-   - `acceptedTerms` (Boolean, Must be true)
-   - `notifiedForSimilarJobs` (Boolean)
-   - `appliedAt` (Timestamp)
+---
 
-### 5. Job (If backend manages job postings)
-   - `jobId` (String, Primary Key)
-   - `title` (String)
-   - `company` (String)
-   - `location` (String)
-   - `department` (String)
-   - `description` (Text)
-   - `employmentType` (String)
-   - `salaryRange` (String, Optional)
-   - `requiredSkills` (Array of Strings)
-   - `postedDate` (Timestamp)
-   - `isActive` (Boolean)
+## II. Required API Endpoints
 
-## III. API Endpoints
+### 1. Recruiting & ATS (Authenticated: HR/Founder)
+*   `GET /api/admin/applications`: Fetch applications with filtering by status/job.
+*   `GET /api/admin/applications/{id}`: Detailed candidate profile.
+*   `PATCH /api/admin/applications/{id}/status`: Update hiring pipeline stage.
+*   `PATCH /api/admin/applications/{id}/notes`: Update internal recruiter feedback.
+*   `POST /api/jobs/apply`: (Public) Handle multipart form-data for resume upload (to S3/GCS) and Firestore entry.
 
-These are conceptual RESTful API endpoints. Actual paths and request/response structures can vary.
+### 2. Lead Management (Authenticated: Admin)
+*   `GET /api/admin/leads`: Fetch all business inquiries.
+*   `PATCH /api/admin/leads/{id}/status`: Update lead qualification stage.
+*   `POST /api/leads`: (Public) Capture form submission.
 
-### 1. Authentication
-   - **`POST /api/auth/signup`**
-     - **Request Body**: `fullName`, `email`, `password`
-     - **Action**:
-       - Validate input.
-       - Check if email already exists.
-       - Generate OTP, store it (e.g., in OTP table or Redis) with an expiry.
-       - Send OTP to user's email.
-     - **Response**: Success message (e.g., "OTP sent to your email").
-   - **`POST /api/auth/verify-otp`** (for signup)
-     - **Request Body**: `email`, `otp`
-     - **Action**:
-       - Validate OTP against stored OTP for the email.
-       - If valid: Mark email as verified (e.g., update `emailVerified` on User if user created, or store verification status temporarily). Create the user record in the database with `hashedPassword`.
-     - **Response**: Success message, or JWT/session token for auto-login.
-   - **`POST /api/auth/login`**
-     - **Request Body**: `email`, `password`
-     - **Action**:
-       - Validate credentials against stored `hashedPassword`.
-       - Ensure `emailVerified` is true.
-       - Generate JWT or session token.
-     - **Response**: User details (excluding password), JWT/session token.
-   - **`POST /api/auth/logout`**
-     - **Action**: Invalidate JWT/session token on the backend if necessary (e.g., for JWT, add to a blacklist until expiry).
-     - **Response**: Success message.
-   - **`POST /api/auth/forgot-password`**
-     - **Request Body**: `email`
-     - **Action**:
-       - Check if user exists.
-       - Generate a secure, time-limited password reset token.
-       - Store the token (hashed) associated with the `userId`.
-       - Send an email to the user with a link containing this token (e.g., `yourfrontend.com/auth/reset-password?token=TOKEN_VALUE`).
-     - **Response**: Success message (e.g., "Password reset link sent to your email if account exists").
-   - **`POST /api/auth/reset-password`**
-     - **Request Body**: `token`, `newPassword`
-     - **Action**:
-       - Validate the token (check existence, expiry, not used).
-       - Update user's `hashedPassword`.
-       - Invalidate the reset token.
-     - **Response**: Success message.
+### 3. Newsletter (Authenticated: Admin)
+*   `GET /api/admin/newsletter`: Fetch subscribers.
+*   `GET /api/admin/newsletter/export`: Generate CSV of all subscribers.
+*   `POST /api/newsletter/subscribe`: (Public) Add new email.
+*   `DELETE /api/admin/newsletter/{id}`: Remove subscriber.
 
-### 2. User Profile
-   - **`GET /api/profile`** (Authenticated route)
-     - **Action**: Fetch the profile for the currently authenticated user (`userId` from token/session).
-     - **Response**: UserProfile data.
-   - **`PUT /api/profile`** (Authenticated route)
-     - **Request Body**: Fields from UserProfile to update (e.g., `phone`, `skills`, `resumeUrl`, etc.).
-     - **Action**: Validate input. Update the user's profile in the database.
-     - **Response**: Updated UserProfile data.
+### 4. CMS Operations (Authenticated: Admin)
+*   `POST /api/admin/blog/autosave`: Temporary storage for draft recovery.
+*   `PUT /api/admin/services/{id}`: Update service offerings.
+*   `PUT /api/admin/portfolio/{id}`: Manage project showcases.
+*   `PUT /api/admin/testimonials/{id}`: Manage client feedback.
 
-### 3. Job Application
-   - **`POST /api/jobs/apply`** (Authenticated route)
-     - **Request Body**: All fields from `ApplicationFormValues` (including `jobId`, `jobTitle`).
-     *   **Resume Handling**: The frontend might send the resume as a `FormData` object (multipart/form-data). The backend needs to handle file uploads, validate size/type, and store it (e.g., AWS S3, Google Cloud Storage, or local file system if appropriate) and save the path in `JobApplication.resumeStoragePath`.
-     - **Action**:
-       - Validate input.
-       - Store the application details in the `JobApplication` table.
-       - **Trigger email notifications**:
-         - Send application details to `erprabhat72@gmail.com`. This could use the logic from the existing Genkit flow (`format-application-email-flow.ts`) adapted for the backend, or a new backend email templating system.
-         - Send a confirmation email to the applicant.
-     - **Response**: Success message.
-   - **`GET /api/applications/me`** (Authenticated route, Optional)
-     - **Action**: Fetch a list of jobs the authenticated user has applied for.
-     - **Response**: Array of `JobApplication` summaries or relevant job details.
+### 5. Security & Auditing (System)
+*   `GET /api/admin/activity`: Read-only stream of `AuditLog` entries.
+*   **Internal Requirement**: Every `POST`, `PUT`, `PATCH`, or `DELETE` request in `/api/admin/*` must trigger an entry in `AuditLog`.
 
-### 4. Job Listings (If managed by backend)
-   - **`GET /api/jobs`**
-     - **Action**: Fetch a list of active jobs (with pagination, filtering options like location, department, keywords).
-     - **Response**: Paginated list of Job data.
-   - **`GET /api/jobs/{jobId}`**
-     - **Action**: Fetch details for a specific job.
-     - **Response**: Job data.
-   - **`POST /api/jobs`** (Admin route)
-     - **Action**: Create a new job posting.
-     - **Trigger**: After successful creation, this could trigger the "Smart Job Matching Alert" logic.
+---
 
-## IV. Smart Job Matching Alert (Backend Logic)
+## III. Operational Logic
 
-This feature, if implemented on the backend, would require:
-1.  **Trigger**: A mechanism to detect when a new job is posted (e.g., after `POST /api/jobs` or a database trigger).
-2.  **User Skill Matching**:
-    - Fetch all users who have opted into job notifications (`jobNotificationOptIn: true` in `UserProfile`).
-    - For each user, retrieve their `skills`.
-    - Retrieve the `requiredSkills` for the new job.
-    - Perform the percentage match (as defined in the frontend's Genkit flow).
-3.  **Email Notification**:
-    - If the match percentage is >= 70%, format and send an email to the user. The email content logic from `src/ai/flows/generate-job-match-email-flow.ts` can be adapted or called by the backend.
-    - This process should be asynchronous (e.g., using message queues or background jobs) to avoid blocking the job posting API response.
+### 1. Soft Delete Pattern
+Records for `Jobs`, `Blogs`, `Applications`, and `Leads` must never be physically deleted from the database via the API. 
+*   Implement a `deleted_at` timestamp. 
+*   The `GET` endpoints for the public site must filter for `deleted_at IS NULL`.
+*   The Admin Panel must allow filtering by "Archived" records and provide a "Restore" action.
 
-## V. Technologies & Considerations for Spring Boot
+### 2. Blog Scheduling
+*   The backend must run a cron job (every 10-15 minutes) to find `BlogPost` records where `status = 'Scheduled'` and `publishAt <= NOW()`, and update them to `status = 'Published'`.
 
-If using Java Spring Boot:
+### 3. File Storage
+*   Resumes must be stored in a private S3 bucket or GCS bucket. 
+*   The `resumeUrl` returned to the admin should ideally be a **Pre-signed URL** with a short expiration (e.g., 15 minutes) to ensure resumes are not publicly accessible.
 
-*   **Spring Security**: For authentication (JWT, OAuth2) and authorization.
-*   **Spring Data JPA/Hibernate**: For database interaction (e.g., with PostgreSQL, MySQL).
-*   **Spring Web MVC/WebFlux**: For creating REST APIs.
-*   **Spring Mail**: For sending emails.
-*   **File Handling**: For resume uploads (e.g., `MultipartFile`).
-*   **Validation**: Bean Validation (JSR 380).
-*   **Database**: Choose a relational (PostgreSQL, MySQL) or NoSQL (MongoDB - though careful schema design is still needed) database.
-*   **Password Hashing**: Use a strong hashing algorithm like BCrypt.
-*   **External Services**:
-    *   Transactional Email Service (SendGrid, Amazon SES, Mailgun).
-    *   Cloud Storage (AWS S3, Google Cloud Storage) if storing resumes.
-*   **Project Structure**: Standard Maven/Gradle project structure with layers (Controller, Service, Repository).
-*   **Error Handling**: Consistent error responses and logging.
-*   **Testing**: Unit, integration, and API tests.
+### 4. Login Security (Rate Limiting)
+*   Endpoint `POST /api/admin/auth/login` must implement a lockout mechanism.
+*   Rule: Max 5 failures for a specific email or IP address within a 15-minute window.
+*   After lockout, the account is blocked for 30 minutes.
 
-## VI. Interaction with Existing Genkit Flows (Optional)
+### 5. Email Triggers
+*   **New Application**: Send to `HR_EMAIL`. Include candidate name, job, and recruiter link.
+*   **New Lead**: Send to `ADMIN_EMAIL`. Include full message and contact info.
+*   **Newsletter Welcome**: Send to subscriber upon successful join.
 
-If you want the backend to directly use the AI logic already defined in your Next.js project's Genkit flows:
-1.  **Expose Genkit Flows as APIs**: Your Next.js app (when deployed) can expose Genkit flows as API routes. The Spring Boot backend could then make HTTP calls to these Next.js API routes. This might be simpler initially if you want to reuse the exact AI prompts and logic.
-2.  **Replicate Logic in Backend**: Alternatively, the backend could implement its own logic to call the Google AI APIs directly, potentially using Google's Java client libraries, replicating the prompts and output structuring done by the Genkit flows.
+---
 
-This guide provides a starting point for defining the backend requirements based on the current frontend application. You would need to elaborate on each section, define detailed schemas, and design the specific architecture based on your chosen backend technology and scalability needs.
+## IV. Success Criteria
+A successful backend implementation will allow the QuantumFusion frontend to:
+1.  Manage a full hiring funnel without external tools.
+2.  Maintain a secure audit trail for all content and operational changes.
+3.  Scale the admin team by assigning granular roles (Founder/HR).
+4.  Recover accidentally "deleted" business data instantly.

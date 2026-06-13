@@ -1,13 +1,12 @@
 
-"use client"; // Add "use client" because openSettings will be a client-side interaction
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { NewsletterSubscription } from '@/components/sections/newsletter-subscription';
-import { Facebook, Linkedin, Twitter, Instagram, Settings } from 'lucide-react';
-import { useCookieConsent } from "@/hooks/use-cookie-consent.tsx"; // Import the hook
-import { Button } from "@/components/ui/button"; // Import Button for the settings link
-
+import { Facebook, Linkedin, Twitter, Instagram, Settings, MapPin, Mail, Phone } from 'lucide-react';
+import { useCookieConsent } from "@/hooks/use-cookie-consent.tsx";
+import { Button } from "@/components/ui/button";
 
 const footerNavLinks = [
   { href: "/about", label: "About Us" },
@@ -25,33 +24,47 @@ export function Footer() {
   const { openSettings, isMounted } = useCookieConsent();
 
   return (
-    <footer className="border-t border-border/40 bg-background">
-      <div className="container px-4 md:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
-          {/* Column 1: Logo and About */}
-          <div className="md:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center space-x-2 mb-4">
+    <footer className="border-t border-border/40 bg-background relative z-10">
+      <div className="container px-4 md:px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+          {/* Column 1: Branding */}
+          <div className="space-y-6">
+            <Link href="/" className="inline-block">
               <Image
                 src="/images/QuantumFusion-Logo.png" 
-                alt="QuantumFusion Solutions Logo"
-                width={220}
-                height={150}
-                className="h-20 w-30 md:h-40 md:w-40, align-center, rounded-3xl"
-                data-ai-hint="company logo abstract"
+                alt="QuantumFusion Solutions"
+                width={180}
+                height={60}
+                className="h-auto w-auto dark:brightness-110"
+                priority
               />
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              QuantumFusion Solutions: Shaping the future for tomorrow with innovative IT solutions in AI, Cloud, DevOps, and SaaS.
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+              QuantumFusion Solutions is an AI-native technology company building the next generation of digital platforms and intelligent automation for global businesses.
             </p>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
+                <MapPin className="h-4 w-4 text-primary" />
+                <span>HSR Layout, Bangalore, 560102</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Mail className="h-4 w-4 text-primary" />
+                <a href="mailto:contact@quantumfusion.in">contact@quantumfusion.in</a>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Phone className="h-4 w-4 text-primary" />
+                <a href="tel:+917250063206">+91 72500 63206</a>
+              </div>
+            </div>
           </div>
 
-          {/* Column 2: Quick Links */}
+          {/* Column 2: Navigation */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
-            <ul className="space-y-2">
+            <h4 className="font-bold text-foreground mb-6 uppercase tracking-widest text-xs">Company</h4>
+            <ul className="space-y-3">
               {footerNavLinks.slice(0, 5).map(link => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                     {link.label}
                   </Link>
                 </li>
@@ -59,51 +72,70 @@ export function Footer() {
             </ul>
           </div>
           
-           {/* Column 3: More Quick Links */}
+          {/* Column 3: More Links */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4 lg:invisible">‎</h4> {/* Placeholder for alignment */}
-             <ul className="space-y-2">
+            <h4 className="font-bold text-foreground mb-6 uppercase tracking-widest text-xs">Resources</h4>
+             <ul className="space-y-3">
               {footerNavLinks.slice(5).map(link => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link href={link.href} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                     {link.label}
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link href="/privacy-policy" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
             </ul>
           </div>
 
-
           {/* Column 4: Newsletter */}
-          <div className="md:col-span-2 lg:col-span-1">
-             <h4 className="font-semibold text-foreground mb-4">Stay Connected</h4>
+          <div className="space-y-6">
+             <h4 className="font-bold text-foreground mb-2 uppercase tracking-widest text-xs">Join the Community</h4>
              <NewsletterSubscription />
           </div>
         </div>
         
-        <div className="border-t border-border/40 pt-8 flex flex-col sm:flex-row items-center justify-between">
-          <div className="flex flex-col sm:flex-row items-center gap-x-4 gap-y-2 text-sm text-muted-foreground text-center sm:text-left mb-4 sm:mb-0">
-            <p>
-              &copy; {new Date().getFullYear()} QuantumFusion Solutions. All rights reserved.
-            </p>
+        <div className="border-t border-border/40 pt-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col sm:flex-row items-center gap-x-6 gap-y-3 text-sm text-muted-foreground font-medium">
+            <p>&copy; {new Date().getFullYear()} QuantumFusion Solutions.</p>
             {isMounted && (
-              <Button variant="link" size="sm" onClick={openSettings} className="p-0 text-muted-foreground hover:text-primary">
-                <Settings className="h-4 w-4 mr-1.5" /> Cookie Settings
-              </Button>
+              <button 
+                onClick={openSettings} 
+                className="flex items-center hover:text-primary transition-colors group"
+              >
+                <Settings className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform duration-500" /> 
+                Cookie Settings
+              </button>
             )}
           </div>
-          <div className="flex space-x-4">
-            <Link href="https://www.linkedin.com/company/quantumfusion-solutions/?viewAsMember=true" className="text-muted-foreground hover:text-primary transition-colors" aria-label="LinkedIn">
-              <Linkedin className="h-5 w-5 neon-icon" />
+          
+          <div className="flex items-center gap-6">
+            <Link 
+              href="https://www.linkedin.com/company/quantumfusion-solutions" 
+              target="_blank" 
+              className="text-muted-foreground hover:text-primary transition-all hover:scale-110"
+              aria-label="LinkedIn"
+            >
+              <Linkedin className="h-5 w-5" />
             </Link>
-            <Link href="https://x.com/kattyPrabhat" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Twitter">
-              <Twitter className="h-5 w-5 neon-icon" />
+            <Link 
+              href="https://x.com/kattyPrabhat" 
+              target="_blank" 
+              className="text-muted-foreground hover:text-primary transition-all hover:scale-110"
+              aria-label="Twitter"
+            >
+              <Twitter className="h-5 w-5" />
             </Link>
-            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Facebook">
-              <Facebook className="h-5 w-5 neon-icon" />
-            </Link>
-            <Link href="https://www.instagram.com/_s_4_sharma/" className="text-muted-foreground hover:text-primary transition-colors" aria-label="Instagram">
-              <Instagram className="h-5 w-5 neon-icon" />
+            <Link 
+              href="https://www.instagram.com/_s_4_sharma/" 
+              target="_blank" 
+              className="text-muted-foreground hover:text-primary transition-all hover:scale-110"
+              aria-label="Instagram"
+            >
+              <Instagram className="h-5 w-5" />
             </Link>
           </div>
         </div>
