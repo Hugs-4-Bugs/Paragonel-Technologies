@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -19,7 +18,6 @@ import { cn } from '@/lib/utils';
 export default function BlogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-  const [isFilterVisible, setIsFilterVisible] = useState(false);
 
   const postsQuery = useMemo(() => 
     query(
@@ -48,23 +46,23 @@ export default function BlogPage() {
   }, [posts, searchTerm, activeCategory]);
 
   return (
-    <section className="section-padding bg-zinc-50/50 dark:bg-zinc-950 min-h-screen">
+    <section className="section-padding bg-background min-h-screen">
       <div className="container mx-auto px-4 md:px-6">
-        <ScrollFadeIn className="text-center mb-12">
+        <ScrollFadeIn className="text-center mb-16">
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Rss className="h-8 w-8 text-primary neon-icon" />
           </div>
-          <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight text-foreground">
             Quantum<span className="text-primary">Insights</span>
           </h1>
-          <p className="text-lg text-zinc-500 max-w-2xl mx-auto font-medium">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-medium">
             Intelligence and trends from the cutting edge of AI, Cloud, and Software Engineering.
           </p>
         </ScrollFadeIn>
 
-        {/* Compact Search & Category Bar */}
-        <ScrollFadeIn className="mb-12 max-w-4xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-zinc-900 p-2 rounded-2xl border shadow-sm">
+        {/* Improved Search & Category Bar - Theme Consistent */}
+        <ScrollFadeIn className="mb-16 max-w-4xl mx-auto">
+          <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2 rounded-2xl border shadow-sm flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               <Input 
@@ -74,28 +72,26 @@ export default function BlogPage() {
                 className="pl-9 h-11 border-none focus-visible:ring-0 bg-transparent" 
               />
               {searchTerm && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <button 
                   onClick={() => setSearchTerm('')} 
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 flex items-center justify-center text-zinc-400 hover:text-primary transition-colors"
                 >
                   <X className="h-4 w-4" />
-                </Button>
+                </button>
               )}
             </div>
             <div className="hidden md:block w-px h-8 bg-zinc-200 dark:bg-zinc-800" />
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto px-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 mr-2 whitespace-nowrap">Topics:</span>
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto px-2 no-scrollbar">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 mr-2 whitespace-nowrap">Topics:</span>
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={cn(
-                    "px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
+                    "px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border",
                     activeCategory === cat 
-                      ? "bg-primary text-white shadow-md" 
-                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200"
+                      ? "bg-primary text-white border-primary shadow-md" 
+                      : "bg-background text-zinc-500 border-zinc-200 dark:border-zinc-800 hover:border-primary/50 hover:text-primary"
                   )}
                 >
                   {cat}
@@ -131,7 +127,7 @@ export default function BlogPage() {
                           </div>
                         )}
                         <div className="absolute top-4 left-4">
-                          <Badge className="bg-primary shadow-lg">{post.category}</Badge>
+                          <Badge className="bg-primary text-white shadow-lg border-none">{post.category}</Badge>
                         </div>
                       </div>
                     </CardHeader>
@@ -142,7 +138,7 @@ export default function BlogPage() {
                         {post.title}
                       </CardTitle>
                     </Link>
-                    <CardDescription className="text-base text-zinc-600 dark:text-zinc-400 line-clamp-3 mb-6">
+                    <CardDescription className="text-base text-zinc-600 dark:text-zinc-400 line-clamp-3 mb-6 leading-relaxed">
                       {post.excerpt}
                     </CardDescription>
                     <div className="flex items-center text-xs font-bold text-zinc-400 space-x-6 mt-auto">
@@ -157,7 +153,7 @@ export default function BlogPage() {
                     </div>
                   </CardContent>
                   <CardFooter className="p-8 pt-0">
-                    <Button asChild variant="link" className="p-0 text-lg font-bold text-primary">
+                    <Button asChild variant="link" className="p-0 text-lg font-bold text-primary group-hover:translate-x-1 transition-transform">
                       <Link href={`/blog/${post.slug}`}>
                         Read Article <ArrowRight className="ml-1 h-5 w-5" />
                       </Link>
@@ -168,11 +164,11 @@ export default function BlogPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-24 bg-white dark:bg-zinc-900 border rounded-3xl max-w-4xl mx-auto shadow-sm">
-             <Rss className="h-20 w-20 text-zinc-100 dark:text-zinc-800 mx-auto mb-6" />
+          <div className="text-center py-24 bg-zinc-50/50 dark:bg-zinc-900/40 border rounded-[2.5rem] max-w-4xl mx-auto shadow-sm">
+             <Rss className="h-20 w-20 text-zinc-200 dark:text-zinc-800 mx-auto mb-6" />
              <h2 className="text-2xl font-bold">No articles found</h2>
              <p className="text-zinc-400 mb-8">Try adjusting your filters or search term.</p>
-             <Button variant="outline" onClick={() => { setSearchTerm(''); setActiveCategory('All'); }}>
+             <Button variant="outline" className="rounded-full px-8" onClick={() => { setSearchTerm(''); setActiveCategory('All'); }}>
                Reset All Filters
              </Button>
           </div>
