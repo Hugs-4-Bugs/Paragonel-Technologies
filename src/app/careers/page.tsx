@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, Cloud, Rocket, Laptop, Zap, Users, Filter, Search, MapPin, Clock, Building, Hash, Loader2, Heart, Award, ShieldCheck, Gem } from 'lucide-react';
+import { Brain, Cloud, Rocket, Laptop, Zap, Users, Filter, Search, MapPin, Clock, Building, Hash, Loader2, Heart, Award, ShieldCheck, Gem, Briefcase } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
