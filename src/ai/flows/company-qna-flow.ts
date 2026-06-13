@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview QuantumAI Smart Q&A Flow.
@@ -27,7 +26,7 @@ export type CompanyQnaOutput = z.infer<typeof CompanyQnaOutputSchema>;
 
 const prompt = ai.definePrompt({
   name: 'companyQnaPrompt',
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: CompanyQnaInputSchema },
   output: { schema: CompanyQnaOutputSchema },
   prompt: `You are QuantumAI, the intelligent assistant for QuantumFusion Solutions.
@@ -50,6 +49,15 @@ Answer with intent and navigationLink if applicable.`,
 });
 
 export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQnaOutput> {
-  const { output } = await prompt({ ...input, knowledge });
-  return output!;
+  try {
+    const { output } = await prompt({ ...input, knowledge });
+    if (!output) throw new Error("No output from AI");
+    return output;
+  } catch (error: any) {
+    console.error("companyQnaFlow Error:", error);
+    return {
+      answer: "I'm currently experiencing high demand. Please try again in a moment, or feel free to explore our [Services](/services) and [Careers](/careers) pages manually.",
+      intent: 'error'
+    };
+  }
 }

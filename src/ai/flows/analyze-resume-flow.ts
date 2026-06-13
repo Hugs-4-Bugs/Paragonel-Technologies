@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview QuantumAI Resume Analysis Flow.
@@ -27,7 +26,7 @@ export type AnalyzeResumeOutput = z.infer<typeof AnalyzeResumeOutputSchema>;
 
 const prompt = ai.definePrompt({
   name: 'analyzeResumePrompt',
-  model: 'googleai/gemini-2.0-flash',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: AnalyzeResumeInputSchema },
   output: { schema: AnalyzeResumeOutputSchema },
   prompt: `You are an expert HR recruitment specialist.
@@ -47,6 +46,12 @@ Extract:
 });
 
 export async function analyzeResume(input: AnalyzeResumeInput): Promise<AnalyzeResumeOutput> {
-  const { output } = await prompt(input);
-  return output!;
+  try {
+    const { output } = await prompt(input);
+    if (!output) throw new Error("Failed to parse resume");
+    return output;
+  } catch (error: any) {
+    console.error("analyzeResume Error:", error);
+    throw new Error("I'm having trouble analyzing your resume right now. Please try again later or apply manually.");
+  }
 }
