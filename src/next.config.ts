@@ -1,2 +1,2 @@
-// This file is being deprecated. Next.js configuration should reside in the root next.config.ts.
+// Deprecated: Moving all configuration to root next.config.ts
 export default {};

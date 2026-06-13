@@ -1,7 +1,7 @@
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai';
+import { genkit as genkitCore } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 
-export const ai = genkit({
+export const ai = genkitCore({
   plugins: [
     googleAI(),
   ],

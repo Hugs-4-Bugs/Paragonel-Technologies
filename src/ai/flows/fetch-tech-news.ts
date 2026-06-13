@@ -3,8 +3,8 @@
  * @fileOverview Fetches or generates recent tech news related to specified domains.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const FetchTechNewsInputSchema = z.object({
   domains: z
@@ -38,8 +38,8 @@ export async function fetchTechNews(
 const prompt = ai.definePrompt({
   name: 'fetchTechNewsPrompt',
   model: 'googleai/gemini-2.0-flash',
-  input: {schema: FetchTechNewsInputSchema},
-  output: {schema: FetchTechNewsOutputSchema},
+  input: { schema: FetchTechNewsInputSchema },
+  output: { schema: FetchTechNewsOutputSchema },
   prompt: `You are a tech news curator for QuantumFusion Solutions, an IT company specializing in AI, Cloud, DevOps, and SaaS.
 Your task is to generate {{count}} recent and plausible news headlines and short summaries related to our core domains: {{#each domains}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}.
 
@@ -64,7 +64,7 @@ const fetchTechNewsFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const {output} = await prompt(input);
+      const { output } = await prompt(input);
       if (!output || !output.newsItems || output.newsItems.length === 0) {
         throw new Error("Empty AI output");
       }

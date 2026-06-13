@@ -3,8 +3,8 @@
  * @fileOverview Recommends blog posts or case studies related to jobs a user has viewed.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const RecommendRelatedContentInputSchema = z.object({
   jobTitles: z
@@ -33,8 +33,8 @@ export async function recommendRelatedContent(
 const prompt = ai.definePrompt({
   name: 'recommendRelatedContentPrompt',
   model: 'googleai/gemini-2.0-flash',
-  input: {schema: RecommendRelatedContentInputSchema},
-  output: {schema: RecommendRelatedContentOutputSchema},
+  input: { schema: RecommendRelatedContentInputSchema },
+  output: { schema: RecommendRelatedContentOutputSchema },
   prompt: `You are a content curator for QuantumFusion Solutions, an innovative IT company specializing in AI, Cloud, DevOps, and SaaS.
 Based on the job titles a user has shown interest in, your task is to generate 3 relevant and engaging recommendations for blog posts, articles, or case studies from our website that would appeal to them.
 The recommendations should be related to our company's work and expertise.
@@ -54,9 +54,9 @@ const recommendRelatedContentFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const {output} = await prompt(input);
+      const { output } = await prompt(input);
       if (!output || !output.recommendations || output.recommendations.length === 0) {
-          throw new Error("Empty recommendations");
+        throw new Error("Empty recommendations");
       }
       return output;
     } catch (error) {
