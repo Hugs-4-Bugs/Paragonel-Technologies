@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export type MessageRole = 'user' | 'ai';
 
@@ -49,8 +49,6 @@ export function useChatState() {
     matchedJobs: [],
   });
 
-  const [isLoaded, setIsLoaded] = useState(false);
-
   // Initialize Session
   useEffect(() => {
     let sid = sessionStorage.getItem(SESSION_KEY);
@@ -59,7 +57,6 @@ export function useChatState() {
       sessionStorage.setItem(SESSION_KEY, sid);
     }
     setState(prev => ({ ...prev, sessionId: sid! }));
-    setIsLoaded(true);
   }, []);
 
   const addMessage = useCallback(async (role: MessageRole, content: string | React.ReactNode) => {
@@ -73,20 +70,21 @@ export function useChatState() {
       messages: [...prev.messages, newMessage]
     }));
 
-    // Persist to Firestore if content is string
-    if (typeof content === 'string' && state.sessionId && db) {
+    // Persist to Firestore if content is string and DB is available
+    if (typeof content === 'string' && sessionStorage.getItem(SESSION_KEY) && db) {
       try {
-        const messagesRef = collection(db, 'chatSessions', state.sessionId, 'messages');
+        const sid = sessionStorage.getItem(SESSION_KEY)!;
+        const messagesRef = collection(db, 'chatSessions', sid, 'messages');
         addDoc(messagesRef, {
           role,
           content,
           timestamp: serverTimestamp(),
         });
       } catch (e) {
-        console.error("Error persisting message", e);
+        // Silent fail for persistence to keep UI working
       }
     }
-  }, [state.sessionId]);
+  }, []);
 
   const updateCareerStep = useCallback((step: CareerFlowStep) => {
     setState(prev => ({ ...prev, careerStep: step }));

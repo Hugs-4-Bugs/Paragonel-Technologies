@@ -52,9 +52,16 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow update, delete: if false; // Audit logs are immutable
     }
+
+    // Chat Sessions (Public Read/Write with Subcollection access)
     match /chatSessions/{sessionId} {
       allow read, write: if true;
+      match /{allPaths=**} {
+        allow read, write: if true;
+      }
     }
+    
+    // Public User Profiles
     match /users/{userId} {
       allow read, write: if true;
     }
