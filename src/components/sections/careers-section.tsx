@@ -21,7 +21,7 @@ interface CareersSectionProps {
 }
 
 const employmentTypes = ['All Types', 'Full Time', 'Part Time', 'Contract', 'Internship'];
-const workArrangements = ['Any', 'Remote'];
+const workArrangements = ['Any', 'Remote', 'Onsite'];
 
 export function CareersSection({ initialJobs }: CareersSectionProps) { 
   const [searchTerm, setSearchTerm] = useState('');
@@ -87,6 +87,8 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
       let matchesWorkArrangement = true;
       if (workArrangementFilter === 'Remote') {
         matchesWorkArrangement = job.location.toLowerCase().includes('remote');
+      } else if (workArrangementFilter === 'Onsite') {
+        matchesWorkArrangement = !job.location.toLowerCase().includes('remote');
       }
 
       return matchesSearchTerm && matchesJobId && matchesLocation && matchesDepartment && matchesEmploymentType && matchesWorkArrangement;
@@ -112,7 +114,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
             Join <span className="text-primary">QuantumFusion</span>
           </h1>
           <p className="text-xl text-zinc-500 max-w-2xl mx-auto font-medium">
-            Explore exciting opportunities and build the future of AI with our elite team.
+            Explore exciting opportunities and grow with our innovative team.
           </p>
         </ScrollFadeIn>
 
@@ -123,109 +125,114 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                 className="rounded-full px-10 py-7 text-xl font-bold shadow-2xl hover:scale-105 transition-transform"
             >
                 {showOpenRoles ? <ChevronUp className="mr-2 h-6 w-6" /> : <ChevronDown className="mr-2 h-6 w-6" />}
-                {showOpenRoles ? 'Hide Vacancies' : 'See Open Vacancies'}
+                {showOpenRoles ? 'Hide Open Roles' : 'See Open Roles'}
                 <Briefcase className="ml-2 h-6 w-6" />
             </Button>
         </ScrollFadeIn>
 
         {showOpenRoles && (
           <>
-            <ScrollFadeIn delay="100ms" className="mb-12 p-8 bg-white dark:bg-zinc-900 border rounded-2xl shadow-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="space-y-2">
-                <Label htmlFor="search">Search Jobs</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-                  <Input
-                    id="search"
-                    placeholder="Keywords (e.g., AI, Python)"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 h-11" />
+            <ScrollFadeIn delay="100ms" className="mb-12 p-8 bg-white dark:bg-zinc-900 border rounded-2xl shadow-xl space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="search" className="text-sm font-semibold">Search Jobs</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+                    <Input
+                      id="search"
+                      placeholder="Keywords (e.g., AI, Python)"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 h-12 rounded-xl" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="jobId" className="text-sm font-semibold">Filter by Job ID</Label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+                    <Input
+                      id="jobId"
+                      placeholder="Enter Job ID (e.g., ABC123)"
+                      value={jobIdSearch}
+                      onChange={(e) => setJobIdSearch(e.target.value)}
+                      className="pl-10 h-12 rounded-xl" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="text-sm font-semibold">Location</Label>
+                  <Select value={locationFilter} onValueChange={setLocationFilter}>
+                    <SelectTrigger id="location" className="h-12 rounded-xl">
+                      <SelectValue placeholder="All Locations" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="department" className="text-sm font-semibold">Department</Label>
+                  <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                    <SelectTrigger id="department" className="h-12 rounded-xl">
+                      <SelectValue placeholder="All Departments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="jobId">Filter by Job ID</Label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-                  <Input
-                    id="jobId"
-                    placeholder="Enter Job ID (e.g., ABC123)"
-                    value={jobIdSearch}
-                    onChange={(e) => setJobIdSearch(e.target.value)}
-                    className="pl-10 h-11" />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Select value={locationFilter} onValueChange={setLocationFilter}>
-                  <SelectTrigger id="location" className="h-11">
-                    <SelectValue placeholder="All Locations" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="department">Department</Label>
-                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                  <SelectTrigger id="department" className="h-11">
-                    <SelectValue placeholder="All Departments" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="lg:col-span-2 space-y-4">
-                <Label>Filter by Date</Label>
-                <RadioGroup
-                  value={dateFilter}
-                  onValueChange={setDateFilter}
-                  className="flex flex-wrap gap-4 lg:gap-6 h-11 items-center"
-                >
-                  {['Any time', 'Past month', 'Past week', 'Past 24 hours'].map((opt) => (
-                    <div key={opt} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt} id={`date-${opt}`} />
-                      <Label htmlFor={`date-${opt}`} className="font-bold cursor-pointer text-sm">{opt}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="type">Employment Type</Label>
-                <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
-                  <SelectTrigger id="type" className="h-11">
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employmentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-4">
-                <Label>Work Arrangement</Label>
-                <RadioGroup
-                    defaultValue="Any"
-                    onValueChange={setWorkArrangementFilter}
-                    className="flex space-x-6 h-11 items-center"
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-4 border-t">
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Filter by Date</Label>
+                  <RadioGroup
+                    value={dateFilter}
+                    onValueChange={setDateFilter}
+                    className="flex flex-wrap gap-x-6 gap-y-2"
                   >
-                    {workArrangements.map((type) => (
-                      <div key={type} className="flex items-center space-x-2">
-                        <RadioGroupItem value={type} id={`arr-${type}`} />
-                        <Label htmlFor={`arr-${type}`} className="font-bold flex items-center cursor-pointer text-sm">
-                          {type === 'Remote' && <Laptop className="mr-2 h-4 w-4" />}
-                          {type}
-                        </Label>
+                    {['Any time', 'Past month', 'Past week', 'Past 24 hours'].map((opt) => (
+                      <div key={opt} className="flex items-center space-x-2">
+                        <RadioGroupItem value={opt} id={`date-${opt}`} />
+                        <Label htmlFor={`date-${opt}`} className="font-medium cursor-pointer text-sm">{opt}</Label>
                       </div>
                     ))}
-                </RadioGroup>
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="type" className="text-sm font-semibold">Employment Type</Label>
+                  <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
+                    <SelectTrigger id="type" className="h-12 rounded-xl">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employmentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Work Arrangement</Label>
+                  <RadioGroup
+                      value={workArrangementFilter}
+                      onValueChange={setWorkArrangementFilter}
+                      className="flex space-x-6"
+                    >
+                      {workArrangements.map((type) => (
+                        <div key={type} className="flex items-center space-x-2">
+                          <RadioGroupItem value={type} id={`arr-${type}`} />
+                          <Label htmlFor={`arr-${type}`} className="font-medium flex items-center cursor-pointer text-sm">
+                            {type === 'Remote' && <Laptop className="mr-2 h-4 w-4 text-primary" />}
+                            {type === 'Onsite' && <Building className="mr-2 h-4 w-4 text-primary" />}
+                            {type}
+                          </Label>
+                        </div>
+                      ))}
+                  </RadioGroup>
+                </div>
               </div>
             </ScrollFadeIn>
 
@@ -242,7 +249,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                 ))}
               </div>
             ) : (
-              <ScrollFadeIn className="text-center py-24 bg-white dark:bg-zinc-900 border rounded-2xl">
+              <ScrollFadeIn className="text-center py-24 bg-white dark:bg-zinc-900 border rounded-2xl shadow-sm">
                 <Filter className="mx-auto h-16 w-16 text-zinc-200 mb-6" />
                 <h3 className="text-2xl font-bold mb-2">No Matching Roles Found</h3>
                 <p className="text-zinc-500 mb-8 max-w-sm mx-auto text-lg">Try adjusting your filters or search terms.</p>
