@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "ChatSession": {
@@ -25,6 +24,27 @@
       },
       "required": ["sessionId", "role", "content", "timestamp"]
     },
+    "Job": {
+      "title": "Job Opening",
+      "description": "A job opening managed via Admin Panel.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "department": { "type": "string" },
+        "location": { "type": "string" },
+        "employmentType": { "type": "string" },
+        "experience": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "salaryRange": { "type": "string" },
+        "description": { "type": "string" },
+        "deadline": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Draft"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "department", "location", "employmentType", "description"]
+    },
     "JobApplication": {
       "title": "Job Application",
       "description": "A job application submitted through the website or QuantumAI.",
@@ -45,23 +65,29 @@
       },
       "required": ["applicationId", "jobId", "candidateEmail", "appliedAt"]
     },
-    "CandidateProfile": {
-      "title": "Candidate Profile",
-      "description": "Extracted profile of a candidate from their resume.",
+    "BlogPost": {
+      "title": "Blog Post",
+      "description": "An article published on the company blog.",
       "type": "object",
       "properties": {
-        "name": { "type": "string" },
-        "email": { "type": "string" },
-        "phone": { "type": "string" },
-        "skills": { "type": "array", "items": { "type": "string" } },
-        "experienceYears": { "type": "number" },
-        "education": { "type": "string" },
-        "lastUpdated": { "type": "string", "format": "date-time" }
-      }
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "category": { "type": "string" },
+        "author": { "type": "string" },
+        "coverImageUrl": { "type": "string" },
+        "summary": { "type": "string" },
+        "body": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["Published", "Draft"] },
+        "publishedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "slug", "body"]
     }
   },
   "auth": {
-    "providers": ["google.com", "password"]
+    "providers": ["password"]
   },
   "firestore": {
     "/chatSessions/{sessionId}": {
@@ -72,13 +98,17 @@
       "schema": "#/backend/entities/ChatMessage",
       "description": "Messages belonging to a specific chat session."
     },
+    "/jobs/{jobId}": {
+      "schema": "#/backend/entities/Job",
+      "description": "Job openings available at the company."
+    },
     "/jobApplications/{applicationId}": {
       "schema": "#/backend/entities/JobApplication",
       "description": "Job applications received by the company."
     },
-    "/candidateProfiles/{email}": {
-      "schema": "#/backend/entities/CandidateProfile",
-      "description": "Temporary or persistent candidate profiles."
+    "/blogPosts/{postId}": {
+      "schema": "#/backend/entities/BlogPost",
+      "description": "Articles published on the company blog."
     }
   }
 }

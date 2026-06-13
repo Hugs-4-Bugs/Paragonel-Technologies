@@ -1,165 +1,122 @@
+"use client";
 
-import { Metadata } from 'next';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { blogPosts, type BlogPost as BlogPostType } from '@/lib/data';
+import { notFound, useParams } from 'next/navigation';
+import { useCollection } from '@/firebase';
+import { collection, query, where, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CalendarDays, User, MessageSquare } from 'lucide-react';
-import { Badge } from '@/components/ui/badge'; // Using the existing Badge from ui
+import { ArrowLeft, CalendarDays, User, Rss, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-interface BlogPostPageProps {
-  params: {
-    slug: string;
-  };
-}
+export default function BlogPostPage() {
+  const { slug } = useParams();
 
-// Function to generate metadata dynamically
-export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const post = blogPosts.find(p => p.slug === params.slug);
-  if (!post) {
-    return {
-      title: 'Post Not Found',
-      description: 'The blog post you are looking for does not exist.',
-    };
+  const postQuery = useMemo(() => 
+    query(
+      collection(db, 'blogPosts'), 
+      where('slug', '==', slug),
+      limit(1)
+    ), 
+  [slug]);
+  
+  const { data: posts, loading } = useCollection(postQuery);
+  const post = posts?.[0];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="font-bold text-zinc-500">Retrieving article...</p>
+      </div>
+    );
   }
-  return {
-    title: `${post.title} | QuantumFusion Solutions Blog`,
-    description: post.excerpt,
-    openGraph: {
-        title: post.title,
-        description: post.excerpt,
-        images: [{ url: post.imageUrl }],
-        type: 'article',
-        publishedTime: post.date, // Assuming date is in ISO format or similar
-        authors: [post.author],
-    },
-    twitter: {
-        card: 'summary_large_image',
-        title: post.title,
-        description: post.excerpt,
-        images: [post.imageUrl],
-    }
-  };
-}
-
-// Function to generate static paths for all blog posts
-export async function generateStaticParams() {
-  return blogPosts.map(post => ({
-    slug: post.slug,
-  }));
-}
-
-export default function BlogPostPage({ params }: BlogPostPageProps) {
-  const post = blogPosts.find(p => p.slug === params.slug);
 
   if (!post) {
-    notFound();
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <h1 className="text-4xl font-bold mb-4">Post Not Found</h1>
+        <p className="text-zinc-500 mb-8">The article you're looking for doesn't exist or has been moved.</p>
+        <Button asChild>
+          <Link href="/blog">Return to Blog</Link>
+        </Button>
+      </div>
+    );
   }
 
   return (
-    <div className="section-padding bg-background">
-      <div className="container mx-auto max-w-4xl px-4 md:px-6">
-        <ScrollFadeIn className="mb-8">
-          <Button variant="outline" asChild>
+    <div className="bg-background pb-20">
+      <div className="container mx-auto max-w-4xl px-4 md:px-6 pt-10">
+        <ScrollFadeIn className="mb-12">
+          <Button variant="ghost" asChild className="hover:bg-zinc-100">
             <Link href="/blog">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Blog
+              <ArrowLeft className="mr-2 h-5 w-5" />
+              Back to Insights
             </Link>
           </Button>
         </ScrollFadeIn>
 
-        <article>
+        <article className="space-y-10">
           <ScrollFadeIn>
-            <header className="mb-8">
-              <Badge variant="outline" className="mb-3 text-sm">{post.category}</Badge>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-4 text-foreground">
+            <header className="space-y-6">
+              <Badge variant="default" className="text-base px-4 py-1">{post.category}</Badge>
+              <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1]">
                 {post.title}
               </h1>
-              <div className="flex flex-wrap items-center space-x-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-8 text-zinc-500 font-bold">
                 <div className="flex items-center">
-                  <CalendarDays className="mr-1.5 h-4 w-4 neon-icon" />
-                  <span>{post.date}</span>
+                  <CalendarDays className="mr-2 h-5 w-5 text-primary" />
+                  <span>{new Date(post.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
                 </div>
                 <div className="flex items-center">
-                  <User className="mr-1.5 h-4 w-4 neon-icon" />
+                  <User className="mr-2 h-5 w-5 text-primary" />
                   <span>By {post.author}</span>
-                </div>
-                <div className="flex items-center">
-                  <MessageSquare className="mr-1.5 h-4 w-4 neon-icon" />
-                  <span>{post.comments} Comments</span>
                 </div>
               </div>
             </header>
           </ScrollFadeIn>
 
-          <ScrollFadeIn delay="100ms" className="mb-8">
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg">
-              <Image
-                src={post.imageUrl}
-                alt={post.title}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 60vw"
-                className="object-cover"
-                data-ai-hint={post.aiHint}
-                priority
-              />
-            </div>
+          <ScrollFadeIn delay="100ms">
+            {post.coverImageUrl && (
+              <div className="relative w-full aspect-[21/9] rounded-3xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800">
+                <Image
+                  src={post.coverImageUrl}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  priority
+                  unoptimized
+                />
+              </div>
+            )}
           </ScrollFadeIn>
 
           <ScrollFadeIn delay="200ms">
-            <div className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 leading-relaxed">
-              {/* Using excerpt as placeholder for full content */}
-              <p>{post.content || post.excerpt}</p>
-              {/* Add more paragraphs or structured content if available */}
-              {post.id === '1' && (
-                <>
-                  <h2 className="text-2xl font-semibold mt-8 mb-4">Key Takeaways from the Article</h2>
-                  <ul className="list-disc pl-5 space-y-2">
-                    <li>AI significantly speeds up candidate sourcing and screening.</li>
-                    <li>Bias mitigation in AI tools is crucial for fair hiring.</li>
-                    <li>Human oversight remains essential in AI-driven recruitment.</li>
-                    <li>Predictive analytics can help forecast candidate success.</li>
-                  </ul>
-                </>
-              )}
-               {post.id === '2' && (
-                <>
-                  <h2 className="text-2xl font-semibold mt-8 mb-4">Core Strategies Discussed</h2>
-                  <ol className="list-decimal pl-5 space-y-2">
-                    <li>Embrace continuous learning and upskilling.</li>
-                    <li>Develop strong networking and personal branding.</li>
-                    <li>Cultivate soft skills alongside technical expertise.</li>
-                    <li>Adapt to evolving work environments, including remote work.</li>
-                  </ol>
-                </>
-              )}
-               {post.id === '3' && (
-                <>
-                  <h2 className="text-2xl font-semibold mt-8 mb-4">Benefits of Personalized Learning</h2>
-                   <div className="grid md:grid-cols-2 gap-4">
-                        <div className="bg-muted/50 p-4 rounded-lg">Increased learner engagement.</div>
-                        <div className="bg-muted/50 p-4 rounded-lg">Improved knowledge retention.</div>
-                        <div className="bg-muted/50 p-4 rounded-lg">More efficient skill acquisition.</div>
-                        <div className="bg-muted/50 p-4 rounded-lg">Tailored to individual career goals.</div>
-                   </div>
-                </>
-              )}
+            <div className="prose prose-xl dark:prose-invert max-w-none prose-zinc prose-headings:font-black prose-p:leading-relaxed text-zinc-800 dark:text-zinc-200">
+              <p className="text-2xl font-medium text-zinc-500 italic border-l-4 border-primary pl-6 py-2 mb-10">
+                {post.summary}
+              </p>
+              <div className="whitespace-pre-wrap">
+                {post.body}
+              </div>
             </div>
           </ScrollFadeIn>
-        </article>
 
-        <ScrollFadeIn delay="300ms" className="mt-12 pt-8 border-t">
-           <h3 className="text-xl font-semibold mb-4">Enjoyed this article?</h3>
-           <p className="text-muted-foreground mb-6">Share it with your network or subscribe to our newsletter for more insights.</p>
-           <div className="flex gap-4">
-            <Button variant="outline">Share Post (Placeholder)</Button>
-            <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Link href="/#contact-snippet">Subscribe Now</Link>
-            </Button>
-           </div>
-        </ScrollFadeIn>
+          <ScrollFadeIn delay="300ms" className="pt-16 border-t">
+             <div className="bg-zinc-50 dark:bg-zinc-900 rounded-3xl p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+               <div className="space-y-2 text-center md:text-left">
+                  <h3 className="text-3xl font-bold">Never miss an update</h3>
+                  <p className="text-zinc-500 text-lg">Join our community for the latest in AI and tech.</p>
+               </div>
+               <Button asChild size="lg" className="rounded-full px-8 shadow-xl">
+                  <Link href="/#contact-snippet">Subscribe to Newsletter</Link>
+               </Button>
+             </div>
+          </ScrollFadeIn>
+        </article>
       </div>
     </div>
   );
