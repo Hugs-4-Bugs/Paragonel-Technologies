@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { StatsBar } from '@/components/sections/stats-bar';
 import { TargetClients } from '@/components/sections/target-clients';
 import { ProcessSection } from '@/components/sections/process-section';
-import { TechStackSection } from '@/components/sections/tech-stack-section';
+import { TechStackSection, CompactTechShowcase } from '@/components/sections/tech-stack-section';
 
 // Dynamically import sections that are further down or involve client-side data fetching/JS
 const AiContent = dynamic(() => 
@@ -38,30 +38,18 @@ const TestimonialsSection = dynamic(() =>
 export default function HomePage() {
   return (
     <>
+      {/* 1. Hero Section */}
       <Hero />
       <StatsBar />
       
-      <section id="about-snippet" className="section-padding bg-background">
-        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
-          <Brain className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Welcome to <span className="text-primary">QuantumFusion Solutions</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
-            We are dedicated to revolutionizing IT with cutting-edge solutions in AI, Cloud, DevOps, and SaaS. We empower businesses to shape a smarter tomorrow.
-          </p>
-          <Button asChild size="lg" variant="outline">
-            <Link href="/about">Learn More About Us</Link>
-          </Button>
-        </div>
-      </section>
-      <Separator className="my-0 container mx-auto max-w-7xl" />
-      
+      {/* 2. Services Section */}
       <ServicesSection />
-      <TargetClients />
-      <ProcessSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
+      {/* 3. Problems We Solve (Solutions) & 4. Why Businesses Choose Us */}
+      <TechStackSection />
+      
+      {/* 5. Portfolio / Case Studies */}
       <section id="portfolio-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <LayoutDashboard className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
@@ -71,11 +59,25 @@ export default function HomePage() {
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
             Explore our portfolio of successful projects and see how we leverage technology to solve complex challenges.
           </p>
-          <Button asChild size="lg" variant="outline">
-            <Link href="/portfolio">View Our Portfolio</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button asChild size="lg">
+              <Link href="/portfolio">View Our Portfolio</Link>
+            </Button>
+          </div>
         </div>
       </section>
+      <Separator className="my-0 container mx-auto max-w-7xl" />
+      
+      {/* 6. Testimonials */}
+      <TestimonialsSection />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
+
+      {/* 7. Technologies We Work With (Compact) */}
+      <CompactTechShowcase />
+
+      {/* Supporting Content Snippets */}
+      <ProcessSection />
+      <TargetClients />
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <AiContent /> 
@@ -84,25 +86,6 @@ export default function HomePage() {
       <TechNewsSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
-      <TestimonialsSection />
-      <Separator className="my-0 container mx-auto max-w-7xl" />
-      
-      <section id="team-snippet" className="section-padding bg-background">
-        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
-          <Users className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Meet Our <span className="text-primary">Innovators</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-10">
-            The brilliant minds behind QuantumFusion Solutions, dedicated to driving technological excellence and client success.
-          </p>
-          <Button asChild size="lg" variant="outline">
-            <Link href="/team">Discover Our Team</Link>
-          </Button>
-        </div>
-      </section>
-      <Separator className="my-0 container mx-auto max-w-7xl" />
-
       <section id="careers-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <Briefcase className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
@@ -117,9 +100,6 @@ export default function HomePage() {
           </Button>
         </div>
       </section>
-      <Separator className="my-0 container mx-auto max-w-7xl" />
-      
-      <TechStackSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <section id="blog-snippet" className="section-padding bg-background">
@@ -154,6 +134,7 @@ export default function HomePage() {
       </section>
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
+      {/* 8. Contact CTA */}
       <section id="contact-snippet" className="section-padding bg-background">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           <Mail className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
