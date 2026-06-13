@@ -18,7 +18,8 @@ import {
   Activity,
   Mail,
   Users as UsersIcon,
-  Calendar
+  Calendar,
+  ChevronRight
 } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, limit, orderBy, addDoc, serverTimestamp, getCountFromServer } from 'firebase/firestore';
