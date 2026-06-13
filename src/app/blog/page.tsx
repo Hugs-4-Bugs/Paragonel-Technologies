@@ -1,20 +1,26 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, ArrowRight, Rss, Loader2, User } from 'lucide-react';
+import { CalendarDays, ArrowRight, Rss, User, Search, Filter, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 export default function BlogPage() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+
   const postsQuery = useMemo(() => 
     query(
       collection(db, 'blogPosts'), 
@@ -25,33 +31,92 @@ export default function BlogPage() {
   
   const { data: posts, loading } = useCollection(postsQuery);
 
+  const categories = useMemo(() => {
+    if (!posts) return ['All'];
+    const cats = new Set(posts.map((p: any) => p.category));
+    return ['All', ...Array.from(cats)].sort();
+  }, [posts]);
+
+  const filteredPosts = useMemo(() => {
+    if (!posts) return [];
+    return posts.filter((post: any) => {
+      const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = activeCategory === 'All' || post.category === activeCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [posts, searchTerm, activeCategory]);
+
   return (
     <section className="section-padding bg-zinc-50/50 dark:bg-zinc-950 min-h-screen">
       <div className="container mx-auto px-4 md:px-6">
-        <ScrollFadeIn className="text-center mb-20">
-          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
-            <Rss className="h-10 w-10 text-primary neon-icon" />
+        <ScrollFadeIn className="text-center mb-12">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Rss className="h-8 w-8 text-primary neon-icon" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">
             Quantum<span className="text-primary">Insights</span>
           </h1>
-          <p className="text-xl text-zinc-500 max-w-2xl mx-auto font-medium">
+          <p className="text-lg text-zinc-500 max-w-2xl mx-auto font-medium">
             Intelligence and trends from the cutting edge of AI, Cloud, and Software Engineering.
           </p>
+        </ScrollFadeIn>
+
+        {/* Compact Search & Category Bar */}
+        <ScrollFadeIn className="mb-12 max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center gap-4 bg-white dark:bg-zinc-900 p-2 rounded-2xl border shadow-sm">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+              <Input 
+                placeholder="Search articles..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 h-11 border-none focus-visible:ring-0 bg-transparent" 
+              />
+              {searchTerm && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setSearchTerm('')} 
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <div className="hidden md:block w-px h-8 bg-zinc-200 dark:bg-zinc-800" />
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto px-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 mr-2 whitespace-nowrap">Topics:</span>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={cn(
+                    "px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap",
+                    activeCategory === cat 
+                      ? "bg-primary text-white shadow-md" 
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
         </ScrollFadeIn>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-[450px] rounded-3xl" />)}
           </div>
-        ) : posts && posts.length > 0 ? (
+        ) : filteredPosts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {posts.map((post: any, index: number) => (
+            {filteredPosts.map((post: any, index: number) => (
               <ScrollFadeIn key={post.id} delay={`${index * 100}ms`}>
                 <Card className="h-full flex flex-col overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border-zinc-200 dark:border-zinc-800 group">
                   <Link href={`/blog/${post.slug}`}>
                     <CardHeader className="p-0">
-                      <div className="relative h-60 w-full overflow-hidden">
+                      <div className="relative h-56 w-full overflow-hidden">
                         {post.thumbnailUrl ? (
                           <Image
                             src={post.thumbnailUrl}
@@ -103,10 +168,13 @@ export default function BlogPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-24 bg-white dark:bg-zinc-900 border rounded-3xl">
-             <Rss className="h-20 w-20 text-zinc-100 mx-auto mb-6" />
-             <h2 className="text-2xl font-bold">No articles published yet</h2>
-             <p className="text-zinc-400">Our writers are crafting new insights. Check back soon!</p>
+          <div className="text-center py-24 bg-white dark:bg-zinc-900 border rounded-3xl max-w-4xl mx-auto shadow-sm">
+             <Rss className="h-20 w-20 text-zinc-100 dark:text-zinc-800 mx-auto mb-6" />
+             <h2 className="text-2xl font-bold">No articles found</h2>
+             <p className="text-zinc-400 mb-8">Try adjusting your filters or search term.</p>
+             <Button variant="outline" onClick={() => { setSearchTerm(''); setActiveCategory('All'); }}>
+               Reset All Filters
+             </Button>
           </div>
         )}
       </div>
