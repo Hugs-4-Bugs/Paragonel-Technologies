@@ -1,20 +1,22 @@
 
 import dynamic from 'next/dynamic';
 import { Hero } from '@/components/sections/hero';
-// Sections that are above the fold or very light can be imported statically
 import { ServicesSection } from '@/components/sections/services-section';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Briefcase, Users, BookOpen, HelpCircle, LayoutDashboard, Mail, Brain } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton'; // For a more consistent loading state
+import { Skeleton } from '@/components/ui/skeleton';
+import { StatsBar } from '@/components/sections/stats-bar';
+import { TargetClients } from '@/components/sections/target-clients';
+import { ProcessSection } from '@/components/sections/process-section';
+import { TechStackSection } from '@/components/sections/tech-stack-section';
 
 // Dynamically import sections that are further down or involve client-side data fetching/JS
 const AiContent = dynamic(() => 
   import('@/components/sections/ai-content').then(mod => mod.AiContent), 
   { 
     loading: () => <div className="container mx-auto px-4 md:px-6 section-padding"><Skeleton className="h-32 w-full" /></div>,
-    // ssr: false // Often good for client-side heavy components // Removed ssr: false
   }
 );
 
@@ -22,7 +24,6 @@ const TechNewsSection = dynamic(() =>
   import('@/components/sections/tech-news-section').then(mod => mod.TechNewsSection), 
   { 
     loading: () => <div className="container mx-auto px-4 md:px-6 section-padding"><Skeleton className="h-32 w-full" /></div>,
-    // ssr: false // Removed ssr: false
   }
 );
 
@@ -30,7 +31,6 @@ const TestimonialsSection = dynamic(() =>
   import('@/components/sections/testimonials-section').then(mod => mod.TestimonialsSection), 
   { 
     loading: () => <div className="container mx-auto px-4 md:px-6 section-padding"><Skeleton className="h-32 w-full" /></div>,
-    // ssr: false // Removed ssr: false
   }
 );
 
@@ -39,6 +39,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <StatsBar />
       
       <section id="about-snippet" className="section-padding bg-background">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
@@ -57,6 +58,8 @@ export default function HomePage() {
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <ServicesSection />
+      <TargetClients />
+      <ProcessSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       <section id="portfolio-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
@@ -114,6 +117,9 @@ export default function HomePage() {
           </Button>
         </div>
       </section>
+      <Separator className="my-0 container mx-auto max-w-7xl" />
+      
+      <TechStackSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
       
       <section id="blog-snippet" className="section-padding bg-background">

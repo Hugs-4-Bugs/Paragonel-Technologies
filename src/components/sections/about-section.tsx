@@ -4,7 +4,9 @@
 import Image from 'next/image';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Rocket, Target, Award, Milestone, Brain, Cloud, GitFork } from 'lucide-react';
+import { Users, Rocket, Target, Award, Milestone, Brain, Cloud, GitFork, Linkedin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export function AboutSection() {
   return (
@@ -22,92 +24,101 @@ export function AboutSection() {
         <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
           <ScrollFadeIn>
             <Image
-              src="/images/about.png"
+              src="https://picsum.photos/seed/about-team/600/450"
               alt="QuantumFusion Solutions Team Collaboration"
               width={600}
               height={450}
               className="rounded-xl shadow-2xl object-cover"
-              data-ai-hint="abstract tech innovation"
+              data-ai-hint="team work"
             />
           </ScrollFadeIn>
           <ScrollFadeIn delay="200ms">
-            <h2 className="text-3xl font-bold mb-6">Our Story</h2>
-            <p className="text-muted-foreground mb-4 leading-relaxed">
-              Founded with the vision to fuse cutting-edge technology with strategic business insights, QuantumFusion Solutions empowers organizations to navigate the complexities of the digital age. We believe in the transformative power of AI, the scalability of the Cloud, the efficiency of DevOps, and the agility of SaaS.
+            <h2 className="text-3xl font-bold mb-6 text-primary">Our Mission</h2>
+            <p className="text-xl font-medium mb-6 italic border-l-4 border-primary pl-6 py-2">
+              "Our mission is to eliminate the gap between 'we have this problem' and 'we have a working solution' — by building AI-native software that is precise, fast, and built to actually solve real pain rather than check a feature box."
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              Our journey began with a commitment to innovation and a passion for solving complex challenges. Today, we partner with businesses globally, helping them achieve quantum leaps in performance and market leadership.
+              Founded with the vision to fuse cutting-edge technology with strategic business insights, QuantumFusion Solutions empowers organizations to navigate the complexities of the digital age. We believe in the transformative power of AI, the scalability of the Cloud, the efficiency of DevOps, and the agility of SaaS.
             </p>
           </ScrollFadeIn>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <ScrollFadeIn className="mb-20">
+          <h2 className="text-3xl font-bold text-center mb-12">Meet Our Founder</h2>
+          <Card className="max-w-4xl mx-auto overflow-hidden border-none shadow-xl bg-secondary/10">
+            <div className="grid md:grid-cols-3 gap-0">
+              <div className="bg-primary flex items-center justify-center py-12">
+                <div className="w-32 h-32 rounded-full bg-white text-primary flex items-center justify-center text-5xl font-black shadow-lg">PS</div>
+              </div>
+              <div className="md:col-span-2 p-8">
+                <h3 className="text-2xl font-bold mb-1">Prabhat Sharma</h3>
+                <p className="text-primary font-medium mb-4">Founder & Principal Engineer</p>
+                <p className="text-muted-foreground mb-6">
+                  Java backend developer with expertise in Spring Boot, cloud infrastructure (AWS/GCP), AI systems, and full-stack development. Building QuantumFusion Solutions as a portfolio of AI, developer, and infrastructure SaaS products while also delivering custom client projects.
+                </p>
+                <Button asChild variant="outline" className="gap-2">
+                  <Link href="https://www.linkedin.com/company/quantumfusion-solutions" target="_blank">
+                    <Linkedin className="h-4 w-4" /> LinkedIn Profile
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </ScrollFadeIn>
+
+        <div className="grid md:grid-cols-3 gap-8 mb-20">
           <ScrollFadeIn delay="0ms">
-            <Card className="h-full text-center shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="h-full border-primary/20 shadow-lg">
               <CardHeader>
-                <Target className="h-12 w-12 text-primary mx-auto mb-4 neon-icon" />
-                <CardTitle className="text-2xl">Our Mission</CardTitle>
+                <CardTitle className="text-xl text-primary">AI-Native Focus</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  To deliver transformative IT solutions that drive innovation, efficiency, and sustainable growth for our clients worldwide.
+                <p className="text-muted-foreground text-sm">
+                  We are AI-native from day one, not as a feature add-on. Every solution we build leverages the latest in intelligent automation.
                 </p>
               </CardContent>
             </Card>
           </ScrollFadeIn>
           <ScrollFadeIn delay="200ms">
-            <Card className="h-full text-center shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="h-full border-primary/20 shadow-lg">
               <CardHeader>
-                <Rocket className="h-12 w-12 text-primary mx-auto mb-4 neon-icon" />
-                <CardTitle className="text-2xl">Our Vision</CardTitle>
+                <CardTitle className="text-xl text-primary">Product Builders</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  To be the leading catalyst in our clients' digital transformation journeys, shaping a future where technology and human ingenuity converge.
+                <p className="text-muted-foreground text-sm">
+                  We build our own products — so we understand exactly what it takes to ship, maintain, and scale complex software systems.
                 </p>
               </CardContent>
             </Card>
           </ScrollFadeIn>
           <ScrollFadeIn delay="400ms">
-            <Card className="h-full text-center shadow-lg hover:shadow-xl transition-shadow">
+            <Card className="h-full border-primary/20 shadow-lg">
               <CardHeader>
-                <Award className="h-12 w-12 text-primary mx-auto mb-4 neon-icon" />
-                <CardTitle className="text-2xl">Our Values</CardTitle>
+                <CardTitle className="text-xl text-primary">Results Oriented</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="text-muted-foreground space-y-1 list-disc list-inside text-left pl-4">
-                  <li>Innovation First</li>
-                  <li>Client Centricity</li>
-                  <li>Unwavering Integrity</li>
-                  <li>Collaborative Spirit</li>
-                  <li>Pursuit of Excellence</li>
-                </ul>
+                <p className="text-muted-foreground text-sm">
+                  Fixed-scope, milestone-based delivery ensures you pay for results and tangible outcomes, not just billable hours.
+                </p>
               </CardContent>
             </Card>
           </ScrollFadeIn>
         </div>
 
         <ScrollFadeIn className="mb-12">
-            <h2 className="text-3xl font-bold text-center mb-10">Our Journey: Milestones</h2>
-            <div className="relative">
-                <div className="hidden md:block border-l-2 border-primary absolute h-full top-0 left-1/2 transform -translate-x-1/2"></div>
-                
+            <h2 className="text-3xl font-bold text-center mb-10">Our Journey</h2>
+            <div className="max-w-3xl mx-auto space-y-8">
                 {[
-                    { year: "2020", title: "Inception & Vision", description: "QuantumFusion Solutions founded with a focus on next-gen IT.", icon: Rocket, side: "left" },
-                    { year: "2021", title: "AI Lab Established", description: "Launched dedicated AI research and development wing.", icon: Brain, side: "right" },
-                    { year: "2022", title: "Cloud Partnerships", description: "Forged strategic alliances with major cloud providers.", icon: Cloud, side: "left" },
-                    { year: "2023", title: "DevOps Excellence", description: "Recognized for DevOps automation and CI/CD implementations.", icon: GitFork, side: "right" },
-                    { year: "2024", title: "Global Expansion", description: "Expanded operations to serve a wider international client base.", icon: Milestone, side: "left" },
+                    { year: "2024", title: "Inception", description: "QuantumFusion Solutions founded. CodeGuard AI published on VS Code Marketplace (AWS cost intelligence)." },
+                    { year: "2025", title: "Growth", description: "AcquisitionOS and SystemFoundry launched. Expansion into AI-native CRM and architecture simulation." },
+                    { year: "2026", title: "New Frontiers", description: "AaharAI India-first health companion in development. First major client engagement: Maa-Aarogyam Health Centre." },
                 ].map((item, index) => (
-                    <div key={index} className={`mb-8 flex md:justify-between items-center w-full ${item.side === 'left' ? 'md:flex-row-reverse' : 'md:flex-row'}`}>
-                        <div className="order-1 md:w-5/12"></div>
-                        <div className="z-20 flex items-center order-1 bg-primary shadow-xl w-12 h-12 rounded-full md:w-10 md:h-10">
-                            <item.icon className="mx-auto font-semibold text-lg text-white w-6 h-6 neon-icon" />
-                        </div>
-                        <div className={`order-1 rounded-lg shadow-xl w-full md:w-5/12 px-6 py-4 ${item.side === 'left' ? 'bg-card md:text-right' : 'bg-card'}`}>
-                            <p className="font-bold text-primary text-xl">{item.year}</p>
-                            <h3 className="mb-3 font-bold text-foreground text-lg">{item.title}</h3>
-                            <p className="text-sm leading-snug tracking-wide text-muted-foreground text-opacity-100">{item.description}</p>
+                    <div key={index} className="flex gap-6 border-l-2 border-primary/30 pl-8 relative pb-8 last:pb-0">
+                        <div className="absolute w-4 h-4 bg-primary rounded-full -left-[9px] top-1 shadow-lg shadow-primary/50"></div>
+                        <div>
+                            <span className="text-primary font-bold text-lg">{item.year}</span>
+                            <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                            <p className="text-muted-foreground">{item.description}</p>
                         </div>
                     </div>
                 ))}
