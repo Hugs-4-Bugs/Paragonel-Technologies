@@ -1,20 +1,19 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, Search, MessageSquare, Trash2, CheckCircle2, RotateCcw, MoreVertical } from 'lucide-react';
+import { Mail, Search, Trash2, RotateCcw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { logActivity } from '@/lib/audit';
+import { cn } from '@/lib/utils';
 
 const leadStatuses = ["New", "Contacted", "Qualified", "Closed"];
 

@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,13 +19,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Loader2, Save, BookOpen, ImageIcon, Globe, Search, Sparkles, AlertCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, BookOpen, ImageIcon, Search, Clock } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
 import { logActivity } from '@/lib/audit';
+import { cn } from '@/lib/utils';
 
 const blogSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),

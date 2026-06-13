@@ -1,21 +1,20 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, FileUser, ExternalLink, MoreVertical, Trash2, Eye, RotateCcw } from 'lucide-react';
+import { Search, FileUser, Trash2, Eye, RotateCcw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { logActivity } from '@/lib/audit';
+import { cn } from '@/lib/utils';
 
 const statusOptions = ["New", "Reviewing", "Shortlisted", "Interview Scheduled", "Rejected", "Hired"];
 
