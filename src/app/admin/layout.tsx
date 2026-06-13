@@ -12,7 +12,6 @@ import {
   Menu, 
   X,
   ChevronRight,
-  ChevronLeft,
   ShieldCheck,
   Layers,
   Globe,
@@ -54,7 +53,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   };
 
-  // Close sidebar on mobile when route changes
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [pathname]);
@@ -62,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (isLoginPage) return <>{children}</>;
 
   return (
-    <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950 isolate">
+    <div className="flex h-screen w-full bg-zinc-50 dark:bg-zinc-950 overflow-hidden isolate">
       <style jsx global>{`
         header:not(.admin-header), footer:not(.admin-footer), .chat-widget { display: none !important; }
         main { padding-top: 0 !important; }
@@ -81,13 +79,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-[55] bg-white dark:bg-zinc-900 border-r transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        "fixed inset-y-0 left-0 z-[55] bg-white dark:bg-zinc-900 border-r transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 shrink-0",
         isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0",
         !isSidebarOpen && (isCollapsed ? "lg:w-20" : "lg:w-72")
       )}>
         <div className="flex flex-col h-full overflow-hidden">
-          <div className="h-16 flex items-center justify-between px-4 border-b">
-            <div className={cn("flex items-center gap-2 transition-opacity duration-300", isCollapsed && "lg:opacity-0 lg:w-0")}>
+          <div className="h-16 flex items-center justify-between px-4 border-b shrink-0">
+            <div className={cn("flex items-center gap-2 transition-all duration-300", isCollapsed && "lg:opacity-0 lg:w-0 overflow-hidden")}>
               <ShieldCheck className="h-7 w-7 text-primary shrink-0" />
               <span className="font-black text-xl tracking-tighter whitespace-nowrap">QuantumCMS</span>
             </div>
@@ -101,7 +99,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 py-8 px-3">
+          <ScrollArea className="flex-1 py-6 px-3">
             <nav className="space-y-1.5">
               {sidebarItems.map((item) => {
                 const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
@@ -129,11 +127,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </nav>
           </ScrollArea>
 
-          <div className="p-4 border-t mt-auto">
+          <div className="p-4 border-t mt-auto shrink-0">
             <Button 
               variant="outline" 
               className={cn(
-                "w-full justify-start text-destructive border-destructive/20 hover:text-destructive hover:bg-destructive/5 font-bold h-12 rounded-xl transition-all",
+                "w-full justify-start text-destructive border-destructive/20 hover:text-destructive hover:bg-destructive/5 font-bold h-11 rounded-xl transition-all",
                 isCollapsed && "lg:justify-center lg:px-0"
               )} 
               onClick={handleLogout}
@@ -157,10 +155,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-auto pt-20 lg:pt-0">
-        <div className="max-w-7xl mx-auto p-4 md:p-8 lg:p-10">
-          {children}
-        </div>
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <ScrollArea className="flex-1 w-full h-full">
+          <div className="w-full h-full p-4 md:p-8 lg:p-10 pt-20 lg:pt-10">
+            <div className="max-w-[1600px] mx-auto">
+              {children}
+            </div>
+          </div>
+        </ScrollArea>
       </main>
     </div>
   );
