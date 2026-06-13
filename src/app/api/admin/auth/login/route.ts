@@ -33,10 +33,14 @@ export async function POST(request: Request) {
       .sign(JWT_SECRET);
 
     const response = NextResponse.json({ success: true });
+    
+    // Determine if we are in a secure environment
+    const isSecure = request.url.startsWith('https');
+
     response.cookies.set('qf_admin_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: isSecure, // Only true if the request is https
+      sameSite: 'lax', // 'lax' is more reliable than 'strict' across different tab/origin scenarios in dev
       maxAge: 8 * 60 * 60, // 8 hours
       path: '/',
     });

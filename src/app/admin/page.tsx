@@ -1,6 +1,7 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Briefcase, BookOpen, UserPlus, TrendingUp, Clock } from 'lucide-react';
 import { useCollection } from '@/firebase';
@@ -8,8 +9,20 @@ import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 export default function AdminDashboard() {
+  const router = useRouter();
+
+  // Simple client-side check to verify session with the backend on mount
+  useEffect(() => {
+    fetch('/api/admin/auth/me').then(res => {
+      if (!res.ok) {
+        router.push('/admin/login');
+      }
+    });
+  }, [router]);
+
   const jobsQuery = query(collection(db, 'jobs'), where('isActive', '==', true));
   const { data: activeJobs, loading: jobsLoading } = useCollection(jobsQuery);
 
@@ -164,8 +177,4 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }
