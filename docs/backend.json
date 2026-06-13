@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "ChatSession": {
@@ -74,8 +75,8 @@
         "slug": { "type": "string" },
         "category": { "type": "string" },
         "author": { "type": "string" },
-        "coverImageUrl": { "type": "string" },
-        "summary": { "type": "string" },
+        "thumbnailUrl": { "type": "string" },
+        "excerpt": { "type": "string" },
         "body": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
         "status": { "type": "string", "enum": ["Published", "Draft"] },
@@ -84,6 +85,50 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "slug", "body"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "A core service offered by the company.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "iconName": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "slug": { "type": "string" },
+        "order": { "type": "number" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["title", "description", "slug"]
+    },
+    "PortfolioItem": {
+      "title": "Portfolio Item",
+      "description": "A project showcased in the portfolio.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "techs": { "type": "array", "items": { "type": "string" } },
+        "link": { "type": "string" }
+      },
+      "required": ["name", "category", "description"]
+    },
+    "Testimonial": {
+      "title": "Testimonial",
+      "description": "Feedback from a client.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "company": { "type": "string" },
+        "content": { "type": "string" },
+        "rating": { "type": "number" },
+        "avatarUrl": { "type": "string" }
+      },
+      "required": ["name", "content"]
     }
   },
   "auth": {
@@ -109,6 +154,18 @@
     "/blogPosts/{postId}": {
       "schema": "#/backend/entities/BlogPost",
       "description": "Articles published on the company blog."
+    },
+    "/services/{serviceId}": {
+      "schema": "#/backend/entities/Service",
+      "description": "Core services offered by QuantumFusion."
+    },
+    "/portfolio/{itemId}": {
+      "schema": "#/backend/entities/PortfolioItem",
+      "description": "Projects in the company portfolio."
+    },
+    "/testimonials/{testimonialId}": {
+      "schema": "#/backend/entities/Testimonial",
+      "description": "Client feedback and ratings."
     }
   }
 }

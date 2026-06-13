@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -11,7 +12,10 @@ import {
   Menu, 
   X,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Layers,
+  Globe,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -22,6 +26,9 @@ const sidebarItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/jobs', label: 'Jobs', icon: Briefcase },
   { href: '/admin/blog', label: 'Blog', icon: BookOpen },
+  { href: '/admin/services', label: 'Services', icon: Layers },
+  { href: '/admin/portfolio', label: 'Portfolio', icon: Globe },
+  { href: '/admin/testimonials', label: 'Testimonials', icon: MessageSquare },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -43,49 +50,63 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   };
 
+  // Close sidebar on mobile when route changes
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
+
   if (isLoginPage) return <>{children}</>;
 
   return (
-    <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950 isolate">
+      {/* 
+        IMPORTANT: In Admin Panel, we hide the main site's Navbar/Footer 
+        This is handled by CSS in globals.css or by conditional rendering in root layout.
+        For Studio, we'll ensure this layout takes over the whole screen.
+      */}
+      <style jsx global>{`
+        header:not(.admin-header), footer:not(.admin-footer) { display: none !important; }
+        main { padding-top: 0 !important; }
+      `}</style>
+
       {/* Mobile Top Bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-zinc-900 border-b z-50 flex items-center justify-between px-4">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-zinc-900 border-b z-[60] flex items-center justify-between px-4 admin-header shadow-sm">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-6 w-6 text-primary" />
-          <span className="font-bold text-lg">QuantumCMS</span>
+          <span className="font-bold text-lg tracking-tight">QuantumCMS</span>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-          {isSidebarOpen ? <X /> : <Menu />}
+          {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </Button>
       </div>
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-zinc-900 border-r transform transition-transform duration-300 lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-[55] w-72 bg-white dark:bg-zinc-900 border-r transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
-          <div className="h-16 flex items-center gap-2 px-6 border-b">
-            <ShieldCheck className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl tracking-tight">QuantumCMS</span>
+          <div className="h-16 hidden lg:flex items-center gap-2 px-8 border-b">
+            <ShieldCheck className="h-7 w-7 text-primary" />
+            <span className="font-black text-xl tracking-tighter">QuantumCMS</span>
           </div>
 
-          <ScrollArea className="flex-1 py-6 px-4">
-            <nav className="space-y-1">
+          <ScrollArea className="flex-1 py-8 px-4">
+            <nav className="space-y-1.5">
               {sidebarItems.map((item) => {
                 const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => setIsSidebarOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                      "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200",
                       isActive 
-                        ? "bg-primary text-primary-foreground shadow-sm" 
-                        : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
+                        : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-primary"
                     )}
                   >
-                    <item.icon className="h-5 w-5" />
+                    <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "text-primary")} />
                     {item.label}
                     {isActive && <ChevronRight className="ml-auto h-4 w-4 opacity-50" />}
                   </Link>
@@ -94,14 +115,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </nav>
           </ScrollArea>
 
-          <div className="p-4 border-t mt-auto">
+          <div className="p-6 border-t mt-auto">
             <Button 
               variant="outline" 
-              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/5" 
+              className="w-full justify-start text-destructive border-destructive/20 hover:text-destructive hover:bg-destructive/5 font-bold h-12 rounded-xl" 
               onClick={handleLogout}
             >
               <LogOut className="mr-3 h-5 w-5" />
-              Logout
+              Sign Out
             </Button>
           </div>
         </div>
@@ -110,14 +131,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Overlay for mobile */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden" 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[50] lg:hidden transition-opacity" 
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Main Content */}
-      <main className="flex-1 lg:pl-64 pt-16 lg:pt-0">
-        <div className="max-w-7xl mx-auto p-4 md:p-8 lg:p-10">
+      <main className="flex-1 min-w-0 overflow-auto pt-20 lg:pt-0">
+        <div className="max-w-7xl mx-auto p-4 md:p-10 lg:p-12">
           {children}
         </div>
       </main>

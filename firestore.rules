@@ -1,12 +1,25 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allows public read access to jobs and blog posts
+    // Allows public read access to jobs, blog posts, services, portfolio, and testimonials
     match /jobs/{jobId} {
       allow read: if true;
-      allow write: if request.auth != null || request.headers.origin.contains('localhost'); // Relaxed for seeding during dev
+      allow write: if request.auth != null || request.headers.origin.contains('localhost');
     }
     match /blogPosts/{postId} {
+      allow read: if true;
+      allow write: if request.auth != null || request.headers.origin.contains('localhost');
+    }
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if request.auth != null || request.headers.origin.contains('localhost');
+    }
+    match /portfolio/{itemId} {
+      allow read: if true;
+      allow write: if request.auth != null || request.headers.origin.contains('localhost');
+    }
+    match /testimonials/{testimonialId} {
       allow read: if true;
       allow write: if request.auth != null || request.headers.origin.contains('localhost');
     }

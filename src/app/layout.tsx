@@ -1,3 +1,6 @@
+
+"use client";
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -12,6 +15,7 @@ import { CookieConsentManager } from '@/components/cookie-consent/CookieConsentM
 import { CookieConsentProvider } from '@/hooks/use-cookie-consent.tsx';
 import { AuthProvider } from '@/contexts/auth-context';
 import { FirebaseClientProvider } from '@/firebase';
+import { usePathname } from 'next/navigation';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -23,16 +27,14 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-export const metadata: Metadata = {
-  title: 'QuantumFusion Solutions - Shaping The Future For Tomorrow',
-  description: 'Innovative IT solutions in AI, Cloud Computing, DevOps, and SaaS Platforms by QuantumFusion Solutions.',
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAdminPath = pathname?.startsWith('/admin');
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
@@ -46,10 +48,10 @@ export default function RootLayout({
                   enableSystem
                   disableTransitionOnChange
                 >
-                  <Navbar />
+                  {!isAdminPath && <Navbar />}
                   <main className="flex-grow">{children}</main>
-                  <Footer />
-                  <ChatSection />
+                  {!isAdminPath && <Footer />}
+                  {!isAdminPath && <ChatSection />}
                   <Toaster />
                   <CookieConsentBanner />
                   <CookieSettingsModal />
