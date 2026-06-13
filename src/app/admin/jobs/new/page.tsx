@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -24,25 +25,27 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Save, Briefcase } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
+import Link from 'next/link';
 
 const jobSchema = z.object({
+  jobId: z.string().min(3, 'Job ID is required (e.g. ABC123)'),
   title: z.string().min(2, 'Job title is required'),
   department: z.string().min(1, 'Department is required'),
   location: z.string().min(1, 'Location is required'),
   employmentType: z.string().min(1, 'Employment type is required'),
-  experience: z.string().optional(),
-  skills: z.string().describe('Comma-separated list of skills'),
+  workArrangement: z.string().min(1, 'Arrangement is required'),
+  experienceRequired: z.string().min(1, 'Experience range is required'),
   salaryRange: z.string().optional(),
-  description: z.string().min(10, 'Full job description is required'),
+  skills: z.string().min(2, 'At least one skill is required'),
+  description: z.string().min(50, 'Full job description is required'),
   deadline: z.string().optional(),
-  isActive: z.boolean().default(true),
+  status: z.string().default('Active'),
 });
 
 type JobFormValues = z.infer<typeof jobSchema>;
@@ -55,16 +58,18 @@ export default function NewJobPage() {
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
+      jobId: '',
       title: '',
       department: 'Engineering',
       location: 'Remote',
       employmentType: 'Full Time',
-      experience: '',
-      skills: '',
+      workArrangement: 'Remote',
+      experienceRequired: '',
       salaryRange: '',
+      skills: '',
       description: '',
       deadline: '',
-      isActive: true,
+      status: 'Active',
     },
   });
 
@@ -73,8 +78,9 @@ export default function NewJobPage() {
     try {
       const jobData = {
         ...values,
+        isActive: values.status === 'Active',
         skills: values.skills.split(',').map(s => s.trim()).filter(Boolean),
-        status: values.isActive ? 'Active' : 'Draft',
+        postedDate: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -82,9 +88,8 @@ export default function NewJobPage() {
       await addDoc(collection(db, 'jobs'), jobData);
       toast({ title: 'Success', description: 'Job opening posted successfully.' });
       router.push('/admin/jobs');
-      router.refresh();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to save job opening.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to post job. Please try again.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -106,12 +111,25 @@ export default function NewJobPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card className="shadow-sm border-zinc-200 dark:border-zinc-800">
-            <CardHeader className="border-b bg-zinc-50/50 dark:bg-zinc-900/50 px-6 py-4">
-              <CardTitle className="text-lg font-bold">Basic Information</CardTitle>
+          <Card className="shadow-sm border-zinc-200">
+            <CardHeader className="border-b bg-zinc-50/50">
+              <CardTitle className="text-lg font-bold">General Information</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="jobId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job ID (Unique)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ABC123" {...field} className="font-mono uppercase h-11" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="title"
@@ -119,12 +137,15 @@ export default function NewJobPage() {
                     <FormItem>
                       <FormLabel>Position Title</FormLabel>
                       <FormControl>
-                        <Input placeholder="Senior Frontend Engineer" {...field} />
+                        <Input placeholder="Senior Frontend Engineer" {...field} className="h-11" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField
                   control={form.control}
                   name="department"
@@ -133,8 +154,8 @@ export default function NewJobPage() {
                       <FormLabel>Department</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select department" />
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -147,32 +168,16 @@ export default function NewJobPage() {
                     </FormItem>
                   )}
                 />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Remote / Bangalore" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <FormField
                   control={form.control}
                   name="employmentType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Employment Type</FormLabel>
+                      <FormLabel>Job Type</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -185,24 +190,46 @@ export default function NewJobPage() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="workArrangement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Arrangement</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {['Remote', 'Onsite', 'Hybrid'].map(a => (
+                            <SelectItem key={a} value={a}>{a}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border-zinc-200 dark:border-zinc-800">
-            <CardHeader className="border-b bg-zinc-50/50 dark:bg-zinc-900/50 px-6 py-4">
-              <CardTitle className="text-lg font-bold">Requirements & Comp</CardTitle>
+          <Card className="shadow-sm border-zinc-200">
+            <CardHeader className="border-b bg-zinc-50/50">
+              <CardTitle className="text-lg font-bold">Details & Skills</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
-                  name="experience"
+                  name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Experience Required</FormLabel>
+                      <FormLabel>Specific Location</FormLabel>
                       <FormControl>
-                        <Input placeholder="2-4 Years" {...field} />
+                        <Input placeholder="Bangalore / Remote" {...field} className="h-11" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -210,12 +237,12 @@ export default function NewJobPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="salaryRange"
+                  name="experienceRequired"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Salary Range (Optional)</FormLabel>
+                      <FormLabel>Experience Required</FormLabel>
                       <FormControl>
-                        <Input placeholder="₹12L - ₹18L" {...field} />
+                        <Input placeholder="2-4 Years" {...field} className="h-11" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -228,11 +255,11 @@ export default function NewJobPage() {
                 name="skills"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Required Skills</FormLabel>
+                    <FormLabel>Key Skills</FormLabel>
                     <FormControl>
-                      <Input placeholder="React, TypeScript, Next.js, CSS" {...field} />
+                      <Input placeholder="React, TypeScript, Next.js (comma separated)" {...field} className="h-11" />
                     </FormControl>
-                    <FormDescription>Separate skills with commas.</FormDescription>
+                    <FormDescription>Comma-separated list of required technologies.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -243,11 +270,11 @@ export default function NewJobPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Job Description</FormLabel>
+                    <FormLabel>Full Description (Markdown supported)</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Write detailed responsibilities, qualifications, and benefits..." 
-                        className="min-h-[250px] font-sans" 
+                        placeholder="Write roles, responsibilities, and requirements here..." 
+                        className="min-h-[250px]" 
                         {...field} 
                       />
                     </FormControl>
@@ -258,40 +285,57 @@ export default function NewJobPage() {
             </CardContent>
           </Card>
 
-          <div className="flex items-center justify-between p-6 bg-zinc-50 dark:bg-zinc-900 border rounded-xl">
-            <div className="space-y-0.5">
-              <h4 className="font-bold">Publish Immediately</h4>
-              <p className="text-sm text-zinc-500">If disabled, the job will be saved as a draft.</p>
-            </div>
-            <FormField
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
+          <Card className="shadow-sm border-zinc-200">
+             <CardHeader className="border-b bg-zinc-50/50">
+              <CardTitle className="text-lg font-bold">Status & Visibility</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Active">Active (Visible on Careers Page)</SelectItem>
+                          <SelectItem value="Draft">Draft (Internal Only)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="deadline"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Application Deadline (Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} className="h-11" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </CardContent>
+          </Card>
 
-          <div className="flex justify-end gap-4 sticky bottom-6 z-10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md p-4 border rounded-2xl shadow-xl">
+          <div className="flex justify-end gap-4 pt-4 sticky bottom-6 z-10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md p-4 rounded-2xl border shadow-xl">
             <Button variant="outline" onClick={() => router.back()} disabled={isLoading} size="lg">
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} size="lg" className="min-w-[150px]">
+            <Button type="submit" disabled={isLoading} size="lg" className="min-w-[160px]">
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving...
-                </>
+                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving...</>
               ) : (
-                <>
-                  <Save className="mr-2 h-5 w-5" /> Post Job Opening
-                </>
+                <><Save className="mr-2 h-5 w-5" /> Post Job Role</>
               )}
             </Button>
           </div>

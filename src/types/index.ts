@@ -1,30 +1,39 @@
 
 export interface Job {
-  id: string;
+  id: string; // Firestore Doc ID
+  jobId: string; // Custom Unique ID (e.g., ABC123)
   title: string;
   company: string;
   location: string;
   department: string;
   description: string;
-  employmentType: 'Full-time' | 'Part-time' | 'Contract' | 'Internship';
+  employmentType: 'Full Time' | 'Part Time' | 'Contract' | 'Internship';
+  workArrangement: 'Remote' | 'Onsite' | 'Hybrid';
+  experienceRequired: string;
   salaryRange?: string;
-  postedDate: string; // ISO string format for date
-  companyLogoUrl?: string;
-  requiredSkills: string[]; // Added for job matching
+  skills: string[];
+  deadline?: string;
+  isActive: boolean;
+  status: 'Active' | 'Draft';
+  postedDate: string; // ISO String
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface BlogPost {
   id: string;
   title: string;
-  date: string;
-  author: string;
-  excerpt: string;
-  content?: string; // Full content for detail page
-  imageUrl: string;
-  aiHint: string;
-  category: string;
-  comments: number;
   slug: string;
+  category: string;
+  author: string;
+  thumbnailUrl?: string;
+  excerpt: string;
+  body: string;
+  tags: string[];
+  status: 'Published' | 'Draft';
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApplicationFormValues {
@@ -66,14 +75,13 @@ export interface ApplicationFormValues {
   jobTitle: string;
 }
 
-// New type for User Profile data in Firestore
 export interface UserProfile {
   uid: string;
   fullName: string;
   email: string;
   phone?: string;
-  skills?: string[]; // Stored as an array of strings
-  resumeUrl?: string; // URL to a resume, not the file itself
-  appliedJobs?: string[]; // Array of job IDs
-  updatedAt?: any; // Firestore Timestamp type, use 'any' for client-side flexibility initially
+  skills?: string[];
+  resumeUrl?: string;
+  appliedJobs?: string[];
+  updatedAt?: any;
 }

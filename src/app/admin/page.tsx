@@ -1,20 +1,22 @@
+
 "use client";
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, BookOpen, UserPlus, TrendingUp, Clock } from 'lucide-react';
+import { Briefcase, BookOpen, UserPlus, TrendingUp, PlusCircle, FileText } from 'lucide-react';
 import { useCollection } from '@/firebase';
 import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
   const router = useRouter();
 
-  // Simple client-side check to verify session with the backend on mount
   useEffect(() => {
     fetch('/api/admin/auth/me').then(res => {
       if (!res.ok) {
@@ -70,11 +72,25 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-10">
       <ScrollFadeIn>
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-extrabold tracking-tight">Dashboard Overview</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 text-lg">
-            Monitor your company's digital pulse and content status.
-          </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-4xl font-extrabold tracking-tight">Dashboard Overview</h1>
+            <p className="text-zinc-500 dark:text-zinc-400 text-lg">
+              Manage your company's career portal and blog content.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button asChild variant="outline" className="shadow-sm">
+              <Link href="/admin/jobs/new">
+                <PlusCircle className="mr-2 h-4 w-4" /> New Job
+              </Link>
+            </Button>
+            <Button asChild className="shadow-sm">
+              <Link href="/admin/blog/new">
+                <FileText className="mr-2 h-4 w-4" /> New Article
+              </Link>
+            </Button>
+          </div>
         </div>
       </ScrollFadeIn>
 
@@ -104,10 +120,7 @@ export default function AdminDashboard() {
         <ScrollFadeIn delay="400ms" className="lg:col-span-2">
           <Card className="shadow-sm border-zinc-200 dark:border-zinc-800 h-full">
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <CardTitle>Recent Applications</CardTitle>
-              </div>
+              <CardTitle>Recent Applications</CardTitle>
             </CardHeader>
             <CardContent>
               {appsLoading ? (
@@ -117,7 +130,7 @@ export default function AdminDashboard() {
               ) : recentApps && recentApps.length > 0 ? (
                 <div className="space-y-4">
                   {recentApps.map((app: any) => (
-                    <div key={app.id} className="flex items-center p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border group hover:border-primary/50 transition-colors">
+                    <div key={app.id} className="flex items-center p-4 bg-zinc-50 dark:bg-zinc-900 rounded-xl border">
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold mr-4">
                         {app.candidateName?.charAt(0) || 'A'}
                       </div>
@@ -126,7 +139,7 @@ export default function AdminDashboard() {
                           {app.candidateName}
                         </p>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 truncate">
-                          Applied for: <span className="text-primary font-medium">{app.jobTitle}</span>
+                          Role: <span className="text-primary font-medium">{app.jobTitle}</span>
                         </p>
                       </div>
                       <div className="text-xs text-zinc-400 text-right">
@@ -137,7 +150,6 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="h-40 flex flex-col items-center justify-center text-zinc-400 italic">
-                  <UserPlus className="h-8 w-8 mb-2 opacity-20" />
                   No recent applications found.
                 </div>
               )}
@@ -163,11 +175,11 @@ export default function AdminDashboard() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-zinc-500">API Latency</span>
-                    <span className="text-zinc-900 dark:text-zinc-100 font-medium">120ms</span>
+                    <span className="text-zinc-500">Cloud Storage (S3/GCP)</span>
+                    <span className="text-green-500 font-bold">Connected</span>
                   </div>
                   <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary w-[85%]" />
+                    <div className="h-full bg-primary w-[90%]" />
                   </div>
                 </div>
               </div>

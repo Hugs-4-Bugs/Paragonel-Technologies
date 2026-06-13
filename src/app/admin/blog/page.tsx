@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -12,7 +13,8 @@ import {
   Clock, 
   FileText,
   Eye,
-  BookOpen
+  BookOpen,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,33 +41,34 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
+import { Card } from '@/components/ui/card';
 
 export default function AdminBlogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: posts, loading } = useCollection(query(collection(db, 'blogPosts'), orderBy('createdAt', 'desc')));
   const { toast } = useToast();
 
-  const handleTogglePublished = async (id: string, currentStatus: boolean) => {
+  const handleTogglePublished = async (id: string, currentStatus: string) => {
     try {
-      const newStatus = !currentStatus;
+      const newStatus = currentStatus === 'Published' ? 'Draft' : 'Published';
       await updateDoc(doc(db, 'blogPosts', id), { 
-        status: newStatus ? 'Published' : 'Draft',
-        isPublished: newStatus,
-        publishedAt: newStatus ? new Date().toISOString() : null
+        status: newStatus,
+        publishedAt: newStatus === 'Published' ? new Date().toISOString() : null,
+        updatedAt: new Date().toISOString()
       });
-      toast({ title: 'Success', description: `Post ${newStatus ? 'published' : 'moved to drafts'} successfully.` });
+      toast({ title: 'Status Updated', description: `Article is now ${newStatus}.` });
     } catch (e) {
-      toast({ title: 'Error', description: 'Failed to update post status.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to update article status.', variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to permanently delete this blog post?')) return;
+    if (!confirm('Are you sure you want to permanently delete this article?')) return;
     try {
       await deleteDoc(doc(db, 'blogPosts', id));
-      toast({ title: 'Success', description: 'Post deleted permanently.' });
+      toast({ title: 'Success', description: 'Article deleted permanently.' });
     } catch (e) {
-      toast({ title: 'Error', description: 'Failed to delete post.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to delete article.', variant: 'destructive' });
     }
   };
 
@@ -81,13 +84,11 @@ export default function AdminBlogPage() {
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
               <BookOpen className="h-8 w-8 text-primary" />
-              Manage Blog Content
+              Manage Insights
             </h1>
-            <p className="text-zinc-500 dark:text-zinc-400">
-              Publish insights, news, and company updates.
-            </p>
+            <p className="text-zinc-500">Publish news, trends, and company updates.</p>
           </div>
-          <Button asChild size="lg" className="shadow-md">
+          <Button asChild size="lg">
             <Link href="/admin/blog/new">
               <Plus className="mr-2 h-5 w-5" /> Write New Article
             </Link>
@@ -107,113 +108,113 @@ export default function AdminBlogPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border rounded-xl overflow-hidden shadow-sm">
-        <Table>
-          <TableHeader className="bg-zinc-50 dark:bg-zinc-900/50">
-            <TableRow>
-              <TableHead className="font-bold">Cover</TableHead>
-              <TableHead className="font-bold">Article Title</TableHead>
-              <TableHead className="font-bold">Category</TableHead>
-              <TableHead className="font-bold">Author</TableHead>
-              <TableHead className="font-bold">Status</TableHead>
-              <TableHead className="text-right font-bold">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell><Skeleton className="h-10 w-16 rounded-md" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
-                  <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
-                </TableRow>
-              ))
-            ) : filteredPosts && filteredPosts.length > 0 ? (
-              filteredPosts.map((post: any) => (
-                <TableRow key={post.id} className="group hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-                  <TableCell>
-                    <div className="relative h-10 w-16 rounded-md overflow-hidden bg-zinc-100 dark:bg-zinc-800 border">
-                      {post.coverImageUrl ? (
-                        <Image 
-                          src={post.coverImageUrl} 
-                          alt="" 
-                          fill 
-                          className="object-cover" 
-                          unoptimized 
-                        />
-                      ) : (
-                        <FileText className="h-5 w-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-30" />
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-bold max-w-xs truncate">{post.title}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{post.category}</Badge>
-                  </TableCell>
-                  <TableCell className="text-zinc-500 text-sm">{post.author}</TableCell>
-                  <TableCell>
-                    <Badge variant={post.status === 'Published' ? "default" : "secondary"} className="gap-1">
-                      {post.status === 'Published' ? (
-                        <CheckCircle2 className="h-3 w-3" />
-                      ) : (
-                        <Clock className="h-3 w-3" />
-                      )}
-                      {post.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-52">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/blog/${post.slug}`} target="_blank" className="flex items-center cursor-pointer">
-                            <Eye className="mr-2 h-4 w-4" /> View Public Site
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/blog/${post.id}/edit`} className="flex items-center cursor-pointer">
-                            <Edit className="mr-2 h-4 w-4" /> Edit Content
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="flex items-center cursor-pointer"
-                          onClick={() => handleTogglePublished(post.id, post.status === 'Published')}
-                        >
-                          {post.status === 'Published' ? (
-                            <><Clock className="mr-2 h-4 w-4" /> Move to Drafts</>
-                          ) : (
-                            <><CheckCircle2 className="mr-2 h-4 w-4" /> Publish Now</>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          className="flex items-center cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
-                          onClick={() => handleDelete(post.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete Post
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
+      <Card className="overflow-hidden border-zinc-200 shadow-sm">
+        <div className="hidden md:block">
+          <Table>
+            <TableHeader className="bg-zinc-50">
               <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center text-zinc-500 italic">
-                  No blog articles found.
-                </TableCell>
+                <TableHead className="font-bold">Cover</TableHead>
+                <TableHead className="font-bold">Title</TableHead>
+                <TableHead className="font-bold">Category</TableHead>
+                <TableHead className="font-bold">Status</TableHead>
+                <TableHead className="font-bold">Date</TableHead>
+                <TableHead className="text-right font-bold">Actions</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-10 w-16 rounded-md" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-48" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                  </TableRow>
+                ))
+              ) : filteredPosts && filteredPosts.length > 0 ? (
+                filteredPosts.map((post: any) => (
+                  <TableRow key={post.id} className="group hover:bg-zinc-50">
+                    <TableCell>
+                      <div className="relative h-10 w-16 rounded-md overflow-hidden bg-zinc-100 border">
+                        {post.thumbnailUrl ? (
+                          <Image src={post.thumbnailUrl} alt="" fill className="object-cover" unoptimized />
+                        ) : (
+                          <ImageIcon className="h-4 w-4 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-bold max-w-xs truncate">{post.title}</TableCell>
+                    <TableCell><Badge variant="outline">{post.category}</Badge></TableCell>
+                    <TableCell>
+                      <Badge variant={post.status === 'Published' ? "default" : "secondary"}>
+                        {post.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-zinc-500 text-xs">
+                      {new Date(post.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/blog/${post.slug}`} target="_blank" className="cursor-pointer">
+                              <Eye className="mr-2 h-4 w-4" /> View Public
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/admin/blog/${post.id}/edit`} className="cursor-pointer">
+                              <Edit className="mr-2 h-4 w-4" /> Edit Content
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleTogglePublished(post.id, post.status)} className="cursor-pointer">
+                            {post.status === 'Published' ? <Clock className="mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                            {post.status === 'Published' ? 'Move to Drafts' : 'Publish Now'}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleDelete(post.id)} className="text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Post
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-40 text-center text-zinc-500 italic">No articles found.</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden divide-y">
+           {filteredPosts?.map((post: any) => (
+             <div key={post.id} className="p-6 space-y-4">
+               <div className="flex gap-4">
+                  <div className="relative h-12 w-20 rounded-md overflow-hidden bg-zinc-100 border flex-shrink-0">
+                    {post.thumbnailUrl && <Image src={post.thumbnailUrl} alt="" fill className="object-cover" unoptimized />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-sm truncate">{post.title}</h3>
+                    <p className="text-xs text-zinc-500">{post.category} • {new Date(post.createdAt).toLocaleDateString()}</p>
+                  </div>
+               </div>
+               <div className="flex gap-2">
+                  <Button asChild variant="outline" size="sm" className="flex-1"><Link href={`/admin/blog/${post.id}/edit`}>Edit</Link></Button>
+                  <Button asChild variant="ghost" size="sm" className="flex-1"><Link href={`/blog/${post.slug}`} target="_blank">View</Link></Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(post.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+               </div>
+             </div>
+           ))}
+        </div>
+      </Card>
     </div>
   );
 }

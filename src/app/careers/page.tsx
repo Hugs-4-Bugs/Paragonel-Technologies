@@ -1,107 +1,229 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, Cloud, Rocket, Laptop, Zap, Users, Filter, Search } from 'lucide-react';
+import { Brain, Cloud, Rocket, Laptop, Zap, Users, Filter, Search, MapPin, Clock, Building, Hash, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from '@/components/ui/label';
+import { useCollection } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { JobCard } from '@/components/job-card';
+import { ApplyJobModal } from '@/components/apply-job-modal';
+import { JobDescriptionModal } from '@/components/job-description-modal';
+import { useAuth } from '@/contexts/auth-context';
+import { useRouter } from 'next/navigation';
 
 export default function CareersPage() {
-  const [department, setDepartment] = useState('All');
-  const [type, setType] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [jobIdSearch, setJobIdSearch] = useState('');
+  const [locationFilter, setLocationFilter] = useState('All Locations');
+  const [departmentFilter, setDepartmentFilter] = useState('All Departments');
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState('All Types');
+  const [dateFilter, setDateFilter] = useState('Any time');
+  const [workArrangementFilter, setWorkArrangementFilter] = useState('Any');
+
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [selectedJobForApplication, setSelectedJobForApplication] = useState<any>(null);
+  const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
+  const [selectedJobForDescription, setSelectedJobForDescription] = useState<any>(null);
+
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+
+  const jobsQuery = useMemo(() => query(
+    collection(db, 'jobs'), 
+    where('isActive', '==', true),
+    orderBy('createdAt', 'desc')
+  ), []);
+  const { data: jobs, loading: jobsLoading } = useCollection(jobsQuery);
+
+  const departments = useMemo(() => {
+    if (!jobs) return ['All Departments'];
+    const depts = new Set(jobs.map((j: any) => j.department));
+    return ['All Departments', ...Array.from(depts)].sort();
+  }, [jobs]);
+
+  const locations = useMemo(() => {
+    if (!jobs) return ['All Locations'];
+    const locs = new Set(jobs.map((j: any) => j.location));
+    return ['All Locations', ...Array.from(locs)].sort();
+  }, [jobs]);
+
+  const filteredJobs = useMemo(() => {
+    if (!jobs) return [];
+    
+    return jobs.filter((job: any) => {
+      const matchesSearch = searchTerm === '' || 
+        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.skills.some((s: string) => s.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const matchesJobId = jobIdSearch === '' || job.jobId.toLowerCase() === jobIdSearch.toLowerCase();
+      const matchesLocation = locationFilter === 'All Locations' || job.location === locationFilter;
+      const matchesDept = departmentFilter === 'All Departments' || job.department === departmentFilter;
+      const matchesType = employmentTypeFilter === 'All Types' || job.employmentType === employmentTypeFilter;
+      
+      let matchesArrangement = true;
+      if (workArrangementFilter !== 'Any') {
+        matchesArrangement = job.workArrangement === workArrangementFilter;
+      }
+
+      let matchesDate = true;
+      if (dateFilter !== 'Any time') {
+        const jobDate = new Date(job.postedDate || job.createdAt);
+        const now = new Date();
+        const diffHours = (now.getTime() - jobDate.getTime()) / (1000 * 60 * 60);
+        if (dateFilter === 'Past 24 hours' && diffHours > 24) matchesDate = false;
+        if (dateFilter === 'Past week' && diffHours > 168) matchesDate = false;
+        if (dateFilter === 'Past month' && diffHours > 720) matchesDate = false;
+      }
+
+      return matchesSearch && matchesJobId && matchesLocation && matchesDept && matchesType && matchesArrangement && matchesDate;
+    });
+  }, [jobs, searchTerm, jobIdSearch, locationFilter, departmentFilter, employmentTypeFilter, dateFilter, workArrangementFilter]);
+
+  const handleApply = (job: any) => {
+    if (!isAuthenticated) {
+      localStorage.setItem('pendingApplyJobId', job.id);
+      router.push('/auth/login');
+    } else {
+      setSelectedJobForApplication(job);
+      setIsApplyModalOpen(true);
+    }
+  };
+
+  const handleView = (job: any) => {
+    setSelectedJobForDescription(job);
+    setIsDescriptionModalOpen(true);
+  };
 
   return (
     <div className="bg-background min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[400px] flex items-center justify-center overflow-hidden bg-primary text-primary-foreground">
-        <div className="absolute inset-0 bg-black/20 z-0"></div>
+      <section className="relative h-[450px] flex items-center justify-center overflow-hidden animated-gradient-background text-white">
+        <div className="absolute inset-0 bg-black/40 z-0"></div>
         <div className="container relative z-10 px-4 md:px-6 text-center">
           <ScrollFadeIn>
-            <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight">Careers at <br/><span className="opacity-80">QuantumFusion</span></h1>
-            <p className="text-xl max-w-2xl mx-auto opacity-90">Building real products. Solving complex challenges. No bureaucracy.</p>
+            <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight">Careers at <br/>QuantumFusion</h1>
+            <p className="text-xl max-w-2xl mx-auto opacity-90 font-medium">Build AI-native products. Solve real challenges. No bureaucracy.</p>
+            <Button size="lg" className="mt-8 rounded-full bg-white text-primary hover:bg-white/90" onClick={() => document.getElementById('open-roles')?.scrollIntoView({ behavior: 'smooth' })}>
+              View Open Roles <Zap className="ml-2 h-4 w-4" />
+            </Button>
           </ScrollFadeIn>
         </div>
       </section>
 
-      {/* Why Join Us */}
-      <section className="section-padding bg-background">
-        <div className="container mx-auto px-4 md:px-6">
-          <ScrollFadeIn className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Join Us</h2>
-          </ScrollFadeIn>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { icon: Brain, title: "Interesting Problems", text: "Work on AI, cloud architecture, and real SaaS products." },
-              { icon: Laptop, title: "Remote-Friendly", text: "Bangalore based with full flexibility to work where you are best." },
-              { icon: Zap, title: "Learn by Shipping", text: "We build real products used by real people every day." },
-              { icon: Users, title: "Founder Access", text: "Direct access to leadership. Your voice actually matters." }
-            ].map((perk, i) => (
-              <ScrollFadeIn key={i} delay={`${i * 100}ms`}>
-                <Card className="h-full border-none shadow-md bg-secondary/20">
-                  <CardHeader>
-                    <perk.icon className="h-10 w-10 text-primary mb-2" />
-                    <CardTitle className="text-lg">{perk.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground text-sm">{perk.text}</p>
-                  </CardContent>
-                </Card>
-              </ScrollFadeIn>
-            ))}
+      {/* Advanced Filter Section */}
+      <section className="bg-white dark:bg-zinc-950 border-b sticky top-20 z-20 shadow-sm" id="open-roles">
+        <div className="container mx-auto px-4 md:px-6 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Search Jobs</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+                <Input placeholder="Keywords (e.g., AI, Python)" className="pl-10 h-12" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Filter by Job ID</Label>
+              <div className="relative">
+                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+                <Input placeholder="Enter Job ID (e.g., ABC123)" className="pl-10 h-12" value={jobIdSearch} onChange={(e) => setJobIdSearch(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Location</Label>
+              <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Department</Label>
+              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pt-6 border-t">
+            <div className="space-y-3">
+              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Filter by Date</Label>
+              <RadioGroup value={dateFilter} onValueChange={setDateFilter} className="flex flex-wrap gap-x-6 gap-y-2">
+                {['Any time', 'Past month', 'Past week', 'Past 24 hours'].map(opt => (
+                  <div key={opt} className="flex items-center space-x-2">
+                    <RadioGroupItem value={opt} id={`date-${opt}`} />
+                    <Label htmlFor={`date-${opt}`} className="text-sm font-medium cursor-pointer">{opt}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+            <div className="space-y-3">
+               <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Employment Type</Label>
+               <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {['All Types', 'Full Time', 'Part Time', 'Contract', 'Internship'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Work Arrangement</Label>
+              <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex space-x-6">
+                 {['Any', 'Remote', 'Onsite', 'Hybrid'].map(opt => (
+                  <div key={opt} className="flex items-center space-x-2">
+                    <RadioGroupItem value={opt} id={`arr-${opt}`} />
+                    <Label htmlFor={`arr-${opt}`} className="text-sm font-medium cursor-pointer">{opt}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Job Listings Section */}
-      <section className="section-padding bg-secondary/10" id="open-roles">
+      {/* Jobs Listing Section */}
+      <section className="section-padding bg-zinc-50 dark:bg-zinc-900/10 min-h-[500px]">
         <div className="container mx-auto px-4 md:px-6">
-          <ScrollFadeIn className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Current Openings</h2>
-          </ScrollFadeIn>
-
-          {/* Filter Bar */}
-          <ScrollFadeIn className="flex flex-col md:flex-row gap-4 mb-12 max-w-4xl mx-auto">
-            <div className="flex-grow flex gap-4">
-              <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Departments</SelectItem>
-                  <SelectItem value="Engineering">Engineering</SelectItem>
-                  <SelectItem value="Design">Design</SelectItem>
-                  <SelectItem value="Marketing">Marketing</SelectItem>
-                  <SelectItem value="Operations">Operations</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={type} onValueChange={setType}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Job Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Types</SelectItem>
-                  <SelectItem value="Full Time">Full Time</SelectItem>
-                  <SelectItem value="Part Time">Part Time</SelectItem>
-                  <SelectItem value="Contract">Contract</SelectItem>
-                  <SelectItem value="Internship">Internship</SelectItem>
-                </SelectContent>
-              </Select>
+          {jobsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64 rounded-2xl" />)}
             </div>
-            <Button className="shrink-0"><Search className="mr-2 h-4 w-4" /> Filter</Button>
-          </ScrollFadeIn>
-
-          {/* Empty State */}
-          <ScrollFadeIn className="text-center py-20 bg-background border border-dashed border-primary/30 rounded-3xl">
-            <Rocket className="h-16 w-16 text-primary/20 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold mb-2">No active openings right now</h3>
-            <p className="text-muted-foreground mb-8">But we are always looking for great talent. Drop your resume at:</p>
-            <a href="mailto:careers@quantumfusion.in" className="text-2xl font-black text-primary hover:underline">careers@quantumfusion.in</a>
-            <p className="mt-4 text-sm text-muted-foreground">We'll reach out when something fits your profile.</p>
-          </ScrollFadeIn>
+          ) : filteredJobs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {filteredJobs.map((job: any) => (
+                <JobCard 
+                  key={job.id} 
+                  job={job} 
+                  onApplyNowClick={() => handleApply(job)} 
+                  onViewDetailsClick={() => handleView(job)} 
+                />
+              ))}
+            </div>
+          ) : (
+            <ScrollFadeIn className="text-center py-20 bg-white dark:bg-zinc-950 border rounded-3xl">
+              <Rocket className="h-16 w-16 text-primary/20 mx-auto mb-6" />
+              <h3 className="text-2xl font-bold mb-2">No matching openings right now</h3>
+              <p className="text-muted-foreground mb-8">Adjust your filters or drop your resume at careers@quantumfusion.in</p>
+              <Button variant="outline" onClick={() => {
+                setSearchTerm(''); setJobIdSearch(''); setLocationFilter('All Locations');
+                setDepartmentFilter('All Departments'); setEmploymentTypeFilter('All Types');
+                setDateFilter('Any time'); setWorkArrangementFilter('Any');
+              }}>Clear All Filters</Button>
+            </ScrollFadeIn>
+          )}
         </div>
       </section>
 
@@ -109,44 +231,27 @@ export default function CareersPage() {
       <section className="section-padding bg-background">
         <div className="container mx-auto px-4 md:px-6">
           <ScrollFadeIn className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Application Process</h2>
+            <h2 className="text-3xl md:text-4xl font-black">Our Application Process</h2>
           </ScrollFadeIn>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
-              "Apply via careers or chatbot",
-              "Resume screening (within 48h)",
-              "Practical technical interview",
-              "Offer & Onboarding"
+              { title: "Apply Online", text: "Submit your details via form or QuantumAI." },
+              { title: "Review", text: "Resume screening within 48 hours." },
+              { title: "Practical", text: "A real-world technical discussion." },
+              { title: "Onboarding", text: "Offer and welcome to the team." }
             ].map((step, i) => (
-              <ScrollFadeIn key={i} delay={`${i * 100}ms`} className="p-6 bg-secondary/10 rounded-2xl relative">
-                <span className="text-primary font-black text-xl mb-4 block">0{i+1}</span>
-                <p className="font-bold">{step}</p>
-              </ScrollFadeIn>
+              <div key={i} className="p-8 bg-zinc-50 dark:bg-zinc-900 rounded-3xl border">
+                <span className="text-primary font-black text-3xl mb-4 block opacity-50">0{i+1}</span>
+                <h4 className="font-bold text-lg mb-2">{step.title}</h4>
+                <p className="text-sm text-muted-foreground">{step.text}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Perks Grid */}
-      <section className="section-padding bg-secondary/10">
-        <div className="container mx-auto px-4 md:px-6">
-          <ScrollFadeIn className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Perks & Benefits</h2>
-          </ScrollFadeIn>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 text-center">
-            {[
-              "Remote-first", "Founder Mentorship", "Real Products", "Fast Growth", "Competitive Pay", "Learning Budget"
-            ].map((p, i) => (
-              <ScrollFadeIn key={i} delay={`${i * 50}ms`} className="flex flex-col items-center gap-3">
-                <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-primary" />
-                </div>
-                <span className="text-sm font-bold">{p}</span>
-              </ScrollFadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ApplyJobModal isOpen={isApplyModalOpen} onOpenChange={setIsApplyModalOpen} job={selectedJobForApplication} />
+      <JobDescriptionModal isOpen={isDescriptionModalOpen} onOpenChange={setIsDescriptionModalOpen} job={selectedJobForDescription} />
     </div>
   );
 }
