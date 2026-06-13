@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview QuantumAI Resume Analysis Flow.
@@ -26,7 +27,7 @@ export type AnalyzeResumeOutput = z.infer<typeof AnalyzeResumeOutputSchema>;
 
 const prompt = ai.definePrompt({
   name: 'analyzeResumePrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: AnalyzeResumeInputSchema },
   output: { schema: AnalyzeResumeOutputSchema },
   prompt: `You are an expert HR recruitment specialist.

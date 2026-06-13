@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow to check for a job match based on user skills and generate a notification email.
@@ -47,7 +48,7 @@ function findJobById(jobId: string): Job | undefined {
 
 const emailFormattingPrompt = ai.definePrompt({
     name: 'formatJobMatchEmailPrompt',
-    model: 'googleai/gemini-1.5-flash',
+    model: 'googleai/gemini-1.5-flash-latest',
     input: { schema: z.object({
         jobTitle: z.string(),
         jobCompany: z.string(),
@@ -75,7 +76,7 @@ export async function generateJobMatchEmail(
 
   if (!job || !userProfile || !userProfile.skills) return { shouldNotify: false };
 
-  const jobRequiredSkills = job.requiredSkills.map(s => s.toLowerCase());
+  const jobRequiredSkills = job.skills.map(s => s.toLowerCase());
   const userSkills = userProfile.skills.map(s => s.toLowerCase());
   const matchedSkillCount = jobRequiredSkills.filter(s => userSkills.includes(s)).length;
   const matchPercentage = (matchedSkillCount / jobRequiredSkills.length) * 100;

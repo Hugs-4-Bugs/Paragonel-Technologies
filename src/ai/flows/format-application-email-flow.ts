@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Formats a detailed job application into an email for admin and a confirmation email for the applicant.
@@ -68,7 +69,7 @@ export async function formatApplicationEmail(
 
 const prompt = ai.definePrompt({
   name: 'formatDetailedApplicationEmailPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: {schema: FormatApplicationEmailInputSchema},
   output: {schema: FormatApplicationEmailOutputSchema},
   prompt: `
