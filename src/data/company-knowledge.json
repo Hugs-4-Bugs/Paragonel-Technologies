@@ -3,88 +3,73 @@
   "company": {
     "name": "QuantumFusion Solutions",
     "founder": "Prabhat Sharma",
+    "ceo": "Prabhat Sharma",
     "founded": "2024",
     "tagline": "Shaping the Future for Tomorrow",
     "description": "QuantumFusion Solutions is an AI-native technology company that builds its own SaaS products and delivers custom digital platforms for clients. We specialize in AI integration, cloud infrastructure, DevOps automation, mobile apps, and full-stack SaaS development.",
-    "location": "Bangalore, India",
+    "mission": "To deliver transformative IT solutions that drive innovation, efficiency, and sustainable growth.",
+    "vision": "To be the leading catalyst in our clients' digital transformation journeys.",
+    "location": "HSR Layout, Bangalore, 560102, India",
+    "phone": "+91 7250063206",
     "email": "contact@quantumfusion.in",
     "website": "https://quantumfusion-solutions.vercel.app",
     "linkedin": "https://www.linkedin.com/company/quantumfusion-solutions",
-    "twitter": "https://x.com/kattyPrabhat"
+    "twitter": "https://x.com/kattyPrabhat",
+    "technologies": ["AI/ML", "Next.js", "React", "Node.js", "Firebase", "Spring Boot", "AWS", "Azure", "GCP", "DevOps", "Kubernetes", "Docker"]
   },
   "pages": [
-    { "name": "Home", "url": "/" },
-    { "name": "About", "url": "/about" },
-    { "name": "Services", "url": "/services" },
-    { "name": "Portfolio", "url": "/portfolio" },
-    { "name": "Blog", "url": "/blog" },
-    { "name": "Careers", "url": "/careers" },
-    { "name": "Team", "url": "/team" },
-    { "name": "Contact", "url": "/contact" },
-    { "name": "FAQ", "url": "/faq" },
-    { "name": "Testimonials", "url": "/testimonials" }
+    { "name": "Home", "url": "/", "description": "Welcome to QuantumFusion Solutions. Overview of our mission and core services." },
+    { "name": "About", "url": "/about", "description": "Learn about our history, mission, vision, and the team." },
+    { "name": "Services", "url": "/services", "description": "Explore our core offerings: AI Solutions, Cloud, DevOps, and SaaS." },
+    { "name": "Portfolio", "url": "/portfolio", "description": "See our successful projects like AcquisitionOS, SystemFoundry, and CodeGuard AI." },
+    { "name": "Blog", "url": "/blog", "description": "Read the latest tech insights and company news." },
+    { "name": "Careers", "url": "/careers", "description": "Join our team of innovators. View open roles and apply." },
+    { "name": "Team", "url": "/team", "description": "Meet our leadership and technical experts." },
+    { "name": "Contact", "url": "/contact", "description": "Get in touch with us for inquiries or partnerships." },
+    { "name": "FAQ", "url": "/faq", "description": "Find answers to common questions about our company." },
+    { "name": "Testimonials", "url": "/testimonials", "description": "Read what our clients say about our work." }
   ],
   "services": [
     {
       "name": "AI Solutions",
       "url": "/services/ai-solutions",
-      "description": "Custom ML models, LLM integration, multi-agent systems, RAG pipelines, chatbots, voice agents, document automation."
+      "description": "Custom ML models, LLM integration, RAG pipelines, and intelligent automation."
     },
     {
       "name": "Cloud Infrastructure",
       "url": "/services/cloud-infrastructure",
-      "description": "AWS and GCP setup, migration, management, cost optimization, Terraform IaC."
+      "description": "Cloud migration, managed services, and cloud-native development on AWS, Azure, and GCP."
     },
     {
       "name": "DevOps Automation",
       "url": "/services/devops-automation",
-      "description": "CI/CD pipelines, Docker, Kubernetes, infrastructure as code, automated testing."
+      "description": "CI/CD pipelines, Infrastructure as Code (IaC), and automated testing."
     },
     {
       "name": "SaaS Platforms",
       "url": "/services/saas-platforms",
-      "description": "End-to-end custom SaaS platform development: design, backend, payments, deployment."
-    },
-    {
-      "name": "Mobile App Development",
-      "url": "/services",
-      "description": "Flutter cross-platform apps for Android and iOS integrated with Spring Boot backends."
-    },
-    {
-      "name": "Custom Platform Build",
-      "url": "/services",
-      "description": "Any domain: healthcare, fintech, e-commerce, restaurant tech. Full-stack delivery."
+      "description": "End-to-end development of scalable Software-as-a-Service applications."
     }
   ],
   "products": [
     {
       "name": "AcquisitionOS",
-      "status": "live",
-      "description": "AI-powered lead acquisition and CRM platform. Replaces 3-4 separate tools.",
-      "url": "/portfolio"
+      "status": "Live",
+      "description": "AI-powered lead acquisition and CRM platform."
     },
     {
       "name": "SystemFoundry",
-      "status": "live",
-      "description": "Visual AI-powered system architecture simulator for engineers.",
-      "url": "/portfolio"
+      "status": "Live",
+      "description": "Visual AI-powered system architecture simulator."
     },
     {
       "name": "CodeGuard AI",
-      "status": "published",
-      "description": "VS Code extension that detects expensive AWS infrastructure patterns in Terraform files in real time.",
-      "url": "/portfolio"
-    },
-    {
-      "name": "AaharAI",
-      "status": "in-development",
-      "description": "India-first AI nutrition and health companion for Android with regional food intelligence.",
-      "url": "/portfolio"
+      "status": "Published",
+      "description": "VS Code extension for real-time cloud cost detection in IaC."
     }
   ],
   "careers": {
-    "page_url": "/careers",
-    "description": "We are always looking for talented engineers, designers, and product thinkers.",
-    "apply_instruction": "Visit our Careers page to see open roles and apply."
+    "description": "We look for talented engineers, designers, and thinkers who want to shape the future.",
+    "apply_process": "View roles -> Apply via form or QuantumAI -> Resume screening -> Interview -> Offer."
   }
 }

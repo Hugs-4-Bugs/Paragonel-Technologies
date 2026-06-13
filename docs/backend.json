@@ -1,0 +1,84 @@
+
+{
+  "entities": {
+    "ChatSession": {
+      "title": "Chat Session",
+      "description": "Represents a chat conversation session between a user and QuantumAI.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "metadata": { "type": "object" }
+      },
+      "required": ["sessionId", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "An individual message within a chat session.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "ai"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sessionId", "role", "content", "timestamp"]
+    },
+    "JobApplication": {
+      "title": "Job Application",
+      "description": "A job application submitted through the website or QuantumAI.",
+      "type": "object",
+      "properties": {
+        "applicationId": { "type": "string" },
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "candidateName": { "type": "string" },
+        "candidateEmail": { "type": "string" },
+        "candidatePhone": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "experienceYears": { "type": "number" },
+        "resumeUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["submitted", "reviewing", "shortlisted", "rejected"] },
+        "appliedAt": { "type": "string", "format": "date-time" },
+        "appliedVia": { "type": "string", "enum": ["form", "ai"] }
+      },
+      "required": ["applicationId", "jobId", "candidateEmail", "appliedAt"]
+    },
+    "CandidateProfile": {
+      "title": "Candidate Profile",
+      "description": "Extracted profile of a candidate from their resume.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "experienceYears": { "type": "number" },
+        "education": { "type": "string" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "password"]
+  },
+  "firestore": {
+    "/chatSessions/{sessionId}": {
+      "schema": "#/backend/entities/ChatSession",
+      "description": "Collection of active and past chat sessions."
+    },
+    "/chatSessions/{sessionId}/messages/{messageId}": {
+      "schema": "#/backend/entities/ChatMessage",
+      "description": "Messages belonging to a specific chat session."
+    },
+    "/jobApplications/{applicationId}": {
+      "schema": "#/backend/entities/JobApplication",
+      "description": "Job applications received by the company."
+    },
+    "/candidateProfiles/{email}": {
+      "schema": "#/backend/entities/CandidateProfile",
+      "description": "Temporary or persistent candidate profiles."
+    }
+  }
+}

@@ -1,71 +1,55 @@
+
 'use server';
 /**
- * @fileOverview A QuantumFusion Solutions Q&A AI agent.
- *
- * - companyQnaFlow - A function that answers questions about QuantumFusion Solutions.
- * - CompanyQnaInput - The input type for the companyQnaFlow function.
- * - CompanyQnaOutput - The return type for the companyQnaFlow function.
+ * @fileOverview QuantumAI Smart Q&A Flow.
+ * Answers questions about the company using the knowledge base and handles navigation.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+import knowledge from '@/data/company-knowledge.json';
 
 const CompanyQnaInputSchema = z.object({
   question: z.string().describe('The user question about QuantumFusion Solutions.'),
+  context: z.object({
+    userName: z.string().optional(),
+    currentPath: z.string().optional(),
+  }).optional(),
 });
 export type CompanyQnaInput = z.infer<typeof CompanyQnaInputSchema>;
 
 const CompanyQnaOutputSchema = z.object({
-  answer: z.string().describe('The AI-generated answer to the user question.'),
+  answer: z.string().describe('The AI-generated answer.'),
+  intent: z.string().describe('The detected intent of the user (e.g., qna, navigate, careers).'),
+  navigationLink: z.string().optional().describe('A link to a page on the website if relevant.'),
 });
 export type CompanyQnaOutput = z.infer<typeof CompanyQnaOutputSchema>;
-
-export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQnaOutput> {
-  return companyQnaFlowInternal(input);
-}
 
 const prompt = ai.definePrompt({
   name: 'companyQnaPrompt',
   model: 'googleai/gemini-2.0-flash',
-  input: {schema: CompanyQnaInputSchema},
-  output: {schema: CompanyQnaOutputSchema},
-  prompt: `You are a helpful and knowledgeable assistant for QuantumFusion Solutions, an innovative IT company focused on AI, Cloud Computing, DevOps, and SaaS Platforms.
-The company's mission is to deliver transformative IT solutions that drive innovation, efficiency, and sustainable growth. Their vision is to be the leading catalyst in clients' digital transformation journeys.
-Key services include:
-- AI Solutions: Covering machine learning, Natural Language Processing (NLP), and computer vision.
-- Cloud Infrastructure: Including cloud migration, management, and cloud-native development on platforms like AWS, Azure, and GCP.
-- DevOps Automation: Focusing on CI/CD pipelines, Infrastructure as Code (IaC), and automated testing.
-- SaaS Platforms: Offering end-to-end development of Software-as-a-Service applications.
-The company was founded by Prabhat Kumar.
-The company's official LinkedIn page is: https://www.linkedin.com/company/106575838/admin/inbox/thread/2-OTQ5ODNjNjAtNDE0Yi00YTI3LWI5YTEtOGI5ZmQ0ZDNkMTAwXzEwMA==/
+  input: { schema: CompanyQnaInputSchema },
+  output: { schema: CompanyQnaOutputSchema },
+  prompt: `You are QuantumAI, the intelligent assistant for QuantumFusion Solutions.
+Your goal is to help users explore the website, learn about the company, and answer any questions.
 
-When providing a link, please use Markdown format, for example: [Our Careers Page](/careers) or [QuantumFusion Solutions LinkedIn](https://www.linkedin.com/company/106575838/admin/inbox/thread/2-OTQ5ODNjNjAtNDE0Yi00YTI3LWI5YTEtOGI5ZmQ0ZDNkMTAwXzEwMA==/).
+COMPANY KNOWLEDGE:
+{{{json knowledge}}}
 
-Answer the following user question concisely and professionally based on the information about QuantumFusion Solutions.
-If the question is about careers or job openings, mention that they can find more information on the [Careers page](/careers) of the website or on the company's [LinkedIn profile](https://www.linkedin.com/company/106575838/admin/inbox/thread/2-OTQ5ODNjNjAtNDE0Yi00YTI3LWI5YTEtOGI5ZmQ0ZDNkMTAwXzEwMA==/).
-If the question is unrelated to the company or its services, politely state that you can only answer questions about QuantumFusion Solutions.
+INSTRUCTIONS:
+1. Use the provided knowledge base as your ground truth.
+2. If the user asks for a page (e.g., "show careers", "go to contact"), detect the 'navigate' intent and provide the relative URL from the knowledge base.
+3. If the user asks about jobs, openings, or hiring, detect 'careers' intent.
+4. Always be professional, modern, and helpful.
+5. Use Markdown for links in the text if you aren't providing a specific navigationLink field.
+6. If the question is unrelated to the company, politely explain that you are specialized in QuantumFusion Solutions.
 
 User Question: {{{question}}}
 
-Answer:`,
+Answer with intent and navigationLink if applicable.`,
 });
 
-const companyQnaFlowInternal = ai.defineFlow(
-  {
-    name: 'companyQnaFlowInternal',
-    inputSchema: CompanyQnaInputSchema,
-    outputSchema: CompanyQnaOutputSchema,
-  },
-  async (input) => {
-    try {
-      const {output} = await prompt(input);
-      if (!output || !output.answer) {
-        return { answer: "I'm sorry, I'm having a bit of trouble processing that. QuantumFusion Solutions offers top-tier AI, Cloud, and SaaS solutions. You can check our [Services](/services) or [Careers](/careers) pages for more info!" };
-      }
-      return output;
-    } catch (error) {
-      console.error("AI Flow Error:", error);
-      return { answer: "I'm currently updating my knowledge base. QuantumFusion Solutions specializes in AI, Cloud, and DevOps. Please visit our [Contact Page](/contact) if you have specific inquiries!" };
-    }
-  }
-);
+export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQnaOutput> {
+  const { output } = await prompt({ ...input, knowledge });
+  return output!;
+}

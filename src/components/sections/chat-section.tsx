@@ -6,12 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageCircle, Send, X, Loader2, Bot, User, Trash2 } from 'lucide-react';
+import { MessageCircle, Send, X, Loader2, Bot, Trash2, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
-import knowledge from '@/data/company-knowledge.json';
 import { useChatState } from '@/hooks/useChatState';
 import { ChatCareerFlow } from '@/components/ChatCareerFlow';
+import { companyQnaFlow } from '@/ai/flows/company-qna-flow';
+import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
+import { dummyJobs } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function ChatSection() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +31,8 @@ export function ChatSection() {
     selectedJob, setSelectedJob,
     jobListings, setJobListings,
     matchedJobs, setMatchedJobs,
-    clearChat
+    clearChat,
+    sessionId
   } = useChatState();
 
   const initialGreeting = "Hi! I'm QuantumAI, your intelligent assistant for QuantumFusion Solutions. I can help you explore our products, services, careers, company information, and answer questions about everything available on this website.";
@@ -52,182 +57,169 @@ export function ChatSection() {
         scrollViewport.scrollTop = scrollViewport.scrollHeight;
       }
     }
-  }, [messages, careerStep]);
+  }, [messages, careerStep, isLoading]);
 
-  const detectIntent = (text: string) => {
-    const t = text.toLowerCase();
-    
-    if (t.includes('founder') || t.includes('built this') || t.includes('owns') || t.includes('ceo') || t.includes('prabhat')) {
-      return `QuantumFusion Solutions was founded by ${knowledge.company.founder}. ${knowledge.company.description}`;
-    }
-    
-    if (t.includes('service') || t.includes('offering') || t.includes('what do you do')) {
-      const servicesHtml = knowledge.services.map(s => `• <a href="${s.url}" class="text-primary underline font-medium">${s.name}</a>: ${s.description}`).join('<br/>');
-      return `Our core services include:<br/><br/>${servicesHtml}`;
-    }
-    
-    if (t.includes('product') || t.includes('built')) {
-      const productsHtml = knowledge.products.map(p => `• <strong>${p.name}</strong> (${p.status}): ${p.description}`).join('<br/>');
-      return `Here are some of our innovative products:<br/><br/>${productsHtml}`;
-    }
-    
-    if (t.includes('pricing') || t.includes('cost') || t.includes('budget')) {
-      return `Our pricing typically ranges from ₹75K–₹10L+ for custom projects, with ongoing support retainers available from ₹20K–₹60K/month. Would you like to discuss a specific project? <a href="/contact" class="text-primary underline">Talk to our team</a>.`;
-    }
-    
-    if (t.includes('contact') || t.includes('reach out') || t.includes('email')) {
-      return `You can reach us at ${knowledge.company.email} or via our <a href="/contact" class="text-primary underline">Contact Page</a>.`;
-    }
-
-    if (t.includes('blog') || t.includes('article') || t.includes('insight')) {
-      return `Check out our latest insights and tech news on our <a href="/blog" class="text-primary underline">Blog Page</a>.`;
-    }
-
-    if (t.includes('about') || t.includes('who are you') || t.includes('what is quantumfusion')) {
-      return `${knowledge.company.description} Learn more <a href="/about" class="text-primary underline">About Us here</a>.`;
-    }
-
-    if (t.includes('portfolio') || t.includes('past work') || t.includes('case study')) {
-      return `Explore our successful collaborations and projects in our <a href="/portfolio" class="text-primary underline">Portfolio</a>.`;
-    }
-
-    if (t.includes('job') || t.includes('career') || t.includes('hiring') || t.includes('opening') || t.includes('work here')) {
-      return 'TRIGGER_CAREER_FLOW';
-    }
-
-    // Direct page matches
-    for (const page of knowledge.pages) {
-      if (t.includes(page.name.toLowerCase())) {
-        return `You can find information about ${page.name} here: <a href="${page.url}" class="text-primary underline">Open ${page.name} Page →</a>`;
-      }
-    }
-
-    return "I can help with info about QuantumFusion's services, products, team, careers, or anything on our website. What would you like to know?";
-  };
-
-  const startCareerFlow = async () => {
-    updateCareerStep('showing_jobs');
-    addMessage('ai', "Great! Let me show you our current openings.");
-    
+  const handleNormalQna = async (text: string) => {
     setIsLoading(true);
     try {
-      // Simulation of API fetch
-      // In production: const res = await fetch('/api/careers/jobs'); const data = await res.json();
-      const mockJobs = [
-        { id: '1', title: 'Full Stack Developer', location: 'Remote', type: 'Full Time', department: 'Engineering' },
-        { id: '2', title: 'AI/ML Engineer', location: 'Bangalore', type: 'Full Time', department: 'Engineering' },
-        { id: '3', title: 'UI/UX Designer', location: 'Remote', type: 'Full Time', department: 'Product' }
-      ];
-      setTimeout(() => {
-        setJobListings(mockJobs);
-        setIsLoading(false);
-      }, 800);
+      const response = await companyQnaFlow({ question: text });
+      
+      if (response.intent === 'careers') {
+        startCareerFlow();
+      } else if (response.intent === 'navigate' && response.navigationLink) {
+        addMessage('ai', (
+          <div className="flex flex-col gap-2">
+            <p>{response.answer}</p>
+            <Button asChild size="sm" variant="outline" className="self-start">
+              <a href={response.navigationLink}>Open {response.navigationLink.replace('/', '') || 'Home'} Page <ArrowRight className="ml-2 h-3 w-3" /></a>
+            </Button>
+          </div>
+        ));
+      } else {
+        addMessage('ai', response.answer);
+      }
     } catch (e) {
-      addMessage('ai', "I'm having trouble fetching job listings right now. Please check our <a href='/careers'>Careers page</a>.");
+      console.error(e);
+      addMessage('ai', "I'm sorry, I encountered an error. Please try again or visit our [Contact Page](/contact).");
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSendMessage = async () => {
-    if (inputValue.trim() === '' || isLoading) return;
+  const startCareerFlow = () => {
+    updateCareerStep('offering_help');
+    addMessage('ai', "I see you're interested in careers at QuantumFusion! Would you like me to help find the most suitable role for you?");
+  };
 
-    const userText = inputValue;
-    addMessage('user', userText);
-    setInputValue('');
-
-    // Handle Career Flow specific user responses (Text based)
-    if (careerStep === 'confirm_details') {
-      if (userText.toLowerCase().includes('yes')) {
-        handleConfirmProfile(true);
-        return;
-      }
-    }
-
-    const intentResponse = detectIntent(userText);
-    
-    if (intentResponse === 'TRIGGER_CAREER_FLOW') {
-      startCareerFlow();
+  const handleAcceptHelp = (accepted: boolean) => {
+    if (accepted) {
+      updateCareerStep('showing_jobs');
+      setJobListings(dummyJobs);
+      addMessage('ai', "Great! Here are our current openings. You can select one to start, or upload your resume for matching.");
     } else {
-      setIsLoading(true);
-      setTimeout(() => {
-        addMessage('ai', intentResponse);
-        setIsLoading(false);
-      }, 600);
+      updateCareerStep('idle');
+      addMessage('ai', "No problem! You can explore roles at your own pace here: [Open Careers Page](/careers)");
     }
   };
 
   const handleJobSelect = (job: any) => {
     setSelectedJob(job);
     updateCareerStep('resume_upload');
-    addMessage('ai', `You've selected ${job.title}. To apply, please upload your resume (PDF or DOCX).`);
+    addMessage('ai', `Excellent choice: ${job.title}. To apply, please upload your resume (PDF or DOCX) so I can prepare your application.`);
   };
 
   const handleFileUpload = async (file: File) => {
-    // In production: use FormData to send to /api/careers/parse-resume
-    // const formData = new FormData(); formData.append('resume', file);
-    // const res = await fetch('/api/careers/parse-resume', { method: 'POST', body: formData });
+    updateCareerStep('analyzing_resume');
+    setIsLoading(true);
     
-    // Mock parsing result
-    const mockProfile = {
-      name: "Prabhat Sharma", // Simplified for demo
-      email: "candidate@example.com",
-      phone: "+91-9876543210",
-      skills: ["React", "Next.js", "Java", "Tailwind"],
-      experienceYears: 4,
-      education: "B.Tech Computer Science"
-    };
-
-    setCandidateProfile(mockProfile);
-    updateCareerStep('confirm_details');
-    addMessage('ai', "I found the following details from your resume. Is this correct? Reply YES to confirm.");
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const dataUri = reader.result as string;
+        const analysis = await analyzeResume({ resumeDataUri: dataUri });
+        
+        setCandidateProfile({
+          ...analysis,
+          resumeDataUri: dataUri,
+          resumeUrl: file.name // Mocking URL as name for display
+        });
+        
+        updateCareerStep('confirm_details');
+        addMessage('ai', "I've analyzed your resume! Here's what I found. Is this information correct?");
+        setIsLoading(false);
+      };
+    } catch (e) {
+      console.error(e);
+      addMessage('ai', "Failed to analyze resume. Please try again or upload a different file.");
+      updateCareerStep('resume_upload');
+      setIsLoading(false);
+    }
   };
 
   const handleConfirmProfile = (confirmed: boolean) => {
     if (confirmed) {
       updateCareerStep('matching_jobs');
-      addMessage('ai', "Perfect! Based on your profile, you're a strong match for these roles:");
       
-      // Simulation of matching
-      setMatchedJobs([selectedJob, ...jobListings.filter(j => j.id !== selectedJob.id).slice(0, 1)]);
-      
-      // Prompt for application step
-      setTimeout(() => {
-        updateCareerStep('apply_behalf');
-        addMessage('ai', `Should I submit your application for ${selectedJob.title} on your behalf? I have all your details ready.`);
-      }, 1000);
+      // Calculate matching
+      const matches = dummyJobs.map(job => {
+        const jobSkills = job.requiredSkills.map(s => s.toLowerCase());
+        const userSkills = candidateProfile?.skills.map(s => s.toLowerCase()) || [];
+        const overlap = jobSkills.filter(s => userSkills.includes(s)).length;
+        const score = Math.round((overlap / Math.max(1, jobSkills.length)) * 100);
+        return { ...job, matchScore: score };
+      }).sort((a, b) => b.matchScore - a.matchScore);
+
+      setMatchedJobs(matches);
+      addMessage('ai', "Based on your skills and experience, here are the best matches for you:");
     } else {
-      addMessage('ai', "I understand. Please tell me what needs to be corrected, or visit our <a href='/careers'>Careers page</a> to apply manually.");
+      addMessage('ai', "I understand. Please visit our [Careers Page](/careers) to apply manually with your updated details.");
       updateCareerStep('idle');
     }
   };
 
-  const handleFinalApply = async (method: 'ai' | 'manual') => {
-    if (method === 'manual') {
-      addMessage('ai', `Understood. You can apply manually here: <a href="/careers" class="text-primary underline">View Roles</a>`);
+  const handleApplyOnBehalf = (job: any) => {
+    setSelectedJob(job);
+    updateCareerStep('apply_behalf');
+    addMessage('ai', `Would you like me to submit this application for ${job.title} on your behalf? I have all your details ready.`);
+  };
+
+  const handleFinalSubmit = async (approved: boolean) => {
+    if (!approved) {
       updateCareerStep('idle');
+      addMessage('ai', "Understood. You can still apply manually on our website.");
       return;
     }
 
+    updateCareerStep('submitting');
     setIsLoading(true);
+
     try {
-      // Simulation of application submission
-      // In production: call /api/careers/apply
-      setTimeout(() => {
-        updateCareerStep('submitted');
-        addMessage('ai', `Your application for ${selectedJob.title} has been submitted! A confirmation has been sent to ${candidateProfile.email}.`);
-        setIsLoading(false);
-      }, 2000);
+      if (!db) throw new Error("Firebase not initialized");
+      
+      const appId = 'APP_' + Math.random().toString(36).substr(2, 9);
+      const applicationData = {
+        applicationId: appId,
+        jobId: selectedJob.id,
+        jobTitle: selectedJob.title,
+        candidateName: candidateProfile?.name,
+        candidateEmail: candidateProfile?.email,
+        candidatePhone: candidateProfile?.phone,
+        skills: candidateProfile?.skills,
+        experienceYears: candidateProfile?.experienceYears,
+        appliedAt: serverTimestamp(),
+        appliedVia: 'ai',
+        status: 'submitted'
+      };
+
+      await addDoc(collection(db, 'jobApplications'), applicationData);
+
+      // Simulation of email
+      console.log(`REAL-TIME EMAIL SIMULATION: Sending confirmation to ${candidateProfile?.email}...`);
+      
+      updateCareerStep('submitted');
+      addMessage('ai', (
+        <div className="flex flex-col gap-2">
+          <p className="font-bold text-green-600">Application Submitted Successfully!</p>
+          <p>Role: {selectedJob.title}</p>
+          <p>Application ID: {appId}</p>
+          <p className="text-xs text-muted-foreground">A confirmation email has been sent to {candidateProfile?.email}. Our team will review it shortly.</p>
+        </div>
+      ));
     } catch (e) {
-      addMessage('ai', "There was an error submitting your application. Please try again later.");
+      console.error(e);
+      addMessage('ai', "Failed to submit application. There was a backend error. Please try again later.");
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const renderMessageContent = (content: string | React.ReactNode) => {
-    if (typeof content === 'string') {
-      return <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: content }} />;
-    }
-    return content;
+  const handleSendMessage = async () => {
+    if (inputValue.trim() === '' || isLoading) return;
+    const userText = inputValue;
+    addMessage('user', userText);
+    setInputValue('');
+    handleNormalQna(userText);
   };
 
   if (!isOpen) {
@@ -237,7 +229,6 @@ export function ChatSection() {
         size="lg"
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl z-[100] bg-gradient-to-br from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity p-0 flex items-center justify-center"
         onClick={() => setIsOpen(true)}
-        aria-label="Open chat"
       >
         <MessageCircle className="h-7 w-7" />
       </Button>
@@ -246,7 +237,7 @@ export function ChatSection() {
 
   return (
     <Card className={cn(
-        "fixed bottom-0 right-0 w-full sm:w-[400px] h-full sm:h-[600px] sm:bottom-6 sm:right-6 shadow-2xl z-[100] flex flex-col rounded-none sm:rounded-2xl overflow-hidden border-none bg-background",
+        "fixed bottom-0 right-0 w-full sm:w-[450px] h-[100svh] sm:h-[650px] sm:bottom-6 sm:right-6 shadow-2xl z-[100] flex flex-col rounded-none sm:rounded-2xl overflow-hidden border-none bg-background",
         "animate-in slide-in-from-bottom duration-300"
       )}>
       <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-primary text-primary-foreground">
@@ -275,30 +266,25 @@ export function ChatSection() {
                       ? 'bg-primary text-primary-foreground rounded-tr-none'
                       : 'bg-muted text-foreground rounded-tl-none border border-border/50'
                   )}>
-                  {renderMessageContent(msg.content)}
+                  {typeof msg.content === 'string' ? <div className="whitespace-pre-wrap">{msg.content}</div> : msg.content}
                 </div>
-                <span className="text-[10px] text-muted-foreground mt-1 px-1">
-                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
               </div>
             ))}
 
             {careerStep !== 'idle' && (
-              <div className="flex flex-col items-start w-full">
-                <div className="bg-muted text-foreground rounded-2xl rounded-tl-none px-4 py-3 text-sm shadow-sm border border-border/50 w-[90%]">
-                  <ChatCareerFlow 
-                    step={careerStep}
-                    jobListings={jobListings}
-                    matchedJobs={matchedJobs}
-                    selectedJob={selectedJob}
-                    candidateProfile={candidateProfile}
-                    onJobSelect={handleJobSelect}
-                    onFileUpload={handleFileUpload}
-                    onConfirmProfile={handleConfirmProfile}
-                    onFinalApply={handleFinalApply}
-                  />
-                </div>
-              </div>
+              <ChatCareerFlow 
+                step={careerStep}
+                jobListings={jobListings}
+                matchedJobs={matchedJobs}
+                selectedJob={selectedJob}
+                candidateProfile={candidateProfile}
+                onAcceptHelp={handleAcceptHelp}
+                onJobSelect={handleJobSelect}
+                onFileUpload={handleFileUpload}
+                onConfirmProfile={handleConfirmProfile}
+                onApplyOnBehalf={handleApplyOnBehalf}
+                onFinalSubmit={handleFinalSubmit}
+              />
             )}
 
             {isLoading && (
@@ -306,6 +292,7 @@ export function ChatSection() {
                 <div className="bg-muted rounded-full p-2 h-8 w-8 flex items-center justify-center">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 </div>
+                <span className="text-xs text-muted-foreground italic">QuantumAI is thinking...</span>
               </div>
             )}
           </div>
@@ -322,13 +309,13 @@ export function ChatSection() {
         >
           <Input
             type="text"
-            placeholder="Ask about QuantumFusion..."
+            placeholder="Ask QuantumAI anything..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             className="flex-grow h-10 text-sm focus-visible:ring-primary border-muted"
-            disabled={isLoading || careerStep !== 'idle'}
+            disabled={isLoading}
           />
-          <Button type="submit" size="icon" disabled={isLoading || inputValue.trim() === '' || careerStep !== 'idle'} className="bg-primary h-10 w-10">
+          <Button type="submit" size="icon" disabled={isLoading || inputValue.trim() === ''} className="bg-primary h-10 w-10">
             <Send className="h-4 w-4" />
           </Button>
         </form>
