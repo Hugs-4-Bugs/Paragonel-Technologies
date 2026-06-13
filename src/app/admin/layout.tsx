@@ -12,10 +12,13 @@ import {
   Menu, 
   X,
   ChevronRight,
+  ChevronLeft,
   ShieldCheck,
   Layers,
   Globe,
-  MessageSquare
+  MessageSquare,
+  PanelLeftClose,
+  PanelLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,6 +36,7 @@ const sidebarItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
@@ -59,13 +63,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen bg-zinc-50 dark:bg-zinc-950 isolate">
-      {/* 
-        IMPORTANT: In Admin Panel, we hide the main site's Navbar/Footer 
-        This is handled by CSS in globals.css or by conditional rendering in root layout.
-        For Studio, we'll ensure this layout takes over the whole screen.
-      */}
       <style jsx global>{`
-        header:not(.admin-header), footer:not(.admin-footer) { display: none !important; }
+        header:not(.admin-header), footer:not(.admin-footer), .chat-widget { display: none !important; }
         main { padding-top: 0 !important; }
       `}</style>
 
@@ -82,16 +81,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-[55] w-72 bg-white dark:bg-zinc-900 border-r transform transition-transform duration-300 lg:translate-x-0 lg:static lg:inset-0",
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed inset-y-0 left-0 z-[55] bg-white dark:bg-zinc-900 border-r transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        isSidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0",
+        !isSidebarOpen && (isCollapsed ? "lg:w-20" : "lg:w-72")
       )}>
-        <div className="flex flex-col h-full">
-          <div className="h-16 hidden lg:flex items-center gap-2 px-8 border-b">
-            <ShieldCheck className="h-7 w-7 text-primary" />
-            <span className="font-black text-xl tracking-tighter">QuantumCMS</span>
+        <div className="flex flex-col h-full overflow-hidden">
+          <div className="h-16 flex items-center justify-between px-4 border-b">
+            <div className={cn("flex items-center gap-2 transition-opacity duration-300", isCollapsed && "lg:opacity-0 lg:w-0")}>
+              <ShieldCheck className="h-7 w-7 text-primary shrink-0" />
+              <span className="font-black text-xl tracking-tighter whitespace-nowrap">QuantumCMS</span>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hidden lg:flex h-8 w-8 text-zinc-400 hover:text-primary"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              {isCollapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+            </Button>
           </div>
 
-          <ScrollArea className="flex-1 py-8 px-4">
+          <ScrollArea className="flex-1 py-8 px-3">
             <nav className="space-y-1.5">
               {sidebarItems.map((item) => {
                 const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href));
@@ -99,30 +109,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Link
                     key={item.href}
                     href={item.href}
+                    title={isCollapsed ? item.label : undefined}
                     className={cn(
-                      "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-200",
+                      "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all duration-200 group",
                       isActive 
-                        ? "bg-primary text-white shadow-lg shadow-primary/20 scale-[1.02]" 
-                        : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-primary"
+                        ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                        : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-primary",
+                      isCollapsed && "lg:justify-center lg:px-0"
                     )}
                   >
-                    <item.icon className={cn("h-5 w-5", isActive ? "text-white" : "text-primary")} />
-                    {item.label}
-                    {isActive && <ChevronRight className="ml-auto h-4 w-4 opacity-50" />}
+                    <item.icon className={cn("h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110", isActive ? "text-white" : "text-primary")} />
+                    <span className={cn("transition-all duration-300 whitespace-nowrap", isCollapsed && "lg:opacity-0 lg:w-0 lg:hidden")}>
+                      {item.label}
+                    </span>
+                    {isActive && !isCollapsed && <ChevronRight className="ml-auto h-4 w-4 opacity-50" />}
                   </Link>
                 );
               })}
             </nav>
           </ScrollArea>
 
-          <div className="p-6 border-t mt-auto">
+          <div className="p-4 border-t mt-auto">
             <Button 
               variant="outline" 
-              className="w-full justify-start text-destructive border-destructive/20 hover:text-destructive hover:bg-destructive/5 font-bold h-12 rounded-xl" 
+              className={cn(
+                "w-full justify-start text-destructive border-destructive/20 hover:text-destructive hover:bg-destructive/5 font-bold h-12 rounded-xl transition-all",
+                isCollapsed && "lg:justify-center lg:px-0"
+              )} 
               onClick={handleLogout}
+              title={isCollapsed ? "Sign Out" : undefined}
             >
-              <LogOut className="mr-3 h-5 w-5" />
-              Sign Out
+              <LogOut className="mr-3 h-5 w-5 shrink-0" />
+              <span className={cn("transition-all duration-300 whitespace-nowrap", isCollapsed && "lg:opacity-0 lg:w-0 lg:hidden")}>
+                Sign Out
+              </span>
             </Button>
           </div>
         </div>
@@ -138,7 +158,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 overflow-auto pt-20 lg:pt-0">
-        <div className="max-w-7xl mx-auto p-4 md:p-10 lg:p-12">
+        <div className="max-w-7xl mx-auto p-4 md:p-8 lg:p-10">
           {children}
         </div>
       </main>
