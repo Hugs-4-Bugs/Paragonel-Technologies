@@ -76,7 +76,7 @@ export function ChatSection() {
           </div>
         ));
       } else {
-        addMessage('ai', response.answer);
+        addMessage('ai', response.answer || "I'm here to help! Could you please rephrase that?");
       }
     } catch (e) {
       console.error(e);
@@ -117,21 +117,27 @@ export function ChatSection() {
       reader.readAsDataURL(file);
       reader.onload = async () => {
         const dataUri = reader.result as string;
-        const analysis = await analyzeResume({ resumeDataUri: dataUri });
-        
-        setCandidateProfile({
-          ...analysis,
-          resumeDataUri: dataUri,
-          resumeUrl: file.name // Mocking URL as name for display
-        });
-        
-        updateCareerStep('confirm_details');
-        addMessage('ai', "I've analyzed your resume! Here's what I found. Is this information correct?");
-        setIsLoading(false);
+        try {
+          const analysis = await analyzeResume({ resumeDataUri: dataUri });
+          
+          setCandidateProfile({
+            ...analysis,
+            resumeDataUri: dataUri,
+            resumeUrl: file.name
+          });
+          
+          updateCareerStep('confirm_details');
+          addMessage('ai', "I've analyzed your resume! Here's what I found. Is this information correct?");
+        } catch (err) {
+          addMessage('ai', "I couldn't parse that file correctly. Please try a standard PDF or DOCX format.");
+          updateCareerStep('resume_upload');
+        } finally {
+          setIsLoading(false);
+        }
       };
     } catch (e) {
       console.error(e);
-      addMessage('ai', "Failed to analyze resume. Please try again or upload a different file.");
+      addMessage('ai', "Failed to upload file. Please try again.");
       updateCareerStep('resume_upload');
       setIsLoading(false);
     }
@@ -141,7 +147,6 @@ export function ChatSection() {
     if (confirmed) {
       updateCareerStep('matching_jobs');
       
-      // Calculate matching
       const matches = dummyJobs.map(job => {
         const jobSkills = job.requiredSkills.map(s => s.toLowerCase());
         const userSkills = candidateProfile?.skills.map(s => s.toLowerCase()) || [];
@@ -175,40 +180,40 @@ export function ChatSection() {
     setIsLoading(true);
 
     try {
-      if (!db) throw new Error("Firebase not initialized");
-      
-      const appId = 'APP_' + Math.random().toString(36).substr(2, 9);
-      const applicationData = {
-        applicationId: appId,
-        jobId: selectedJob.id,
-        jobTitle: selectedJob.title,
-        candidateName: candidateProfile?.name,
-        candidateEmail: candidateProfile?.email,
-        candidatePhone: candidateProfile?.phone,
-        skills: candidateProfile?.skills,
-        experienceYears: candidateProfile?.experienceYears,
-        appliedAt: serverTimestamp(),
-        appliedVia: 'ai',
-        status: 'submitted'
-      };
+      if (db) {
+        const appId = 'APP_' + Math.random().toString(36).substr(2, 9);
+        const applicationData = {
+          applicationId: appId,
+          jobId: selectedJob.id,
+          jobTitle: selectedJob.title,
+          candidateName: candidateProfile?.name,
+          candidateEmail: candidateProfile?.email,
+          candidatePhone: candidateProfile?.phone,
+          skills: candidateProfile?.skills,
+          experienceYears: candidateProfile?.experienceYears,
+          appliedAt: serverTimestamp(),
+          appliedVia: 'ai',
+          status: 'submitted'
+        };
 
-      await addDoc(collection(db, 'jobApplications'), applicationData);
-
-      // Simulation of email
-      console.log(`REAL-TIME EMAIL SIMULATION: Sending confirmation to ${candidateProfile?.email}...`);
-      
-      updateCareerStep('submitted');
-      addMessage('ai', (
-        <div className="flex flex-col gap-2">
-          <p className="font-bold text-green-600">Application Submitted Successfully!</p>
-          <p>Role: {selectedJob.title}</p>
-          <p>Application ID: {appId}</p>
-          <p className="text-xs text-muted-foreground">A confirmation email has been sent to {candidateProfile?.email}. Our team will review it shortly.</p>
-        </div>
-      ));
+        await addDoc(collection(db, 'jobApplications'), applicationData);
+        
+        updateCareerStep('submitted');
+        addMessage('ai', (
+          <div className="flex flex-col gap-2">
+            <p className="font-bold text-green-600">Application Submitted Successfully!</p>
+            <p>Role: {selectedJob.title}</p>
+            <p>Application ID: {appId}</p>
+            <p className="text-xs text-muted-foreground">A confirmation email has been sent to {candidateProfile?.email}. Our team will review it shortly.</p>
+          </div>
+        ));
+      } else {
+        throw new Error("Firebase disconnected");
+      }
     } catch (e) {
       console.error(e);
-      addMessage('ai', "Failed to submit application. There was a backend error. Please try again later.");
+      addMessage('ai', "Failed to submit application. Please try applying manually on the Careers page.");
+      updateCareerStep('idle');
     } finally {
       setIsLoading(false);
     }
@@ -227,7 +232,7 @@ export function ChatSection() {
       <Button
         variant="default"
         size="lg"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl z-[100] bg-gradient-to-br from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity p-0 flex items-center justify-center"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl z-[40] bg-gradient-to-br from-primary to-accent text-primary-foreground hover:opacity-90 transition-opacity p-0 flex items-center justify-center"
         onClick={() => setIsOpen(true)}
       >
         <MessageCircle className="h-7 w-7" />
@@ -237,11 +242,11 @@ export function ChatSection() {
 
   return (
     <Card className={cn(
-        "fixed bottom-0 right-0 w-full sm:w-[450px] h-[100svh] sm:h-[650px] sm:bottom-6 sm:right-6 shadow-2xl z-[100] flex flex-col rounded-none sm:rounded-2xl overflow-hidden border-none bg-background",
+        "fixed bottom-0 right-0 w-full sm:w-[400px] h-[70vh] sm:h-[600px] sm:max-h-[calc(100vh-120px)] sm:bottom-6 sm:right-6 shadow-2xl z-[40] flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden border-none bg-background",
         "animate-in slide-in-from-bottom duration-300"
       )}>
-      <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-primary text-primary-foreground">
-        <CardTitle className="text-lg font-bold flex items-center">
+      <CardHeader className="flex flex-row items-center justify-between p-3 border-b bg-primary text-primary-foreground flex-shrink-0">
+        <CardTitle className="text-base font-bold flex items-center">
           <Bot className="h-5 w-5 mr-2" />
           QuantumAI
         </CardTitle>
@@ -292,14 +297,14 @@ export function ChatSection() {
                 <div className="bg-muted rounded-full p-2 h-8 w-8 flex items-center justify-center">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 </div>
-                <span className="text-xs text-muted-foreground italic">QuantumAI is thinking...</span>
+                <span className="text-xs text-muted-foreground italic">Thinking...</span>
               </div>
             )}
           </div>
         </ScrollArea>
       </CardContent>
 
-      <CardFooter className="p-3 border-t bg-background">
+      <CardFooter className="p-3 border-t bg-background flex-shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -309,7 +314,7 @@ export function ChatSection() {
         >
           <Input
             type="text"
-            placeholder="Ask QuantumAI anything..."
+            placeholder="Ask anything..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             className="flex-grow h-10 text-sm focus-visible:ring-primary border-muted"
