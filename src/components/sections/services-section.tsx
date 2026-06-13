@@ -10,6 +10,7 @@ import { Brain, Cloud, GitFork, Layers, ArrowRight, AppWindow, Zap, Code, Shield
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import React, { useMemo } from 'react';
+import { baseServices } from '@/lib/data';
 
 const iconMap: Record<string, any> = {
   Brain, Cloud, GitFork, Layers, AppWindow, Zap, Code, ShieldCheck
@@ -31,9 +32,12 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
     );
   }, [firestore]);
 
-  const { data: services, loading } = useCollection(servicesQuery);
+  const { data: dynamicServices, loading } = useCollection(servicesQuery);
 
-  const displayedServices = isFullPage ? services : services?.slice(0, 4);
+  const displayedServices = useMemo(() => {
+    const combined = [...baseServices, ...(dynamicServices || [])];
+    return isFullPage ? combined : combined.slice(0, 4);
+  }, [dynamicServices, isFullPage]);
 
   return (
     <section className={isFullPage ? "" : "section-padding bg-secondary/30 dark:bg-secondary/10"}>
@@ -52,7 +56,7 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
 
       <div className={isFullPage ? "" : "container mx-auto px-4 md:px-6"}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
-          {displayedServices?.map((service: any, index: number) => {
+          {displayedServices.map((service: any, index: number) => {
             const Icon = iconMap[service.iconName] || Layers;
             return (
               <ScrollFadeIn key={service.id} delay={`${index * 100}ms`}>
@@ -91,7 +95,7 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
           })}
         </div>
 
-        {!isFullPage && services && services.length > 4 && (
+        {!isFullPage && displayedServices.length > 4 && (
           <ScrollFadeIn className="text-center mt-16">
             <Button asChild size="lg" variant="outline" className="rounded-full px-10 h-16 font-bold border-2 hover:bg-primary hover:text-white transition-all">
               <Link href="/services">View All Specializations</Link>
@@ -101,8 +105,4 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
       </div>
     </section>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }

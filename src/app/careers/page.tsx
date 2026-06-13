@@ -17,10 +17,8 @@ import {
   Award, 
   Users, 
   Gem, 
-  ChevronDown, 
   ChevronUp, 
-  Filter, 
-  Loader2 
+  Filter 
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -36,6 +34,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { dummyJobs as baseJobs } from '@/lib/data';
 
 export default function CareersPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,30 +59,30 @@ export default function CareersPage() {
     where('isActive', '==', true),
     orderBy('createdAt', 'desc')
   ), []);
-  const { data: jobs, loading: jobsLoading } = useCollection(jobsQuery);
+  const { data: dynamicJobs, loading: jobsLoading } = useCollection(jobsQuery);
+
+  const allJobs = useMemo(() => {
+    return [...baseJobs, ...(dynamicJobs || [])];
+  }, [dynamicJobs]);
 
   const departments = useMemo(() => {
-    if (!jobs) return ['All Departments'];
-    const depts = new Set(jobs.map((j: any) => j.department));
+    const depts = new Set(allJobs.map((j: any) => j.department));
     return ['All Departments', ...Array.from(depts)].sort();
-  }, [jobs]);
+  }, [allJobs]);
 
   const locations = useMemo(() => {
-    if (!jobs) return ['All Locations'];
-    const locs = new Set(jobs.map((j: any) => j.location));
+    const locs = new Set(allJobs.map((j: any) => j.location));
     return ['All Locations', ...Array.from(locs)].sort();
-  }, [jobs]);
+  }, [allJobs]);
 
   const filteredJobs = useMemo(() => {
-    if (!jobs) return [];
-    
-    return jobs.filter((job: any) => {
+    return allJobs.filter((job: any) => {
       const matchesSearch = searchTerm === '' || 
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.skills.some((s: string) => s.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      const matchesJobId = jobIdSearch === '' || job.jobId.toLowerCase().includes(jobIdSearch.toLowerCase());
+      const matchesJobId = jobIdSearch === '' || (job.jobId || job.id).toLowerCase().includes(jobIdSearch.toLowerCase());
       const matchesLocation = locationFilter === 'All Locations' || job.location === locationFilter;
       const matchesDept = departmentFilter === 'All Departments' || job.department === departmentFilter;
       const matchesType = employmentTypeFilter === 'All Types' || job.employmentType === employmentTypeFilter;
@@ -105,7 +104,7 @@ export default function CareersPage() {
 
       return matchesSearch && matchesJobId && matchesLocation && matchesDept && matchesType && matchesArrangement && matchesDate;
     });
-  }, [jobs, searchTerm, jobIdSearch, locationFilter, departmentFilter, employmentTypeFilter, dateFilter, workArrangementFilter]);
+  }, [allJobs, searchTerm, jobIdSearch, locationFilter, departmentFilter, employmentTypeFilter, dateFilter, workArrangementFilter]);
 
   const handleApply = (job: any) => {
     if (!isAuthenticated) {
@@ -150,9 +149,9 @@ export default function CareersPage() {
         <div className="container mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
             <Briefcase className="h-6 w-6 text-primary" />
-            Open Roles 
+            Available Positions
             <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary border-none">
-              {jobsLoading ? '...' : filteredJobs.length}
+              {filteredJobs.length}
             </Badge>
           </h2>
           <div className="flex items-center gap-3">
@@ -254,7 +253,7 @@ export default function CareersPage() {
       {/* Jobs Listing Section */}
       <section className="section-padding bg-background min-h-[500px]">
         <div className="container mx-auto px-4 md:px-6">
-          {jobsLoading ? (
+          {jobsLoading && !allJobs.length ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64 rounded-2xl" />)}
             </div>
@@ -333,29 +332,6 @@ export default function CareersPage() {
                 </div>
               ))}
            </div>
-        </div>
-      </section>
-
-      {/* Application Process */}
-      <section className="section-padding bg-zinc-50 dark:bg-zinc-900/40 border-t">
-        <div className="container mx-auto px-4 md:px-6">
-          <ScrollFadeIn className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-black">Our Application Process</h2>
-          </ScrollFadeIn>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[
-              { title: "Apply Online", text: "Submit your details via form or QuantumAI." },
-              { title: "Review", text: "Resume screening within 48 hours." },
-              { title: "Practical", text: "A real-world technical discussion." },
-              { title: "Onboarding", text: "Offer and welcome to the team." }
-            ].map((step, i) => (
-              <div key={i} className="p-8 bg-background rounded-3xl border border-dashed border-primary/20 hover:border-primary transition-colors">
-                <span className="text-primary font-black text-3xl mb-4 block opacity-50">0{i+1}</span>
-                <h4 className="font-bold text-lg mb-2">{step.title}</h4>
-                <p className="text-sm text-muted-foreground">{step.text}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

@@ -1,6 +1,126 @@
 
 import type { Job, BlogPost } from '@/types';
 
+export const baseServices = [
+  {
+    id: 'base-ai',
+    title: 'AI Solutions',
+    description: 'Unlock the power of Artificial Intelligence with our custom machine learning models, natural language processing, and computer vision solutions tailored to your business needs.',
+    iconName: 'Brain',
+    slug: 'ai-solutions',
+    imageUrl: 'https://picsum.photos/seed/ai-service/600/400',
+    isActive: true,
+    order: 1
+  },
+  {
+    id: 'base-cloud',
+    title: 'Cloud Infrastructure',
+    description: 'Optimize your operations with our secure, scalable, and cost-effective cloud infrastructure services, including migration, management, and cloud-native development.',
+    iconName: 'Cloud',
+    slug: 'cloud-infrastructure',
+    imageUrl: 'https://picsum.photos/seed/cloud-service/600/400',
+    isActive: true,
+    order: 2
+  },
+  {
+    id: 'base-devops',
+    title: 'DevOps Automation',
+    description: 'Accelerate your software delivery lifecycle with our comprehensive DevOps automation services, including CI/CD pipelines, infrastructure as code, and automated testing.',
+    iconName: 'GitFork',
+    slug: 'devops-automation',
+    imageUrl: 'https://picsum.photos/seed/devops-service/600/400',
+    isActive: true,
+    order: 3
+  },
+  {
+    id: 'base-saas',
+    title: 'SaaS Platforms',
+    description: 'Develop and launch robust, scalable, and user-friendly SaaS platforms with our end-to-end development services, from ideation and design to deployment and maintenance.',
+    iconName: 'Layers',
+    slug: 'saas-platforms',
+    imageUrl: 'https://picsum.photos/seed/saas-service/600/400',
+    isActive: true,
+    order: 4
+  }
+];
+
+export const basePortfolio = [
+  {
+    id: 'p-1',
+    name: 'AI-Driven Recruitment Platform',
+    category: 'Talent Acquisition',
+    imageUrl: 'https://picsum.photos/seed/p1/600/400',
+    description: 'Developed a cutting-edge platform that reduced hiring time by 40% using AI matchmaking and automated workflows.',
+    status: 'Live',
+    techs: ['React', 'Java', 'Python', 'AWS'],
+    link: '#',
+    createdAt: new Date('2024-01-01').toISOString()
+  },
+  {
+    id: 'p-2',
+    name: 'Career Path Visualization Tool',
+    category: 'Career Development',
+    imageUrl: 'https://picsum.photos/seed/p2/600/400',
+    description: 'Created an interactive tool helping students visualize and plan their career paths based on skills and interests.',
+    status: 'Live',
+    techs: ['Next.js', 'Firebase', 'D3.js'],
+    link: '#',
+    createdAt: new Date('2024-01-05').toISOString()
+  },
+  {
+    id: 'p-3',
+    name: 'Personalized Learning Portal',
+    category: 'EdTech Solutions',
+    imageUrl: 'https://picsum.photos/seed/p3/600/400',
+    description: 'Built a SaaS platform offering personalized learning journeys and skill assessments for professionals.',
+    status: 'Live',
+    techs: ['Flutter', 'Node.js', 'MongoDB'],
+    link: '#',
+    createdAt: new Date('2024-01-10').toISOString()
+  },
+  {
+    id: 'p-4',
+    name: 'Remote Team Collaboration Suite',
+    category: 'Productivity Tools',
+    imageUrl: 'https://picsum.photos/seed/p4/600/400',
+    description: 'Designed and launched a comprehensive suite of tools for enhancing remote team productivity and communication.',
+    status: 'Live',
+    techs: ['React', 'Spring Boot', 'Redis'],
+    link: '#',
+    createdAt: new Date('2024-01-15').toISOString()
+  }
+];
+
+export const baseTestimonials = [
+  {
+    id: 't-1',
+    name: 'Rajesh Kumar',
+    role: 'CEO',
+    company: 'TechIndia Corp',
+    content: 'QuantumFusion transformed our legacy infrastructure into a high-performance cloud environment. Their AI expertise is world-class.',
+    rating: 5,
+    avatarUrl: ''
+  },
+  {
+    id: 't-2',
+    name: 'Sarah Chen',
+    role: 'Product Lead',
+    company: 'Innovate Global',
+    content: 'The SaaS platform built by QuantumFusion has allowed us to scale from 100 to 50,000 users without a single hitch.',
+    rating: 5,
+    avatarUrl: ''
+  },
+  {
+    id: 't-3',
+    name: 'Amit Sharma',
+    role: 'Founder',
+    company: 'StartScale AI',
+    content: 'Their Fractional CTO services provided the technical leadership we needed during our critical seed-round growth.',
+    rating: 5,
+    avatarUrl: ''
+  }
+];
+
 export const dummyJobs: Job[] = [
   {
     id: 'ENG-001',
@@ -384,7 +504,7 @@ export const dummyJobs: Job[] = [
   },
   {
     id: 'PM-001',
-    jobId: 'PM001',
+    jobId: ' PM001',
     title: 'Product Manager (SaaS)',
     company: 'QuantumFusion Solutions',
     location: 'Remote',

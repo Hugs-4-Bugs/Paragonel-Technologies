@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Image from 'next/image';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,11 +12,16 @@ import Link from 'next/link';
 import { useCollection } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { basePortfolio } from '@/lib/data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PortfolioPage() {
-  const { data: projects, loading } = useCollection(
-    query(collection(db, 'portfolio'), orderBy('createdAt', 'desc'))
-  );
+  const portfolioQuery = useMemo(() => query(collection(db, 'portfolio'), orderBy('createdAt', 'desc')), []);
+  const { data: dynamicProjects, loading } = useCollection(portfolioQuery);
+
+  const displayedProjects = useMemo(() => {
+    return [...basePortfolio, ...(dynamicProjects || [])];
+  }, [dynamicProjects]);
 
   return (
     <section className="section-padding bg-background min-h-screen">
@@ -33,13 +38,13 @@ export default function PortfolioPage() {
           </p>
         </ScrollFadeIn>
 
-        {loading ? (
+        {loading && !displayedProjects.length ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-96 rounded-[2.5rem]" />)}
           </div>
-        ) : projects && projects.length > 0 ? (
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {projects.map((project: any, index: number) => (
+            {displayedProjects.map((project: any, index: number) => (
               <ScrollFadeIn key={project.id} delay={`${index * 100}ms`}>
                 <Card className="h-full flex flex-col overflow-hidden border-zinc-200 dark:border-zinc-800 shadow-xl hover:shadow-2xl transition-all duration-500 rounded-[2.5rem] bg-card group">
                   <CardHeader className="p-0">
@@ -85,25 +90,8 @@ export default function PortfolioPage() {
               </ScrollFadeIn>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-24 bg-zinc-50/50 dark:bg-zinc-900/20 border-2 border-dashed rounded-[3rem] max-w-4xl mx-auto shadow-sm">
-             <Rocket className="h-20 w-20 text-zinc-200 mx-auto mb-8" />
-             <h2 className="text-3xl font-black mb-4 tracking-tight">Our Showcase is Growing</h2>
-             <p className="text-zinc-500 font-medium max-w-md mx-auto mb-10 leading-relaxed text-lg">We're currently preparing new case studies for our most recent AI and SaaS deployments.</p>
-             <Button asChild className="rounded-full h-14 px-10 font-bold shadow-xl shadow-primary/20">
-               <Link href="/contact">Partner With Us</Link>
-             </Button>
-          </div>
         )}
       </div>
     </section>
   );
-}
-
-function Skeleton({ className }: any) {
-  return <div className={cn("animate-pulse bg-zinc-100 dark:bg-zinc-800", className)} />;
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }
