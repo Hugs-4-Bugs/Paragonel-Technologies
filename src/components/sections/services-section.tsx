@@ -32,9 +32,10 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
     );
   }, [firestore]);
 
-  const { data: dynamicServices, loading } = useCollection(servicesQuery);
+  const { data: dynamicServices } = useCollection(servicesQuery);
 
   const displayedServices = useMemo(() => {
+    // Always show the 4 base services first, then append any CMS services
     const combined = [...baseServices, ...(dynamicServices || [])];
     return isFullPage ? combined : combined.slice(0, 4);
   }, [dynamicServices, isFullPage]);
@@ -44,7 +45,7 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
       {!isFullPage && (
         <div className="container mx-auto px-4 md:px-6">
           <ScrollFadeIn className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-foreground">
               Our Core <span className="text-primary">Services</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto font-medium">
@@ -66,14 +67,14 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
                       <div className="p-4 bg-primary/10 rounded-3xl group-hover:bg-primary group-hover:text-white transition-colors duration-500">
                         <Icon className="h-8 w-8 text-primary group-hover:text-white transition-colors duration-500" />
                       </div>
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full px-3 py-1 font-bold text-[10px] tracking-widest uppercase border">Expertise Available</div>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full px-3 py-1 font-bold text-[10px] tracking-widest uppercase border border-primary/20">Specialization</div>
                     </div>
                     <CardTitle className="text-2xl font-black mb-3 tracking-tight group-hover:text-primary transition-colors">{service.title}</CardTitle>
                     <CardDescription className="text-base text-zinc-500 font-medium line-clamp-3 leading-relaxed">{service.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-grow p-8 pt-0 flex flex-col">
                     {service.imageUrl && (
-                      <div className="relative w-full h-48 mb-8 rounded-3xl overflow-hidden shadow-inner bg-zinc-100">
+                      <div className="relative w-full h-52 mb-8 rounded-3xl overflow-hidden shadow-inner bg-zinc-100">
                         <Image
                           src={service.imageUrl}
                           alt={service.title}
@@ -85,7 +86,7 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
                     )}
                     <Button asChild variant="link" className="mt-auto self-start p-0 text-primary font-black text-lg group-hover:translate-x-2 transition-transform">
                       <Link href={`/services/${service.slug}`}>
-                        Deep Dive <ArrowRight className="ml-2 h-6 w-6" />
+                        Learn More <ArrowRight className="ml-2 h-6 w-6" />
                       </Link>
                     </Button>
                   </CardContent>
@@ -95,10 +96,10 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
           })}
         </div>
 
-        {!isFullPage && displayedServices.length > 4 && (
+        {!isFullPage && (baseServices.length > 4 || (dynamicServices && dynamicServices.length > 0)) && (
           <ScrollFadeIn className="text-center mt-16">
-            <Button asChild size="lg" variant="outline" className="rounded-full px-10 h-16 font-bold border-2 hover:bg-primary hover:text-white transition-all">
-              <Link href="/services">View All Specializations</Link>
+            <Button asChild size="lg" variant="outline" className="rounded-full px-10 h-16 font-bold border-2 hover:bg-primary hover:text-white transition-all shadow-xl">
+              <Link href="/services">Explore All Specializations</Link>
             </Button>
           </ScrollFadeIn>
         )}

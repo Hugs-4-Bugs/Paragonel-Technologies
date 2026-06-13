@@ -8,7 +8,7 @@ export const baseServices = [
     description: 'Unlock the power of Artificial Intelligence with our custom machine learning models, natural language processing, and computer vision solutions tailored to your business needs.',
     iconName: 'Brain',
     slug: 'ai-solutions',
-    imageUrl: 'https://picsum.photos/seed/ai-service/600/400',
+    imageUrl: 'https://picsum.photos/seed/ai-service-main/800/600',
     isActive: true,
     order: 1
   },
@@ -18,7 +18,7 @@ export const baseServices = [
     description: 'Optimize your operations with our secure, scalable, and cost-effective cloud infrastructure services, including migration, management, and cloud-native development.',
     iconName: 'Cloud',
     slug: 'cloud-infrastructure',
-    imageUrl: 'https://picsum.photos/seed/cloud-service/600/400',
+    imageUrl: 'https://picsum.photos/seed/cloud-infra-main/800/600',
     isActive: true,
     order: 2
   },
@@ -28,7 +28,7 @@ export const baseServices = [
     description: 'Accelerate your software delivery lifecycle with our comprehensive DevOps automation services, including CI/CD pipelines, infrastructure as code, and automated testing.',
     iconName: 'GitFork',
     slug: 'devops-automation',
-    imageUrl: 'https://picsum.photos/seed/devops-service/600/400',
+    imageUrl: 'https://picsum.photos/seed/devops-auto-main/800/600',
     isActive: true,
     order: 3
   },
@@ -38,7 +38,7 @@ export const baseServices = [
     description: 'Develop and launch robust, scalable, and user-friendly SaaS platforms with our end-to-end development services, from ideation and design to deployment and maintenance.',
     iconName: 'Layers',
     slug: 'saas-platforms',
-    imageUrl: 'https://picsum.photos/seed/saas-service/600/400',
+    imageUrl: 'https://picsum.photos/seed/saas-plat-main/800/600',
     isActive: true,
     order: 4
   }
