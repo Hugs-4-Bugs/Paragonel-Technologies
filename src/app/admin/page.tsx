@@ -1,21 +1,25 @@
 
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Briefcase, BookOpen, UserPlus, TrendingUp, PlusCircle, FileText } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Briefcase, BookOpen, UserPlus, TrendingUp, PlusCircle, FileText, Database, Loader2 } from 'lucide-react';
 import { useCollection } from '@/firebase';
-import { collection, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, limit, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import { dummyJobs } from '@/lib/data';
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [isSeeding, setIsSeeding] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/auth/me').then(res => {
@@ -37,6 +41,40 @@ export default function AdminDashboard() {
     limit(5)
   );
   const { data: recentApps, loading: appsLoading } = useCollection(recentAppsQuery);
+
+  const handleSeedJobs = async () => {
+    if (!confirm(`This will add ${dummyJobs.length} sample jobs to your database. Continue?`)) return;
+    
+    setIsSeeding(true);
+    try {
+      const jobsCol = collection(db, 'jobs');
+      for (const job of dummyJobs) {
+        // Remove the static ID to let Firestore generate one, but keep the jobId field
+        const { id, ...jobData } = job;
+        await addDoc(jobsCol, {
+          ...jobData,
+          isActive: true,
+          status: 'Active',
+          postedDate: serverTimestamp(),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+      toast({
+        title: "Database Seeded!",
+        description: `Successfully added ${dummyJobs.length} job openings.`,
+      });
+    } catch (e) {
+      console.error(e);
+      toast({
+        title: "Seeding Failed",
+        description: "Could not add sample jobs to database.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   const stats = [
     { 
@@ -79,7 +117,11 @@ export default function AdminDashboard() {
               Manage your company's career portal and blog content.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+             <Button variant="outline" onClick={handleSeedJobs} disabled={isSeeding} className="border-primary text-primary hover:bg-primary/5">
+                {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                Seed Sample Jobs
+            </Button>
             <Button asChild variant="outline" className="shadow-sm">
               <Link href="/admin/jobs/new">
                 <PlusCircle className="mr-2 h-4 w-4" /> New Job
@@ -121,6 +163,7 @@ export default function AdminDashboard() {
           <Card className="shadow-sm border-zinc-200 dark:border-zinc-800 h-full">
             <CardHeader>
               <CardTitle>Recent Applications</CardTitle>
+              <CardDescription>Monitor incoming talent for your open roles.</CardDescription>
             </CardHeader>
             <CardContent>
               {appsLoading ? (
@@ -149,7 +192,8 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="h-40 flex flex-col items-center justify-center text-zinc-400 italic">
+                <div className="h-40 flex flex-col items-center justify-center text-zinc-400 italic text-center border border-dashed rounded-2xl bg-zinc-50/50">
+                  <UserPlus className="h-10 w-10 mb-2 opacity-20" />
                   No recent applications found.
                 </div>
               )}
@@ -161,12 +205,13 @@ export default function AdminDashboard() {
           <Card className="shadow-sm border-zinc-200 dark:border-zinc-800 h-full">
             <CardHeader>
               <CardTitle>System Health</CardTitle>
+              <CardDescription>Live connection monitoring.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-zinc-500">Database Connection</span>
+                    <span className="text-zinc-500 font-medium">Database Connection</span>
                     <span className="text-green-500 font-bold">Stable</span>
                   </div>
                   <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
@@ -175,7 +220,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-zinc-500">Cloud Storage (S3/GCP)</span>
+                    <span className="text-zinc-500 font-medium">Cloud Storage (S3/GCP)</span>
                     <span className="text-green-500 font-bold">Connected</span>
                   </div>
                   <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">

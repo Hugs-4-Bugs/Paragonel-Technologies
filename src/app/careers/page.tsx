@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, Cloud, Rocket, Laptop, Zap, Users, Filter, Search, MapPin, Clock, Building, Hash, Loader2 } from 'lucide-react';
+import { Brain, Cloud, Rocket, Laptop, Zap, Users, Filter, Search, MapPin, Clock, Building, Hash, Loader2, Heart, Award, ShieldCheck, Gem } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -120,37 +121,63 @@ export default function CareersPage() {
         </div>
       </section>
 
+      {/* Why Join Us Section */}
+      <section className="section-padding bg-background">
+        <div className="container mx-auto px-4 md:px-6">
+          <ScrollFadeIn className="text-center mb-16">
+             <h2 className="text-3xl md:text-4xl font-black">Why Join QuantumFusion?</h2>
+             <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">We aren't just another IT firm. We are a product-first AI company building the future of work.</p>
+          </ScrollFadeIn>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { title: "Interesting Problems", text: "Work on cutting-edge AI, cloud, and real client challenges.", icon: Brain },
+              { title: "Remote-First", text: "Work from anywhere in India with our Bangalore hub.", icon: Laptop },
+              { title: "Learn by Shipping", text: "We build real products, not just maintenance code.", icon: Zap },
+              { title: "Zero Bureaucracy", text: "Direct access to founders and rapid execution.", icon: Rocket }
+            ].map((card, i) => (
+              <div key={i} className="p-8 rounded-3xl border bg-card hover:shadow-xl transition-all group">
+                <div className="h-12 w-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <card.icon className="h-6 w-6 text-primary" />
+                </div>
+                <h4 className="font-bold text-lg mb-2">{card.title}</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">{card.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Advanced Filter Section */}
-      <section className="bg-white dark:bg-zinc-950 border-b sticky top-20 z-20 shadow-sm" id="open-roles">
+      <section className="bg-zinc-50 dark:bg-zinc-900/40 border-y sticky top-20 z-20 shadow-sm" id="open-roles">
         <div className="container mx-auto px-4 md:px-6 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Search Jobs</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Search Jobs</Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-                <Input placeholder="Keywords (e.g., AI, Python)" className="pl-10 h-12" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                <Input placeholder="Keywords (e.g., AI, Python)" className="pl-9 h-11 rounded-xl bg-background" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Filter by Job ID</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Filter by Job ID</Label>
               <div className="relative">
-                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-                <Input placeholder="Enter Job ID (e.g., ABC123)" className="pl-10 h-12" value={jobIdSearch} onChange={(e) => setJobIdSearch(e.target.value)} />
+                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                <Input placeholder="Job ID (e.g., ABC123)" className="pl-9 h-11 rounded-xl bg-background" value={jobIdSearch} onChange={(e) => setJobIdSearch(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Location</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Location</Label>
               <Select value={locationFilter} onValueChange={setLocationFilter}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-11 rounded-xl bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Department</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Department</Label>
               <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-11 rounded-xl bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                 </SelectContent>
@@ -158,34 +185,34 @@ export default function CareersPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pt-6 border-t">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pt-6 border-t border-zinc-200 dark:border-zinc-800">
             <div className="space-y-3">
-              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Filter by Date</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Filter by Date</Label>
               <RadioGroup value={dateFilter} onValueChange={setDateFilter} className="flex flex-wrap gap-x-6 gap-y-2">
                 {['Any time', 'Past month', 'Past week', 'Past 24 hours'].map(opt => (
                   <div key={opt} className="flex items-center space-x-2">
                     <RadioGroupItem value={opt} id={`date-${opt}`} />
-                    <Label htmlFor={`date-${opt}`} className="text-sm font-medium cursor-pointer">{opt}</Label>
+                    <Label htmlFor={`date-${opt}`} className="text-xs font-medium cursor-pointer">{opt}</Label>
                   </div>
                 ))}
               </RadioGroup>
             </div>
             <div className="space-y-3">
-               <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Employment Type</Label>
+               <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Employment Type</Label>
                <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {['All Types', 'Full Time', 'Part Time', 'Contract', 'Internship'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-3">
-              <Label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Work Arrangement</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Work Arrangement</Label>
               <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex space-x-6">
-                 {['Any', 'Remote', 'Onsite', 'Hybrid'].map(opt => (
+                 {['Any', 'Remote', 'Onsite'].map(opt => (
                   <div key={opt} className="flex items-center space-x-2">
                     <RadioGroupItem value={opt} id={`arr-${opt}`} />
-                    <Label htmlFor={`arr-${opt}`} className="text-sm font-medium cursor-pointer">{opt}</Label>
+                    <Label htmlFor={`arr-${opt}`} className="text-xs font-medium cursor-pointer">{opt}</Label>
                   </div>
                 ))}
               </RadioGroup>
@@ -195,8 +222,15 @@ export default function CareersPage() {
       </section>
 
       {/* Jobs Listing Section */}
-      <section className="section-padding bg-zinc-50 dark:bg-zinc-900/10 min-h-[500px]">
+      <section className="section-padding bg-background min-h-[500px]">
         <div className="container mx-auto px-4 md:px-6">
+          <div className="flex justify-between items-center mb-8">
+             <h3 className="text-2xl font-bold flex items-center gap-2">
+                <Briefcase className="h-6 w-6 text-primary" />
+                Available Positions ({filteredJobs.length})
+             </h3>
+          </div>
+
           {jobsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64 rounded-2xl" />)}
@@ -213,17 +247,47 @@ export default function CareersPage() {
               ))}
             </div>
           ) : (
-            <ScrollFadeIn className="text-center py-20 bg-white dark:bg-zinc-950 border rounded-3xl">
+            <ScrollFadeIn className="text-center py-20 bg-zinc-50 dark:bg-zinc-900 border rounded-[2.5rem]">
               <Rocket className="h-16 w-16 text-primary/20 mx-auto mb-6" />
               <h3 className="text-2xl font-bold mb-2">No matching openings right now</h3>
               <p className="text-muted-foreground mb-8">Adjust your filters or drop your resume at careers@quantumfusion.in</p>
-              <Button variant="outline" onClick={() => {
+              <Button variant="outline" className="rounded-full px-8" onClick={() => {
                 setSearchTerm(''); setJobIdSearch(''); setLocationFilter('All Locations');
                 setDepartmentFilter('All Departments'); setEmploymentTypeFilter('All Types');
                 setDateFilter('Any time'); setWorkArrangementFilter('Any');
               }}>Clear All Filters</Button>
             </ScrollFadeIn>
           )}
+        </div>
+      </section>
+
+      {/* Benefits & Perks Section */}
+      <section className="section-padding bg-zinc-50 dark:bg-zinc-900/20">
+        <div className="container mx-auto px-4 md:px-6">
+           <ScrollFadeIn className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-black">Benefits & Perks</h2>
+              <p className="text-muted-foreground mt-4">We take care of our own. More than just a paycheck.</p>
+           </ScrollFadeIn>
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { title: "Health Insurance", icon: Heart, text: "Comprehensive family health plans." },
+                { title: "Learning Budget", icon: Award, text: "Annual stipend for courses and conferences." },
+                { title: "Flexible Leave", icon: Zap, text: "Generous PTO and wellness breaks." },
+                { title: "Equity Options", icon: Gem, text: "Be a real owner of QuantumFusion." },
+                { title: "Annual Offsites", icon: Users, text: "Meet the team in exotic locations." },
+                { title: "Gadget Stipend", icon: Laptop, text: "Get the latest tech to do your best work." }
+              ].map((perk, i) => (
+                <div key={i} className="flex gap-4 p-6 bg-background rounded-3xl border shadow-sm">
+                   <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                      <perk.icon className="h-5 w-5 text-primary" />
+                   </div>
+                   <div>
+                      <h5 className="font-bold mb-1">{perk.title}</h5>
+                      <p className="text-xs text-muted-foreground">{perk.text}</p>
+                   </div>
+                </div>
+              ))}
+           </div>
         </div>
       </section>
 
@@ -240,7 +304,7 @@ export default function CareersPage() {
               { title: "Practical", text: "A real-world technical discussion." },
               { title: "Onboarding", text: "Offer and welcome to the team." }
             ].map((step, i) => (
-              <div key={i} className="p-8 bg-zinc-50 dark:bg-zinc-900 rounded-3xl border">
+              <div key={i} className="p-8 bg-zinc-50 dark:bg-zinc-900/40 rounded-3xl border border-dashed border-primary/20">
                 <span className="text-primary font-black text-3xl mb-4 block opacity-50">0{i+1}</span>
                 <h4 className="font-bold text-lg mb-2">{step.title}</h4>
                 <p className="text-sm text-muted-foreground">{step.text}</p>

@@ -2,139 +2,482 @@
 import type { Job, BlogPost } from '@/types';
 
 export const dummyJobs: Job[] = [
- {
-    id: 'A1B2C3',
-    title: 'Senior Software Engineer (Frontend)',
+  {
+    id: 'ENG-001',
+    jobId: 'ENG001',
+    title: 'Senior Frontend Engineer (React/Next.js)',
     company: 'QuantumFusion Solutions',
-    location: 'San Francisco, CA',
+    location: 'Bangalore / Remote',
     department: 'Engineering',
-    description: 'Join our dynamic team to build next-generation web applications using modern frontend technologies. Lead frontend development projects and mentor junior engineers.',
-    employmentType: 'Full-Time',
-    salaryRange: '$150,000 - $180,000',
-    postedDate: '2024-07-20T10:00:00Z',
-    // companyLogoUrl: 'https://placehold.co/100x100.png',
-    requiredSkills: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS', 'GraphQL'],
+    description: 'We are looking for a Senior Frontend Engineer to lead the development of our AI-native CRM, AcquisitionOS. You will be responsible for building high-performance, responsive UIs and mentoring junior developers.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '5+ Years',
+    salaryRange: '₹18L - ₹28L',
+    skills: ['React', 'Next.js', 'Tailwind CSS', 'TypeScript', 'Redux'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
-    id: 'D4E5F6',
-    title: 'Product Manager, AI Platforms',
+    id: 'ENG-002',
+    jobId: 'ENG002',
+    title: 'Backend Developer (Java/Spring Boot)',
     company: 'QuantumFusion Solutions',
-    location: 'New York, NY',
-    department: 'Product',
-    description: 'Define and drive the product strategy for our cutting-edge AI platforms. Work closely with engineering, design, and marketing teams to deliver innovative solutions.',
-    employmentType: 'Full-Time',
-    postedDate: '2024-07-18T14:30:00Z',
-    // companyLogoUrl: 'https://placehold.co/100x100.png',
-    requiredSkills: ['Product Management', 'AI/ML Fundamentals', 'Agile Methodologies', 'Roadmapping', 'Market Analysis'],
+    location: 'Bangalore',
+    department: 'Engineering',
+    description: 'Join our core engineering team to build scalable microservices for SystemFoundry. Experience with Java, Spring Boot, and cloud-native architectures is essential.',
+    employmentType: 'Full Time',
+    workArrangement: 'Hybrid',
+    experienceRequired: '3-6 Years',
+    salaryRange: '₹15L - ₹25L',
+    skills: ['Java', 'Spring Boot', 'PostgreSQL', 'AWS', 'Docker'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
-    id: 'G7H8I9',
-    title: 'UX/UI Designer',
+    id: 'AI-001',
+    jobId: 'AI001',
+    title: 'AI Research Engineer',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Engineering',
+    description: 'Develop and fine-tune LLM models and RAG pipelines for our internal and client projects. Expertise in Python and vector databases is a must.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '2-4 Years',
+    salaryRange: '₹20L - ₹35L',
+    skills: ['Python', 'PyTorch', 'LangChain', 'Pinecone', 'OpenAI'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'DES-001',
+    jobId: 'DES001',
+    title: 'Lead UI/UX Designer',
     company: 'QuantumFusion Solutions',
     location: 'Remote',
     department: 'Design',
-    description: 'Craft intuitive and visually appealing user experiences for our suite of creative tools. Collaborate with product managers and developers to bring ideas to life.',
-    employmentType: 'Full-Time',
-    salaryRange: '$90,000 - $120,000',
-    postedDate: '2024-07-22T09:00:00Z',
-    requiredSkills: ['UX Design', 'UI Design', 'Figma', 'Prototyping', 'User Research'],
+    description: 'Lead the design language of QuantumFusion. You will create intuitive interfaces for complex AI-driven dashboards and mobile applications.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '4+ Years',
+    salaryRange: '₹12L - ₹22L',
+    skills: ['Figma', 'Adobe XD', 'Prototyping', 'User Research', 'Design Systems'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
-    id: 'J0K1L2',
-    title: 'Data Scientist',
+    id: 'MKT-001',
+    jobId: 'MKT001',
+    title: 'Growth Marketing Manager',
     company: 'QuantumFusion Solutions',
-    location: 'Boston, MA',
-    department: 'Data Science',
-    description: 'Analyze large datasets to extract meaningful insights and build predictive models. Apply machine learning techniques to solve complex business problems.',
-    employmentType: 'Full-Time',
-    postedDate: '2024-07-15T11:00:00Z',
-    // companyLogoUrl: 'https://placehold.co/100x100.png',
-    requiredSkills: ['Python', 'Machine Learning', 'Statistical Analysis', 'SQL', 'Data Visualization'],
-  },
-  {
-    id: 'M3N4O5',
-    title: 'Marketing Specialist (Digital)',
-    company: 'QuantumFusion Solutions',
-    location: 'San Francisco, CA',
+    location: 'Remote',
     department: 'Marketing',
-    description: 'Develop and execute digital marketing campaigns to drive brand awareness and lead generation. Manage SEO/SEM, social media, and email marketing efforts.',
-    employmentType: 'Part-Time',
-    postedDate: '2024-07-25T16:00:00Z',
-    requiredSkills: ['Digital Marketing', 'SEO', 'SEM', 'Social Media Marketing', 'Content Creation'],
+    description: 'Drive user acquisition for our SaaS products. Manage SEO, SEM, and social media campaigns with a focus on product-led growth.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '3-5 Years',
+    salaryRange: '₹10L - ₹18L',
+    skills: ['SEO', 'Google Ads', 'Content Strategy', 'HubSpot', 'Analytics'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
   {
-    id: 'P6Q7R8',
-    title: 'Backend Developer (Node.js)',
+    id: 'ENG-003',
+    jobId: 'ENG003',
+    title: 'DevOps & Cloud Architect',
+    company: 'QuantumFusion Solutions',
+    location: 'Bangalore',
+    department: 'Engineering',
+    description: 'Design and manage our multi-cloud infrastructure (AWS/GCP). Implement robust CI/CD pipelines and automated security scanning.',
+    employmentType: 'Full Time',
+    workArrangement: 'Onsite',
+    experienceRequired: '6+ Years',
+    salaryRange: '₹25L - ₹40L',
+    skills: ['Terraform', 'Kubernetes', 'AWS', 'Jenkins', 'Networking'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'SLS-001',
+    jobId: 'SLS001',
+    title: 'Business Development Executive',
+    company: 'QuantumFusion Solutions',
+    location: 'Bangalore / Remote',
+    department: 'Sales',
+    description: 'Identify new business opportunities and manage client relationships for our custom platform development services.',
+    employmentType: 'Full Time',
+    workArrangement: 'Hybrid',
+    experienceRequired: '2-4 Years',
+    salaryRange: '₹8L - ₹14L + Incentives',
+    skills: ['Salesforce', 'Negotiation', 'B2B Sales', 'Communication'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'HR-001',
+    jobId: 'HR001',
+    title: 'Technical Recruiter',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'HR',
+    description: 'Find and hire the best tech talent in India. Manage the end-to-end recruitment process for engineering and design roles.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '2-5 Years',
+    salaryRange: '₹7L - ₹12L',
+    skills: ['Technical Sourcing', 'LinkedIn Recruiter', 'Interviewing'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'ENG-004',
+    jobId: 'ENG004',
+    title: 'Mobile App Developer (Flutter)',
     company: 'QuantumFusion Solutions',
     location: 'Remote',
     department: 'Engineering',
-    description: 'Design and implement scalable backend services and APIs. Work with Node.js, microservices architecture, and cloud platforms like AWS or Google Cloud.',
-    employmentType: 'Full-Time',
-    salaryRange: '$130,000 - $160,000',
-    postedDate: '2024-07-19T08:00:00Z',
-    requiredSkills: ['Node.js', 'Express.js', 'Microservices', 'AWS', 'Databases (SQL/NoSQL)'],
+    description: 'Build beautiful cross-platform apps using Flutter. Experience with state management and native integrations is required.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '2-4 Years',
+    salaryRange: '₹12L - ₹20L',
+    skills: ['Flutter', 'Dart', 'Firebase', 'REST APIs', 'Provider/Riverpod'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   },
-];
-
-// Function to generate a unique ID (simple incrementing string for demo)
-// This function is no longer used with the fixed dummy data, but kept for potential future dynamic job additions
-
-// A more robust ID generation function would be needed for actual unique IDs
-export const generateUniqueId = (): string => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  {
+    id: 'ENG-005',
+    jobId: 'ENG005',
+    title: 'Full Stack Developer (Node.js/React)',
+    company: 'QuantumFusion Solutions',
+    location: 'Mumbai / Remote',
+    department: 'Engineering',
+    description: 'Work across our entire stack to ship features fast. Focus on clean code and rapid iteration cycles.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '3-5 Years',
+    salaryRange: '₹14L - ₹24L',
+    skills: ['Node.js', 'React', 'MongoDB', 'Express', 'JavaScript'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'ENG-006',
+    jobId: 'ENG006',
+    title: 'Product Engineer',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Engineering',
+    description: 'A developer who thinks like a product manager. You will own features from ideation to deployment.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '2+ Years',
+    salaryRange: '₹12L - ₹18L',
+    skills: ['Next.js', 'Firebase', 'User Empathy', 'System Design'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'DES-002',
+    jobId: 'DES002',
+    title: 'Graphic & Brand Designer',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Design',
+    description: 'Shape the visual identity of QuantumFusion across our website, marketing collateral, and social media.',
+    employmentType: 'Part Time',
+    workArrangement: 'Remote',
+    experienceRequired: '1-3 Years',
+    salaryRange: '₹40k - ₹70k / Month',
+    skills: ['Photoshop', 'Illustrator', 'Branding', 'Motion Graphics'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'OPS-001',
+    jobId: 'OPS001',
+    title: 'Project Coordinator',
+    company: 'QuantumFusion Solutions',
+    location: 'Bangalore',
+    department: 'Operations',
+    description: 'Liaise between clients and the engineering team. Ensure project milestones are met on time and within scope.',
+    employmentType: 'Full Time',
+    workArrangement: 'Onsite',
+    experienceRequired: '2-4 Years',
+    salaryRange: '₹8L - ₹12L',
+    skills: ['Jira', 'Agile', 'Communication', 'Organization'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'ENG-007',
+    jobId: 'ENG007',
+    title: 'Data Engineer',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Engineering',
+    description: 'Build data pipelines that power our AI insights. Manage large-scale data ingestion and transformation tasks.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '3-5 Years',
+    salaryRange: '₹16L - ₹26L',
+    skills: ['Spark', 'Kafka', 'Python', 'SQL', 'BigQuery'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'ENG-008',
+    jobId: 'ENG008',
+    title: 'Software Engineer Intern',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Engineering',
+    description: 'Work alongside senior engineers to build real-world AI applications. Perfect for students or recent grads.',
+    employmentType: 'Internship',
+    workArrangement: 'Remote',
+    experienceRequired: 'Fresher',
+    salaryRange: '₹20k - ₹35k Stiipend',
+    skills: ['React', 'Node.js', 'Willingness to learn'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'SLS-002',
+    jobId: 'SLS002',
+    title: 'Sales Operations Associate',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Sales',
+    description: 'Support the sales team with lead research, CRM management, and reporting.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '1-3 Years',
+    salaryRange: '₹6L - ₹9L',
+    skills: ['Excel', 'LinkedIn Sales Nav', 'CRM Support'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'ENG-009',
+    jobId: 'ENG009',
+    title: 'QA Automation Engineer',
+    company: 'QuantumFusion Solutions',
+    location: 'Pune / Remote',
+    department: 'Engineering',
+    description: 'Ensure the quality of our SaaS platforms through automated testing frameworks.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '3-5 Years',
+    salaryRange: '₹12L - ₹18L',
+    skills: ['Cypress', 'Selenium', 'JavaScript', 'Postman'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'MKT-002',
+    jobId: 'MKT002',
+    title: 'Content Writer (Tech Focus)',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Marketing',
+    description: 'Write technical blog posts, case studies, and documentation for QuantumFusion.',
+    employmentType: 'Contract',
+    workArrangement: 'Remote',
+    experienceRequired: '2+ Years',
+    salaryRange: '₹5L - ₹8L',
+    skills: ['Copywriting', 'Technical Writing', 'SEO Content'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'ENG-010',
+    jobId: 'ENG010',
+    title: 'Security Engineer',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Engineering',
+    description: 'Protect our applications and infrastructure from threats. Conduct audits and penetration testing.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '4-7 Years',
+    salaryRange: '₹22L - ₹35L',
+    skills: ['Cybersecurity', 'SOC2', 'Ethical Hacking', 'Cloud Security'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'DES-003',
+    jobId: 'DES003',
+    title: 'UX Researcher',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Design',
+    description: 'Understand our users deeper. Conduct interviews and usability tests to guide product development.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '2-4 Years',
+    salaryRange: '₹10L - ₹16L',
+    skills: ['User Interviews', 'Data Analysis', 'Usability Testing'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'ENG-011',
+    jobId: 'ENG011',
+    title: 'Solutions Architect',
+    company: 'QuantumFusion Solutions',
+    location: 'Hybrid',
+    department: 'Engineering',
+    description: 'Translate business requirements into technical architectures for our large enterprise clients.',
+    employmentType: 'Full Time',
+    workArrangement: 'Hybrid',
+    experienceRequired: '8+ Years',
+    salaryRange: '₹35L - ₹55L',
+    skills: ['System Architecture', 'Client Facing', 'Enterprise Design'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'HR-002',
+    jobId: 'HR002',
+    title: 'People Operations Lead',
+    company: 'QuantumFusion Solutions',
+    location: 'Bangalore',
+    department: 'HR',
+    description: 'Build a world-class culture at QuantumFusion. Handle onboarding, engagement, and internal policies.',
+    employmentType: 'Full Time',
+    workArrangement: 'Onsite',
+    experienceRequired: '5+ Years',
+    salaryRange: '₹12L - ₹20L',
+    skills: ['Culture Building', 'Conflict Resolution', 'HR Policy'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'ENG-012',
+    jobId: 'ENG012',
+    title: 'React Native Developer',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Engineering',
+    description: 'Develop high-performance mobile apps for iOS and Android using React Native.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '3-5 Years',
+    salaryRange: '₹14L - ₹22L',
+    skills: ['React Native', 'JavaScript', 'Mobile UI'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'MKT-003',
+    jobId: 'MKT003',
+    title: 'Video Producer / Editor',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Marketing',
+    description: 'Create engaging video content for our YouTube and LinkedIn channels to showcase our products.',
+    employmentType: 'Contract',
+    workArrangement: 'Remote',
+    experienceRequired: '2+ Years',
+    salaryRange: '₹6L - ₹10L',
+    skills: ['Premiere Pro', 'After Effects', 'Storyboarding'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 'ENG-013',
+    jobId: 'ENG013',
+    title: 'Site Reliability Engineer (SRE)',
+    company: 'QuantumFusion Solutions',
+    location: 'Remote',
+    department: 'Engineering',
+    description: 'Focus on the availability, latency, performance, and capacity of our distributed systems.',
+    employmentType: 'Full Time',
+    workArrangement: 'Remote',
+    experienceRequired: '4-6 Years',
+    salaryRange: '₹20L - ₹32L',
+    skills: ['Python', 'Observability', 'Linux', 'Automation'],
+    isActive: true,
+    status: 'Active',
+    postedDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   }
-  return Array.from({ length: 6 }, () => characters[Math.floor(Math.random() * characters.length)]).join('');
-};
-
-// Function to add a new job
-export const addJob = (newJob: Omit<Job, 'id' | 'postedDate'>): Job => {
-  const jobWithId: Job = {
-    ...newJob,
-    id: generateUniqueId(),
-    postedDate: new Date().toISOString(), // Add current timestamp
-  };
-  dummyJobs.push(jobWithId);
-  return jobWithId;
-};
-
-// Function to update an existing job
-export const updateJob = (updatedJob: Job): Job | undefined => {
-  const index = dummyJobs.findIndex(job => job.id === updatedJob.id);
-  if (index !== -1) {
-    dummyJobs[index] = { ...updatedJob, postedDate: new Date().toISOString() }; // Update timestamp
-    return dummyJobs[index];
-  }
-  return undefined; // Job not found
-};
-
-// Robust generation of unique locations for filters and dropdowns
-const jobSpecificLocations = dummyJobs
-  .map(job => String(job.location || "").trim()) // Ensure string, trim whitespace
-  .filter(Boolean); // Remove any empty strings that might result
-
-const baseFilterLocations = ['All Locations', 'Anywhere', 'Remote'];
-const allUniqueLocations = Array.from(new Set([...baseFilterLocations, ...jobSpecificLocations]));
-
-export const locations = allUniqueLocations.sort((a, b) => {
-  const specialOrder = ['All Locations', 'Anywhere', 'Remote'];
-  const aIndex = specialOrder.indexOf(a);
-  const bIndex = specialOrder.indexOf(b);
-
-  if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex; // Sort by special order
-  if (aIndex !== -1) return -1; // a is special, b is not (so a comes first)
-  if (bIndex !== -1) return 1;  // b is special, a is not (so b comes first)
-  return a.localeCompare(b); // Alphabetical for all other locations
-});
-
-
-export const departments = [
-  'All Departments',
-  ...new Set(dummyJobs.map(job => job.department).sort())
 ];
-
 
 export const blogPosts: BlogPost[] = [
   {
@@ -143,39 +486,13 @@ export const blogPosts: BlogPost[] = [
     date: 'August 5, 2024',
     author: 'Dr. Evelyn Reed',
     excerpt: 'Exploring how artificial intelligence is revolutionizing the recruitment landscape, from automated screening to predictive hiring.',
-    content: 'The full article delves deeper into AI-driven candidate sourcing, bias mitigation techniques using AI, and the ethical considerations of AI in recruitment. It also showcases case studies of companies successfully implementing these technologies to improve their hiring outcomes, reduce time-to-fill, and enhance candidate experience. We explore various AI tools, from resume parsers and chatbot interviewers to predictive analytics platforms that forecast hiring success. Furthermore, the post discusses the importance of human oversight in AI-driven recruitment processes to ensure fairness and maintain a personal touch.',
+    content: 'The full article delves deeper into AI-driven candidate sourcing, bias mitigation techniques using AI, and the ethical considerations of AI in recruitment.',
     imageUrl: '/images/blog1.png',
     aiHint: 'AI hiring concept',
     category: 'AI & Recruitment',
     comments: 12,
     slug: 'future-of-ai-talent-acquisition',
-  },
-  {
-    id: '2',
-    title: 'Navigating Your Career Path in the Digital Age',
-    date: 'July 28, 2024',
-    author: 'Aisha Khan',
-    excerpt: 'Tips and strategies for professionals looking to thrive and adapt in an ever-evolving digital job market.',
-    content: 'This comprehensive guide provides actionable advice for career navigation. It covers topics such as continuous learning, skill development in high-demand areas like data science and cybersecurity, networking strategies both online and offline, personal branding, and adapting to remote work environments. The article emphasizes the importance of soft skills like critical thinking, creativity, and emotional intelligence in complementing technical expertise. It also includes resources for online courses, mentorship programs, and industry certifications to help professionals stay competitive.',
-    imageUrl: '/images/blog2.png',
-    aiHint: 'digital future career',
-    category: 'Career Development',
-    comments: 8,
-    slug: 'navigating-career-path-digital-age',
-  },
-  {
-    id: '3',
-    title: 'The Power of Personalized Learning for Skill Enhancement',
-    date: 'July 15, 2024',
-    author: 'Marcus Chen',
-    excerpt: 'How QuantumFusion Solutions\' personalized learning modules help individuals acquire new skills and stay ahead.',
-    content: 'Discover how adaptive learning technologies and personalized content curation are revolutionizing professional development. This article explains the mechanisms behind personalized learning platforms, including AI algorithms that tailor educational content to individual learning styles, paces, and career goals. It highlights the benefits of such systems, such as increased engagement, better knowledge retention, and more efficient skill acquisition. We also discuss how QuantumFusion Solutions leverages these principles in its own EdTech offerings to empower lifelong learning.',
-    imageUrl: '/images/blog3.png',
-    aiHint: 'online learning interface',
-    category: 'EdTech',
-    comments: 5,
-    slug: 'power-of-personalized-learning',
-  },
+  }
 ];
 
 export const educationQualifications = [
@@ -195,8 +512,10 @@ export const generateYearOptions = () => {
   return years;
 };
 
-// For the preferred job location dropdown in the ApplyJobModal
-// It uses the main `locations` array but filters out "All Locations" in the modal component itself.
-// So no separate export needed here if `locations` is correctly deduplicated and sorted.
-// If a truly different list is needed for preferred locations, it can be defined here.
-// For now, `apply-job-modal.tsx` imports `locations as preferredLocations` and filters.
+export const locations = [
+  'All Locations', 'Remote', 'Bangalore', 'Mumbai', 'Pune', 'Hyderabad', 'Chennai', 'Delhi NCR', 'Ahmedabad', 'Kolkata'
+];
+
+export const departments = [
+  'All Departments', 'Engineering', 'Design', 'Marketing', 'Operations', 'HR', 'Sales', 'Product', 'Data Science'
+];
