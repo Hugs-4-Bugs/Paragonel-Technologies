@@ -71,16 +71,18 @@ export function ChatSection() {
           <div className="flex flex-col gap-2">
             <p>{response.answer}</p>
             <Button asChild size="sm" variant="outline" className="self-start">
-              <a href={response.navigationLink}>Open {response.navigationLink.replace('/', '') || 'Home'} Page <ArrowRight className="ml-2 h-3 w-3" /></a>
+              <Link href={response.navigationLink}>
+                Open {response.navigationLink.replace('/', '') || 'Home'} Page <ArrowRight className="ml-2 h-3 w-3" />
+              </Link>
             </Button>
           </div>
         ));
       } else {
-        addMessage('ai', response.answer || "I'm here to help! Could you please rephrase that?");
+        addMessage('ai', response.answer);
       }
     } catch (e) {
       console.error(e);
-      addMessage('ai', "I'm sorry, I encountered an error. Please try again or visit our [Contact Page](/contact).");
+      addMessage('ai', "I'm sorry, I'm having trouble connecting to my brain right now. Please try again or visit our [Contact Page](/contact).");
     } finally {
       setIsLoading(false);
     }
@@ -148,7 +150,7 @@ export function ChatSection() {
       updateCareerStep('matching_jobs');
       
       const matches = dummyJobs.map(job => {
-        const jobSkills = job.requiredSkills.map(s => s.toLowerCase());
+        const jobSkills = job.skills.map(s => s.toLowerCase());
         const userSkills = candidateProfile?.skills.map(s => s.toLowerCase()) || [];
         const overlap = jobSkills.filter(s => userSkills.includes(s)).length;
         const score = Math.round((overlap / Math.max(1, jobSkills.length)) * 100);
@@ -193,7 +195,7 @@ export function ChatSection() {
           experienceYears: candidateProfile?.experienceYears,
           appliedAt: serverTimestamp(),
           appliedVia: 'ai',
-          status: 'submitted'
+          status: 'New'
         };
 
         await addDoc(collection(db, 'jobApplications'), applicationData);
@@ -204,7 +206,7 @@ export function ChatSection() {
             <p className="font-bold text-green-600">Application Submitted Successfully!</p>
             <p>Role: {selectedJob.title}</p>
             <p>Application ID: {appId}</p>
-            <p className="text-xs text-muted-foreground">A confirmation email has been sent to {candidateProfile?.email}. Our team will review it shortly.</p>
+            <p className="text-xs text-muted-foreground">Our team will review it shortly. You can also view your status in your profile if logged in.</p>
           </div>
         ));
       } else {

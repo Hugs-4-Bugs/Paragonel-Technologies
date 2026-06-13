@@ -16,40 +16,61 @@ export type CompanyQnaInput = z.infer<typeof CompanyQnaInputSchema>;
 
 const CompanyQnaOutputSchema = z.object({
   answer: z.string().describe('The AI-generated answer.'),
-  intent: z.string().describe('The detected intent of the user (e.g., qna, navigate, careers).'),
-  navigationLink: z.string().optional().describe('A link to a page on the website if relevant.'),
+  intent: z.enum(['qna', 'navigate', 'careers', 'error']).describe('The detected intent of the user.'),
+  navigationLink: z.string().optional().describe('A relative URL if the intent is navigate.'),
 });
 export type CompanyQnaOutput = z.infer<typeof CompanyQnaOutputSchema>;
 
+// Define a structured prompt for better reliability
+const qnaPrompt = ai.definePrompt({
+  name: 'companyQnaPrompt',
+  input: { schema: CompanyQnaInputSchema },
+  output: { schema: CompanyQnaOutputSchema },
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    ],
+  },
+  prompt: `
+    You are QuantumAI, the official intelligent assistant for QuantumFusion Solutions.
+    Your goal is to be a professional, helpful, and ultra-modern representative of the company.
+
+    COMPANY KNOWLEDGE BASE:
+    ${JSON.stringify(knowledge)}
+
+    INSTRUCTIONS:
+    1. Use the provided Knowledge Base as your source of truth.
+    2. Respond using professional yet approachable language.
+    3. Use Markdown for formatting (bolding, lists, and links).
+    4. INTENT DETECTION:
+       - If the user asks for a specific page (e.g., "go to careers", "show me services", "contact page"), set intent to 'navigate' and provide the correct relative URL from the knowledge base.
+       - If the user asks about job openings or joining the team, set intent to 'careers'.
+       - For general questions, set intent to 'qna'.
+    5. If the user's question is completely unrelated to the company or its domains (AI, Cloud, SaaS), politely guide them back to company-related topics.
+
+    USER QUESTION: {{question}}
+    
+    RESPONSE FORMAT: Always return a valid JSON object matching the requested schema.
+  `,
+});
+
 export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQnaOutput> {
   try {
-    const { output } = await ai.generate({
-      output: { schema: CompanyQnaOutputSchema },
-      prompt: `You are QuantumAI, the intelligent assistant for QuantumFusion Solutions.
-Your goal is to help users explore the website, learn about the company, and answer any questions.
-
-COMPANY KNOWLEDGE BASE:
-${JSON.stringify(knowledge, null, 2)}
-
-INSTRUCTIONS:
-1. Use the provided company knowledge as your ground truth.
-2. If the user asks for a specific page (e.g., "show careers", "go to contact"), detect the 'navigate' intent and provide the relative URL (e.g., "/careers").
-3. If the user asks about jobs, openings, or hiring, detect 'careers' intent.
-4. Always be professional, modern, and helpful.
-5. Use Markdown for links in your text response.
-6. If the question is unrelated to the company, politely explain that you are specialized in QuantumFusion Solutions.
-
-User Question: ${input.question}
-
-Respond with the answer, intent, and optional navigationLink.`,
-    });
+    const { output } = await qnaPrompt(input);
     
-    if (!output) throw new Error("No output from AI");
+    if (!output) {
+      throw new Error("AI returned empty output");
+    }
+    
     return output;
   } catch (error: any) {
-    console.error("companyQnaFlow Error:", error);
+    console.error("companyQnaFlow Error Details:", error);
+    // Provide a more helpful but still professional fallback
     return {
-      answer: "I'm here to help! It seems I had a brief technical hiccup. Please try asking your question again, or you can explore our [Services](/services) and [Careers](/careers) manually.",
+      answer: "I'm here to assist you! It looks like I had a momentary connection issue. You can manually explore our [Services](/services), view our [Portfolio](/portfolio), or check for [Open Roles](/careers). How else can I help you today?",
       intent: 'error'
     };
   }

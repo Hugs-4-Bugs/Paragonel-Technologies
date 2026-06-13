@@ -35,7 +35,7 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
   const { data: dynamicServices } = useCollection(servicesQuery);
 
   const displayedServices = useMemo(() => {
-    // Always show the 4 base services first, then append any CMS services
+    // Merge base foundation services with dynamic CMS services
     const combined = [...baseServices, ...(dynamicServices || [])];
     return isFullPage ? combined : combined.slice(0, 4);
   }, [dynamicServices, isFullPage]);
@@ -60,7 +60,7 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
           {displayedServices.map((service: any, index: number) => {
             const Icon = iconMap[service.iconName] || Layers;
             return (
-              <ScrollFadeIn key={service.id} delay={`${index * 100}ms`}>
+              <ScrollFadeIn key={service.id || index} delay={`${index * 100}ms`}>
                 <Card className="h-full overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 flex flex-col group rounded-[2.5rem] border-zinc-100 dark:border-zinc-800 bg-card">
                   <CardHeader className="p-8 pb-4">
                     <div className="flex items-start justify-between mb-6">
@@ -85,7 +85,7 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
                       </div>
                     )}
                     <Button asChild variant="link" className="mt-auto self-start p-0 text-primary font-black text-lg group-hover:translate-x-2 transition-transform">
-                      <Link href={`/services/${service.slug}`}>
+                      <Link href={`/services/${service.slug || service.id}`}>
                         Learn More <ArrowRight className="ml-2 h-6 w-6" />
                       </Link>
                     </Button>

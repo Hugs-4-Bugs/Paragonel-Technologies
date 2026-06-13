@@ -1,6 +1,12 @@
 
 import type { Job, BlogPost } from '@/types';
 
+/**
+ * @fileOverview Base foundation data for QuantumFusion Solutions.
+ * These items are permanent and represent the core identity of the brand.
+ * CMS items added via Firestore will be appended to these lists.
+ */
+
 export const baseServices = [
   {
     id: 'base-ai',
@@ -8,37 +14,37 @@ export const baseServices = [
     description: 'Unlock the power of Artificial Intelligence with our custom machine learning models, natural language processing, and computer vision solutions tailored to your business needs.',
     iconName: 'Brain',
     slug: 'ai-solutions',
-    imageUrl: 'https://picsum.photos/seed/ai-service-main/800/600',
+    imageUrl: 'https://picsum.photos/seed/qfs-ai/800/600',
     isActive: true,
     order: 1
   },
   {
     id: 'base-cloud',
     title: 'Cloud Infrastructure',
-    description: 'Optimize your operations with our secure, scalable, and cost-effective cloud infrastructure services, including migration, management, and cloud-native development.',
+    description: 'Optimize your operations with our secure, scalable, and cost-effective cloud infrastructure services, including migration, management, and cloud-native development on AWS, GCP, and Azure.',
     iconName: 'Cloud',
     slug: 'cloud-infrastructure',
-    imageUrl: 'https://picsum.photos/seed/cloud-infra-main/800/600',
+    imageUrl: 'https://picsum.photos/seed/qfs-cloud/800/600',
     isActive: true,
     order: 2
   },
   {
     id: 'base-devops',
     title: 'DevOps Automation',
-    description: 'Accelerate your software delivery lifecycle with our comprehensive DevOps automation services, including CI/CD pipelines, infrastructure as code, and automated testing.',
+    description: 'Accelerate your software delivery lifecycle with our comprehensive DevOps automation services, including CI/CD pipelines, infrastructure as code (IaC), and automated testing.',
     iconName: 'GitFork',
     slug: 'devops-automation',
-    imageUrl: 'https://picsum.photos/seed/devops-auto-main/800/600',
+    imageUrl: 'https://picsum.photos/seed/qfs-devops/800/600',
     isActive: true,
     order: 3
   },
   {
     id: 'base-saas',
     title: 'SaaS Platforms',
-    description: 'Develop and launch robust, scalable, and user-friendly SaaS platforms with our end-to-end development services, from ideation and design to deployment and maintenance.',
+    description: 'Develop and launch robust, scalable, and user-friendly SaaS platforms with our end-to-end development services, from ideation and architectural design to deployment and maintenance.',
     iconName: 'Layers',
     slug: 'saas-platforms',
-    imageUrl: 'https://picsum.photos/seed/saas-plat-main/800/600',
+    imageUrl: 'https://picsum.photos/seed/qfs-saas/800/600',
     isActive: true,
     order: 4
   }
@@ -49,7 +55,7 @@ export const basePortfolio = [
     id: 'p-1',
     name: 'AcquisitionOS',
     category: 'Talent Acquisition',
-    imageUrl: 'https://picsum.photos/seed/p1/600/400',
+    imageUrl: 'https://picsum.photos/seed/acq-os/800/600',
     description: 'Developed a cutting-edge platform that reduced hiring time by 40% using AI matchmaking and automated workflows.',
     status: 'Live',
     techs: ['React', 'Java', 'Python', 'AWS'],
@@ -60,8 +66,8 @@ export const basePortfolio = [
     id: 'p-2',
     name: 'SystemFoundry',
     category: 'Architecture',
-    imageUrl: 'https://picsum.photos/seed/p2/600/400',
-    description: 'Created an interactive tool helping students visualize and plan their career paths based on skills and interests.',
+    imageUrl: 'https://picsum.photos/seed/sys-foundry/800/600',
+    description: 'Created an interactive tool helping engineers visualize and simulate system architectures in real-time with AI guidance.',
     status: 'Live',
     techs: ['Next.js', 'Firebase', 'D3.js'],
     link: '#',
@@ -71,8 +77,8 @@ export const basePortfolio = [
     id: 'p-3',
     name: 'CodeGuard AI',
     category: 'Dev Intelligence',
-    imageUrl: 'https://picsum.photos/seed/p3/600/400',
-    description: 'Built a SaaS platform offering personalized learning journeys and skill assessments for professionals.',
+    imageUrl: 'https://picsum.photos/seed/cg-ai/800/600',
+    description: 'Built a specialized developer tool that provides real-time security and cost intelligence for cloud infrastructure code.',
     status: 'Published',
     techs: ['VS Code API', 'Node.js', 'LLMs'],
     link: '#',
@@ -82,8 +88,8 @@ export const basePortfolio = [
     id: 'p-4',
     name: 'AaharAI',
     category: 'Health Tech',
-    imageUrl: 'https://picsum.photos/seed/p4/600/400',
-    description: 'Designed and launched a comprehensive suite of tools for enhancing remote team productivity and communication.',
+    imageUrl: 'https://picsum.photos/seed/aahar-ai/800/600',
+    description: 'An India-first intelligent health companion focusing on personalized nutrition and dietary insights.',
     status: 'Development',
     techs: ['Flutter', 'Spring Boot', 'GCP'],
     link: '#',
@@ -215,25 +221,6 @@ export const dummyJobs: Job[] = [
     postedDate: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'MKT-001',
-    jobId: 'MKT001',
-    title: 'Growth Marketing Manager',
-    company: 'QuantumFusion Solutions',
-    location: 'Remote',
-    department: 'Marketing',
-    description: 'Drive user acquisition for our SaaS products. Manage SEO, SEM, and social media campaigns with a focus on product-led growth.',
-    employmentType: 'Full Time',
-    workArrangement: 'Remote',
-    experienceRequired: '3-5 Years',
-    salaryRange: '₹10L - ₹18L',
-    skills: ['SEO', 'Google Ads', 'Content Strategy', 'HubSpot', 'Analytics'],
-    isActive: true,
-    status: 'Active',
-    postedDate: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
   }
 ];
 
@@ -245,12 +232,13 @@ export const blogPosts: BlogPost[] = [
     author: 'Prabhat Sharma',
     excerpt: 'Exploring how artificial intelligence is revolutionizing the recruitment landscape, from automated screening to predictive hiring.',
     body: 'The full article delves deeper into AI-driven candidate sourcing, bias mitigation techniques using AI, and the ethical considerations of AI in recruitment.',
-    thumbnailUrl: 'https://picsum.photos/seed/b1/800/600',
+    thumbnailUrl: 'https://picsum.photos/seed/qfs-blog1/800/600',
     category: 'AI & Recruitment',
     tags: ['AI', 'Recruitment', 'HR Tech'],
     status: 'Published',
     slug: 'future-of-ai-talent-acquisition',
-    createdAt: new Date('2024-08-05').toISOString()
+    createdAt: new Date('2024-08-05').toISOString(),
+    updatedAt: new Date('2024-08-05').toISOString()
   },
   {
     id: '2',
@@ -259,12 +247,13 @@ export const blogPosts: BlogPost[] = [
     author: 'QuantumFusion Team',
     excerpt: 'How businesses are saving thousands of hours by integrating intelligent automation into their daily workflows.',
     body: 'Automation is no longer just about scripts. With LLMs, we can now automate decision-making processes that previously required human intervention...',
-    thumbnailUrl: 'https://picsum.photos/seed/b2/800/600',
+    thumbnailUrl: 'https://picsum.photos/seed/qfs-blog2/800/600',
     category: 'AI Solutions',
     tags: ['Automation', 'ROI', 'Efficiency'],
     status: 'Published',
     slug: 'maximizing-roi-ai-automation',
-    createdAt: new Date('2024-08-12').toISOString()
+    createdAt: new Date('2024-08-12').toISOString(),
+    updatedAt: new Date('2024-08-12').toISOString()
   },
   {
     id: '3',
@@ -273,12 +262,13 @@ export const blogPosts: BlogPost[] = [
     author: 'Vivek Sharma',
     excerpt: 'Navigating the balance between security, cost, and scalability with a hybrid cloud approach.',
     body: 'Small and medium businesses often struggle with the "all-in" cloud transition. Hybrid cloud offers a middle ground that provides the best of both worlds...',
-    thumbnailUrl: 'https://picsum.photos/seed/b3/800/600',
+    thumbnailUrl: 'https://picsum.photos/seed/qfs-blog3/800/600',
     category: 'Cloud Infrastructure',
     tags: ['Cloud', 'Hybrid', 'SMB'],
     status: 'Published',
     slug: 'why-hybrid-cloud-future-smbs',
-    createdAt: new Date('2024-08-18').toISOString()
+    createdAt: new Date('2024-08-18').toISOString(),
+    updatedAt: new Date('2024-08-18').toISOString()
   }
 ];
 
