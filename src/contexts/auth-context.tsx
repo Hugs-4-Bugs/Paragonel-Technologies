@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -6,16 +5,25 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
 interface User {
-  uid: string; // Added UID
+  uid: string;
   email: string;
-  fullName?: string; // Added fullName
+  fullName?: string;
 }
 
 // Simulate a simple in-memory store for registered users
 interface RegisteredUser extends User {
   password?: string; 
 }
-let simulatedUserDatabase: RegisteredUser[] = [];
+
+// Initializing database with some test accounts including admin
+let simulatedUserDatabase: RegisteredUser[] = [
+  {
+    uid: 'admin-testing-uid',
+    email: 'admin@quantumfusion.in',
+    fullName: 'Quantum Admin',
+    password: 'admin123'
+  }
+];
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -23,7 +31,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password?: string, redirectPath?: string) => void;
   logout: () => void;
-  signup: (fullName: string, email: string, password?: string, redirectPath?: string) => void; // Added fullName
+  signup: (fullName: string, email: string, password?: string, redirectPath?: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,11 +50,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const storedUser = localStorage.getItem('user');
       if (storedAuth === 'true' && storedUser) {
         const parsedUser: User = JSON.parse(storedUser);
-        if (parsedUser && parsedUser.uid && parsedUser.email) { // Validate stored user
+        if (parsedUser && parsedUser.uid && parsedUser.email) {
             setIsAuthenticated(true);
             setUser(parsedUser);
         } else {
-            // Clear invalid stored data
             localStorage.removeItem('isAuthenticated');
             localStorage.removeItem('user');
         }
@@ -65,7 +72,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     if (foundUser) {
-      // Ensure uid and fullName are correctly set from foundUser
       const loggedInUser: User = { 
         uid: foundUser.uid, 
         email: foundUser.email,
@@ -75,10 +81,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(loggedInUser);
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('user', JSON.stringify(loggedInUser));
-      console.log("SIMULATION: User logged in:", loggedInUser);
+      
       toast({
         title: "Login Successful!",
-        description: "Welcome back to QuantumFusion Solutions.",
+        description: `Welcome back, ${foundUser.fullName || 'User'}!`,
       });
 
       const actionAfterLogin = localStorage.getItem('actionAfterLogin');
@@ -86,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (actionAfterLogin === 'applyJobModalOpen') {
         router.push('/careers');
-      } else if (redirectPath) {
+      } else if (redirectPath && redirectPath !== '/') {
         router.push(redirectPath);
       } else {
         router.push('/');
@@ -110,14 +116,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Simulate UID generation (replace with actual Firebase Auth UID in a real app)
     const uid = email.replace(/[^a-zA-Z0-9]/g, "") + Date.now(); 
-
     const newUser: RegisteredUser = { uid, email, fullName, password };
     simulatedUserDatabase.push(newUser);
-    console.log("SIMULATION: User signed up and added to simulated DB:", newUser);
     
-    // Auto-login after signup
     login(email, password, redirectPath); 
     console.log("SIMULATION: Signup confirmation email sent to:", email);
   };
@@ -128,7 +130,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('user');
     localStorage.removeItem('actionAfterLogin');
-    console.log("SIMULATION: User logged out");
     toast({
         title: "Logged Out",
         description: "You have been successfully logged out.",

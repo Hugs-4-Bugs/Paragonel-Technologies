@@ -38,6 +38,8 @@ import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function AdminJobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -107,7 +109,7 @@ export default function AdminJobsPage() {
         </Button>
       </div>
 
-      <Card className="overflow-hidden border-zinc-200 dark:border-zinc-800">
+      <Card className="overflow-hidden border-zinc-200 dark:border-zinc-800 shadow-sm">
         <Table>
           <TableHeader className="bg-zinc-50 dark:bg-zinc-900/50">
             <TableRow>
@@ -148,7 +150,7 @@ export default function AdminJobsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-zinc-500 text-sm">
-                    {new Date(job.createdAt).toLocaleDateString()}
+                    {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -193,8 +195,4 @@ export default function AdminJobsPage() {
       </Card>
     </div>
   );
-}
-
-function Card({ children, className }: { children: React.ReactNode, className?: string }) {
-  return <div className={cn("bg-white dark:bg-zinc-900 border rounded-xl", className)}>{children}</div>;
 }
