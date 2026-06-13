@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -19,6 +18,7 @@ import { ApplyJobModal } from '@/components/apply-job-modal';
 import { JobDescriptionModal } from '@/components/job-description-modal';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CareersPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,7 +65,7 @@ export default function CareersPage() {
         job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.skills.some((s: string) => s.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      const matchesJobId = jobIdSearch === '' || job.jobId.toLowerCase() === jobIdSearch.toLowerCase();
+      const matchesJobId = jobIdSearch === '' || job.jobId.toLowerCase().includes(jobIdSearch.toLowerCase());
       const matchesLocation = locationFilter === 'All Locations' || job.location === locationFilter;
       const matchesDept = departmentFilter === 'All Departments' || job.department === departmentFilter;
       const matchesType = employmentTypeFilter === 'All Types' || job.employmentType === employmentTypeFilter;
