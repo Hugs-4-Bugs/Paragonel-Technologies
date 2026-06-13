@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { JobDescriptionModal } from '@/components/job-description-modal';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Briefcase, ChevronDown, ChevronUp, Laptop, Building } from 'lucide-react';
+import { Search, Filter, Briefcase, ChevronDown, ChevronUp, Laptop, Building, Hash } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -20,10 +21,11 @@ interface CareersSectionProps {
 }
 
 const employmentTypes = ['All Types', 'Full Time', 'Part Time', 'Contract', 'Internship'];
-const workArrangements = ['Any', 'Remote', 'Onsite'];
+const workArrangements = ['Any', 'Remote'];
 
 export function CareersSection({ initialJobs }: CareersSectionProps) { 
   const [searchTerm, setSearchTerm] = useState('');
+  const [jobIdSearch, setJobIdSearch] = useState('');
   const [locationFilter, setLocationFilter] = useState('All Locations');
   const [departmentFilter, setDepartmentFilter] = useState('All Departments');
   const [employmentTypeFilter, setEmploymentTypeFilter] = useState('All Types');
@@ -75,6 +77,9 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
       const matchesSearchTerm = 
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.description.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesJobId = jobIdSearch === '' || job.id.toLowerCase().includes(jobIdSearch.toLowerCase());
+      
       const matchesLocation = locationFilter === 'All Locations' || job.location === locationFilter;
       const matchesDepartment = departmentFilter === 'All Departments' || job.department === departmentFilter;
       const matchesEmploymentType = employmentTypeFilter === 'All Types' || job.employmentType === employmentTypeFilter;
@@ -82,11 +87,9 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
       let matchesWorkArrangement = true;
       if (workArrangementFilter === 'Remote') {
         matchesWorkArrangement = job.location.toLowerCase().includes('remote');
-      } else if (workArrangementFilter === 'Onsite') {
-        matchesWorkArrangement = !job.location.toLowerCase().includes('remote');
       }
 
-      return matchesSearchTerm && matchesLocation && matchesDepartment && matchesEmploymentType && matchesWorkArrangement;
+      return matchesSearchTerm && matchesJobId && matchesLocation && matchesDepartment && matchesEmploymentType && matchesWorkArrangement;
     });
 
     if (dateFilter !== 'Any time') {
@@ -94,12 +97,12 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
       let cutoffDate = new Date(now);
       if (dateFilter === 'Past month') cutoffDate.setMonth(now.getMonth() - 1);
       if (dateFilter === 'Past week') cutoffDate.setDate(now.getDate() - 7);
-      if (dateFilter === 'Past 24 hours') cutoffDate.setDate(now.getDate() - 1);
+      if (dateFilter === 'Past 24 hours') cutoffDate.setHours(now.getHours() - 24);
       
-      filtered = filtered.filter(job => new Date(job.createdAt) >= cutoffDate);
+      filtered = filtered.filter(job => new Date(job.createdAt || job.postedDate) >= cutoffDate);
     }
     return filtered;
-  }, [initialJobs, searchTerm, locationFilter, departmentFilter, employmentTypeFilter, workArrangementFilter, dateFilter, showOpenRoles]);
+  }, [initialJobs, searchTerm, jobIdSearch, locationFilter, departmentFilter, employmentTypeFilter, workArrangementFilter, dateFilter, showOpenRoles]);
 
   return (
     <section id="careers-section" className="section-padding bg-zinc-50/50 dark:bg-zinc-900/10">
@@ -127,16 +130,29 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
 
         {showOpenRoles && (
           <>
-            <ScrollFadeIn delay="100ms" className="mb-12 p-8 bg-white dark:bg-zinc-900 border rounded-2xl shadow-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <ScrollFadeIn delay="100ms" className="mb-12 p-8 bg-white dark:bg-zinc-900 border rounded-2xl shadow-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="space-y-2">
-                <Label htmlFor="search">Search Keywords</Label>
+                <Label htmlFor="search">Search Jobs</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
                   <Input
                     id="search"
-                    placeholder="e.g. React, Manager"
+                    placeholder="Keywords (e.g., AI, Python)"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 h-11" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="jobId">Filter by Job ID</Label>
+                <div className="relative">
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
+                  <Input
+                    id="jobId"
+                    placeholder="Enter Job ID (e.g., ABC123)"
+                    value={jobIdSearch}
+                    onChange={(e) => setJobIdSearch(e.target.value)}
                     className="pl-10 h-11" />
                 </div>
               </div>
@@ -145,7 +161,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                 <Label htmlFor="location">Location</Label>
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
                   <SelectTrigger id="location" className="h-11">
-                    <SelectValue placeholder="Select location" />
+                    <SelectValue placeholder="All Locations" />
                   </SelectTrigger>
                   <SelectContent>
                     {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
@@ -157,7 +173,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                 <Label htmlFor="department">Department</Label>
                 <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                   <SelectTrigger id="department" className="h-11">
-                    <SelectValue placeholder="Select department" />
+                    <SelectValue placeholder="All Departments" />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}
@@ -165,11 +181,27 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                 </Select>
               </div>
 
+              <div className="lg:col-span-2 space-y-4">
+                <Label>Filter by Date</Label>
+                <RadioGroup
+                  value={dateFilter}
+                  onValueChange={setDateFilter}
+                  className="flex flex-wrap gap-4 lg:gap-6 h-11 items-center"
+                >
+                  {['Any time', 'Past month', 'Past week', 'Past 24 hours'].map((opt) => (
+                    <div key={opt} className="flex items-center space-x-2">
+                      <RadioGroupItem value={opt} id={`date-${opt}`} />
+                      <Label htmlFor={`date-${opt}`} className="font-bold cursor-pointer text-sm">{opt}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="type">Employment Type</Label>
                 <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
                   <SelectTrigger id="type" className="h-11">
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
                     {employmentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
@@ -177,7 +209,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                 </Select>
               </div>
 
-              <div className="lg:col-span-2 xl:col-span-2 space-y-4">
+              <div className="space-y-4">
                 <Label>Work Arrangement</Label>
                 <RadioGroup
                     defaultValue="Any"
@@ -187,29 +219,12 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                     {workArrangements.map((type) => (
                       <div key={type} className="flex items-center space-x-2">
                         <RadioGroupItem value={type} id={`arr-${type}`} />
-                        <Label htmlFor={`arr-${type}`} className="font-bold flex items-center cursor-pointer">
+                        <Label htmlFor={`arr-${type}`} className="font-bold flex items-center cursor-pointer text-sm">
                           {type === 'Remote' && <Laptop className="mr-2 h-4 w-4" />}
-                          {type === 'Onsite' && <Building className="mr-2 h-4 w-4" />}
                           {type}
                         </Label>
                       </div>
                     ))}
-                </RadioGroup>
-              </div>
-
-              <div className="lg:col-span-2 xl:col-span-2 space-y-4">
-                <Label>Posted Date</Label>
-                <RadioGroup
-                  value={dateFilter}
-                  onValueChange={setDateFilter}
-                  className="flex space-x-6 h-11 items-center"
-                >
-                  {['Any time', 'Past week', 'Past month'].map((opt) => (
-                    <div key={opt} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt} id={`date-${opt}`} />
-                      <Label htmlFor={`date-${opt}`} className="font-bold cursor-pointer">{opt}</Label>
-                    </div>
-                  ))}
                 </RadioGroup>
               </div>
             </ScrollFadeIn>
@@ -233,6 +248,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                 <p className="text-zinc-500 mb-8 max-w-sm mx-auto text-lg">Try adjusting your filters or search terms.</p>
                  <Button variant="outline" size="lg" onClick={() => {
                     setSearchTerm('');
+                    setJobIdSearch('');
                     setLocationFilter('All Locations');
                     setDepartmentFilter('All Departments');
                     setEmploymentTypeFilter('All Types');
