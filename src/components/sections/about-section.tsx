@@ -59,16 +59,16 @@ export function AboutSection() {
               <div className="md:col-span-2 p-8 md:p-12">
                 <span className="text-primary font-black uppercase tracking-[0.2em] text-[10px] mb-2 block">Meet Our Founder</span>
                 <h3 className="text-3xl font-black mb-1">Prabhat Sharma</h3>
-                <p className="text-primary font-bold mb-6">Founder & Principal Engineer</p>
+                <p className="text-primary font-bold mb-6">Founder & Lead Architect</p>
                 <div className="space-y-4 text-muted-foreground leading-relaxed mb-8">
                   <p>
-                    Prabhat Kumar is a specialist Java Backend Developer and Principal Engineer with a Bachelor of Engineering in Computer Science. He leads QuantumFusion Solutions with a mission to deliver precision-engineered, AI-native software.
+                    Prabhat Sharma is the visionary Founder and Lead Architect of QuantumFusion Solutions, holding a Bachelor of Engineering in Computer Science. A specialist Java Backend Developer, he brings expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructures (AWS/GCP).
                   </p>
                   <p>
                     Before embarking on his journey as a solo founder, Prabhat spent significant years as an engineer at Netcore Cloud. During his tenure there, he specialized in architecting and maintaining backend systems at massive scale—handling millions of real-time events and data streams.
                   </p>
                   <p>
-                    Today, he leverages that enterprise-grade expertise to build QuantumFusion's portfolio of SaaS products, including AcquisitionOS (AI CRM) and SystemFoundry (Architecture Simulator), while helping global clients solve their most complex technical bottlenecks.
+                    Today, he leverages that high-scale expertise to build QuantumFusion's portfolio of SaaS products, including AcquisitionOS (AI CRM) and SystemFoundry (Architecture Simulator), while helping global clients solve their most complex technical bottlenecks through precision engineering.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-4">
@@ -78,8 +78,8 @@ export function AboutSection() {
                     </Link>
                   </Button>
                   <Button asChild variant="outline" size="sm" className="rounded-full h-12 px-8 font-bold">
-                    <Link href="https://prabhatkr.vercel.app/" target="_blank" className="flex items-center gap-2">
-                      <Globe className="h-5 w-5" /> Personal Portfolio
+                    <Link href="https://www.prabhat.online/" target="_blank" className="flex items-center gap-2">
+                      <Globe className="h-5 w-5" /> Engineering Hub
                     </Link>
                   </Button>
                 </div>

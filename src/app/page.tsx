@@ -109,23 +109,34 @@ export default function HomePage() {
             <Card className="overflow-hidden border-none shadow-2xl bg-secondary/10 rounded-[3rem]">
               <div className="grid md:grid-cols-3 gap-0">
                 <div className="bg-primary flex items-center justify-center py-12 md:py-0 text-white">
-                  <div className="w-40 h-40 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-6xl font-black border-4 border-white/40 shadow-2xl">PS</div>
+                  <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-white/40 shadow-2xl">
+                    <Image 
+                      src="/images/Prabhat.png" 
+                      alt="Prabhat Sharma" 
+                      fill 
+                      className="object-cover" 
+                      unoptimized
+                    />
+                  </div>
                 </div>
                 <div className="md:col-span-2 p-8 md:p-12">
                   <span className="text-primary font-black uppercase tracking-[0.2em] text-[10px] mb-2 block">Our Leadership</span>
                   <h3 className="text-3xl font-black mb-1">Prabhat Sharma</h3>
-                  <p className="text-primary font-bold mb-6">Founder & Principal Engineer</p>
+                  <p className="text-primary font-bold mb-6">Founder & Lead Architect</p>
                   <p className="text-muted-foreground leading-relaxed mb-8">
-                    "We don't build software to check a box. we build AI-native products that solve real business pain. My goal for QuantumFusion is to fuse precision engineering with meaningful outcomes for every client we serve."
+                    "We don't build software to check a box—we build AI-native products that solve real business pain. My goal for QuantumFusion is to fuse precision engineering with meaningful outcomes for every client we serve, leveraging a background in massive-scale systems to ensure unshakeable reliability."
                   </p>
-                  <div className="flex gap-4">
-                    <Button asChild size="sm" className="rounded-full shadow-lg">
-                      <Link href="/team" className="flex items-center gap-2">View Team</Link>
+                  <div className="flex flex-wrap gap-4">
+                    <Button asChild size="sm" className="rounded-full shadow-lg h-10 px-6 font-bold">
+                      <Link href="https://www.linkedin.com/in/prabhat-kumar-6963661a4/" target="_blank" className="flex items-center gap-2">
+                        <Linkedin className="h-4 w-4" /> LinkedIn Profile
+                      </Link>
                     </Button>
-                    <div className="flex items-center gap-4 ml-auto">
-                      <Link href="https://www.linkedin.com/company/quantumfusion-solutions" target="_blank" className="text-zinc-400 hover:text-primary transition-colors"><Linkedin className="h-5 w-5" /></Link>
-                      <Link href="https://x.com/kattyPrabhat" target="_blank" className="text-zinc-400 hover:text-primary transition-colors"><Twitter className="h-5 w-5" /></Link>
-                    </div>
+                    <Button asChild variant="outline" size="sm" className="rounded-full h-10 px-6 font-bold border-2">
+                      <Link href="https://www.prabhat.online/" target="_blank" className="flex items-center gap-2">
+                        <Globe className="h-4 w-4" /> Engineering Hub
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               </div>

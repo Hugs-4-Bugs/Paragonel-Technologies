@@ -32,15 +32,15 @@ const teamMembers: TeamMember[] = [
   {
     id: '1',
     name: 'Prabhat Sharma',
-    title: 'Founder & Principal Engineer',
+    title: 'Founder & Lead Architect',
     imageUrl: '/images/Prabhat.png',
     aiHint: 'Prabhat Sharma Founder CEO QuantumFusion Solutions',
-    bio: 'Prabhat Sharma is the visionary Founder and Principal Engineer of QuantumFusion Solutions, holding a Bachelor of Engineering in Computer Science. A specialist Java Backend Developer, he brings enterprise-grade expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructures (AWS/GCP). \n\nBefore embarking on his journey as a solo founder, Prabhat served as an engineer at Netcore Cloud, where he played a critical role in maintaining backend systems operating at massive scale—handling millions of real-time events per second. This background in high-concurrency engineering is the foundation of QuantumFusion’s "Precision Engineering" philosophy. \n\nToday, Prabhat leads a lean team of innovators, bridging the gap between complex business pain and AI-native solutions. He is the lead architect behind our proprietary products including AcquisitionOS (AI-powered CRM) and SystemFoundry (Architecture Simulator), while providing Fractional CTO advisory to high-growth startups globally.',
+    bio: 'Prabhat Sharma is the visionary Founder and Lead Architect of QuantumFusion Solutions, holding a Bachelor of Engineering in Computer Science. A specialist Java Backend Developer, he brings expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructures (AWS/GCP). \n\nBefore embarking on his journey as a solo founder, Prabhat spent significant years as an engineer at Netcore Cloud, where he played a critical role in maintaining backend systems operating at massive scale—handling millions of real-time events per second. This background in high-concurrency engineering is the foundation of QuantumFusion’s "Precision Engineering" philosophy. \n\nToday, Prabhat leads a lean team of innovators, bridging the gap between complex business pain and AI-native solutions. He is the lead architect behind our proprietary products including AcquisitionOS (AI-powered CRM) and SystemFoundry (Architecture Simulator), while providing technical advisory to high-growth startups globally.',
     socials: { 
       linkedin: 'https://www.linkedin.com/in/prabhat-kumar-6963661a4/', 
       github: 'https://github.com/Hugs-4-Bugs', 
       instagram: 'https://www.instagram.com/_s_4_sharma/', 
-      globe: 'https://prabhatkr.vercel.app/' 
+      globe: 'https://www.prabhat.online/' 
     },
     icon: Brain,
   },
