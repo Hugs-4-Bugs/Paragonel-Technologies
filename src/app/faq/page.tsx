@@ -13,35 +13,35 @@ import { HelpCircle } from 'lucide-react';
 const faqItems = [
   {
     q: "What types of clients do you work with?",
-    a: "We work with startups, SMBs, and enterprises across any industry. If you have a software problem, we can build an AI-native solution for it."
+    a: "We work with startups, SMBs, and enterprises across any industry. If you have a software problem, we can build an AI-native solution for it. We specialize in helping companies eliminate operational bottlenecks through intelligent automation."
   },
   {
     q: "How do you price your projects?",
-    a: "We use fixed-scope, milestone-based pricing. Small projects start around ₹75,000. Full SaaS platforms range from ₹1.5L to ₹10L+. We do not bill by the hour for project work."
+    a: "We use fixed-scope, milestone-based pricing to ensure total transparency. Small projects or MVPs start around ₹75,000. Full SaaS platforms generally range from ₹1.5L to ₹10L+ depending on complexity. We do not bill by the hour for project-based work."
   },
   {
     q: "Do you work with international clients?",
-    a: "Yes. We are India-based but work with clients globally. Payments are accepted in INR via Razorpay and USD/EUR via Stripe."
+    a: "Yes. We are India-based but serve clients globally. We accept payments in INR via Razorpay and USD/EUR via Stripe, ensuring a seamless transaction process regardless of your location."
   },
   {
     q: "How long does a typical project take?",
-    a: "A simple web app or MVP usually takes 6–10 weeks. A full SaaS platform takes 12–22 weeks. We provide a detailed timeline in the initial proposal."
+    a: "A simple web application or MVP usually takes 6–10 weeks to ship. A full-scale SaaS platform or complex AI integration typically takes 12–22 weeks. We provide a detailed project timeline in every initial proposal."
   },
   {
     q: "Do you provide post-launch support?",
-    a: "Yes. We offer monthly retainers for ongoing development, bug fixes, performance monitoring, and feature additions."
+    a: "Absolutely. We offer monthly retainers for ongoing development, critical bug fixes, performance monitoring, and feature additions. Our goal is to be your long-term technology partner, not just a one-time vendor."
   },
   {
     q: "What tech stack do you use?",
-    a: "Backend: Java Spring Boot or Python FastAPI. Frontend: Next.js / React or Flutter for mobile. Cloud: AWS or GCP. Payments: Razorpay (India) / Stripe (global)."
+    a: "We choose the best tool for the job. Our primary stack includes Java (Spring Boot) or Python for backends, Next.js or React for web frontends, and Flutter for mobile. We host primarily on AWS or GCP and leverage Firebase for real-time data needs."
   },
   {
-    q: "Can I see your products?",
-    a: "Yes. AcquisitionOS and SystemFoundry are live. CodeGuard AI is on the VS Code Marketplace. See our Portfolio page for details."
+    q: "Can I see your previous products?",
+    a: "Yes. AcquisitionOS and SystemFoundry are live and used by clients today. CodeGuard AI is available on the VS Code Marketplace. You can explore these and other projects on our Portfolio page."
   },
   {
     q: "Who will I be working with?",
-    a: "Directly with the founder and principal engineer, Prabhat Sharma. No account managers or middlemen. Direct engineer-to-client communication."
+    a: "You will work directly with our engineering team and founders. We eliminate account managers and middlemen to ensure that the technical vision is never lost in translation. Direct engineer-to-client communication is our standard."
   }
 ];
 
@@ -55,7 +55,7 @@ export default function FaqPage() {
             Frequently Asked <span className="text-primary">Questions</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Find quick answers to common questions about our services, pricing, and how we work.
+            Find quick answers to common questions about our services, pricing, and how we build high-impact technology.
           </p>
         </ScrollFadeIn>
 

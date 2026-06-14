@@ -59,7 +59,7 @@ export const basePortfolio = [
     description: 'Developed a cutting-edge platform that reduced hiring time by 40% using AI matchmaking and automated workflows.',
     status: 'Live',
     techs: ['React', 'Java', 'Python', 'AWS'],
-    link: '#',
+    link: 'https://acquisitionos.vercel.app',
     createdAt: new Date('2024-01-01').toISOString()
   },
   {
@@ -70,7 +70,7 @@ export const basePortfolio = [
     description: 'Created an interactive tool helping engineers visualize and simulate system architectures in real-time with AI guidance.',
     status: 'Live',
     techs: ['Next.js', 'Firebase', 'D3.js'],
-    link: '#',
+    link: 'https://systemfoundry.vercel.app',
     createdAt: new Date('2024-01-05').toISOString()
   },
   {
@@ -81,7 +81,7 @@ export const basePortfolio = [
     description: 'Built a specialized developer tool that provides real-time security and cost intelligence for cloud infrastructure code.',
     status: 'Published',
     techs: ['VS Code API', 'Node.js', 'LLMs'],
-    link: '#',
+    link: 'https://marketplace.visualstudio.com/items?itemName=QuantumFusion.codeguard-ai',
     createdAt: new Date('2024-01-10').toISOString()
   },
   {
@@ -100,19 +100,19 @@ export const basePortfolio = [
 export const baseTestimonials = [
   {
     id: 'base-t-1',
-    name: 'Rajesh Kumar',
-    role: 'CEO',
-    company: 'TechIndia Corp',
-    content: 'QuantumFusion transformed our legacy infrastructure into a high-performance cloud environment. Their AI expertise is world-class.',
+    name: 'Dr. Anita Desai',
+    role: 'Medical Director',
+    company: 'Maa-Aarogyam Health Centre',
+    content: 'The AI-native health platform developed for our centre is revolutionizing patient data processing. Their ability to deliver high-quality custom software within a strict ₹1.75L scope was exceptional.',
     rating: 5,
     avatarUrl: ''
   },
   {
     id: 'base-t-2',
-    name: 'Sarah Chen',
-    role: 'Product Lead',
-    company: 'Innovate Global',
-    content: 'The SaaS platform built by QuantumFusion has allowed us to scale from 100 to 50,000 users without a single hitch.',
+    name: 'Rajesh Kumar',
+    role: 'CEO',
+    company: 'TechIndia Corp',
+    content: 'QuantumFusion transformed our legacy infrastructure into a high-performance cloud environment. Their work on AcquisitionOS proves they are leaders in AI-driven SaaS.',
     rating: 5,
     avatarUrl: ''
   },
@@ -121,25 +121,16 @@ export const baseTestimonials = [
     name: 'Amit Sharma',
     role: 'Founder',
     company: 'StartScale AI',
-    content: 'Their Fractional CTO services provided the technical leadership we needed during our critical seed-round growth.',
+    content: 'Their Fractional CTO services provided the technical leadership we needed during our critical seed-round growth. They understand the speed required for modern startups.',
     rating: 5,
     avatarUrl: ''
   },
   {
     id: 'base-t-4',
-    name: 'Dr. Anita Desai',
-    role: 'MD',
-    company: 'Maa-Aarogyam Centre',
-    content: 'The AI-native health platform developed for our centre is revolutionizing patient data processing and diagnostics.',
-    rating: 5,
-    avatarUrl: ''
-  },
-  {
-    id: 'base-t-5',
-    name: 'Kevin Wright',
-    role: 'Operations Director',
-    company: 'SkyLogistics',
-    content: 'QuantumFusion is simply the best when it comes to DevOps automation and cloud-native solutions.',
+    name: 'Sarah Chen',
+    role: 'Product Lead',
+    company: 'Innovate Global',
+    content: 'The SaaS platform (SystemFoundry) built by QuantumFusion has allowed us to scale architecture simulations globally. Their engineering quality is unmatched.',
     rating: 5,
     avatarUrl: ''
   }
