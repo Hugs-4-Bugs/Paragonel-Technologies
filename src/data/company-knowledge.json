@@ -6,9 +6,9 @@
     "ceo": "Prabhat Sharma",
     "founded": "2024",
     "tagline": "Shaping the Future for Tomorrow",
-    "description": "QuantumFusion Solutions is an AI-native technology company that builds its own SaaS products and delivers custom digital platforms for clients. We specialize in AI integration, cloud infrastructure, DevOps automation, mobile apps, and full-stack SaaS development.",
-    "mission": "To deliver transformative IT solutions that drive innovation, efficiency, and sustainable growth.",
-    "vision": "To be the leading catalyst in our clients' digital transformation journeys.",
+    "description": "QuantumFusion Solutions is an AI-native technology company founded by Prabhat Sharma. We build our own SaaS products (AcquisitionOS, SystemFoundry, CodeGuard AI) and deliver custom digital platforms for global clients. We specialize in AI integration, cloud infrastructure, DevOps automation, and full-stack engineering.",
+    "mission": "To eliminate the gap between business problems and working solutions by building AI-native software that actually solves real pain.",
+    "vision": "To be the leading catalyst in global digital transformation through precision engineering.",
     "location": "HSR Layout, Bangalore, 560102, India",
     "phone": "+91 7250063206",
     "email": "contact@quantumfusion.in",
@@ -18,44 +18,19 @@
     "technologies": ["AI/ML", "Next.js", "React", "Node.js", "Firebase", "Spring Boot", "AWS", "Azure", "GCP", "DevOps", "Kubernetes", "Docker"]
   },
   "pages": [
-    { "name": "Home", "url": "/", "description": "Welcome to QuantumFusion Solutions. Overview of our mission and core services." },
-    { "name": "About", "url": "/about", "description": "Learn about our history, mission, vision, and the team." },
-    { "name": "Services", "url": "/services", "description": "Explore our core offerings: AI Solutions, Cloud, DevOps, and SaaS." },
-    { "name": "Portfolio", "url": "/portfolio", "description": "See our successful projects like AcquisitionOS, SystemFoundry, and CodeGuard AI." },
-    { "name": "Blog", "url": "/blog", "description": "Read the latest tech insights and company news." },
-    { "name": "Careers", "url": "/careers", "description": "Join our team of innovators. View open roles and apply." },
-    { "name": "Team", "url": "/team", "description": "Meet our leadership and technical experts." },
-    { "name": "Contact", "url": "/contact", "description": "Get in touch with us for inquiries or partnerships." },
-    { "name": "FAQ", "url": "/faq", "description": "Find answers to common questions about our company." },
-    { "name": "Testimonials", "url": "/testimonials", "description": "Read what our clients say about our work." }
-  ],
-  "services": [
-    {
-      "name": "AI Solutions",
-      "url": "/services/ai-solutions",
-      "description": "Custom ML models, LLM integration, RAG pipelines, and intelligent automation."
-    },
-    {
-      "name": "Cloud Infrastructure",
-      "url": "/services/cloud-infrastructure",
-      "description": "Cloud migration, managed services, and cloud-native development on AWS, Azure, and GCP."
-    },
-    {
-      "name": "DevOps Automation",
-      "url": "/services/devops-automation",
-      "description": "CI/CD pipelines, Infrastructure as Code (IaC), and automated testing."
-    },
-    {
-      "name": "SaaS Platforms",
-      "url": "/services/saas-platforms",
-      "description": "End-to-end development of scalable Software-as-a-Service applications."
-    }
+    { "name": "Home", "url": "/", "description": "Overview of mission, stats (4+ products), and solutions." },
+    { "name": "About", "url": "/about", "description": "Learn about founder Prabhat Sharma and our journey from 2024." },
+    { "name": "Services", "url": "/services", "description": "AI Solutions, Cloud, DevOps, and SaaS." },
+    { "name": "Portfolio", "url": "/portfolio", "description": "Live projects: AcquisitionOS (Sales CRM), SystemFoundry, CodeGuard AI." },
+    { "name": "Blog", "url": "/blog", "description": "Engineering insights and founder's journal." },
+    { "name": "Careers", "url": "/careers", "description": "Join our remote-first team. View roles and perks." },
+    { "name": "Contact", "url": "/contact", "description": "Get in touch for partnerships or inquiries." }
   ],
   "products": [
     {
       "name": "AcquisitionOS",
       "status": "Live",
-      "description": "AI-powered lead acquisition and CRM platform."
+      "description": "AI-powered lead acquisition and CRM platform. Replaces 3-4 sales tools."
     },
     {
       "name": "SystemFoundry",
@@ -65,11 +40,7 @@
     {
       "name": "CodeGuard AI",
       "status": "Published",
-      "description": "VS Code extension for real-time cloud cost detection in IaC."
+      "description": "VS Code extension for real-time cloud cost intelligence."
     }
-  ],
-  "careers": {
-    "description": "We look for talented engineers, designers, and thinkers who want to shape the future.",
-    "apply_process": "View roles -> Apply via form or QuantumAI -> Resume screening -> Interview -> Offer."
-  }
+  ]
 }

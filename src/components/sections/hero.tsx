@@ -9,7 +9,7 @@ import Link from "next/link";
 export function Hero() {
   return (
     <section className="relative min-h-[80vh] md:min-h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden animated-gradient-background">
-      <div className="absolute inset-0 bg-black/40 dark:bg-black/60"></div> {/* Overlay for better text contrast */}
+      <div className="absolute inset-0 bg-black/40 dark:bg-black/60"></div>
       <div className="relative z-10 container px-4 md:px-6 text-center">
         <ScrollFadeIn>
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-primary-foreground mb-6">
@@ -20,8 +20,8 @@ export function Hero() {
           <p className="text-xl sm:text-2xl md:text-3xl font-medium text-primary-foreground tracking-normal mb-4">
             Shaping the Future for Tomorrow.
           </p>
-          <p className="max-w-2xl mx-auto text-base sm:text-lg md:text-lg text-primary-foreground/80 mb-10 leading-relaxed">
-            Innovative IT solutions in AI, Cloud Computing, DevOps, and SaaS Platforms.
+          <p className="max-w-3xl mx-auto text-base sm:text-lg md:text-lg text-primary-foreground/80 mb-10 leading-relaxed">
+            We build AI-native software and scalable cloud platforms that solve real business pain. From intelligent CRMs to developer cost intelligence tools, we fusion precision engineering with business outcomes.
           </p>
         </ScrollFadeIn>
         <ScrollFadeIn delay="400ms" className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -46,7 +46,6 @@ export function Hero() {
           </Button>
         </ScrollFadeIn>
       </div>
-       {/* Optional: Subtle particle/geometric animation layer can be added here */}
     </section>
   );
 }
