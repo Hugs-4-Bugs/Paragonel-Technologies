@@ -29,7 +29,7 @@ const faqItems = [
   },
   {
     q: "Do you provide post-launch support?",
-    a: "Absolutely. We offer monthly retainers for ongoing development, critical bug fixes, performance monitoring, and feature additions. Our goal is to be your long-term technology partner, not just a one-time vendor."
+    a: "Absolutely. We offer monthly retainers (starting at ₹20k) for ongoing development, critical bug fixes, performance monitoring, and feature additions. Our goal is to be your long-term technology partner."
   },
   {
     q: "What tech stack do you use?",
