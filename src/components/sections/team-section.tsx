@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button'; // Added this import
+import { Button } from '@/components/ui/button';
 import { Linkedin, Twitter, Github, Instagram, Globe, UserCircle, Brain, CloudCog, Layers2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -23,7 +23,7 @@ interface TeamMember {
     twitter?: string;
     github?: string;
     instagram?: string;
-    globe?: string; // Changed from 'profile' to 'globe' for clarity
+    globe?: string;
   };
   icon: LucideIcon;
 }
@@ -35,8 +35,13 @@ const teamMembers: TeamMember[] = [
     title: 'Founder & CEO',
     imageUrl: '/images/Prabhat.png',
     aiHint: 'Prabhat Kumar Founder CEO QuantumFusion Solutions',
-    bio: 'Prabhat Kumar, with a Bachelor of Engineering in Computer Science, is the visionary Founder & CEO of QuantumFusion Solutions. He leads the company with a passion for innovation, driving its mission to deliver cutting-edge AI, Cloud, DevOps, and SaaS solutions that shape the future of technology.',
-    socials: { linkedin: 'https://www.linkedin.com/in/prabhat-kumar-6963661a4/', github: 'https://github.com/Hugs-4-Bugs', instagram: 'https://www.instagram.com/_s_4_sharma/', globe: 'https://prabhatkr.vercel.app/' },
+    bio: 'Prabhat Kumar, with a Bachelor of Engineering in Computer Science, is the visionary Founder & CEO of QuantumFusion Solutions. A specialist Java Backend Developer and Principal Engineer, he brings deep expertise in Spring Boot, cloud infrastructure (AWS/GCP), and AI systems integration. Before founding QuantumFusion, Prabhat was an engineer at Netcore Cloud, where he gained invaluable experience building and maintaining high-growth systems operating at a massive scale. His mission is to bridge the gap between complex business problems and elegant engineering solutions by building a portfolio of AI-native products like AcquisitionOS and SystemFoundry.',
+    socials: { 
+      linkedin: 'https://www.linkedin.com/in/prabhat-kumar-6963661a4/', 
+      github: 'https://github.com/Hugs-4-Bugs', 
+      instagram: 'https://www.instagram.com/_s_4_sharma/', 
+      globe: 'https://prabhatkr.vercel.app/' 
+    },
     icon: Brain,
   },
   {
@@ -45,8 +50,11 @@ const teamMembers: TeamMember[] = [
     title: 'CTO, Cloud & DevOps Architect',
     imageUrl: '/images/Vivek.png',
     aiHint: 'professional photo cto tech executive',
-    bio: 'Zara is the driving force behind our robust cloud infrastructures and streamlined DevOps practices, ensuring scalability and resilience for all client projects. She has over 15 years of experience in enterprise IT and cloud architecture, specializing in AWS and Azure.',
-    socials: { linkedin: '', instagram: 'https://www.instagram.com/viveksharma75_/' },
+    bio: 'Vivek is the driving force behind our robust cloud infrastructures and streamlined DevOps practices, ensuring scalability and resilience for all client projects. He specializes in architecting high-availability systems and automated CI/CD pipelines that empower teams to ship code with total confidence.',
+    socials: { 
+      linkedin: 'https://www.linkedin.com/company/quantumfusion-solutions', 
+      instagram: 'https://www.instagram.com/viveksharma75_/' 
+    },
     icon: CloudCog,
   },
   {
@@ -55,8 +63,11 @@ const teamMembers: TeamMember[] = [
     title: 'Head of SaaS Platforms',
     imageUrl: '/images/Ajay.png',
     aiHint: 'professional photo manager saas product',
-    bio: 'Liam orchestrates the development of innovative SaaS solutions, focusing on user experience and market impact. He is passionate about building products that solve real-world problems and achieve commercial success. Liam champions agile methodologies and user-centric design.',
-    socials: { linkedin: 'https://www.linkedin.com/in/ajay-pal-21b8ab269/', instagram: 'https://www.instagram.com/6549ima_j_a_y_p_a_l/' },
+    bio: 'Ajay orchestrates the development of innovative SaaS solutions, focusing on user experience and market impact. He is passionate about building products that solve real-world problems through user-centric design and scalable backend logic.',
+    socials: { 
+      linkedin: 'https://www.linkedin.com/in/ajay-pal-21b8ab269/', 
+      instagram: 'https://www.instagram.com/6549ima_j_a_y_p_a_l/' 
+    },
     icon: Layers2,
   },
   {
@@ -65,8 +76,11 @@ const teamMembers: TeamMember[] = [
     title: 'Principal AI Researcher',
     imageUrl: '/images/Lena.png',
     aiHint: 'professional photo researcher ai scientist',
-    bio: 'Dr. Petrova leads our R&D in machine learning and natural language processing, pushing the boundaries of what AI can achieve for businesses. She holds a PhD in Artificial Intelligence and has published numerous papers in leading AI journals.',
-    socials: { linkedin: '#', github: '#' },
+    bio: 'Dr. Petrova leads our R&D in machine learning and natural language processing, pushing the boundaries of what AI can achieve for businesses. She holds a PhD in Artificial Intelligence and ensures our products leverage the latest breakthroughs in intelligent automation.',
+    socials: { 
+      linkedin: 'https://www.linkedin.com/company/quantumfusion-solutions', 
+      github: '#' 
+    },
     icon: Brain,
   },
 ];
@@ -112,7 +126,7 @@ export function TeamSection() {
                           alt={member.name}
                           width={120}
                           height={120}
-                          className="rounded-full border-4 border-primary/30 group-hover:border-primary/70 object-cover transition-all"
+                          className="rounded-full border-4 border-primary/30 group-hover:border-primary/70 object-cover transition-all h-[120px] w-[120px]"
                           data-ai-hint={member.aiHint}
                           />
                       ) : (
@@ -134,23 +148,13 @@ export function TeamSection() {
                         <Linkedin className="h-5 w-5 text-muted-foreground hover:text-primary neon-icon transition-colors" />
                       </Link>
                     )}
-                    {member.socials?.twitter && (
-                      <Link href={member.socials.twitter} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} Twitter Profile`} onClick={(e) => e.stopPropagation()}>
-                        <Twitter className="h-5 w-5 text-muted-foreground hover:text-primary neon-icon transition-colors" />
-                      </Link>
-                    )}
-                    {member.socials?.github && (
-                      <Link href={member.socials.github} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} GitHub Profile`} onClick={(e) => e.stopPropagation()}>
-                        <Github className="h-5 w-5 text-muted-foreground hover:text-primary neon-icon transition-colors" />
-                      </Link>
-                    )}
                     {member.socials?.instagram && (
                       <Link href={member.socials.instagram} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} Instagram Profile`} onClick={(e) => e.stopPropagation()}>
                         <Instagram className="h-5 w-5 text-muted-foreground hover:text-primary neon-icon transition-colors" />
                       </Link>
                     )}
                     {member.socials?.globe && (
-                      <Link href={member.socials.globe} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} Instagram Profile`} onClick={(e) => e.stopPropagation()}>
+                      <Link href={member.socials.globe} target="_blank" rel="noopener noreferrer" aria-label={`${member.name} Portfolio`} onClick={(e) => e.stopPropagation()}>
                         <Globe className="h-5 w-5 text-muted-foreground hover:text-primary neon-icon transition-colors" />
                       </Link>
                     )}
@@ -173,7 +177,7 @@ export function TeamSection() {
                     alt={selectedMember.name}
                     width={150}
                     height={150}
-                    className="rounded-full border-4 border-primary object-cover shadow-lg"
+                    className="rounded-full border-4 border-primary object-cover shadow-lg h-[150px] w-[150px]"
                     data-ai-hint={selectedMember.aiHint}
                   />
                   {selectedMember.icon && <selectedMember.icon className="absolute bottom-1 right-1 h-10 w-10 p-2 bg-primary text-primary-foreground rounded-full shadow-md border-2 border-background neon-icon" />}
@@ -188,34 +192,39 @@ export function TeamSection() {
               <h3 className="text-lg font-semibold text-foreground mb-2">About {selectedMember.name.split(' ')[0]}</h3>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{selectedMember.bio}</p>
               
-              {(selectedMember.socials?.linkedin || selectedMember.socials?.twitter || selectedMember.socials?.github) && (
-                <div className="mt-6 pt-4 border-t">
-                  <h4 className="text-md font-semibold text-foreground mb-3">Connect:</h4>
-                  <div className="flex space-x-4">
-                    {selectedMember.socials?.linkedin && (
-                      <Button variant="outline" asChild size="sm">
-                        <Link href={selectedMember.socials.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                          <Linkedin className="mr-2 h-4 w-4 text-[#0077B5]" /> LinkedIn
-                        </Link>
-                      </Button>
-                    )}
-                    {selectedMember.socials?.twitter && (
-                      <Button variant="outline" asChild size="sm">
-                        <Link href={selectedMember.socials.twitter} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                          <Twitter className="mr-2 h-4 w-4 text-[#1DA1F2]" /> Twitter
-                        </Link>
-                      </Button>
-                    )}
-                    {selectedMember.socials?.github && (
-                      <Button variant="outline" asChild size="sm">
-                        <Link href={selectedMember.socials.github} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                          <Github className="mr-2 h-4 w-4" /> GitHub
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
+              <div className="mt-6 pt-4 border-t">
+                <h4 className="text-md font-semibold text-foreground mb-3">Connect:</h4>
+                <div className="flex flex-wrap gap-4">
+                  {selectedMember.socials?.linkedin && (
+                    <Button variant="outline" asChild size="sm" className="rounded-full">
+                      <Link href={selectedMember.socials.linkedin} target="_blank" rel="noopener noreferrer">
+                        <Linkedin className="mr-2 h-4 w-4 text-[#0077B5]" /> LinkedIn
+                      </Link>
+                    </Button>
+                  )}
+                  {selectedMember.socials?.instagram && (
+                    <Button variant="outline" asChild size="sm" className="rounded-full">
+                      <Link href={selectedMember.socials.instagram} target="_blank" rel="noopener noreferrer">
+                        <Instagram className="mr-2 h-4 w-4 text-[#E4405F]" /> Instagram
+                      </Link>
+                    </Button>
+                  )}
+                  {selectedMember.socials?.github && (
+                    <Button variant="outline" asChild size="sm" className="rounded-full">
+                      <Link href={selectedMember.socials.github} target="_blank" rel="noopener noreferrer">
+                        <Github className="mr-2 h-4 w-4" /> GitHub
+                      </Link>
+                    </Button>
+                  )}
+                  {selectedMember.socials?.globe && (
+                    <Button variant="outline" asChild size="sm" className="rounded-full">
+                      <Link href={selectedMember.socials.globe} target="_blank" rel="noopener noreferrer">
+                        <Globe className="mr-2 h-4 w-4 text-primary" /> Portfolio
+                      </Link>
+                    </Button>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </DialogContent>
         </Dialog>

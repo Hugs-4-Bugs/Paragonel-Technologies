@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Brain, Rocket, Target, Linkedin, ShieldCheck, Milestone, User, Code2, Briefcase } from 'lucide-react';
+import { Brain, Rocket, Target, Linkedin, ShieldCheck, Milestone, User, Code2, Briefcase, Github, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -45,21 +45,44 @@ export function AboutSection() {
         <ScrollFadeIn className="mb-24">
           <Card className="overflow-hidden border-none shadow-2xl bg-secondary/10 rounded-[3rem]">
             <div className="grid md:grid-cols-3 gap-0">
-              <div className="bg-primary flex items-center justify-center py-12 md:py-0 text-white">
-                <div className="w-40 h-40 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-6xl font-black border-4 border-white/40 shadow-2xl">PS</div>
+              <div className="bg-primary flex items-center justify-center py-12 md:py-0 text-white relative">
+                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white/40 shadow-2xl">
+                  <Image 
+                    src="/images/Prabhat.png" 
+                    alt="Prabhat Sharma" 
+                    fill 
+                    className="object-cover" 
+                    unoptimized
+                  />
+                </div>
               </div>
               <div className="md:col-span-2 p-8 md:p-12">
                 <span className="text-primary font-black uppercase tracking-[0.2em] text-[10px] mb-2 block">Meet Our Founder</span>
                 <h3 className="text-3xl font-black mb-1">Prabhat Sharma</h3>
                 <p className="text-primary font-bold mb-6">Founder & Principal Engineer</p>
-                <p className="text-muted-foreground leading-relaxed mb-8">
-                  Java backend developer with expertise in Spring Boot, cloud infrastructure (AWS/GCP), AI systems, and full-stack development. Building QuantumFusion Solutions as a portfolio of AI, developer, and infrastructure SaaS products while also delivering custom client projects.
-                </p>
-                <Button asChild size="sm" className="rounded-full shadow-lg h-12 px-8 font-bold">
-                  <Link href="https://www.linkedin.com/in/prabhat-kumar-6963661a4/" target="_blank" className="flex items-center gap-2">
-                    <Linkedin className="h-5 w-5" /> LinkedIn Profile
-                  </Link>
-                </Button>
+                <div className="space-y-4 text-muted-foreground leading-relaxed mb-8">
+                  <p>
+                    Prabhat Kumar is a specialist Java Backend Developer and Principal Engineer with a Bachelor of Engineering in Computer Science. He leads QuantumFusion Solutions with a mission to deliver precision-engineered, AI-native software.
+                  </p>
+                  <p>
+                    Before embarking on his journey as a solo founder, Prabhat spent significant years as an engineer at Netcore Cloud. During his tenure there, he specialized in architecting and maintaining backend systems at massive scale—handling millions of real-time events and data streams.
+                  </p>
+                  <p>
+                    Today, he leverages that enterprise-grade expertise to build QuantumFusion's portfolio of SaaS products, including AcquisitionOS (AI CRM) and SystemFoundry (Architecture Simulator), while helping global clients solve their most complex technical bottlenecks.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  <Button asChild size="sm" className="rounded-full shadow-lg h-12 px-8 font-bold">
+                    <Link href="https://www.linkedin.com/in/prabhat-kumar-6963661a4/" target="_blank" className="flex items-center gap-2">
+                      <Linkedin className="h-5 w-5" /> LinkedIn Profile
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="rounded-full h-12 px-8 font-bold">
+                    <Link href="https://prabhatkr.vercel.app/" target="_blank" className="flex items-center gap-2">
+                      <Globe className="h-5 w-5" /> Personal Portfolio
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
           </Card>
