@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
@@ -17,7 +16,7 @@ const faqItems = [
   },
   {
     q: "How do you price your projects?",
-    a: "We use fixed-scope, milestone-based pricing to ensure total transparency. Small projects or MVPs start around ₹75,000. Full SaaS platforms generally range from ₹1.5L to ₹10L+ depending on complexity. We do not bill by the hour for project-based work."
+    a: "We use fixed-scope, milestone-based pricing to ensure total transparency. Each project is quoted individually based on technical complexity, required integration depth, and business impact. We do not bill by the hour for project-based work, ensuring your budget remains predictable from start to finish."
   },
   {
     q: "Do you work with international clients?",
@@ -29,7 +28,7 @@ const faqItems = [
   },
   {
     q: "Do you provide post-launch support?",
-    a: "Absolutely. We offer monthly retainers (starting at ₹20k) for ongoing development, critical bug fixes, performance monitoring, and feature additions. Our goal is to be your long-term technology partner."
+    a: "Absolutely. We offer tailored monthly retainers for ongoing development, critical bug fixes, performance monitoring, and feature additions. Our goal is to be your long-term technology partner, ensuring your platform grows alongside your business."
   },
   {
     q: "What tech stack do you use?",
@@ -55,7 +54,7 @@ export default function FaqPage() {
             Frequently Asked <span className="text-primary">Questions</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Find quick answers to common questions about our services, pricing, and how we build high-impact technology.
+            Find quick answers to common questions about our services, process, and how we build high-impact technology.
           </p>
         </ScrollFadeIn>
 

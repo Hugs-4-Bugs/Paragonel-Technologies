@@ -1,4 +1,3 @@
-
 import type { Job, BlogPost } from '@/types';
 
 /**
@@ -103,7 +102,7 @@ export const baseTestimonials = [
     name: 'Dr. Anita Desai',
     role: 'Medical Director',
     company: 'Maa-Aarogyam Health Centre',
-    content: 'The AI-native health platform developed for our centre is revolutionizing patient data processing. Their ability to deliver high-quality custom software within a strict ₹1.75L scope was exceptional. We have seen a 30% reduction in administrative overhead since launch.',
+    content: 'The AI-native health platform developed for our centre is revolutionizing patient data processing. Their ability to deliver high-quality custom software while maintaining strict adherence to our technical requirements was exceptional. We have seen a 30% reduction in administrative overhead since launch.',
     rating: 5,
     avatarUrl: ''
   },
