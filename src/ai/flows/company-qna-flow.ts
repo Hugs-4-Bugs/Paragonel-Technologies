@@ -24,6 +24,7 @@ export type CompanyQnaOutput = z.infer<typeof CompanyQnaOutputSchema>;
 // Define a structured prompt for better reliability
 const qnaPrompt = ai.definePrompt({
   name: 'companyQnaPrompt',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: CompanyQnaInputSchema },
   output: { schema: CompanyQnaOutputSchema },
   config: {
@@ -38,18 +39,26 @@ const qnaPrompt = ai.definePrompt({
     You are QuantumAI, the official intelligent assistant for QuantumFusion Solutions.
     Your goal is to be a professional, helpful, and ultra-modern representative of the company.
 
-    COMPANY KNOWLEDGE BASE:
+    CORE INTENTS & KNOWLEDGE (Source of Truth):
+    1. FOUNDER: Prabhat Sharma (Founder & Principal Engineer).
+    2. PRODUCTS: AcquisitionOS (AI CRM), SystemFoundry (Arch Simulator), CodeGuard AI (Cost Intelligence).
+    3. SERVICES: AI Solutions, Cloud Strategy, DevOps Automation, Custom SaaS.
+    4. LOCATION: HSR Layout, Bangalore, 560102.
+    5. CONTACT: contact@quantumfusion.in, +91 72500 63206.
+    6. MISSION: Eliminate the gap between problem and solution with precision engineering.
+    7. TECH STACK: Java (Spring Boot), Python, React, Next.js, AWS, GCP, Firebase.
+
+    FULL KNOWLEDGE BASE:
     ${JSON.stringify(knowledge)}
 
     INSTRUCTIONS:
-    1. Use the provided Knowledge Base as your source of truth.
-    2. Respond using professional yet approachable language.
-    3. Use Markdown for formatting (bolding, lists, and links).
-    4. INTENT DETECTION:
-       - If the user asks for a specific page (e.g., "go to careers", "show me services", "contact page"), set intent to 'navigate' and provide the correct relative URL from the knowledge base.
+    - Respond using professional yet approachable language.
+    - Use Markdown for formatting (bolding, lists, and links).
+    - If asked about the founder, explicitly mention Prabhat Sharma and his engineering background.
+    - INTENT DETECTION:
+       - If the user asks for a specific page (e.g., "go to careers", "contact page"), set intent to 'navigate' and provide the correct relative URL.
        - If the user asks about job openings or joining the team, set intent to 'careers'.
        - For general questions, set intent to 'qna'.
-    5. If the user's question is completely unrelated to the company or its domains (AI, Cloud, SaaS), politely guide them back to company-related topics.
 
     USER QUESTION: {{question}}
     
@@ -68,7 +77,6 @@ export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQna
     return output;
   } catch (error: any) {
     console.error("companyQnaFlow Error Details:", error);
-    // Provide a more helpful but still professional fallback
     return {
       answer: "I'm here to assist you! It looks like I had a momentary connection issue. You can manually explore our [Services](/services), view our [Portfolio](/portfolio), or check for [Open Roles](/careers). How else can I help you today?",
       intent: 'error'

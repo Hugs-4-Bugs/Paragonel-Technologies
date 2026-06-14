@@ -8,7 +8,7 @@ import { useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Brain, Layers } from 'lucide-react';
+import { Layers } from 'lucide-react';
 
 export default function ServicesPage() {
   const { data: services, loading } = useCollection(

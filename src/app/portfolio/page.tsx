@@ -24,10 +24,8 @@ export default function PortfolioPage() {
   }, [dynamicProjects]);
 
   return (
-    <>
-      <title>Our Portfolio | QuantumFusion Solutions</title>
-      <meta name="description" content="Explore our portfolio of AI-native products and custom platforms including AcquisitionOS, SystemFoundry, and CodeGuard AI." />
-      <section className="section-padding bg-background min-h-screen">
+    <div className="bg-background min-h-screen">
+      <section className="section-padding">
         <div className="container mx-auto px-4 md:px-6">
           <ScrollFadeIn className="text-center mb-20">
             <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-primary/10">
@@ -96,6 +94,6 @@ export default function PortfolioPage() {
           )}
         </div>
       </section>
-    </>
+    </div>
   );
 }

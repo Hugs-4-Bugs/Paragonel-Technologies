@@ -47,37 +47,33 @@ const faqItems = [
 
 export default function FaqPage() {
   return (
-    <>
-      <title>FAQ | QuantumFusion Solutions</title>
-      <meta name="description" content="Find answers to common questions about QuantumFusion Solutions pricing, services, and engineering process." />
-      <section className="section-padding bg-background min-h-screen">
-        <div className="container mx-auto px-4 md:px-6">
-          <ScrollFadeIn className="text-center mb-16">
-            <HelpCircle className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Frequently Asked <span className="text-primary">Questions</span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Find quick answers to common questions about our services, process, and how we build high-impact technology.
-            </p>
-          </ScrollFadeIn>
+    <section className="section-padding bg-background min-h-screen">
+      <div className="container mx-auto px-4 md:px-6">
+        <ScrollFadeIn className="text-center mb-16">
+          <HelpCircle className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+            Frequently Asked <span className="text-primary">Questions</span>
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto font-medium">
+            Find quick answers to common questions about our services, process, and how we build high-impact technology.
+          </p>
+        </ScrollFadeIn>
 
-          <ScrollFadeIn className="max-w-3xl mx-auto">
-            <Accordion type="single" collapsible className="w-full">
-              {faqItems.map((item, index) => (
-                <AccordionItem value={`item-${index}`} key={index} className="border-b border-primary/10">
-                  <AccordionTrigger className="text-left text-lg hover:no-underline py-5 font-bold hover:text-primary transition-colors">
-                    {item.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-1 pb-5 text-muted-foreground leading-relaxed text-base">
-                    {item.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </ScrollFadeIn>
-        </div>
-      </section>
-    </>
+        <ScrollFadeIn className="max-w-3xl mx-auto">
+          <Accordion type="single" collapsible className="w-full">
+            {faqItems.map((item, index) => (
+              <AccordionItem value={`item-${index}`} key={index} className="border-b border-primary/10">
+                <AccordionTrigger className="text-left text-lg hover:no-underline py-5 font-bold hover:text-primary transition-colors">
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent className="pt-1 pb-5 text-muted-foreground leading-relaxed text-base font-medium">
+                  {item.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </ScrollFadeIn>
+      </div>
+    </section>
   );
 }

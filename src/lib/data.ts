@@ -14,7 +14,7 @@ export const baseServices = [
     description: 'We don\'t just plug in APIs. We build custom RAG pipelines, fine-tuned models, and agentic workflows that live within your secure cloud boundary. Our solutions focus on automating the "thinking" tasks of your business.',
     iconName: 'Brain',
     slug: 'ai-solutions',
-    imageUrl: 'https://picsum.photos/seed/qfs-ai-v3/800/600',
+    imageUrl: 'https://picsum.photos/seed/qfs-ai-v5/800/600',
     isActive: true,
     order: 1
   },
@@ -24,7 +24,7 @@ export const baseServices = [
     description: 'Architecting for the next million users. We specialize in high-availability, multi-region AWS and GCP setups that prioritize security and cost-efficiency. Our cloud foundations are built to be unshakeable.',
     iconName: 'Cloud',
     slug: 'cloud-infrastructure',
-    imageUrl: 'https://picsum.photos/seed/qfs-cloud-v3/800/600',
+    imageUrl: 'https://picsum.photos/seed/qfs-cloud-v5/800/600',
     isActive: true,
     order: 2
   },
@@ -34,7 +34,7 @@ export const baseServices = [
     description: 'Transforming release cycles from weeks to minutes. We implement Infrastructure as Code (IaC) and automated CI/CD pipelines that enable your engineering team to ship with total confidence and zero downtime.',
     iconName: 'GitFork',
     slug: 'devops-automation',
-    imageUrl: 'https://picsum.photos/seed/qfs-devops-v3/800/600',
+    imageUrl: 'https://picsum.photos/seed/qfs-devops-v5/800/600',
     isActive: true,
     order: 3
   },
@@ -44,7 +44,7 @@ export const baseServices = [
     description: 'Turning vision into market-ready products. From initial wireframing to scaling a global backend, we handle the full technical lifecycle of your platform so you can focus on user growth.',
     iconName: 'Layers',
     slug: 'saas-platforms',
-    imageUrl: 'https://picsum.photos/seed/qfs-saas-v3/800/600',
+    imageUrl: 'https://picsum.photos/seed/qfs-saas-v5/800/600',
     isActive: true,
     order: 4
   }
@@ -55,7 +55,7 @@ export const basePortfolio = [
     id: 'p-1',
     name: 'AcquisitionOS: Intelligent Sales Engine',
     category: 'Sales Technology',
-    imageUrl: 'https://picsum.photos/seed/acq-os-v4/800/600',
+    imageUrl: 'https://picsum.photos/seed/acq-os-v6/800/600',
     description: 'AcquisitionOS is our flagship lead acquisition and CRM platform. \n\n**The Problem:** Sales teams were spending 60% of their time on manual research and outreach to low-intent leads.\n\n**The Solution:** We built a custom RAG (Retrieval Augmented Generation) pipeline that aggregates signals from 12+ data sources. Our proprietary scoring engine uses custom LLMs to rank leads by intent, allowing sales teams to focus only on high-value conversations.\n\n**The Result:** Our beta clients saw a 40% reduction in customer acquisition costs and a 3x increase in outreach response rates within the first 90 days.',
     status: 'Live',
     techs: ['Spring Boot', 'Next.js', 'Python', 'Vector DB', 'AWS'],
@@ -66,7 +66,7 @@ export const basePortfolio = [
     id: 'p-2',
     name: 'SystemFoundry: Infrastructure Simulator',
     category: 'Cloud Engineering',
-    imageUrl: 'https://picsum.photos/seed/sys-foundry-v4/800/600',
+    imageUrl: 'https://picsum.photos/seed/sys-foundry-v6/800/600',
     description: 'A visual architecture simulator for complex cloud systems.\n\n**The Problem:** Architectural mistakes are expensive. Testing infrastructure changes often requires deploying them, leading to technical debt and wasted budget.\n\n**The Solution:** SystemFoundry allows engineers to "drag-and-drop" infrastructure components. The AI engine then simulates real-world load, calculates projected monthly costs, and identifies potential bottlenecks or security risks before a single line of Terraform is written.\n\n**The Result:** Used internally for all client engagements, reducing post-deployment configuration errors by 75% and optimizing initial cloud costs by an average of 20%.',
     status: 'Live',
     techs: ['D3.js', 'React', 'Firebase', 'Serverless'],
@@ -77,7 +77,7 @@ export const basePortfolio = [
     id: 'p-3',
     name: 'CodeGuard AI: Cost Intelligence',
     category: 'Developer Tools',
-    imageUrl: 'https://picsum.photos/seed/cg-ai-v4/800/600',
+    imageUrl: 'https://picsum.photos/seed/cg-ai-v6/800/600',
     description: 'A VS Code extension providing real-time cost feedback for cloud infrastructure.\n\n**The Problem:** Developers often don\'t realize the cost implications of the resources they provision via IaC until the monthly bill arrives.\n\n**The Solution:** CodeGuard AI performs static analysis on Terraform and CloudFormation files as they are written. It queries a global pricing engine to show exactly how much each line of code will cost per month, highlighting over-provisioned instances and suggesting cheaper alternatives.',
     status: 'Published',
     techs: ['VS Code API', 'TypeScript', 'Node.js', 'LLM'],
@@ -186,7 +186,7 @@ For a platform that needs to handle high-concurrency data ingestion and mission-
 
 The result is a platform that doesn't just store your leads—it finds them, scores them, and helps you close them.
     `,
-    thumbnailUrl: 'https://picsum.photos/seed/qfs-blog-p1-v2/800/600',
+    thumbnailUrl: 'https://picsum.photos/seed/qfs-blog-p1-v5/800/600',
     category: 'Product Engineering',
     tags: ['AI', 'CRM', 'SaaS', 'Spring Boot', 'RAG'],
     status: 'Published',
@@ -214,7 +214,7 @@ Most companies find out about cloud cost spikes when they receive their monthly 
 ### Security Checkpoints
 Along with cost, it scans for open S3 buckets, permissive security groups, and unencrypted volumes. By catching these issues in the editor, teams are reducing their infrastructure costs by 15-25% without sacrificing performance. It turns cost management from a finance problem into an engineering habit.
     `,
-    thumbnailUrl: 'https://picsum.photos/seed/qfs-blog-p2-v2/800/600',
+    thumbnailUrl: 'https://picsum.photos/seed/qfs-blog-p2-v5/800/600',
     category: 'Cloud Intelligence',
     tags: ['DevOps', 'AWS', 'Cost Management', 'VS Code', 'Terraform'],
     status: 'Published',
@@ -244,7 +244,7 @@ QuantumFusion is still in its early chapters. Our mission remains clear: to elim
 
 This journey from HSR Layout to global deployments is just beginning, and I couldn't be more excited about what we're building next.
     `,
-    thumbnailUrl: 'https://picsum.photos/seed/qfs-blog-p3-v2/800/600',
+    thumbnailUrl: 'https://picsum.photos/seed/qfs-blog-p3-v5/800/600',
     category: 'Founders Journal',
     tags: ['Entrepreneurship', 'Growth', 'Story', 'Netcore', 'Bangalore'],
     status: 'Published',
