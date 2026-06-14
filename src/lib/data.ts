@@ -1,3 +1,4 @@
+
 import type { Job, BlogPost } from '@/types';
 
 /**
@@ -77,7 +78,7 @@ export const basePortfolio = [
     name: 'CodeGuard AI: Cost Intelligence',
     category: 'Developer Tools',
     imageUrl: 'https://picsum.photos/seed/cg-ai-v4/800/600',
-    description: 'A VS Code extension providing real-time cost feedback for cloud infrastructure.\n\n**The Problem:** Developers often don\'t realize the cost implications of the resources they provision via IaC until the monthly bill arrives.\n\n**The Solution:** CodeGuard AI performs static analysis on Terraform and CloudFormation files as they are written. It queries a global pricing engine to show exactly how much each line of code will cost per month, highlighting over-provisioned instances and suggesting cheaper alternatives.\n\n**The Result:** Published on the VS Code Marketplace, it has helped early adopters save a cumulative $50k+ in unnecessary cloud spend.',
+    description: 'A VS Code extension providing real-time cost feedback for cloud infrastructure.\n\n**The Problem:** Developers often don\'t realize the cost implications of the resources they provision via IaC until the monthly bill arrives.\n\n**The Solution:** CodeGuard AI performs static analysis on Terraform and CloudFormation files as they are written. It queries a global pricing engine to show exactly how much each line of code will cost per month, highlighting over-provisioned instances and suggesting cheaper alternatives.',
     status: 'Published',
     techs: ['VS Code API', 'TypeScript', 'Node.js', 'LLM'],
     link: 'https://marketplace.visualstudio.com/items?itemName=QuantumFusion.codeguard-ai',

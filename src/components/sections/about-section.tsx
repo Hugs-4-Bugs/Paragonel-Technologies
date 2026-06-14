@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Rocket, Target, Award, Milestone, Brain, Cloud, GitFork, Linkedin, ShieldCheck } from 'lucide-react';
+import { Brain, Rocket, Target, Linkedin, ShieldCheck, Milestone, User, Code2, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -13,11 +13,11 @@ export function AboutSection() {
     <section className="section-padding bg-background">
       <div className="container mx-auto px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-16">
-          <h1 className="text-4xl md:text-7xl font-black tracking-tighter mb-4 text-foreground">
-            About <span className="text-primary">QuantumFusion</span>
+          <h1 className="text-4xl md:text-7xl font-black tracking-tighter mb-6 text-foreground">
+            About <span className="text-primary">QuantumFusion Solutions</span>
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium">
-            Building the next generation of AI-native software and scalable cloud platforms.
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed">
+            Pioneering the future of IT with intelligent solutions in AI, Cloud Computing, DevOps, and SaaS Platforms.
           </p>
         </ScrollFadeIn>
 
@@ -25,29 +25,64 @@ export function AboutSection() {
           <ScrollFadeIn className="relative aspect-square md:aspect-auto md:h-[500px] rounded-[3rem] overflow-hidden shadow-2xl bg-primary/5 flex items-center justify-center border-2 border-primary/10">
             <div className="text-center p-12">
                <ShieldCheck className="h-32 w-32 text-primary mx-auto mb-6 neon-icon" />
-               <h3 className="text-3xl font-black text-primary mb-2">Precision Engineering</h3>
+               <h3 className="text-3xl font-black text-primary mb-2">Team Collaboration</h3>
                <p className="text-muted-foreground font-medium uppercase tracking-widest text-xs">A QuantumFusion Brand Identity</p>
             </div>
           </ScrollFadeIn>
           <ScrollFadeIn delay="200ms">
-            <span className="text-primary font-black uppercase tracking-[0.3em] text-xs mb-4 block">Our Story</span>
-            <h2 className="text-3xl md:text-5xl font-black mb-8 leading-tight">Eliminating the gap between problems and solutions.</h2>
+            <span className="text-primary font-black uppercase tracking-[0.3em] text-xs mb-4 block">Our Mission</span>
+            <h2 className="text-3xl md:text-5xl font-black mb-8 leading-tight">Eliminating the gap between problem and solution.</h2>
             <p className="text-xl font-medium mb-8 italic border-l-4 border-primary pl-6 py-2 text-foreground/80 leading-relaxed">
-              "We don't build software to check a box. We build it to solve real business pain, with precision and speed that traditional firms can't match."
+              "Our mission is to eliminate the gap between 'we have this problem' and 'we have a working solution' — by building AI-native software that is precise, fast, and built to actually solve real pain rather than check a feature box."
             </p>
             <p className="text-muted-foreground leading-relaxed text-lg">
-              Founded in 2024 by Prabhat Sharma, QuantumFusion Solutions was born from a desire to escape the slow, bureaucratic world of traditional IT services. We believe in lean teams, direct communication, and building AI-native tools that actually work.
+              Founded with the vision to fuse cutting-edge technology with strategic business insights, QuantumFusion Solutions empowers organizations to navigate the complexities of the digital age. We believe in the transformative power of AI, the scalability of the Cloud, the efficiency of DevOps, and the agility of SaaS.
             </p>
           </ScrollFadeIn>
         </div>
 
+        {/* Founder Section */}
         <ScrollFadeIn className="mb-24">
-          <h2 className="text-3xl md:text-5xl font-black text-center mb-12 tracking-tight">Our Core Values</h2>
+          <Card className="overflow-hidden border-none shadow-2xl bg-secondary/10 rounded-[3rem]">
+            <div className="grid md:grid-cols-3 gap-0">
+              <div className="bg-primary flex items-center justify-center py-12 md:py-0 text-white">
+                <div className="w-40 h-40 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-6xl font-black border-4 border-white/40 shadow-2xl">PS</div>
+              </div>
+              <div className="md:col-span-2 p-8 md:p-12">
+                <span className="text-primary font-black uppercase tracking-[0.2em] text-[10px] mb-2 block">Meet Our Founder</span>
+                <h3 className="text-3xl font-black mb-1">Prabhat Sharma</h3>
+                <p className="text-primary font-bold mb-6">Founder & Principal Engineer</p>
+                <p className="text-muted-foreground leading-relaxed mb-8">
+                  Java backend developer with expertise in Spring Boot, cloud infrastructure (AWS/GCP), AI systems, and full-stack development. Building QuantumFusion Solutions as a portfolio of AI, developer, and infrastructure SaaS products while also delivering custom client projects.
+                </p>
+                <Button asChild size="sm" className="rounded-full shadow-lg h-12 px-8 font-bold">
+                  <Link href="https://www.linkedin.com/in/prabhat-kumar-6963661a4/" target="_blank" className="flex items-center gap-2">
+                    <Linkedin className="h-5 w-5" /> LinkedIn Profile
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </ScrollFadeIn>
+
+        <ScrollFadeIn className="mb-24">
           <div className="grid md:grid-cols-3 gap-10">
             {[
-              { title: "AI-Native Thinking", text: "We don't just 'add' AI; we architect it into the core of every solution.", icon: Brain },
-              { title: "Product Mindset", text: "We build our own SaaS products, so we know exactly what it takes to scale.", icon: Rocket },
-              { title: "Radical Transparency", text: "Fixed-scope, milestone-based delivery. No hourly billings, no surprises.", icon: Target }
+              { 
+                title: "AI-Native Focus", 
+                text: "We are AI-native from day one, not as a feature add-on. Every solution we build leverages the latest in intelligent automation.", 
+                icon: Brain 
+              },
+              { 
+                title: "Product Builders", 
+                text: "We build our own products — so we understand exactly what it takes to ship, maintain, and scale complex software systems.", 
+                icon: Code2 
+              },
+              { 
+                title: "Results Oriented", 
+                text: "Fixed-scope, milestone-based delivery ensures you pay for results and tangible outcomes, not just billable hours.", 
+                icon: Target 
+              }
             ].map((value, i) => (
               <Card key={i} className="p-8 rounded-[2.5rem] border-zinc-100 dark:border-zinc-800 shadow-xl bg-card hover:border-primary/30 transition-all group">
                 <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -60,36 +95,44 @@ export function AboutSection() {
           </div>
         </ScrollFadeIn>
 
+        {/* Journey Timeline */}
         <ScrollFadeIn className="mb-24">
-          <div className="bg-zinc-900 text-white rounded-[3rem] p-12 md:p-20 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[120px]"></div>
-            <div className="relative z-10 grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <h3 className="text-3xl md:text-5xl font-black mb-6">Built for the next generation.</h3>
-                <p className="text-zinc-400 text-lg mb-10 font-medium leading-relaxed">
-                  Whether you're a pre-seed startup needing a technical co-founder or an enterprise modernizing legacy systems, we fusion your vision with our engineering expertise.
-                </p>
-                <Button asChild size="lg" className="rounded-full px-10 h-16 text-lg font-black shadow-2xl shadow-primary/20">
-                  <Link href="/portfolio">Explore Our Work</Link>
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                {[
-                  { label: "Products Built", val: "4+" },
-                  { label: "Tech Stack", val: "12+" },
-                  { label: "Global Reach", val: "3 Countries" },
-                  { label: "Core Team", val: "Lean & Fast" }
-                ].map((stat, i) => (
-                  <div key={i} className="p-6 rounded-3xl bg-white/5 border border-white/10 text-center">
-                    <p className="text-3xl font-black text-primary mb-1">{stat.val}</p>
-                    <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{stat.label}</p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight">Our Journey</h2>
+          </div>
+          <div className="max-w-4xl mx-auto space-y-12">
+            {[
+              {
+                year: "2024",
+                title: "Inception",
+                description: "QuantumFusion Solutions founded. CodeGuard AI published on VS Code Marketplace (AWS cost intelligence)."
+              },
+              {
+                year: "2025",
+                title: "Growth",
+                description: "AcquisitionOS and SystemFoundry launched. Expansion into AI-native CRM and architecture simulation."
+              },
+              {
+                year: "2026",
+                title: "New Frontiers",
+                description: "AaharAI India-first health companion in development. First major client engagement: Maa-Aarogyam Health Centre."
+              }
+            ].map((item, i) => (
+              <div key={i} className="flex gap-6 md:gap-10 items-start">
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center font-black text-xl shadow-xl shadow-primary/20">
+                    {item.year}
                   </div>
-                ))}
+                  {i !== 2 && <div className="w-1 h-24 bg-gradient-to-b from-primary to-transparent opacity-20"></div>}
+                </div>
+                <div className="pt-2">
+                  <h4 className="text-2xl font-black text-primary mb-2">{item.title}</h4>
+                  <p className="text-lg text-muted-foreground font-medium">{item.description}</p>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </ScrollFadeIn>
-
       </div>
     </section>
   );

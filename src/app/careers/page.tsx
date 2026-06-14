@@ -10,8 +10,6 @@ import {
   Laptop, 
   Zap, 
   Rocket, 
-  Search, 
-  Hash, 
   Briefcase, 
   Heart, 
   Award, 
@@ -20,10 +18,6 @@ import {
   ChevronUp, 
   Filter 
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from '@/components/ui/label';
 import { useCollection } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -44,7 +38,6 @@ export default function CareersPage() {
   const [employmentTypeFilter, setEmploymentTypeFilter] = useState('All Types');
   const [dateFilter, setDateFilter] = useState('Any time');
   const [workArrangementFilter, setWorkArrangementFilter] = useState('Any');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showOpenRoles, setShowOpenRoles] = useState(true);
 
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
@@ -65,16 +58,6 @@ export default function CareersPage() {
   const allJobs = useMemo(() => {
     return [...baseJobs, ...(dynamicJobs || [])];
   }, [dynamicJobs]);
-
-  const departments = useMemo(() => {
-    const depts = new Set(allJobs.map((j: any) => j.department));
-    return ['All Departments', ...Array.from(depts)].sort();
-  }, [allJobs]);
-
-  const locations = useMemo(() => {
-    const locs = new Set(allJobs.map((j: any) => j.location));
-    return ['All Locations', ...Array.from(locs)].sort();
-  }, [allJobs]);
 
   const filteredJobs = useMemo(() => {
     return allJobs.filter((job: any) => {
@@ -121,7 +104,7 @@ export default function CareersPage() {
           <div className="absolute inset-0 bg-black/40 z-0"></div>
           <div className="container relative z-10 px-4 md:px-6 text-center">
             <ScrollFadeIn>
-              <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">Careers at <br/>QuantumFusion</h1>
+              <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tight">Careers at <br/>QuantumFusion Solutions</h1>
               <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90 font-medium">Build AI-native products. Solve real challenges. No bureaucracy.</p>
             </ScrollFadeIn>
           </div>
