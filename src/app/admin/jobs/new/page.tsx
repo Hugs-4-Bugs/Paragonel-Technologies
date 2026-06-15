@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -50,6 +50,8 @@ const jobSchema = z.object({
 
 type JobFormValues = z.infer<typeof jobSchema>;
 
+const AUTOSAVE_KEY = 'qf_job_new_draft';
+
 export default function NewJobPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -73,12 +75,42 @@ export default function NewJobPage() {
     },
   });
 
+  // 1. Initial Draft Recovery
+  useEffect(() => {
+    const saved = localStorage.getItem(AUTOSAVE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const timeStr = new Date(parsed.timestamp).toLocaleTimeString();
+        if (confirm(`Found an unsaved job draft from ${timeStr}. Restore it?`)) {
+          form.reset(parsed.data);
+        } else {
+          localStorage.removeItem(AUTOSAVE_KEY);
+        }
+      } catch (e) {
+        localStorage.removeItem(AUTOSAVE_KEY);
+      }
+    }
+  }, [form]);
+
+  // 2. Reactive Autosave
+  const formValues = form.watch();
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ 
+        data: formValues, 
+        timestamp: Date.now() 
+      }));
+    }, 1500);
+    return () => clearTimeout(timeout);
+  }, [formValues]);
+
   async function onSubmit(values: JobFormValues) {
     if (isLoading) return;
     setIsLoading(true);
     
     try {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error("Firestore connection unavailable.");
 
       const jobData = {
         ...values,
@@ -87,18 +119,24 @@ export default function NewJobPage() {
         postedDate: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        deletedAt: null,
       };
 
       await addDoc(collection(db, 'jobs'), jobData);
-      toast({ title: 'Success', description: 'Job opening posted successfully.' });
+      
+      // Clear draft on success
+      localStorage.removeItem(AUTOSAVE_KEY);
+      
+      toast({ title: 'Job Posted', description: 'The role is now visible on the Careers page.' });
       router.push('/admin/jobs');
     } catch (error: any) {
       console.error("Post Job Error:", error);
       toast({ 
-        title: 'Error', 
-        description: error.message || 'Failed to post job. Please try again.', 
+        title: 'Posting Failed', 
+        description: error.message || 'Check your database permissions and try again.', 
         variant: 'destructive' 
       });
+    } finally {
       setIsLoading(false);
     }
   }
@@ -160,7 +198,7 @@ export default function NewJobPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Department</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-11">
                             <SelectValue placeholder="Select" />
@@ -182,7 +220,7 @@ export default function NewJobPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Job Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-11">
                             <SelectValue placeholder="Select" />
@@ -204,7 +242,7 @@ export default function NewJobPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Arrangement</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-11">
                             <SelectValue placeholder="Select" />
@@ -304,7 +342,7 @@ export default function NewJobPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Current Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-11">
                             <SelectValue placeholder="Select status" />

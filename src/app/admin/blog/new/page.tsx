@@ -48,7 +48,7 @@ const blogSchema = z.object({
 
 type BlogFormValues = z.infer<typeof blogSchema>;
 
-const AUTOSAVE_KEY = 'qf_blog_autosave';
+const AUTOSAVE_KEY = 'qf_blog_new_draft';
 
 export default function NewBlogPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -74,12 +74,14 @@ export default function NewBlogPage() {
     },
   });
 
+  // 1. Initial Draft Recovery
   useEffect(() => {
     const saved = localStorage.getItem(AUTOSAVE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (confirm("Restore your unsaved progress from " + new Date(parsed.timestamp).toLocaleTimeString() + "?")) {
+        const timeStr = new Date(parsed.timestamp).toLocaleTimeString();
+        if (confirm(`You have an unsaved draft from ${timeStr}. Restore it?`)) {
           form.reset(parsed.data);
         } else {
           localStorage.removeItem(AUTOSAVE_KEY);
@@ -90,14 +92,19 @@ export default function NewBlogPage() {
     }
   }, [form]);
 
+  // 2. Reactive Autosave (Client-side persistence)
+  const formValues = form.watch();
   useEffect(() => {
-    const interval = setInterval(() => {
-      const data = form.getValues();
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [form]);
+    const timeout = setTimeout(() => {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ 
+        data: formValues, 
+        timestamp: Date.now() 
+      }));
+    }, 1500); // Save after 1.5 seconds of inactivity
+    return () => clearTimeout(timeout);
+  }, [formValues]);
 
+  // Auto-slug generator
   const title = form.watch('title');
   useEffect(() => {
     if (title && !form.formState.dirtyFields.slug) {
@@ -110,7 +117,7 @@ export default function NewBlogPage() {
     setIsLoading(true);
     
     try {
-      if (!db) throw new Error("Database not initialized");
+      if (!db) throw new Error("Database connection unavailable.");
 
       const blogData = {
         ...values,
@@ -124,16 +131,19 @@ export default function NewBlogPage() {
       const docRef = await addDoc(collection(db, 'blogPosts'), blogData);
       await logActivity('admin', `Created blog post: ${values.title}`, 'BlogPost', docRef.id);
       
+      // Clear draft upon success
       localStorage.removeItem(AUTOSAVE_KEY);
-      toast({ title: 'Success', description: 'Article created and published.' });
+      
+      toast({ title: 'Insight Published', description: 'The article is now live.' });
       router.push('/admin/blog');
     } catch (error: any) {
       console.error("Save Article Error:", error);
       toast({ 
-        title: 'Save Failed', 
-        description: error.message || 'Check your connection and try again.', 
+        title: 'Publishing Failed', 
+        description: error.message || 'The server rejected the request. Please check your permissions.', 
         variant: 'destructive' 
       });
+    } finally {
       setIsLoading(false);
     }
   }
