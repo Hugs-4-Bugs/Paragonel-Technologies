@@ -74,8 +74,12 @@ export default function NewJobPage() {
   });
 
   async function onSubmit(values: JobFormValues) {
+    if (isLoading) return;
     setIsLoading(true);
+    
     try {
+      if (!db) throw new Error("Database not initialized");
+
       const jobData = {
         ...values,
         isActive: values.status === 'Active',
@@ -88,9 +92,13 @@ export default function NewJobPage() {
       await addDoc(collection(db, 'jobs'), jobData);
       toast({ title: 'Success', description: 'Job opening posted successfully.' });
       router.push('/admin/jobs');
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to post job. Please try again.', variant: 'destructive' });
-    } finally {
+    } catch (error: any) {
+      console.error("Post Job Error:", error);
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to post job. Please try again.', 
+        variant: 'destructive' 
+      });
       setIsLoading(false);
     }
   }
@@ -328,7 +336,7 @@ export default function NewJobPage() {
           </Card>
 
           <div className="flex justify-end gap-4 pt-4 sticky bottom-6 z-10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md p-4 rounded-2xl border shadow-xl">
-            <Button variant="outline" onClick={() => router.back()} disabled={isLoading} size="lg">
+            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading} size="lg">
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading} size="lg" className="min-w-[160px]">

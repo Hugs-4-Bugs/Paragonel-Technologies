@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -38,12 +39,10 @@ const blogSchema = z.object({
   body: z.string().min(50, 'Body content is required'),
   tags: z.string().optional(),
   status: z.string().default('Draft'),
-  // SEO Fields
   metaTitle: z.string().max(60, 'Keep SEO title under 60 chars').optional(),
   metaDescription: z.string().max(160, 'Keep SEO description under 160 chars').optional(),
   focusKeyword: z.string().optional(),
   canonicalUrl: z.string().url().optional().or(z.literal('')),
-  // Scheduling
   publishAt: z.string().optional(),
 });
 
@@ -75,20 +74,22 @@ export default function NewBlogPage() {
     },
   });
 
-  // Restore Autosave
   useEffect(() => {
     const saved = localStorage.getItem(AUTOSAVE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (confirm("Restore your unsaved progress from " + new Date(parsed.timestamp).toLocaleTimeString() + "?")) {
-        form.reset(parsed.data);
-      } else {
+      try {
+        const parsed = JSON.parse(saved);
+        if (confirm("Restore your unsaved progress from " + new Date(parsed.timestamp).toLocaleTimeString() + "?")) {
+          form.reset(parsed.data);
+        } else {
+          localStorage.removeItem(AUTOSAVE_KEY);
+        }
+      } catch (e) {
         localStorage.removeItem(AUTOSAVE_KEY);
       }
     }
   }, [form]);
 
-  // Periodic Autosave (every 30s)
   useEffect(() => {
     const interval = setInterval(() => {
       const data = form.getValues();
@@ -105,8 +106,12 @@ export default function NewBlogPage() {
   }, [title, form]);
 
   async function onSubmit(values: BlogFormValues) {
+    if (isLoading) return;
     setIsLoading(true);
+    
     try {
+      if (!db) throw new Error("Database not initialized");
+
       const blogData = {
         ...values,
         tags: values.tags ? values.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
@@ -120,11 +125,15 @@ export default function NewBlogPage() {
       await logActivity('admin', `Created blog post: ${values.title}`, 'BlogPost', docRef.id);
       
       localStorage.removeItem(AUTOSAVE_KEY);
-      toast({ title: 'Success', description: 'Article created successfully.' });
+      toast({ title: 'Success', description: 'Article created and published.' });
       router.push('/admin/blog');
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to save article.', variant: 'destructive' });
-    } finally {
+    } catch (error: any) {
+      console.error("Save Article Error:", error);
+      toast({ 
+        title: 'Save Failed', 
+        description: error.message || 'Check your connection and try again.', 
+        variant: 'destructive' 
+      });
       setIsLoading(false);
     }
   }
@@ -161,7 +170,7 @@ export default function NewBlogPage() {
                   )} />
                   <FormField control={form.control} name="body" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Body Content (Rich Editor Placeholder)</FormLabel>
+                      <FormLabel>Body Content (Markdown Supported)</FormLabel>
                       <FormControl><Textarea placeholder="Start writing here..." className="min-h-[500px] font-mono leading-relaxed" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -215,7 +224,7 @@ export default function NewBlogPage() {
                     <FormItem>
                       <FormLabel>Current Status</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
                         <SelectContent>
                           <SelectItem value="Draft">Draft (Internal)</SelectItem>
                           <SelectItem value="Published">Publish Immediately</SelectItem>
@@ -286,10 +295,9 @@ export default function NewBlogPage() {
           </div>
 
           <div className="flex justify-end gap-4 pt-4 sticky bottom-6 z-10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md p-4 rounded-2xl border shadow-xl">
-             <Button variant="outline" onClick={() => router.back()} disabled={isLoading} size="lg">Cancel</Button>
+             <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading} size="lg">Cancel</Button>
              <Button type="submit" disabled={isLoading} size="lg" className="min-w-[160px] font-bold">
-                {isLoading ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Save className="mr-2 h-5 w-5" />} 
-                {form.watch('status') === 'Scheduled' ? 'Schedule Article' : 'Save Article'}
+                {isLoading ? <><Loader2 className="animate-spin h-5 w-5 mr-2" /> Saving...</> : <><Save className="mr-2 h-5 w-5" /> Save Article</>}
              </Button>
           </div>
         </form>
