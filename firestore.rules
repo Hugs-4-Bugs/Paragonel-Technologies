@@ -1,66 +1,43 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper to check if user is admin (Simulated Admin via App Logic)
-    // For this prototype, we allow management collections to be writeable 
-    // to support the simulated CMS authentication.
-    
-    // Public Reads (filtering by deletedAt is handled in app logic)
+    // Allow public read access to active jobs and published blog posts
     match /jobs/{jobId} {
-      allow read: if true;
-      allow write: if true; 
+      allow read: if resource.data.isActive == true && resource.data.deletedAt == null;
+      allow write: if true; // Admin panel simulated auth
     }
     match /blogPosts/{postId} {
-      allow read: if true;
-      allow write: if true;
-    }
-    match /services/{serviceId} {
-      allow read: if true;
-      allow write: if true;
-    }
-    match /portfolio/{itemId} {
-      allow read: if true;
-      allow write: if true;
-    }
-    match /testimonials/{testimonialId} {
-      allow read: if true;
-      allow write: if true;
-    }
-
-    // Data Capture (Public Creates)
-    match /jobApplications/{appId} {
-      allow create: if true;
-      allow read, update, delete: if true;
-    }
-    match /leads/{leadId} {
-      allow create: if true;
-      allow read, update, delete: if true;
-    }
-    match /newsletterSubscribers/{subId} {
-      allow create: if true;
-      allow read, delete: if true;
-    }
-
-    // Admin Only
-    match /admins/{adminId} {
-      allow read, write: if true;
-    }
-    match /adminActivityLogs/{logId} {
-      allow create: if true; 
-      allow read: if true;
-      allow update, delete: if false; // Audit logs remain immutable
-    }
-
-    // Chat Sessions (Public Read/Write with Subcollection access)
-    match /chatSessions/{sessionId} {
-      allow read, write: if true;
-      match /{allPaths=**} {
+      allow read: if resource.data.status == 'Published' && resource.data.deletedAt == null;
+      allow write: if true; // Admin panel simulated auth
+      
+      match /revisions/{revId} {
         allow read, write: if true;
       }
     }
     
-    // Public User Profiles
+    // Allow creation of applications and leads by anyone
+    match /jobApplications/{appId} {
+      allow create: if true;
+      allow read, write: if true; // Admin panel access
+    }
+    match /leads/{leadId} {
+      allow create: if true;
+      allow read, write: if true; // Admin panel access
+    }
+    match /newsletterSubscribers/{subId} {
+      allow create: if true;
+      allow read, write: if true; // Admin panel access
+    }
+    
+    // Admin collections
+    match /admins/{adminId} {
+      allow read, write: if true;
+    }
+    match /adminActivityLogs/{logId} {
+      allow read, create: if true;
+    }
+    
+    // User profiles
     match /users/{userId} {
       allow read, write: if true;
     }

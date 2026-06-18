@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,13 +20,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Loader2, Save, BookOpen, ImageIcon, Search, Clock } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
 import { logActivity } from '@/lib/audit';
 import { cn } from '@/lib/utils';
+import { useAutosave } from '@/hooks/useAutosave';
+import { SaveStatusIndicator } from '@/components/cms/SaveStatusIndicator';
 
 const blogSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -52,8 +53,11 @@ const AUTOSAVE_KEY = 'qf_blog_new_draft';
 
 export default function NewBlogPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const form = useForm<BlogFormValues>({
     resolver: zodResolver(blogSchema),
@@ -74,7 +78,24 @@ export default function NewBlogPage() {
     },
   });
 
-  // 1. Initial Draft Recovery
+  const formValues = form.watch();
+
+  // Initialize draft ID
+  useEffect(() => {
+    const sid = localStorage.getItem('current_draft_id_blog') || `draft_${Date.now()}`;
+    setDraftId(sid);
+    localStorage.setItem('current_draft_id_blog', sid);
+  }, []);
+
+  const { saveStatus } = useAutosave({
+    db: firestore,
+    collectionName: 'blogPosts',
+    docId: draftId,
+    data: formValues,
+    enabled: isDirty
+  });
+
+  // Recovery logic
   useEffect(() => {
     const saved = localStorage.getItem(AUTOSAVE_KEY);
     if (saved) {
@@ -83,6 +104,7 @@ export default function NewBlogPage() {
         const timeStr = new Date(parsed.timestamp).toLocaleTimeString();
         if (confirm(`You have an unsaved draft from ${timeStr}. Restore it?`)) {
           form.reset(parsed.data);
+          setIsDirty(true);
         } else {
           localStorage.removeItem(AUTOSAVE_KEY);
         }
@@ -92,17 +114,17 @@ export default function NewBlogPage() {
     }
   }, [form]);
 
-  // 2. Reactive Autosave (Client-side persistence)
-  const formValues = form.watch();
+  // Handle unsaved changes protection
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ 
-        data: formValues, 
-        timestamp: Date.now() 
-      }));
-    }, 1500); // Save after 1.5 seconds of inactivity
-    return () => clearTimeout(timeout);
-  }, [formValues]);
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   // Auto-slug generator
   const title = form.watch('title');
@@ -110,15 +132,14 @@ export default function NewBlogPage() {
     if (title && !form.formState.dirtyFields.slug) {
       form.setValue('slug', title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''));
     }
+    if (title) setIsDirty(true);
   }, [title, form]);
 
   async function onSubmit(values: BlogFormValues) {
-    if (isLoading) return;
+    if (isLoading || !firestore) return;
     setIsLoading(true);
     
     try {
-      if (!db) throw new Error("Database connection unavailable.");
-
       const blogData = {
         ...values,
         tags: values.tags ? values.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
@@ -126,21 +147,35 @@ export default function NewBlogPage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         deletedAt: null,
+        isDraft: false,
       };
 
-      const docRef = await addDoc(collection(db, 'blogPosts'), blogData);
+      const docRef = await addDoc(collection(firestore, 'blogPosts'), blogData);
+      
+      // Store initial revision
+      const revRef = collection(firestore, 'blogPosts', docRef.id, 'revisions');
+      await addDoc(revRef, {
+        ...blogData,
+        timestamp: serverTimestamp()
+      });
+
       await logActivity('admin', `Created blog post: ${values.title}`, 'BlogPost', docRef.id);
       
-      // Clear draft upon success
+      // Cleanup draft
       localStorage.removeItem(AUTOSAVE_KEY);
+      localStorage.removeItem('current_draft_id_blog');
+      if (draftId) {
+        // We could delete the draft document, but often it's better to keep it or mark it as converted
+      }
       
+      setIsDirty(false);
       toast({ title: 'Insight Published', description: 'The article is now live.' });
       router.push('/admin/blog');
     } catch (error: any) {
       console.error("Save Article Error:", error);
       toast({ 
         title: 'Publishing Failed', 
-        description: error.message || 'The server rejected the request. Please check your permissions.', 
+        description: error.message || 'The server rejected the request.', 
         variant: 'destructive' 
       });
     } finally {
@@ -150,17 +185,15 @@ export default function NewBlogPage() {
 
   return (
     <div className="space-y-10 max-w-6xl mx-auto pb-20">
-      <ScrollFadeIn>
-        <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-md py-4 border-b">
+        <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/admin/blog"><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <BookOpen className="h-8 w-8 text-primary" />
-            New Editorial Insight
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">New Article</h1>
         </div>
-      </ScrollFadeIn>
+        <SaveStatusIndicator status={saveStatus} />
+      </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

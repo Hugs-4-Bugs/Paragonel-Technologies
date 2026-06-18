@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -27,11 +26,13 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Save, Briefcase } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
+import { useAutosave } from '@/hooks/useAutosave';
+import { SaveStatusIndicator } from '@/components/cms/SaveStatusIndicator';
 
 const jobSchema = z.object({
   jobId: z.string().min(3, 'Job ID is required (e.g. ABC123)'),
@@ -54,8 +55,11 @@ const AUTOSAVE_KEY = 'qf_job_new_draft';
 
 export default function NewJobPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const form = useForm<JobFormValues>({
     resolver: zodResolver(jobSchema),
@@ -75,7 +79,24 @@ export default function NewJobPage() {
     },
   });
 
-  // 1. Initial Draft Recovery
+  const formValues = form.watch();
+
+  // Initialize draft ID
+  useEffect(() => {
+    const sid = localStorage.getItem('current_draft_id_job') || `draft_job_${Date.now()}`;
+    setDraftId(sid);
+    localStorage.setItem('current_draft_id_job', sid);
+  }, []);
+
+  const { saveStatus } = useAutosave({
+    db: firestore,
+    collectionName: 'jobs',
+    docId: draftId,
+    data: formValues,
+    enabled: isDirty
+  });
+
+  // Recovery logic
   useEffect(() => {
     const saved = localStorage.getItem(AUTOSAVE_KEY);
     if (saved) {
@@ -84,6 +105,7 @@ export default function NewJobPage() {
         const timeStr = new Date(parsed.timestamp).toLocaleTimeString();
         if (confirm(`Found an unsaved job draft from ${timeStr}. Restore it?`)) {
           form.reset(parsed.data);
+          setIsDirty(true);
         } else {
           localStorage.removeItem(AUTOSAVE_KEY);
         }
@@ -93,25 +115,28 @@ export default function NewJobPage() {
     }
   }, [form]);
 
-  // 2. Reactive Autosave
-  const formValues = form.watch();
+  // Handle unsaved changes protection
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ 
-        data: formValues, 
-        timestamp: Date.now() 
-      }));
-    }, 1500);
-    return () => clearTimeout(timeout);
-  }, [formValues]);
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  useEffect(() => {
+    const subscription = form.watch(() => setIsDirty(true));
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
 
   async function onSubmit(values: JobFormValues) {
-    if (isLoading) return;
+    if (isLoading || !firestore) return;
     setIsLoading(true);
     
     try {
-      if (!db) throw new Error("Firestore connection unavailable.");
-
       const jobData = {
         ...values,
         isActive: values.status === 'Active',
@@ -120,20 +145,23 @@ export default function NewJobPage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         deletedAt: null,
+        isDraft: false,
       };
 
-      await addDoc(collection(db, 'jobs'), jobData);
+      await addDoc(collection(firestore, 'jobs'), jobData);
       
-      // Clear draft on success
+      // Clear draft
       localStorage.removeItem(AUTOSAVE_KEY);
+      localStorage.removeItem('current_draft_id_job');
       
+      setIsDirty(false);
       toast({ title: 'Job Posted', description: 'The role is now visible on the Careers page.' });
       router.push('/admin/jobs');
     } catch (error: any) {
       console.error("Post Job Error:", error);
       toast({ 
         title: 'Posting Failed', 
-        description: error.message || 'Check your database permissions and try again.', 
+        description: error.message || 'Check your database permissions.', 
         variant: 'destructive' 
       });
     } finally {
@@ -143,17 +171,15 @@ export default function NewJobPage() {
 
   return (
     <div className="space-y-10 max-w-4xl mx-auto pb-20">
-      <ScrollFadeIn>
-        <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center justify-between sticky top-0 z-20 bg-background/80 backdrop-blur-md py-4 border-b">
+        <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/admin/jobs"><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Briefcase className="h-8 w-8 text-primary" />
-            Create New Role
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Create New Role</h1>
         </div>
-      </ScrollFadeIn>
+        <SaveStatusIndicator status={saveStatus} />
+      </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -328,48 +354,6 @@ export default function NewJobPage() {
                   </FormItem>
                 )}
               />
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm border-zinc-200">
-             <CardHeader className="border-b bg-zinc-50/50">
-              <CardTitle className="text-lg font-bold">Status & Visibility</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Status</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="h-11">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Active">Active (Visible on Careers Page)</SelectItem>
-                          <SelectItem value="Draft">Draft (Internal Only)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="deadline"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Application Deadline (Optional)</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} className="h-11" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
             </CardContent>
           </Card>
 

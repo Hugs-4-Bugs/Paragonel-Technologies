@@ -4,33 +4,31 @@ import React, { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCollection } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CalendarDays, User, Loader2, Tag, Quote, Clock, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { blogPosts as basePosts } from '@/lib/data';
 
 export default function BlogPostPage() {
   const { slug } = useParams();
+  const firestore = useFirestore();
 
-  // Find in base posts first
-  const basePost = useMemo(() => basePosts.find(p => p.slug === slug), [slug]);
-
-  const postQuery = useMemo(() => 
-    query(
-      collection(db, 'blogPosts'), 
+  const postQuery = useMemo(() => {
+    if (!firestore || !slug) return null;
+    return query(
+      collection(firestore, 'blogPosts'), 
       where('slug', '==', slug),
+      where('status', '==', 'Published'),
       limit(1)
-    ), 
-  [slug]);
+    );
+  }, [firestore, slug]);
   
-  const { data: dynamicPosts, loading } = useCollection(postQuery);
-  const post = basePost || dynamicPosts?.[0];
+  const { data: posts, loading } = useCollection(postQuery);
+  const post = posts?.[0];
 
-  if (loading && !basePost) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -51,7 +49,6 @@ export default function BlogPostPage() {
     );
   }
 
-  // Calculate estimated reading time
   const readingTime = Math.ceil((post.body?.split(' ').length || 0) / 200);
 
   return (
@@ -89,11 +86,11 @@ export default function BlogPostPage() {
               <div className="flex flex-wrap items-center justify-center gap-8 text-zinc-500 font-bold border-y py-6 border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center">
                   <CalendarDays className="mr-2.5 h-5 w-5 text-primary" />
-                  <span>{post.date || new Date(post.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
+                  <span>{new Date(post.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs mr-3">
-                    {post.author.charAt(0)}
+                    {post.author?.charAt(0)}
                   </div>
                   <span>By {post.author}</span>
                 </div>
@@ -115,13 +112,12 @@ export default function BlogPostPage() {
           </ScrollFadeIn>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-8">
-            {/* Sidebar for quick navigation/tags */}
             <aside className="lg:col-span-3 space-y-10 hidden lg:block">
                <div className="sticky top-32 space-y-10">
                   <div className="space-y-4">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Core Topics</h4>
                     <div className="flex flex-wrap gap-2">
-                       {post.tags?.map(tag => (
+                       {post.tags?.map((tag: string) => (
                          <Badge key={tag} variant="secondary" className="px-3 py-1 font-bold rounded-lg text-[10px]">
                            #{tag}
                          </Badge>
@@ -137,7 +133,6 @@ export default function BlogPostPage() {
                </div>
             </aside>
 
-            {/* Main Article Content */}
             <div className="lg:col-span-9">
               <ScrollFadeIn delay="200ms">
                 <div className="prose prose-zinc dark:prose-invert max-w-none 
@@ -149,20 +144,19 @@ export default function BlogPostPage() {
                   prose-strong:text-foreground prose-strong:font-black
                   prose-img:rounded-[2rem] prose-img:shadow-xl
                 ">
-                  <div className="text-2xl md:text-3xl font-bold text-primary italic mb-16 leading-relaxed border-l-8 border-primary pl-8 py-4 bg-primary/5 rounded-r-3xl">
-                    {post.excerpt}
-                  </div>
+                  {post.excerpt && (
+                    <div className="text-2xl md:text-3xl font-bold text-primary italic mb-16 leading-relaxed border-l-8 border-primary pl-8 py-4 bg-primary/5 rounded-r-3xl">
+                      {post.excerpt}
+                    </div>
+                  )}
                   
-                  {/* Rendering Body Content - Converting Markdown-like Headers to real HTML if needed, 
-                      but standard white-space: pre-wrap and Tailwind Prose handle most of it nicely */}
                   <div className="whitespace-pre-wrap">
                     {post.body}
                   </div>
 
-                  {/* Manual Tag Display for Mobile */}
                   <div className="lg:hidden mt-16 flex flex-wrap gap-3 items-center pt-8 border-t">
                     <Tag className="h-5 w-5 text-zinc-400 mr-2" />
-                    {post.tags?.map(tag => (
+                    {post.tags?.map((tag: string) => (
                       <Badge key={tag} variant="secondary" className="px-3 py-1 font-bold">
                         #{tag}
                       </Badge>
@@ -171,7 +165,6 @@ export default function BlogPostPage() {
                 </div>
               </ScrollFadeIn>
 
-              {/* Newsletter CTA at the end of the post */}
               <ScrollFadeIn delay="300ms" className="pt-24">
                  <div className="bg-zinc-900 text-white rounded-[4rem] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden group">
                    <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 rounded-full blur-[100px] group-hover:bg-primary/30 transition-colors duration-700"></div>

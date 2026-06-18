@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -9,45 +8,44 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { CalendarDays, ArrowRight, Rss, User, Search, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useCollection } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { blogPosts as basePosts } from '@/lib/data';
 
 export default function BlogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const firestore = useFirestore();
 
-  const postsQuery = useMemo(() => 
-    query(
-      collection(db, 'blogPosts'), 
+  const postsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'blogPosts'), 
       where('status', '==', 'Published'),
+      where('deletedAt', '==', null),
       orderBy('createdAt', 'desc')
-    ), 
-  []);
+    );
+  }, [firestore]);
   
-  const { data: dynamicPosts, loading } = useCollection(postsQuery);
-
-  const allPosts = useMemo(() => {
-    return [...basePosts, ...(dynamicPosts || [])];
-  }, [dynamicPosts]);
+  const { data: posts, loading } = useCollection(postsQuery);
 
   const categories = useMemo(() => {
-    const cats = new Set(allPosts.map((p: any) => p.category));
-    return ['All', ...Array.from(cats)].sort();
-  }, [allPosts]);
+    if (!posts) return ['All'];
+    const cats = new Set(posts.map((p: any) => p.category));
+    return ['All', ...Array.from(cats)].filter(Boolean).sort() as string[];
+  }, [posts]);
 
   const filteredPosts = useMemo(() => {
-    return allPosts.filter((post: any) => {
+    if (!posts) return [];
+    return posts.filter((post: any) => {
       const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+                            post.excerpt?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = activeCategory === 'All' || post.category === activeCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [allPosts, searchTerm, activeCategory]);
+  }, [posts, searchTerm, activeCategory]);
 
   return (
     <section className="section-padding bg-background min-h-screen">
@@ -104,7 +102,7 @@ export default function BlogPage() {
           </div>
         </ScrollFadeIn>
 
-        {loading && !allPosts.length ? (
+        {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-[450px] rounded-3xl" />)}
           </div>
@@ -147,7 +145,7 @@ export default function BlogPage() {
                     <div className="flex items-center text-xs font-bold text-zinc-400 space-x-6 mt-auto">
                       <div className="flex items-center">
                         <CalendarDays className="w-4 h-4 mr-2 text-primary" />
-                        {new Date(post.date || post.publishedAt || post.createdAt).toLocaleDateString()}
+                        {new Date(post.createdAt).toLocaleDateString()}
                       </div>
                       <div className="flex items-center">
                         <User className="w-4 h-4 mr-2 text-primary" />

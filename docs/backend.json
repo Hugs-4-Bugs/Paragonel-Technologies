@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Admin": {
@@ -24,9 +23,13 @@
         "employmentType": { "type": "string" },
         "workArrangement": { "type": "string" },
         "experienceRequired": { "type": "string" },
+        "salaryRange": { "type": "string" },
         "skills": { "type": "array", "items": { "type": "string" } },
         "description": { "type": "string" },
         "isActive": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["Draft", "Active", "Archived"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
         "deletedAt": { "type": "string", "format": "date-time" }
       }
     },
@@ -94,13 +97,16 @@
         "title": { "type": "string" },
         "slug": { "type": "string" },
         "body": { "type": "string" },
+        "excerpt": { "type": "string" },
         "metaTitle": { "type": "string" },
         "metaDescription": { "type": "string" },
-        "ogImageUrl": { "type": "string" },
-        "canonicalUrl": { "type": "string" },
-        "focusKeyword": { "type": "string" },
-        "publishAt": { "type": "string", "format": "date-time" },
+        "thumbnailUrl": { "type": "string" },
+        "category": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
         "status": { "type": "string", "enum": ["Published", "Draft", "Scheduled"] },
+        "publishAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
         "deletedAt": { "type": "string", "format": "date-time" }
       }
     }
@@ -115,6 +121,7 @@
     "/leads/{leadId}": { "schema": "#/backend/entities/Lead", "description": "Business leads." },
     "/newsletterSubscribers/{subId}": { "schema": "#/backend/entities/NewsletterSubscriber", "description": "Email list." },
     "/adminActivityLogs/{logId}": { "schema": "#/backend/entities/AuditLog", "description": "Security logs." },
-    "/blogPosts/{postId}": { "schema": "#/backend/entities/BlogPost", "description": "Blog content." }
+    "/blogPosts/{postId}": { "schema": "#/backend/entities/BlogPost", "description": "Blog content." },
+    "/blogPosts/{postId}/revisions/{revId}": { "schema": "#/backend/entities/BlogPost", "description": "Blog post revisions." }
   }
 }
