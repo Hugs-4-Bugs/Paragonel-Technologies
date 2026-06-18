@@ -1,7 +1,7 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -65,7 +65,8 @@ export function ChatSection() {
       const response = await companyQnaFlow({ question: text });
       
       if (response.intent === 'careers') {
-        startCareerFlow();
+        updateCareerStep('offering_help');
+        addMessage('ai', response.answer);
       } else if (response.intent === 'navigate' && response.navigationLink) {
         addMessage('ai', (
           <div className="flex flex-col gap-2">
@@ -78,7 +79,9 @@ export function ChatSection() {
           </div>
         ));
       } else {
-        addMessage('ai', response.answer);
+        // Parse Markdown links for normal QNA
+        const content = response.answer;
+        addMessage('ai', content);
       }
     } catch (e) {
       console.error(e);

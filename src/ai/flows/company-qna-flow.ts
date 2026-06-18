@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview QuantumAI Smart Q&A Flow.
@@ -40,7 +39,7 @@ const qnaPrompt = ai.definePrompt({
     Your goal is to be a professional, helpful, and ultra-modern representative of the company.
 
     CORE INTENTS & KNOWLEDGE (Source of Truth):
-    1. FOUNDER: Prabhat Sharma (Founder & Principal Engineer).
+    1. FOUNDER: Prabhat Sharma (Founder & Lead Architect).
     2. PRODUCTS: AcquisitionOS (AI CRM), SystemFoundry (Arch Simulator), CodeGuard AI (Cost Intelligence).
     3. SERVICES: AI Solutions, Cloud Strategy, DevOps Automation, Custom SaaS.
     4. LOCATION: HSR Layout, Bangalore, 560102.
@@ -67,6 +66,45 @@ const qnaPrompt = ai.definePrompt({
 });
 
 export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQnaOutput> {
+  const query = input.question.toLowerCase();
+
+  // LOCAL INTENT ROUTER - Instant responses for core company queries
+  if (query.includes('job') || query.includes('career') || query.includes('hiring') || query.includes('openings') || query.includes('work with you')) {
+    return {
+      answer: "I'd love to help you find a role! We're looking for first-principles thinkers who want to build the future of AI-native software. Would you like me to match your profile to our open positions?",
+      intent: 'careers'
+    };
+  }
+
+  if (query.includes('founder') || query.includes('ceo') || query.includes('sharma') || query.includes('prabhat')) {
+    return {
+      answer: "QuantumFusion Solutions was founded by **Prabhat Sharma**, a Lead Architect and specialist Java Backend Developer. He has a background in building massive-scale systems at Netcore Cloud and is passionate about precision engineering.",
+      intent: 'qna'
+    };
+  }
+
+  if (query.includes('location') || query.includes('office') || query.includes('where')) {
+    return {
+      answer: "Our headquarters is located in **HSR Layout, Bangalore (560102), India**. However, we are a remote-first company with team members collaborating globally.",
+      intent: 'qna'
+    };
+  }
+
+  if (query.includes('contact') || query.includes('email') || query.includes('phone')) {
+    return {
+      answer: "You can reach us at **contact@quantumfusion.in** or call us at **+91 72500 63206**. You can also use our [Contact Page](/contact) to send a direct message.",
+      intent: 'navigate',
+      navigationLink: '/contact'
+    };
+  }
+
+  if (query.includes('product') || query.includes('acquisitionos') || query.includes('systemfoundry')) {
+    return {
+      answer: "We have three main proprietary products: \n1. **AcquisitionOS**: An AI-powered CRM.\n2. **SystemFoundry**: A visual architecture simulator.\n3. **CodeGuard AI**: A VS Code extension for cloud cost intelligence.",
+      intent: 'qna'
+    };
+  }
+
   try {
     const { output } = await qnaPrompt(input);
     
@@ -77,9 +115,10 @@ export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQna
     return output;
   } catch (error: any) {
     console.error("companyQnaFlow Error Details:", error);
+    // Robust fallback if the model fails
     return {
-      answer: "I'm here to assist you! It looks like I had a momentary connection issue. You can manually explore our [Services](/services), view our [Portfolio](/portfolio), or check for [Open Roles](/careers). How else can I help you today?",
-      intent: 'error'
+      answer: "I'm here to assist you! You can explore our [Services](/services), view our [Portfolio](/portfolio), or check for [Open Roles](/careers). How else can I help you today?",
+      intent: 'qna'
     };
   }
 }
