@@ -15,32 +15,47 @@
     "website": "https://quantumfusion-solutions.vercel.app",
     "linkedin": "https://www.linkedin.com/company/quantumfusion-solutions",
     "twitter": "https://x.com/kattyPrabhat",
-    "technologies": ["AI/ML", "Next.js", "React", "Node.js", "Firebase", "Spring Boot", "AWS", "Azure", "GCP", "DevOps", "Kubernetes", "Docker"]
+    "technologies": ["AI/ML", "Next.js", "React", "Node.js", "Firebase", "Spring Boot", "AWS", "Azure", "GCP", "DevOps", "Kubernetes", "Docker", "Java", "Python"],
+    "founder_details": {
+      "name": "Prabhat Sharma",
+      "title": "Lead Architect & Founder",
+      "background": "Bachelor of Engineering in Computer Science. Specialized Java Backend Developer with extensive experience building massive-scale systems at Netcore Cloud, handling millions of real-time events.",
+      "expertise": ["High-concurrency engineering", "Spring Boot", "Cloud-native architectures", "AI systems", "Full-stack development"]
+    }
   },
   "pages": [
-    { "name": "Home", "url": "/", "description": "Overview of mission, stats (4+ products), and solutions." },
-    { "name": "About", "url": "/about", "description": "Learn about founder Prabhat Sharma and our journey from 2024." },
-    { "name": "Services", "url": "/services", "description": "AI Solutions, Cloud, DevOps, and SaaS." },
-    { "name": "Portfolio", "url": "/portfolio", "description": "Live projects: AcquisitionOS (Sales CRM), SystemFoundry, CodeGuard AI." },
-    { "name": "Blog", "url": "/blog", "description": "Engineering insights and founder's journal." },
-    { "name": "Careers", "url": "/careers", "description": "Join our remote-first team. View roles and perks." },
-    { "name": "Contact", "url": "/contact", "description": "Get in touch for partnerships or inquiries." }
+    { "name": "Home", "url": "/", "description": "Overview of mission, company stats, and technical solutions." },
+    { "name": "About", "url": "/about", "description": "Details about our journey, core values, and leadership under Prabhat Sharma." },
+    { "name": "Services", "url": "/services", "description": "Specializations in AI Solutions, Cloud Infrastructure, DevOps, and SaaS Platforms." },
+    { "name": "Portfolio", "url": "/portfolio", "description": "Real-world projects like AcquisitionOS, SystemFoundry, and CodeGuard AI." },
+    { "name": "Blog", "url": "/blog", "description": "Engineering deep dives and product development insights." },
+    { "name": "Careers", "url": "/careers", "description": "Hiring information for first-principles thinkers and engineers." },
+    { "name": "Contact", "url": "/contact", "description": "Inquiries for partnerships, sales, and technical advisory." }
   ],
   "products": [
     {
       "name": "AcquisitionOS",
       "status": "Live",
-      "description": "AI-powered lead acquisition and CRM platform. Replaces 3-4 sales tools."
+      "type": "AI CRM",
+      "description": "An AI-powered sales engine that uses RAG pipelines to aggregate signals from 12+ data sources, reducing customer acquisition costs by 40%."
     },
     {
       "name": "SystemFoundry",
       "status": "Live",
-      "description": "Visual AI-powered system architecture simulator."
+      "type": "Architecture Simulator",
+      "description": "A visual simulator for cloud systems that predicts costs and identifies bottlenecks before deployment."
     },
     {
       "name": "CodeGuard AI",
       "status": "Published",
-      "description": "VS Code extension for real-time cloud cost intelligence."
+      "type": "VS Code Extension",
+      "description": "Real-time cloud cost intelligence for developers, providing feedback on Terraform and CloudFormation files."
     }
+  ],
+  "services": [
+    { "id": "ai", "name": "AI Solutions & LLM Ops", "focus": "Custom RAG, fine-tuned models, agentic workflows." },
+    { "id": "cloud", "name": "Enterprise Cloud Strategy", "focus": "AWS/GCP high-availability, multi-region setups." },
+    { "id": "devops", "name": "DevOps & Reliability", "focus": "CI/CD pipelines, Infrastructure as Code (IaC)." },
+    { "id": "saas", "name": "Custom SaaS Platforms", "focus": "Full technical lifecycle from wireframe to scale." }
   ]
 }
