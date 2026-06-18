@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -12,16 +11,29 @@ export interface ChatMessage {
   timestamp: number;
 }
 
-export type CareerFlowStep = 'idle' | 'offering_help' | 'showing_jobs' | 'resume_upload' | 'analyzing_resume' | 'confirm_details' | 'matching_jobs' | 'apply_behalf' | 'submitting' | 'submitted';
+export type CareerFlowStep = 
+  | 'idle' 
+  | 'offering_help' 
+  | 'resume_upload' 
+  | 'analyzing_resume' 
+  | 'confirm_details' 
+  | 'matching_jobs' 
+  | 'apply_behalf' 
+  | 'submitting' 
+  | 'submitted';
 
 export interface CandidateProfile {
   name: string;
   email: string;
   phone: string;
+  location: string;
   skills: string[];
   experienceYears: number;
   education: string;
-  technologies?: string[];
+  domain: string;
+  seniority: string;
+  summary: string;
+  projects?: string[];
   resumeUrl?: string;
   resumeDataUri?: string;
 }
@@ -36,7 +48,7 @@ export interface ChatState {
   matchedJobs: any[];
 }
 
-const SESSION_KEY = 'qfai_chat_session_id';
+const SESSION_KEY = 'qfai_chat_session_id_v2';
 
 export function useChatState() {
   const [state, setState] = useState<ChatState>({
@@ -49,7 +61,6 @@ export function useChatState() {
     matchedJobs: [],
   });
 
-  // Initialize Session
   useEffect(() => {
     let sid = sessionStorage.getItem(SESSION_KEY);
     if (!sid) {
@@ -70,21 +81,17 @@ export function useChatState() {
       messages: [...prev.messages, newMessage]
     }));
 
-    // Persist to Firestore if content is string and DB is available
-    if (typeof content === 'string' && sessionStorage.getItem(SESSION_KEY) && db) {
+    if (typeof content === 'string' && db && state.sessionId) {
       try {
-        const sid = sessionStorage.getItem(SESSION_KEY)!;
-        const messagesRef = collection(db, 'chatSessions', sid, 'messages');
-        addDoc(messagesRef, {
+        const messagesRef = collection(db, 'chatSessions', state.sessionId, 'messages');
+        await addDoc(messagesRef, {
           role,
           content,
           timestamp: serverTimestamp(),
         });
-      } catch (e) {
-        // Silent fail for persistence to keep UI working
-      }
+      } catch (e) {}
     }
-  }, []);
+  }, [state.sessionId]);
 
   const updateCareerStep = useCallback((step: CareerFlowStep) => {
     setState(prev => ({ ...prev, careerStep: step }));
