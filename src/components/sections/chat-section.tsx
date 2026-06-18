@@ -55,7 +55,6 @@ export function ChatSection() {
     let score = 0;
     const reasons: string[] = [];
 
-    // 1. Skills (40%)
     const jobSkills = (job.skills || []).map((s: string) => s.toLowerCase());
     const userSkills = (profile.skills || []).map((s: string) => s.toLowerCase());
     const matchedSkills = jobSkills.filter((s: string) => userSkills.includes(s));
@@ -63,7 +62,6 @@ export function ChatSection() {
     score += skillScore;
     if (matchedSkills.length > 0) reasons.push(`${matchedSkills.length} key skills matched`);
 
-    // 2. Experience (25%)
     const jobExp = parseInt(job.experienceRequired) || 0;
     if (profile.experienceYears >= jobExp) {
       score += 25;
@@ -73,14 +71,12 @@ export function ChatSection() {
       reasons.push("Experience closely aligns");
     }
 
-    // 3. Domain (20%)
     if (profile.domain.toLowerCase().includes(job.department.toLowerCase()) || 
         job.title.toLowerCase().includes(profile.domain.toLowerCase())) {
       score += 20;
       reasons.push(`${profile.domain} specialization`);
     }
 
-    // 4. Seniority & Education (15%)
     if (job.title.toLowerCase().includes(profile.seniority.toLowerCase())) {
       score += 10;
     }
@@ -147,7 +143,7 @@ export function ChatSection() {
       return;
     }
 
-    updateCareerStep('submitting'); // Show loader
+    updateCareerStep('submitting');
     setIsLoading(true);
 
     try {
@@ -276,23 +272,31 @@ export function ChatSection() {
   }
 
   return (
-    <Card className="fixed bottom-0 right-0 w-full sm:w-[420px] h-[80vh] sm:h-[700px] sm:bottom-6 sm:right-6 shadow-2xl z-[40] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden border-none bg-background animate-in slide-in-from-bottom duration-300">
+    <Card 
+      className={cn(
+        "fixed z-[40] flex flex-col bg-background animate-in slide-in-from-bottom duration-300",
+        "inset-0 w-full h-full rounded-none", // Mobile Default
+        "md:inset-auto md:bottom-6 md:right-6 md:w-[400px] md:max-h-[75vh] md:rounded-3xl", // Tablet
+        "lg:w-[450px] lg:max-h-[80vh]", // Desktop
+        "shadow-2xl border-none overflow-hidden"
+      )}
+    >
       <CardHeader className="flex flex-row items-center justify-between p-5 border-b bg-primary text-primary-foreground flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-2xl bg-white/20 flex items-center justify-center border border-white/30">
-            <Bot className="h-7 w-7 text-white" />
+          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-white/20 flex items-center justify-center border border-white/30">
+            <Bot className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
           </div>
           <div>
-            <CardTitle className="text-sm font-black tracking-tight">QuantumAI</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-black tracking-tight">QuantumAI</CardTitle>
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Active Talent Agent</span>
+              <span className="text-[9px] sm:text-[10px] font-bold text-white/70 uppercase tracking-widest">Active Talent Agent</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={clearChat} className="h-9 w-9 hover:bg-white/20 text-white rounded-xl"><Trash2 className="h-5 w-5" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-9 w-9 hover:bg-white/20 text-white rounded-xl"><X className="h-5 w-5" /></Button>
+          <Button variant="ghost" size="icon" onClick={clearChat} className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-white/20 text-white rounded-xl"><Trash2 className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-white/20 text-white rounded-xl"><X className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
         </div>
       </CardHeader>
       
@@ -302,7 +306,7 @@ export function ChatSection() {
             {messages.map((msg) => (
               <div key={msg.id} className={cn("flex flex-col", msg.role === 'user' ? 'items-end' : 'items-start')}>
                 <div className={cn(
-                    "max-w-[90%] rounded-[1.5rem] px-5 py-4 text-sm shadow-sm transition-all leading-relaxed font-medium",
+                    "max-w-[90%] rounded-[1.5rem] px-5 py-3 sm:py-4 text-sm shadow-sm transition-all leading-relaxed font-medium",
                     msg.role === 'user'
                       ? 'bg-primary text-primary-foreground rounded-tr-none'
                       : 'bg-zinc-100 dark:bg-zinc-900 text-foreground rounded-tl-none border border-zinc-200 dark:border-zinc-800'
@@ -341,7 +345,7 @@ export function ChatSection() {
         </ScrollArea>
       </CardContent>
 
-      <CardFooter className="p-5 border-t bg-background flex-shrink-0">
+      <CardFooter className="p-4 sm:p-5 border-t bg-background flex-shrink-0">
         <div className="relative w-full flex items-center gap-3">
           <Input
             type="text"
@@ -349,16 +353,16 @@ export function ChatSection() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-            className="flex-grow h-14 rounded-2xl text-sm focus-visible:ring-primary border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 pr-14 font-medium"
+            className="flex-grow h-12 sm:h-14 rounded-2xl text-sm focus-visible:ring-primary border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 pr-14 font-medium"
             disabled={isLoading}
           />
           <Button 
             onClick={handleSendMessage} 
             size="icon" 
             disabled={isLoading || inputValue.trim() === ''} 
-            className="absolute right-1.5 top-1.5 h-11 w-11 rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-xl shadow-primary/20"
+            className="absolute right-1.5 top-1.5 h-9 w-9 sm:h-11 sm:w-11 rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-xl shadow-primary/20"
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </div>
       </CardFooter>

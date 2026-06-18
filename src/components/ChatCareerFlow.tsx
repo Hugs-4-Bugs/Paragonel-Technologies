@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, FileText, Loader2, Info, Brain, Target, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CandidateProfile } from '@/hooks/useChatState';
+import { cn } from '@/lib/utils';
 
 interface ChatCareerFlowProps {
   step: string;
@@ -75,11 +76,14 @@ export function ChatCareerFlow({
 
   if (step === 'resume_upload') {
     return (
-      <div className="w-full mt-2 bg-muted/30 p-6 rounded-2xl border-2 border-dashed border-primary/30 hover:border-primary/60 transition-colors">
-        <label className="flex flex-col items-center justify-center cursor-pointer text-center">
-          <Upload className="h-10 w-10 mb-3 text-primary animate-bounce" />
-          <p className="text-sm font-black">Drop your resume here</p>
-          <p className="text-[10px] text-muted-foreground mt-1">PDF or DOCX (Max 10MB)</p>
+      <div className={cn(
+        "w-full mt-2 bg-muted/30 rounded-2xl border-2 border-dashed border-primary/30 hover:border-primary/60 transition-colors flex items-center justify-center",
+        "lg:h-[120px] h-[90px]" // Responsive heights per requirement
+      )}>
+        <label className="flex flex-col items-center justify-center cursor-pointer text-center w-full h-full p-2">
+          <Upload className="h-6 w-6 sm:h-8 sm:w-8 mb-1 text-primary animate-bounce" />
+          <p className="text-xs sm:text-sm font-black">Drop your resume here</p>
+          <p className="text-[9px] sm:text-[10px] text-muted-foreground">PDF or DOCX (Max 10MB)</p>
           <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleFileChange} />
         </label>
       </div>
