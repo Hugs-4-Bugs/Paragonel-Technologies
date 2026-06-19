@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -8,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Briefcase, 
   ChevronUp, 
+  ChevronDown,
   Filter,
   Search,
   MapPin,
@@ -50,6 +50,7 @@ export default function CareersPage() {
   const [dateFilter, setDateFilter] = useState('Any time');
   const [workArrangementFilter, setWorkArrangementFilter] = useState('Any');
   const [showOpenRoles, setShowOpenRoles] = useState(true);
+  const [showFilters, setShowFilters] = useState(false); // Toggle for filters suite
 
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [selectedJobForApplication, setSelectedJobForApplication] = useState<any>(null);
@@ -60,7 +61,6 @@ export default function CareersPage() {
   const router = useRouter();
   const firestore = useFirestore();
 
-  // Stable Query Reference
   const jobsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
@@ -73,14 +73,12 @@ export default function CareersPage() {
 
   const { data: dynamicJobs, loading } = useCollection(jobsQuery);
 
-  // Stable Job List Merging
   const allJobs = useMemo(() => {
     const combined = [...dummyJobs, ...(dynamicJobs || [])];
     const unique = Array.from(new Map(combined.map(item => [item.jobId || item.id, item])).values());
     return unique;
   }, [dynamicJobs]);
 
-  // Derived Options
   const departments = useMemo(() => {
     const depts = new Set(allJobs.map(j => j.department));
     return ['All Departments', ...Array.from(depts)].sort();
@@ -91,7 +89,6 @@ export default function CareersPage() {
     return ['All Locations', ...Array.from(locs)].sort();
   }, [allJobs]);
 
-  // Comprehensive Filtering Logic
   const filteredJobs = useMemo(() => {
     if (!showOpenRoles) return [];
 
@@ -147,7 +144,6 @@ export default function CareersPage() {
 
   return (
     <div className="bg-[#1a1b3a] min-h-screen text-white">
-      {/* Hero Content */}
       <section className="pt-20 pb-12 text-center px-4">
         <ScrollFadeIn>
           <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
@@ -156,23 +152,34 @@ export default function CareersPage() {
           <p className="text-zinc-300 text-lg md:text-xl max-w-2xl mx-auto mb-10">
             We are pioneering the future of technology. Explore exciting opportunities and grow with our innovative team.
           </p>
-          <Button 
-            onClick={() => setShowOpenRoles(!showOpenRoles)}
-            className="rounded-full bg-[#8e44ad] hover:bg-[#7d3c98] px-8 h-14 text-lg font-bold gap-3"
-          >
-            {showOpenRoles ? <ChevronUp className="h-5 w-5" /> : <Filter className="h-5 w-5" />}
-            {showOpenRoles ? 'Hide Open Roles' : 'See Open Roles'}
-            <Briefcase className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center justify-center gap-4">
+            <Button 
+              onClick={() => setShowOpenRoles(!showOpenRoles)}
+              className="rounded-full bg-[#8e44ad] hover:bg-[#7d3c98] px-8 h-14 text-lg font-bold gap-3"
+            >
+              {showOpenRoles ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              {showOpenRoles ? 'Hide Open Roles' : 'See Open Roles'}
+              <Briefcase className="h-5 w-5" />
+            </Button>
+            
+            {showOpenRoles && (
+              <Button 
+                onClick={() => setShowFilters(!showFilters)}
+                variant="outline"
+                className="rounded-full border-[#4da3ff]/50 text-[#4da3ff] hover:bg-[#4da3ff]/10 px-8 h-14 text-lg font-bold gap-3"
+              >
+                <Filter className="h-5 w-5" />
+                {showFilters ? 'Hide Filters' : 'Filter Roles'}
+              </Button>
+            )}
+          </div>
         </ScrollFadeIn>
       </section>
 
-      {/* Filter Card - Styled to match image */}
-      {showOpenRoles && (
-        <section className="container mx-auto px-4 md:px-6 mb-16">
+      {showOpenRoles && showFilters && (
+        <section className="container mx-auto px-4 md:px-6 mb-16 animate-in slide-in-from-top duration-500">
           <ScrollFadeIn className="bg-[#2a2b5a] p-8 rounded-[2rem] shadow-2xl border border-white/5 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {/* Row 1, Col 1: Keywords */}
               <div className="space-y-3">
                 <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Search Jobs</Label>
                 <div className="relative">
@@ -186,7 +193,6 @@ export default function CareersPage() {
                 </div>
               </div>
 
-              {/* Row 1, Col 2: Job ID */}
               <div className="space-y-3">
                 <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Filter by Job ID</Label>
                 <div className="relative">
@@ -200,7 +206,6 @@ export default function CareersPage() {
                 </div>
               </div>
 
-              {/* Row 1, Col 3: Location */}
               <div className="space-y-3">
                 <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Location</Label>
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
@@ -213,7 +218,6 @@ export default function CareersPage() {
                 </Select>
               </div>
 
-              {/* Row 1, Col 4: Department */}
               <div className="space-y-3">
                 <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Department</Label>
                 <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
@@ -228,7 +232,6 @@ export default function CareersPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pt-8 border-t border-white/5">
-              {/* Row 2, Col 1: Date Filter */}
               <div className="space-y-4">
                 <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Filter by Date</Label>
                 <RadioGroup value={dateFilter} onValueChange={setDateFilter} className="flex flex-wrap gap-x-6 gap-y-3">
@@ -241,7 +244,6 @@ export default function CareersPage() {
                 </RadioGroup>
               </div>
 
-              {/* Row 2, Col 2: Employment Type */}
               <div className="space-y-3">
                 <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Employment Type</Label>
                 <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
@@ -254,7 +256,6 @@ export default function CareersPage() {
                 </Select>
               </div>
 
-              {/* Row 2, Col 3: Work Arrangement */}
               <div className="space-y-4">
                 <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Work Arrangement</Label>
                 <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex gap-8">
@@ -275,7 +276,6 @@ export default function CareersPage() {
         </section>
       )}
 
-      {/* Roles Listing */}
       {showOpenRoles && (
         <section className="container mx-auto px-4 md:px-6 pb-24">
           {loading ? (
@@ -307,7 +307,6 @@ export default function CareersPage() {
         </section>
       )}
 
-      {/* Info Sections - Restored as requested */}
       <section className="py-24 bg-[#14152e] border-y border-white/5">
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
