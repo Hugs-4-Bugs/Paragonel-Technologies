@@ -1,20 +1,12 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Brain, 
-  Laptop, 
-  Zap, 
-  Rocket, 
   Briefcase, 
-  Heart, 
-  Award, 
-  Users, 
-  Gem, 
   ChevronUp, 
   Filter,
   Search,
@@ -22,12 +14,14 @@ import {
   Clock,
   Building,
   Hash,
-  ShieldCheck,
-  GraduationCap,
+  Monitor,
+  Laptop,
+  ArrowRight,
   Sparkles,
   Trophy,
   Globe,
-  Monitor
+  GraduationCap,
+  Heart
 } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
@@ -66,6 +60,7 @@ export default function CareersPage() {
   const router = useRouter();
   const firestore = useFirestore();
 
+  // Stable Query Reference
   const jobsQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
@@ -78,13 +73,14 @@ export default function CareersPage() {
 
   const { data: dynamicJobs, loading } = useCollection(jobsQuery);
 
+  // Stable Job List Merging
   const allJobs = useMemo(() => {
     const combined = [...dummyJobs, ...(dynamicJobs || [])];
-    // Filter out duplicates if a dummy job was seeded to Firestore
     const unique = Array.from(new Map(combined.map(item => [item.jobId || item.id, item])).values());
     return unique;
   }, [dynamicJobs]);
 
+  // Derived Options
   const departments = useMemo(() => {
     const depts = new Set(allJobs.map(j => j.department));
     return ['All Departments', ...Array.from(depts)].sort();
@@ -95,6 +91,7 @@ export default function CareersPage() {
     return ['All Locations', ...Array.from(locs)].sort();
   }, [allJobs]);
 
+  // Comprehensive Filtering Logic
   const filteredJobs = useMemo(() => {
     if (!showOpenRoles) return [];
 
@@ -149,264 +146,217 @@ export default function CareersPage() {
   };
 
   return (
-    <div className="bg-background min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-[300px] md:h-[450px] flex items-center justify-center overflow-hidden animated-gradient-background text-white">
-        <div className="absolute inset-0 bg-black/40 z-0"></div>
-        <div className="container relative z-10 px-4 md:px-6 text-center">
-          <ScrollFadeIn>
-            <h1 className="text-4xl md:text-7xl font-black mb-4 tracking-tighter">Careers at <span className="text-primary">QuantumFusion</span></h1>
-            <p className="text-lg md:text-2xl max-w-3xl mx-auto opacity-90 font-medium leading-relaxed">
-              We're looking for first-principles thinkers who want to build the future of AI-native software.
-            </p>
-          </ScrollFadeIn>
-        </div>
+    <div className="bg-[#1a1b3a] min-h-screen text-white">
+      {/* Hero Content */}
+      <section className="pt-20 pb-12 text-center px-4">
+        <ScrollFadeIn>
+          <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
+            Join <span className="text-[#4da3ff]">QuantumFusion Solutions</span>
+          </h1>
+          <p className="text-zinc-300 text-lg md:text-xl max-w-2xl mx-auto mb-10">
+            We are pioneering the future of technology. Explore exciting opportunities and grow with our innovative team.
+          </p>
+          <Button 
+            onClick={() => setShowOpenRoles(!showOpenRoles)}
+            className="rounded-full bg-[#8e44ad] hover:bg-[#7d3c98] px-8 h-14 text-lg font-bold gap-3"
+          >
+            {showOpenRoles ? <ChevronUp className="h-5 w-5" /> : <Filter className="h-5 w-5" />}
+            {showOpenRoles ? 'Hide Open Roles' : 'See Open Roles'}
+            <Briefcase className="h-5 w-5" />
+          </Button>
+        </ScrollFadeIn>
       </section>
 
-      {/* Advanced Filter Section */}
-      <section className="bg-zinc-50 dark:bg-zinc-900/40 border-b sticky top-20 z-20 shadow-sm backdrop-blur-md">
-        <div className="container mx-auto px-4 md:px-6 py-6 space-y-6">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 flex-1">
-              <div className="space-y-2">
-                <Label htmlFor="search" className="text-xs font-black uppercase tracking-widest text-zinc-400">Search Roles</Label>
+      {/* Filter Card - Styled to match image */}
+      {showOpenRoles && (
+        <section className="container mx-auto px-4 md:px-6 mb-16">
+          <ScrollFadeIn className="bg-[#2a2b5a] p-8 rounded-[2rem] shadow-2xl border border-white/5 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {/* Row 1, Col 1: Keywords */}
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Search Jobs</Label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                   <Input 
-                    id="search"
-                    placeholder="Keywords (e.g. AI, Python)" 
-                    className="pl-10 h-12 rounded-xl border-zinc-200 dark:border-zinc-800 bg-background"
+                    placeholder="Keywords (e.g., AI, Python)" 
+                    className="pl-10 bg-[#1a1b3a] border-none h-12 rounded-xl text-white placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-[#4da3ff]" 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="jobId" className="text-xs font-black uppercase tracking-widest text-zinc-400">Job ID</Label>
+              {/* Row 1, Col 2: Job ID */}
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Filter by Job ID</Label>
                 <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                   <Input 
-                    id="jobId"
-                    placeholder="ABC123" 
-                    className="pl-10 h-12 rounded-xl border-zinc-200 dark:border-zinc-800 bg-background uppercase font-mono"
+                    placeholder="Enter Job ID (e.g., ABC123)" 
+                    className="pl-10 bg-[#1a1b3a] border-none h-12 rounded-xl text-white placeholder:text-zinc-600 uppercase font-mono" 
                     value={jobIdSearch}
                     onChange={(e) => setJobIdSearch(e.target.value)}
                   />
                 </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="location" className="text-xs font-black uppercase tracking-widest text-zinc-400">Location</Label>
+
+              {/* Row 1, Col 3: Location */}
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Location</Label>
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
-                  <SelectTrigger id="location" className="h-12 rounded-xl border-zinc-200 dark:border-zinc-800 bg-background">
+                  <SelectTrigger className="bg-[#1a1b3a] border-none h-12 rounded-xl text-white">
                     <SelectValue placeholder="All Locations" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#2a2b5a] text-white border-zinc-700">
                     {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="department" className="text-xs font-black uppercase tracking-widest text-zinc-400">Department</Label>
+              {/* Row 1, Col 4: Department */}
+              <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Department</Label>
                 <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                  <SelectTrigger id="department" className="h-12 rounded-xl border-zinc-200 dark:border-zinc-800 bg-background">
+                  <SelectTrigger className="bg-[#1a1b3a] border-none h-12 rounded-xl text-white">
                     <SelectValue placeholder="All Departments" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#2a2b5a] text-white border-zinc-700">
                     {departments.map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <Button 
-              variant="outline" 
-              size="lg" 
-              onClick={() => setShowOpenRoles(!showOpenRoles)}
-              className={cn("h-12 rounded-xl px-8 font-black transition-all border-2", showOpenRoles && "bg-primary text-white border-primary")}
-            >
-              {showOpenRoles ? <ChevronUp className="mr-2 h-5 w-5" /> : <Filter className="mr-2 h-5 w-5" />}
-              {showOpenRoles ? 'Hide Roles' : 'Explore Open Roles'}
-            </Button>
-          </div>
-
-          {showOpenRoles && (
-            <ScrollFadeIn className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-              <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Employment Type</Label>
-                <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
-                  <SelectTrigger className="h-10 rounded-lg border-zinc-200 dark:border-zinc-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employmentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Date Posted</Label>
-                <RadioGroup value={dateFilter} onValueChange={setDateFilter} className="flex flex-wrap gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pt-8 border-t border-white/5">
+              {/* Row 2, Col 1: Date Filter */}
+              <div className="space-y-4">
+                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Filter by Date</Label>
+                <RadioGroup value={dateFilter} onValueChange={setDateFilter} className="flex flex-wrap gap-x-6 gap-y-3">
                   {['Any time', 'Past month', 'Past week', 'Past 24 hours'].map((opt) => (
                     <div key={opt} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt} id={`date-${opt}`} />
-                      <Label htmlFor={`date-${opt}`} className="font-bold text-sm cursor-pointer">{opt}</Label>
+                      <RadioGroupItem value={opt} id={`date-${opt}`} className="border-zinc-600 text-[#4da3ff]" />
+                      <Label htmlFor={`date-${opt}`} className="text-sm font-bold text-zinc-300 cursor-pointer">{opt}</Label>
                     </div>
                   ))}
                 </RadioGroup>
               </div>
 
+              {/* Row 2, Col 2: Employment Type */}
               <div className="space-y-3">
+                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Employment Type</Label>
+                <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
+                  <SelectTrigger className="bg-[#1a1b3a] border-none h-12 rounded-xl text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#2a2b5a] text-white border-zinc-700">
+                    {employmentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Row 2, Col 3: Work Arrangement */}
+              <div className="space-y-4">
                 <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Work Arrangement</Label>
-                <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex gap-4">
+                <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex gap-8">
                   {workArrangements.map((type) => (
                     <div key={type} className="flex items-center space-x-2">
-                      <RadioGroupItem value={type} id={`arr-${type}`} />
-                      <Label htmlFor={`arr-${type}`} className="font-bold text-sm flex items-center cursor-pointer">
-                        {type === 'Remote' && <Laptop className="mr-1.5 h-3.5 w-3.5 text-primary" />}
-                        {type === 'Onsite' && <Building className="mr-1.5 h-3.5 w-3.5 text-primary" />}
+                      <RadioGroupItem value={type} id={`arr-${type}`} className="border-zinc-600 text-[#4da3ff]" />
+                      <Label htmlFor={`arr-${type}`} className="text-sm font-bold text-zinc-300 flex items-center cursor-pointer gap-2">
+                        {type === 'Remote' && <Laptop className="h-4 w-4 text-[#4da3ff]" />}
+                        {type === 'Onsite' && <Building className="h-4 w-4 text-[#4da3ff]" />}
                         {type}
                       </Label>
                     </div>
                   ))}
                 </RadioGroup>
               </div>
-            </ScrollFadeIn>
-          )}
-        </div>
-      </section>
-
-      {/* Open Roles Listing */}
-      {showOpenRoles && (
-        <section className="section-padding bg-background">
-          <div className="container mx-auto px-4 md:px-6">
-            <ScrollFadeIn className="mb-10 flex items-center justify-between">
-               <h2 className="text-2xl font-black tracking-tight flex items-center gap-2">
-                 <Briefcase className="h-6 w-6 text-primary" />
-                 Found {filteredJobs.length} Opportunities
-               </h2>
-               {filteredJobs.length > 0 && (
-                 <Button variant="ghost" onClick={() => {
-                   setSearchTerm(''); setJobIdSearch(''); setLocationFilter('All Locations'); setDepartmentFilter('All Departments'); setEmploymentTypeFilter('All Types'); setWorkArrangementFilter('Any'); setDateFilter('Any time');
-                 }} className="text-primary font-bold text-xs uppercase tracking-widest">
-                   Reset Filters
-                 </Button>
-               )}
-            </ScrollFadeIn>
-
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-64 rounded-3xl" />)}
-              </div>
-            ) : filteredJobs.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-                {filteredJobs.map((job: any) => (
-                  <JobCard 
-                    key={job.jobId || job.id} 
-                    job={job} 
-                    onApplyNowClick={() => handleApply(job)} 
-                    onViewDetailsClick={() => handleView(job)} 
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-32 bg-zinc-50 dark:bg-zinc-900 border rounded-[3rem] shadow-inner max-w-4xl mx-auto">
-                <Rocket className="h-20 w-20 text-primary/20 mx-auto mb-8 animate-pulse" />
-                <h3 className="text-3xl font-black mb-4">No matching roles right now</h3>
-                <p className="text-zinc-500 text-lg max-w-md mx-auto mb-10">We update our roles daily. Drop your resume anyway at <span className="text-primary font-bold">careers@quantumfusion.in</span></p>
-                <Button variant="outline" className="rounded-full px-8 h-12 font-bold" onClick={() => setSearchTerm('')}>Browse All Roles</Button>
-              </div>
-            )}
-          </div>
+            </div>
+          </ScrollFadeIn>
         </section>
       )}
 
-      {/* Why Join Section */}
-      <section className="section-padding bg-zinc-50 dark:bg-zinc-900/20 border-y relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-20 opacity-5 pointer-events-none"><Sparkles className="h-64 w-64 text-primary" /></div>
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
-          <ScrollFadeIn className="text-center mb-20">
-             <span className="text-primary font-black uppercase tracking-[0.3em] text-[10px] mb-4 block">The Mission</span>
-             <h2 className="text-4xl md:text-6xl font-black tracking-tight">Why Join <span className="text-primary">QuantumFusion?</span></h2>
-             <p className="text-zinc-500 text-xl mt-6 max-w-3xl mx-auto leading-relaxed font-medium">
-               We aren't just another IT firm. We are a product-first AI company building the future of work.
-             </p>
-          </ScrollFadeIn>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+      {/* Roles Listing */}
+      {showOpenRoles && (
+        <section className="container mx-auto px-4 md:px-6 pb-24">
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 rounded-[2rem] bg-[#2a2b5a]" />)}
+            </div>
+          ) : filteredJobs.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredJobs.map((job: any) => (
+                <JobCard 
+                  key={job.jobId || job.id} 
+                  job={job} 
+                  onApplyNowClick={() => handleApply(job)} 
+                  onViewDetailsClick={() => handleView(job)} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-[#2a2b5a]/50 rounded-[3rem] border-2 border-dashed border-white/5">
+              <Filter className="h-12 w-12 mx-auto mb-4 text-zinc-600" />
+              <p className="text-xl font-bold text-zinc-400">No matching roles found.</p>
+              <Button variant="link" onClick={() => {
+                setSearchTerm(''); setJobIdSearch(''); setLocationFilter('All Locations'); 
+                setDepartmentFilter('All Departments'); setEmploymentTypeFilter('All Types');
+                setWorkArrangementFilter('Any'); setDateFilter('Any time');
+              }} className="text-[#4da3ff]">Reset all filters</Button>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Info Sections - Restored as requested */}
+      <section className="py-24 bg-[#14152e] border-y border-white/5">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black mb-4">Why Join QuantumFusion?</h2>
+            <p className="text-zinc-400">We aren't just another IT firm. We are a product-first AI company building the future of work.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { title: "Interesting Problems", text: "Work on cutting-edge AI, cloud, and real client challenges that actually matter.", icon: Brain },
-              { title: "Remote-First", text: "Work from anywhere in India with our Bangalore hub as your engineering anchor.", icon: Laptop },
-              { title: "Learn by Shipping", text: "We build real products, not just maintenance code. Ship features every single week.", icon: Zap },
-              { title: "Zero Bureaucracy", text: "Direct access to founders and rapid execution cycles. Your voice is always heard.", icon: Rocket }
-            ].map((card, i) => (
-              <ScrollFadeIn key={i} delay={`${i * 100}ms`} className="p-10 rounded-[3rem] border border-zinc-200 dark:border-zinc-800 bg-card hover:shadow-2xl transition-all duration-500 group relative">
-                <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity"><ArrowRight className="h-6 w-6 text-primary/20" /></div>
-                <div className="h-16 w-16 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-primary transition-all duration-500">
-                  <card.icon className="h-8 w-8 text-primary group-hover:text-white transition-colors" />
-                </div>
-                <h4 className="font-black text-2xl mb-4 tracking-tight">{card.title}</h4>
-                <p className="text-zinc-500 leading-relaxed font-medium">{card.text}</p>
-              </ScrollFadeIn>
+              { title: "Interesting Problems", text: "Work on cutting-edge AI, cloud, and real client challenges.", icon: Sparkles },
+              { title: "Remote-First", text: "Work from anywhere in India with our Bangalore hub.", icon: Laptop },
+              { title: "Learn by Shipping", text: "We build real products, not just maintenance code.", icon: Briefcase },
+              { title: "Zero Bureaucracy", text: "Direct access to founders and rapid execution.", icon: Globe }
+            ].map((item, i) => (
+              <div key={i} className="p-8 rounded-[2rem] bg-[#1a1b3a] border border-white/5 hover:border-[#4da3ff]/30 transition-colors">
+                <item.icon className="h-10 w-10 text-[#4da3ff] mb-6" />
+                <h4 className="text-xl font-bold mb-3">{item.title}</h4>
+                <p className="text-sm text-zinc-500 leading-relaxed">{item.text}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Benefits & Perks */}
-      <section className="section-padding bg-background">
+      <section className="py-24">
         <div className="container mx-auto px-4 md:px-6">
-          <ScrollFadeIn className="text-center mb-20">
-             <span className="text-primary font-black uppercase tracking-[0.3em] text-[10px] mb-4 block">The Value</span>
-             <h2 className="text-4xl md:text-6xl font-black tracking-tight">Benefits & <span className="text-primary">Perks</span></h2>
-             <p className="text-zinc-500 text-xl mt-6 max-w-2xl mx-auto font-medium leading-relaxed">
-               We take care of our innovators. Competitive compensation is just the beginning.
-             </p>
-          </ScrollFadeIn>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-             {[
-               { title: "Health Insurance", text: "Comprehensive family health plans covering you and your loved ones.", icon: Heart },
-               { title: "Learning Budget", text: "Annual stipend for courses, certifications, and international conferences.", icon: GraduationCap },
-               { title: "Flexible Leave", text: "Generous PTO and mental wellness breaks to ensure you stay sharp.", icon: Clock },
-               { title: "Equity Options", text: "Be a real owner of QuantumFusion and share in our collective success.", icon: Trophy },
-               { title: "Annual Offsites", text: "Meet the entire team in exotic locations to bond and brainstorm.", icon: Globe },
-               { title: "Gadget Stipend", text: "Get the latest Apple/Windows tech to do your absolute best work.", icon: Monitor }
-             ].map((perk, i) => (
-               <ScrollFadeIn key={i} delay={`${i * 100}ms`} className="flex items-start gap-6 p-8 rounded-[2rem] hover:bg-secondary/10 transition-colors border border-transparent hover:border-primary/10">
-                  <div className="h-12 w-12 bg-primary/5 rounded-2xl flex items-center justify-center shrink-0">
-                    <perk.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-lg mb-1 tracking-tight">{perk.title}</h4>
-                    <p className="text-zinc-500 text-sm leading-relaxed font-medium">{perk.text}</p>
-                  </div>
-               </ScrollFadeIn>
-             ))}
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black mb-4">Benefits & Perks</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            {[
+              { title: "Health Insurance", text: "Comprehensive family health plans.", icon: Heart },
+              { title: "Learning Budget", text: "Annual stipend for courses and conferences.", icon: GraduationCap },
+              { title: "Flexible Leave", text: "Generous PTO and wellness breaks.", icon: Clock },
+              { title: "Equity Options", text: "Be a real owner of QuantumFusion.", icon: Trophy },
+              { title: "Annual Offsites", text: "Meet the team in exotic locations.", icon: Monitor },
+              { title: "Gadget Stipend", text: "Get the latest tech to do your best work.", icon: Building }
+            ].map((perk, i) => (
+              <div key={i} className="flex items-start gap-5">
+                <div className="h-12 w-12 bg-[#4da3ff]/10 rounded-2xl flex items-center justify-center shrink-0">
+                  <perk.icon className="h-6 w-6 text-[#4da3ff]" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold mb-1">{perk.title}</h4>
+                  <p className="text-zinc-500 text-sm">{perk.text}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </section>
-
-      {/* Culture CTA */}
-      <section className="section-padding bg-secondary/10 mb-20 rounded-[4rem] container mx-auto max-w-6xl relative overflow-hidden group">
-        <div className="absolute top-1/2 left-0 -translate-y-1/2 w-64 h-64 bg-primary/5 rounded-full blur-[100px]"></div>
-        <ScrollFadeIn className="text-center relative z-10 p-10 md:p-20">
-          <Trophy className="h-20 w-20 text-primary/20 mx-auto mb-10" />
-          <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tight">Build the Future With Us</h2>
-          <p className="text-xl text-zinc-500 max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
-            We are a lean, focused group of high-performance engineers. If you are a first-principles thinker, we want to talk.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-             <Button size="lg" className="rounded-full px-12 h-16 text-lg font-black shadow-2xl hover:scale-105 transition-transform" onClick={() => setShowOpenRoles(true)}>
-               See Open Positions
-             </Button>
-             <Button variant="outline" size="lg" className="rounded-full px-12 h-16 text-lg font-black border-2" asChild>
-                <a href="mailto:careers@quantumfusion.in">Talk to Founders</a>
-             </Button>
-          </div>
-        </ScrollFadeIn>
       </section>
 
       <ApplyJobModal isOpen={isApplyModalOpen} onOpenChange={setIsApplyModalOpen} job={selectedJobForApplication} />
