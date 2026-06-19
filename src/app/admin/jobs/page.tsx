@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Plus, 
@@ -12,10 +11,7 @@ import {
   Trash2, 
   CheckCircle2, 
   Clock, 
-  Filter,
-  Briefcase,
-  ExternalLink,
-  Power
+  Briefcase
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,9 +31,8 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useCollection } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, deleteDoc, updateDoc, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,12 +42,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 export default function AdminJobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('All');
-  const { data: jobs, loading } = useCollection(query(collection(db, 'jobs'), orderBy('createdAt', 'desc')));
+  const firestore = useFirestore();
   const { toast } = useToast();
 
+  const jobsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'jobs'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: jobs, loading } = useCollection(jobsQuery);
+
   const handleToggleActive = async (id: string, currentIsActive: boolean) => {
+    if (!firestore) return;
     try {
-      await updateDoc(doc(db, 'jobs', id), { 
+      await updateDoc(doc(firestore, 'jobs', id), { 
         isActive: !currentIsActive,
         status: !currentIsActive ? 'Active' : 'Draft',
         updatedAt: new Date().toISOString()
@@ -64,9 +67,9 @@ export default function AdminJobsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to permanently delete this job opening? This action cannot be undone.')) return;
+    if (!firestore || !confirm('Are you sure you want to permanently delete this job opening? This action cannot be undone.')) return;
     try {
-      await deleteDoc(doc(db, 'jobs', id));
+      await deleteDoc(doc(firestore, 'jobs', id));
       toast({ title: 'Success', description: 'Job deleted permanently.' });
     } catch (e) {
       toast({ title: 'Error', description: 'Failed to delete job.', variant: 'destructive' });
@@ -74,7 +77,7 @@ export default function AdminJobsPage() {
   };
 
   const filteredJobs = jobs?.filter((job: any) => {
-    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) || job.jobId.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = job.title?.toLowerCase().includes(searchTerm.toLowerCase()) || job.jobId?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDept = deptFilter === 'All' || job.department === deptFilter;
     return matchesSearch && matchesDept;
   });

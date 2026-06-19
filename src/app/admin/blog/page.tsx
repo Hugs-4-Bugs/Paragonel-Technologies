@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Plus, 
@@ -34,9 +33,8 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useCollection } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, deleteDoc, updateDoc, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,13 +43,21 @@ import { Card } from '@/components/ui/card';
 
 export default function AdminBlogPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: posts, loading } = useCollection(query(collection(db, 'blogPosts'), orderBy('createdAt', 'desc')));
+  const firestore = useFirestore();
   const { toast } = useToast();
 
+  const postsQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'blogPosts'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+
+  const { data: posts, loading } = useCollection(postsQuery);
+
   const handleTogglePublished = async (id: string, currentStatus: string) => {
+    if (!firestore) return;
     try {
       const newStatus = currentStatus === 'Published' ? 'Draft' : 'Published';
-      await updateDoc(doc(db, 'blogPosts', id), { 
+      await updateDoc(doc(firestore, 'blogPosts', id), { 
         status: newStatus,
         publishedAt: newStatus === 'Published' ? new Date().toISOString() : null,
         updatedAt: new Date().toISOString()
@@ -63,9 +69,9 @@ export default function AdminBlogPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to permanently delete this article?')) return;
+    if (!firestore || !confirm('Are you sure you want to permanently delete this article?')) return;
     try {
-      await deleteDoc(doc(db, 'blogPosts', id));
+      await deleteDoc(doc(firestore, 'blogPosts', id));
       toast({ title: 'Success', description: 'Article deleted permanently.' });
     } catch (e) {
       toast({ title: 'Error', description: 'Failed to delete article.', variant: 'destructive' });
@@ -73,8 +79,8 @@ export default function AdminBlogPage() {
   };
 
   const filteredPosts = posts?.filter((post: any) => 
-    post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.category.toLowerCase().includes(searchTerm.toLowerCase())
+    post.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    post.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -153,7 +159,7 @@ export default function AdminBlogPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-zinc-500 text-xs">
-                      {new Date(post.createdAt).toLocaleDateString()}
+                      {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -203,7 +209,7 @@ export default function AdminBlogPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-sm truncate">{post.title}</h3>
-                    <p className="text-xs text-zinc-500">{post.category} • {new Date(post.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-zinc-500">{post.category} • {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'N/A'}</p>
                   </div>
                </div>
                <div className="flex gap-2">

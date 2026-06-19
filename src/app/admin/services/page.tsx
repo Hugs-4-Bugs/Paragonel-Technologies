@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Plus, 
@@ -10,7 +9,6 @@ import {
   Edit, 
   Trash2, 
   Layers,
-  ArrowRight,
   Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,9 +29,8 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useCollection } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -41,13 +38,20 @@ import { Card } from '@/components/ui/card';
 
 export default function AdminServicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: services, loading } = useCollection(query(collection(db, 'services'), orderBy('order', 'asc')));
+  const firestore = useFirestore();
   const { toast } = useToast();
 
+  const servicesQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'services'), orderBy('order', 'asc'));
+  }, [firestore]);
+
+  const { data: services, loading } = useCollection(servicesQuery);
+
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
+    if (!firestore || !confirm('Are you sure you want to delete this service?')) return;
     try {
-      await deleteDoc(doc(db, 'services', id));
+      await deleteDoc(doc(firestore, 'services', id));
       toast({ title: 'Success', description: 'Service removed successfully.' });
     } catch (e) {
       toast({ title: 'Error', description: 'Failed to delete service.', variant: 'destructive' });
@@ -55,7 +59,7 @@ export default function AdminServicesPage() {
   };
 
   const filteredServices = services?.filter((s: any) => 
-    s.title.toLowerCase().includes(searchTerm.toLowerCase())
+    s.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

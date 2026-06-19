@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -21,7 +20,11 @@ export default function ApplicationDetail() {
   const [notes, setInternalNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const appRef = useMemo(() => firestore ? doc(firestore, 'jobApplications', id as string) : null, [firestore, id]);
+  const appRef = useMemo(() => {
+    if (!firestore || !id) return null;
+    return doc(firestore, 'jobApplications', id as string);
+  }, [firestore, id]);
+
   const { data: app, loading } = useDoc(appRef);
 
   useEffect(() => {
@@ -29,7 +32,7 @@ export default function ApplicationDetail() {
   }, [app]);
 
   const handleSaveNotes = async () => {
-    if (!firestore) return;
+    if (!firestore || !id) return;
     setIsSaving(true);
     try {
       await updateDoc(doc(firestore, 'jobApplications', id as string), {
@@ -161,8 +164,4 @@ export default function ApplicationDetail() {
       </div>
     </div>
   );
-}
-
-function useMemo(arg0: () => any, arg1: any[]) {
-    return React.useMemo(arg0, arg1);
 }

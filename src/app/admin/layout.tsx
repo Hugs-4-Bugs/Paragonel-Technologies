@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { 
@@ -22,7 +21,6 @@ import {
   Search,
   Mail,
   History,
-  TrendingUp,
   FileUser
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -73,10 +71,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex h-screen w-full bg-zinc-50 dark:bg-zinc-950 overflow-hidden isolate">
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         header:not(.admin-header), footer:not(.admin-footer), .chat-widget { display: none !important; }
         main { padding-top: 0 !important; }
-      `}</style>
+      ` }} />
 
       {/* Mobile Top Bar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-zinc-900 border-b z-[60] flex items-center justify-between px-4 admin-header shadow-sm">

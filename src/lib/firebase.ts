@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
@@ -8,18 +7,20 @@ import { firebaseConfig } from '@/firebase/config';
 let app: FirebaseApp;
 let db: Firestore;
 
-// Ensure Firebase is initialized correctly on both server (for SSR compatibility) and client
-if (!getApps().length) {
-  try {
+try {
+  // Ensure Firebase is initialized correctly on both server (for SSR compatibility) and client
+  if (!getApps().length) {
     app = initializeApp(firebaseConfig);
-  } catch (e) {
-    console.error("Error initializing Firebase App:", e);
+  } else {
+    app = getApp();
   }
-} else {
-  app = getApp();
+  
+  if (app) {
+    db = getFirestore(app);
+  }
+} catch (e) {
+  console.error("Error initializing Firebase:", e);
 }
 
-// @ts-ignore
-db = getFirestore(app);
-
+// @ts-ignore - Handle cases where db might not be initialized yet
 export { app, db };

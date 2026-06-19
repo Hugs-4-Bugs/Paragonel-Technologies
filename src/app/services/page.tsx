@@ -1,19 +1,26 @@
-
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ServicesSection } from '@/components/sections/services-section';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
-import { useCollection } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Layers } from 'lucide-react';
 
 export default function ServicesPage() {
-  const { data: services, loading } = useCollection(
-    query(collection(db, 'services'), where('isActive', '==', true), orderBy('order', 'asc'))
-  );
+  const firestore = useFirestore();
+
+  const servicesQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'services'), 
+      where('isActive', '==', true), 
+      orderBy('order', 'asc')
+    );
+  }, [firestore]);
+
+  const { data: services, loading } = useCollection(servicesQuery);
 
   return (
     <div className="bg-background min-h-screen">
