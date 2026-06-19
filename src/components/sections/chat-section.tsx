@@ -275,9 +275,11 @@ export function ChatSection() {
     <Card 
       className={cn(
         "fixed z-[40] flex flex-col bg-background animate-in slide-in-from-bottom duration-300",
-        "inset-0 w-full h-full rounded-none", // Mobile Default
-        "md:inset-auto md:bottom-6 md:right-6 md:w-[400px] md:max-h-[75vh] md:rounded-3xl", // Tablet
-        "lg:w-[450px] lg:max-h-[80vh]", // Desktop
+        "inset-0 w-full h-full rounded-none", // Mobile (Full screen)
+        "sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[calc(100%-2rem)] sm:max-w-[380px] sm:max-h-[70vh] sm:rounded-[2.5rem]", // Small tablets / Small Desktop
+        "md:bottom-6 md:right-6 md:max-w-[420px] md:max-h-[75vh]", // Tablets
+        "lg:max-w-[450px] lg:max-h-[80vh]", // Standard Laptops
+        "2xl:max-w-[500px]", // Ultra-wide Displays
         "shadow-2xl border-none overflow-hidden"
       )}
     >
