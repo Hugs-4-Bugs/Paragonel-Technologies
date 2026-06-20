@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Loader2, Save, BookOpen, ImageIcon, Search, Clock } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, BookOpen, Image as ImageIcon, Search, Clock } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -164,9 +164,6 @@ export default function NewBlogPage() {
       // Cleanup draft
       localStorage.removeItem(AUTOSAVE_KEY);
       localStorage.removeItem('current_draft_id_blog');
-      if (draftId) {
-        // We could delete the draft document, but often it's better to keep it or mark it as converted
-      }
       
       setIsDirty(false);
       toast({ title: 'Insight Published', description: 'The article is now live.' });

@@ -19,7 +19,8 @@ import {
   Trophy,
   Globe,
   GraduationCap,
-  Heart
+  Heart,
+  Monitor
 } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
