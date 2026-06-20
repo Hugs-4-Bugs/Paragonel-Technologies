@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageCircle, Send, X, Loader2, Bot, Trash2, ShieldCheck, FileText, Target, Brain } from 'lucide-react';
+import { MessageCircle, Send, X, Loader2, Bot, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from "@/hooks/use-toast";
 import { useChatState } from '@/hooks/useChatState';
 import { ChatCareerFlow } from '@/components/ChatCareerFlow';
 import { companyQnaFlow } from '@/ai/flows/company-qna-flow';
@@ -20,8 +19,8 @@ export function ChatSection() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
 
   const {
     messages, addMessage, 
@@ -31,6 +30,24 @@ export function ChatSection() {
     matchedJobs, setMatchedJobs,
     clearChat
   } = useChatState();
+
+  // Detect screen size for mobile mode
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Prevent body scroll when open on mobile
+  useEffect(() => {
+    if (isOpen && isMobile) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen, isMobile]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsOpen(true), 2500);
@@ -167,90 +184,115 @@ export function ChatSection() {
 
   if (!isOpen) {
     return (
-      <Button variant="default" className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl z-50 bg-primary hover:scale-110 transition-transform" onClick={() => setIsOpen(true)}>
-        <MessageCircle className="h-8 w-8" />
+      <Button 
+        variant="default" 
+        className="fixed bottom-6 right-6 h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-2xl z-50 bg-primary hover:scale-110 transition-transform p-0" 
+        onClick={() => setIsOpen(true)}
+      >
+        <MessageCircle className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
       </Button>
     );
   }
 
   return (
     <Card className={cn(
-      "fixed z-50 flex flex-col bg-background shadow-2xl border-none overflow-hidden transition-all duration-300",
-      "bottom-0 right-0 w-full h-[100dvh] sm:bottom-6 sm:right-6 sm:w-[360px] sm:h-[600px] sm:max-h-[85vh] sm:rounded-[2rem]"
+      "fixed z-[100] flex flex-col bg-background shadow-2xl border-none overflow-hidden transition-all duration-300",
+      "bottom-0 right-0 w-full h-[100dvh] sm:h-[600px] sm:max-h-[80vh] sm:bottom-6 sm:right-6 sm:w-[360px] sm:rounded-[2rem]"
     )}>
-      <CardHeader className="flex flex-row items-center justify-between p-5 border-b bg-primary text-primary-foreground">
+      {/* Sticky Header */}
+      <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between p-4 sm:p-5 border-b bg-primary text-primary-foreground h-[56px] sm:h-auto">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center"><Bot className="h-6 w-6" /></div>
+          <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white/20 flex items-center justify-center"><Bot className="h-5 w-5 sm:h-6 sm:w-6" /></div>
           <div>
-            <CardTitle className="text-sm font-black">QuantumAI</CardTitle>
-            <div className="flex items-center gap-1.5"><div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /><span className="text-[9px] font-bold opacity-70 uppercase">Production Ready</span></div>
+            <CardTitle className="text-sm sm:text-base font-black">QuantumAI</CardTitle>
+            <div className="flex items-center gap-1.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-[9px] sm:text-[10px] font-bold opacity-70 uppercase">Online</span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={clearChat} className="h-8 w-8 text-white"><Trash2 className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 text-white"><X className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={clearChat} className="h-10 w-10 text-white hover:bg-white/10 rounded-full">
+            <Trash2 className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-10 w-10 text-white hover:bg-white/10 rounded-full">
+            <X className="h-5 w-5" />
+          </Button>
         </div>
       </CardHeader>
       
-      <CardContent className="flex-grow p-0 overflow-hidden bg-background">
-        <ScrollArea className="h-full p-5" ref={scrollAreaRef}>
-          <div className="space-y-6 pb-6">
+      {/* Scrollable Chat Area */}
+      <CardContent className="flex-grow p-0 overflow-hidden bg-background relative">
+        <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
+          <div className="p-4 sm:p-5 space-y-6 pb-10">
             {messages.map((msg) => (
-              <div key={msg.id} className={cn("flex", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+              <div key={msg.id} className={cn("flex w-full", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                 <div className={cn(
-                  "max-w-[85%] rounded-[1.5rem] px-5 py-3 text-sm shadow-sm transition-all leading-relaxed",
-                  msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-none' : 'bg-zinc-100 dark:bg-zinc-900 rounded-tl-none border border-zinc-200 dark:border-zinc-800'
+                  "max-w-[85%] rounded-[1.25rem] sm:rounded-[1.5rem] px-4 py-2.5 sm:px-5 sm:py-3 text-sm sm:text-base shadow-sm transition-all leading-relaxed",
+                  msg.role === 'user' 
+                    ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                    : 'bg-zinc-100 dark:bg-zinc-900 rounded-tl-none border border-zinc-200 dark:border-zinc-800'
                 )}>
                   {renderContent(msg.content)}
                 </div>
               </div>
             ))}
             {careerStep !== 'idle' && (
-              <ChatCareerFlow 
-                step={careerStep} 
-                matchedJobs={matchedJobs} 
-                selectedJob={selectedJob} 
-                candidateProfile={candidateProfile}
-                onAcceptHelp={(acc) => acc ? updateCareerStep('resume_upload') : updateCareerStep('idle')}
-                onFileUpload={handleFileUpload}
-                onConfirmProfile={handleConfirmProfile}
-                onApplyOnBehalf={(job) => { setSelectedJob(job); updateCareerStep('apply_behalf'); }}
-                onFinalSubmit={async (approved) => {
-                  if (!approved) return updateCareerStep('matching_jobs');
-                  setIsLoading(true);
-                  try {
-                    await addDoc(collection(db, 'jobApplications'), {
-                      jobId: selectedJob.id,
-                      jobTitle: selectedJob.title,
-                      candidateName: candidateProfile?.name,
-                      candidateEmail: candidateProfile?.email,
-                      matchScore: selectedJob.matchScore,
-                      appliedAt: serverTimestamp(),
-                      appliedVia: 'ai_agent',
-                      status: 'New'
-                    });
-                    updateCareerStep('submitted');
-                    addMessage('ai', "Success! Your application has been persisted to our production database.");
-                  } catch (e) { addMessage('ai', "Sync failure. Please apply manually."); }
-                  finally { setIsLoading(false); }
-                }}
-              />
+              <div className="w-full">
+                <ChatCareerFlow 
+                  step={careerStep} 
+                  matchedJobs={matchedJobs} 
+                  selectedJob={selectedJob} 
+                  candidateProfile={candidateProfile}
+                  onAcceptHelp={(acc) => acc ? updateCareerStep('resume_upload') : updateCareerStep('idle')}
+                  onFileUpload={handleFileUpload}
+                  onConfirmProfile={handleConfirmProfile}
+                  onApplyOnBehalf={(job) => { setSelectedJob(job); updateCareerStep('apply_behalf'); }}
+                  onFinalSubmit={async (approved) => {
+                    if (!approved) return updateCareerStep('matching_jobs');
+                    setIsLoading(true);
+                    try {
+                      await addDoc(collection(db, 'jobApplications'), {
+                        jobId: selectedJob.id,
+                        jobTitle: selectedJob.title,
+                        candidateName: candidateProfile?.name,
+                        candidateEmail: candidateProfile?.email,
+                        matchScore: selectedJob.matchScore,
+                        appliedAt: serverTimestamp(),
+                        appliedVia: 'ai_agent',
+                        status: 'New'
+                      });
+                      updateCareerStep('submitted');
+                      addMessage('ai', "Success! Your application has been received. Our team will review your profile shortly.");
+                    } catch (e) { addMessage('ai', "I had trouble saving your application. Please try applying manually on the Careers page."); }
+                    finally { setIsLoading(false); }
+                  }}
+                />
+              </div>
             )}
-            {isLoading && <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />}
+            {isLoading && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
           </div>
         </ScrollArea>
       </CardContent>
 
-      <CardFooter className="p-4 border-t bg-background">
+      {/* Sticky Bottom Input Bar */}
+      <CardFooter className="flex-shrink-0 p-3 sm:p-4 border-t bg-background pb-[calc(12px+env(safe-area-inset-bottom))] sm:pb-4 min-h-[56px]">
         <div className="relative w-full flex items-center gap-2">
           <Input 
             placeholder="Type your message..." 
             value={inputValue} 
             onChange={(e) => setInputValue(e.target.value)} 
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} 
-            className="flex-grow h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-none focus-visible:ring-1" 
+            className="flex-grow h-11 sm:h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-none focus-visible:ring-1 text-sm sm:text-base px-4" 
           />
-          <Button onClick={handleSendMessage} size="icon" className="h-10 w-10 rounded-xl bg-primary"><Send className="h-4 w-4" /></Button>
+          <Button 
+            onClick={handleSendMessage} 
+            size="icon" 
+            disabled={!inputValue.trim() || isLoading}
+            className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-primary text-white shadow-lg hover:scale-105 active:scale-95 transition-transform shrink-0"
+          >
+            <Send className="h-5 w-5" />
+          </Button>
         </div>
       </CardFooter>
     </Card>
