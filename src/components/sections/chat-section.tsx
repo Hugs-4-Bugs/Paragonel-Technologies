@@ -39,16 +39,6 @@ export function ChatSection() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Prevent body scroll when open on mobile
-  useEffect(() => {
-    if (isOpen && isMobile) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen, isMobile]);
-
   useEffect(() => {
     const timer = setTimeout(() => setIsOpen(true), 2500);
     return () => clearTimeout(timer);
@@ -197,10 +187,11 @@ export function ChatSection() {
   return (
     <Card className={cn(
       "fixed z-[100] flex flex-col bg-background shadow-2xl border-none overflow-hidden transition-all duration-300",
-      "bottom-0 right-0 w-full h-[100dvh] sm:h-[600px] sm:max-h-[80vh] sm:bottom-6 sm:right-6 sm:w-[360px] sm:rounded-[2rem]"
+      "bottom-4 right-4 left-4 w-auto h-[85dvh] max-h-[85dvh] rounded-[2rem]",
+      "sm:left-auto sm:bottom-6 sm:right-6 sm:w-[380px] sm:h-[650px] sm:max-h-[80vh]"
     )}>
       {/* Sticky Header */}
-      <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between p-4 sm:p-5 border-b bg-primary text-primary-foreground h-[56px] sm:h-auto">
+      <CardHeader className="flex-shrink-0 flex flex-row items-center justify-between p-4 sm:p-5 border-b bg-primary text-primary-foreground h-[60px] sm:h-auto">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white/20 flex items-center justify-center"><Bot className="h-5 w-5 sm:h-6 sm:w-6" /></div>
           <div>
@@ -212,11 +203,11 @@ export function ChatSection() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={clearChat} className="h-10 w-10 text-white hover:bg-white/10 rounded-full">
-            <Trash2 className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={clearChat} className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
+            <Trash2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-10 w-10 text-white hover:bg-white/10 rounded-full">
-            <X className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
+            <X className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
@@ -228,7 +219,7 @@ export function ChatSection() {
             {messages.map((msg) => (
               <div key={msg.id} className={cn("flex w-full", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                 <div className={cn(
-                  "max-w-[85%] rounded-[1.25rem] sm:rounded-[1.5rem] px-4 py-2.5 sm:px-5 sm:py-3 text-sm sm:text-base shadow-sm transition-all leading-relaxed",
+                  "max-w-[85%] rounded-[1.25rem] sm:rounded-[1.5rem] px-4 py-2 sm:px-5 sm:py-3 text-sm sm:text-base shadow-sm transition-all leading-relaxed",
                   msg.role === 'user' 
                     ? 'bg-primary text-primary-foreground rounded-tr-none' 
                     : 'bg-zinc-100 dark:bg-zinc-900 rounded-tl-none border border-zinc-200 dark:border-zinc-800'
