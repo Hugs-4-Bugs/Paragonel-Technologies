@@ -2,13 +2,14 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from '@/firebase/config';
 
 let app: FirebaseApp;
 let db: Firestore;
+let storage: FirebaseStorage;
 
 try {
-  // Ensure Firebase is initialized correctly on both server (for SSR compatibility) and client
   if (!getApps().length) {
     app = initializeApp(firebaseConfig);
   } else {
@@ -17,10 +18,11 @@ try {
   
   if (app) {
     db = getFirestore(app);
+    storage = getStorage(app);
   }
 } catch (e) {
   console.error("Error initializing Firebase:", e);
 }
 
-// @ts-ignore - Handle cases where db might not be initialized yet
-export { app, db };
+// @ts-ignore
+export { app, db, storage };

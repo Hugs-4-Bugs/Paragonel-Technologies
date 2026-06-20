@@ -5,7 +5,7 @@ import { doc, setDoc, serverTimestamp, Firestore } from 'firebase/firestore';
 
 interface AutosaveOptions {
   db: Firestore | null;
-  collectionName: string;
+  collectionName: 'jobs' | 'blogPosts' | 'drafts';
   docId: string | null;
   data: any;
   delay?: number;
@@ -13,7 +13,7 @@ interface AutosaveOptions {
 }
 
 export function useAutosave({ db, collectionName, docId, data, delay = 30000, enabled = true }: AutosaveOptions) {
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error' | 'offline'>('idle');
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dataRef = useRef(data);
 
@@ -25,23 +25,33 @@ export function useAutosave({ db, collectionName, docId, data, delay = 30000, en
     if (!enabled || !db || !docId) return;
 
     const performSave = async () => {
+      if (!window.navigator.onLine) {
+        setSaveStatus('offline');
+        localStorage.setItem(`offline_draft_${collectionName}_${docId}`, JSON.stringify({
+          ...dataRef.current,
+          timestamp: Date.now()
+        }));
+        return;
+      }
+
       setSaveStatus('saving');
       try {
-        const draftRef = doc(db, collectionName, docId);
+        const draftRef = doc(db, 'drafts', `${collectionName}_${docId}`);
         await setDoc(draftRef, {
-          ...dataRef.current,
+          entityId: docId,
+          type: collectionName,
+          data: dataRef.current,
           updatedAt: serverTimestamp(),
-          isDraft: true,
         }, { merge: true });
 
-        // Also save to localStorage as backup
-        localStorage.setItem(`draft_${collectionName}_${docId}`, JSON.stringify({
+        // Backup to localStorage
+        localStorage.setItem(`last_sync_${collectionName}_${docId}`, JSON.stringify({
           ...dataRef.current,
           timestamp: Date.now()
         }));
 
         setSaveStatus('saved');
-        setTimeout(() => setSaveStatus('idle'), 2000);
+        setTimeout(() => setSaveStatus('idle'), 3000);
       } catch (error) {
         console.error('Autosave failed:', error);
         setSaveStatus('error');

@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,9 +14,7 @@ import {
   Clock,
   Building,
   Hash,
-  Monitor,
   Laptop,
-  ArrowRight,
   Sparkles,
   Trophy,
   Globe,
@@ -32,15 +29,10 @@ import { JobDescriptionModal } from '@/components/job-description-modal';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { dummyJobs } from '@/lib/data';
-
-const employmentTypes = ['All Types', 'Full Time', 'Part Time', 'Contract', 'Internship'];
-const workArrangements = ['Any', 'Remote', 'Onsite'];
 
 export default function CareersPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,35 +64,30 @@ export default function CareersPage() {
     );
   }, [firestore]);
 
-  const { data: dynamicJobs, loading } = useCollection(jobsQuery);
-
-  const allJobs = useMemo(() => {
-    const combined = [...dummyJobs, ...(dynamicJobs || [])];
-    const unique = Array.from(new Map(combined.map(item => [item.jobId || item.id, item])).values());
-    return unique;
-  }, [dynamicJobs]);
+  const { data: jobs, loading } = useCollection(jobsQuery);
 
   const departments = useMemo(() => {
-    const depts = new Set(allJobs.map(j => j.department));
+    if (!jobs) return ['All Departments'];
+    const depts = new Set(jobs.map((j: any) => j.department));
     return ['All Departments', ...Array.from(depts)].sort();
-  }, [allJobs]);
+  }, [jobs]);
 
   const locations = useMemo(() => {
-    const locs = new Set(allJobs.map(j => j.location));
+    if (!jobs) return ['All Locations'];
+    const locs = new Set(jobs.map((j: any) => j.location));
     return ['All Locations', ...Array.from(locs)].sort();
-  }, [allJobs]);
+  }, [jobs]);
 
   const filteredJobs = useMemo(() => {
-    if (!showOpenRoles) return [];
+    if (!jobs || !showOpenRoles) return [];
 
-    let filtered = allJobs.filter(job => {
+    let filtered = jobs.filter((job: any) => {
       const matchesSearchTerm = 
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.skills?.some((s: string) => s.toLowerCase().includes(searchTerm.toLowerCase()));
       
       const matchesJobId = jobIdSearch === '' || (job.jobId || job.id).toLowerCase().includes(jobIdSearch.toLowerCase());
-      
       const matchesLocation = locationFilter === 'All Locations' || job.location === locationFilter;
       const matchesDepartment = departmentFilter === 'All Departments' || job.department === departmentFilter;
       const matchesEmploymentType = employmentTypeFilter === 'All Types' || job.employmentType === employmentTypeFilter;
@@ -122,10 +109,10 @@ export default function CareersPage() {
       if (dateFilter === 'Past week') cutoffDate.setDate(now.getDate() - 7);
       if (dateFilter === 'Past 24 hours') cutoffDate.setHours(now.getHours() - 24);
       
-      filtered = filtered.filter(job => new Date(job.createdAt || job.postedDate) >= cutoffDate);
+      filtered = filtered.filter((job: any) => new Date(job.createdAt?.seconds * 1000 || job.postedDate) >= cutoffDate);
     }
     return filtered;
-  }, [allJobs, searchTerm, jobIdSearch, locationFilter, departmentFilter, employmentTypeFilter, workArrangementFilter, dateFilter, showOpenRoles]);
+  }, [jobs, searchTerm, jobIdSearch, locationFilter, departmentFilter, employmentTypeFilter, workArrangementFilter, dateFilter, showOpenRoles]);
 
   const handleApply = (job: any) => {
     if (!isAuthenticated) {
@@ -151,24 +138,16 @@ export default function CareersPage() {
             Join <span className="text-[#4da3ff]">QuantumFusion Solutions</span>
           </h1>
           <p className="text-zinc-300 text-lg md:text-xl max-w-2xl mx-auto mb-10">
-            We are pioneering the future of technology. Explore exciting opportunities and grow with our innovative team.
+            Precision engineering for the next generation. Join our AI-native team.
           </p>
           <div className="flex items-center justify-center flex-wrap gap-4">
-            <Button 
-              onClick={() => setShowOpenRoles(!showOpenRoles)}
-              className="rounded-full bg-[#8e44ad] hover:bg-[#7d3c98] px-8 h-14 text-lg font-bold gap-3"
-            >
+            <Button onClick={() => setShowOpenRoles(!showOpenRoles)} className="rounded-full bg-[#8e44ad] hover:bg-[#7d3c98] px-8 h-14 text-lg font-bold gap-3">
               {showOpenRoles ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               {showOpenRoles ? 'Hide Open Roles' : 'See Open Roles'}
               <Briefcase className="h-5 w-5" />
             </Button>
-            
             {showOpenRoles && (
-              <Button 
-                onClick={() => setShowFilters(!showFilters)}
-                variant="outline"
-                className="rounded-full border-[#4da3ff]/50 text-[#4da3ff] hover:bg-[#4da3ff]/10 px-8 h-14 text-lg font-bold gap-3"
-              >
+              <Button onClick={() => setShowFilters(!showFilters)} variant="outline" className="rounded-full border-[#4da3ff]/50 text-[#4da3ff] hover:bg-[#4da3ff]/10 px-8 h-14 text-lg font-bold gap-3">
                 <Filter className="h-5 w-5" />
                 {showFilters ? 'Hide Filters' : 'Filter Roles'}
               </Button>
@@ -178,63 +157,46 @@ export default function CareersPage() {
       </section>
 
       {showOpenRoles && showFilters && (
-        <section className="container mx-auto px-4 md:px-6 mb-16 animate-in slide-in-from-top duration-500">
+        <section className="container mx-auto px-4 md:px-6 mb-16">
           <ScrollFadeIn className="bg-[#2a2b5a] p-8 rounded-[2rem] shadow-2xl border border-white/5 space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Search Jobs</Label>
+                <Label className="text-xs font-black uppercase text-zinc-400 tracking-widest">Keywords</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                  <Input 
-                    placeholder="Keywords (e.g., AI, Python)" 
-                    className="pl-10 bg-[#1a1b3a] border-none h-12 rounded-xl text-white placeholder:text-zinc-600 focus-visible:ring-1 focus-visible:ring-[#4da3ff]" 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                  <Input placeholder="AI, Python..." className="pl-10 bg-[#1a1b3a] border-none h-12 rounded-xl text-white" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
               </div>
-
               <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Filter by Job ID</Label>
+                <Label className="text-xs font-black uppercase text-zinc-400 tracking-widest">Job ID</Label>
                 <div className="relative">
                   <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                  <Input 
-                    placeholder="Enter Job ID (e.g., ABC123)" 
-                    className="pl-10 bg-[#1a1b3a] border-none h-12 rounded-xl text-white placeholder:text-zinc-600 uppercase font-mono" 
-                    value={jobIdSearch}
-                    onChange={(e) => setJobIdSearch(e.target.value)}
-                  />
+                  <Input placeholder="QF-101" className="pl-10 bg-[#1a1b3a] border-none h-12 rounded-xl text-white uppercase" value={jobIdSearch} onChange={(e) => setJobIdSearch(e.target.value)} />
                 </div>
               </div>
-
               <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Location</Label>
+                <Label className="text-xs font-black uppercase text-zinc-400 tracking-widest">Location</Label>
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
-                  <SelectTrigger className="bg-[#1a1b3a] border-none h-12 rounded-xl text-white">
-                    <SelectValue placeholder="All Locations" />
-                  </SelectTrigger>
+                  <SelectTrigger className="bg-[#1a1b3a] border-none h-12 rounded-xl text-white"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[#2a2b5a] text-white border-zinc-700">
                     {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Department</Label>
+                <Label className="text-xs font-black uppercase text-zinc-400 tracking-widest">Department</Label>
                 <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                  <SelectTrigger className="bg-[#1a1b3a] border-none h-12 rounded-xl text-white">
-                    <SelectValue placeholder="All Departments" />
-                  </SelectTrigger>
+                  <SelectTrigger className="bg-[#1a1b3a] border-none h-12 rounded-xl text-white"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[#2a2b5a] text-white border-zinc-700">
                     {departments.map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-
+            
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 pt-8 border-t border-white/5">
               <div className="space-y-4">
-                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Filter by Date</Label>
+                <Label className="text-xs font-black uppercase text-zinc-400 tracking-widest">Posted Within</Label>
                 <RadioGroup value={dateFilter} onValueChange={setDateFilter} className="flex flex-wrap gap-x-6 gap-y-3">
                   {['Any time', 'Past month', 'Past week', 'Past 24 hours'].map((opt) => (
                     <div key={opt} className="flex items-center space-x-2">
@@ -244,23 +206,19 @@ export default function CareersPage() {
                   ))}
                 </RadioGroup>
               </div>
-
               <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Employment Type</Label>
+                <Label className="text-xs font-black uppercase text-zinc-400 tracking-widest">Job Type</Label>
                 <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
-                  <SelectTrigger className="bg-[#1a1b3a] border-none h-12 rounded-xl text-white">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="bg-[#1a1b3a] border-none h-12 rounded-xl text-white"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[#2a2b5a] text-white border-zinc-700">
-                    {employmentTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                    {['All Types', 'Full Time', 'Part Time', 'Contract', 'Internship'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-4">
-                <Label className="text-xs font-black uppercase tracking-widest text-zinc-400">Work Arrangement</Label>
+                <Label className="text-xs font-black uppercase text-zinc-400 tracking-widest">Arrangement</Label>
                 <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex gap-8">
-                  {workArrangements.map((type) => (
+                  {['Any', 'Remote', 'Onsite'].map((type) => (
                     <div key={type} className="flex items-center space-x-2">
                       <RadioGroupItem value={type} id={`arr-${type}`} className="border-zinc-600 text-[#4da3ff]" />
                       <Label htmlFor={`arr-${type}`} className="text-sm font-bold text-zinc-300 flex items-center cursor-pointer gap-2">
@@ -287,8 +245,8 @@ export default function CareersPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredJobs.map((job: any) => (
                 <JobCard 
-                  key={job.jobId || job.id} 
-                  job={job} 
+                  key={job.id} 
+                  job={{ ...job, postedDate: job.createdAt?.seconds ? new Date(job.createdAt.seconds * 1000).toISOString() : job.postedDate }} 
                   onApplyNowClick={() => handleApply(job)} 
                   onViewDetailsClick={() => handleView(job)} 
                 />
@@ -298,11 +256,6 @@ export default function CareersPage() {
             <div className="text-center py-20 bg-[#2a2b5a]/50 rounded-[3rem] border-2 border-dashed border-white/5">
               <Filter className="h-12 w-12 mx-auto mb-4 text-zinc-600" />
               <p className="text-xl font-bold text-zinc-400">No matching roles found.</p>
-              <Button variant="link" onClick={() => {
-                setSearchTerm(''); setJobIdSearch(''); setLocationFilter('All Locations'); 
-                setDepartmentFilter('All Departments'); setEmploymentTypeFilter('All Types');
-                setWorkArrangementFilter('Any'); setDateFilter('Any time');
-              }} className="text-[#4da3ff]">Reset all filters</Button>
             </div>
           )}
         </section>
@@ -312,11 +265,11 @@ export default function CareersPage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-black mb-4">Why Join QuantumFusion?</h2>
-            <p className="text-zinc-400">We aren't just another IT firm. We are a product-first AI company building the future of work.</p>
+            <p className="text-zinc-400">We are a product-first AI company building the future of work.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { title: "Interesting Problems", text: "Work on cutting-edge AI, cloud, and real client challenges.", icon: Sparkles },
+              { title: "Interesting Problems", text: "Work on cutting-edge AI and real cloud challenges.", icon: Sparkles },
               { title: "Remote-First", text: "Work from anywhere in India with our Bangalore hub.", icon: Laptop },
               { title: "Learn by Shipping", text: "We build real products, not just maintenance code.", icon: Briefcase },
               { title: "Zero Bureaucracy", text: "Direct access to founders and rapid execution.", icon: Globe }
