@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -50,7 +51,7 @@ export default function CareersPage() {
   const [dateFilter, setDateFilter] = useState('Any time');
   const [workArrangementFilter, setWorkArrangementFilter] = useState('Any');
   const [showOpenRoles, setShowOpenRoles] = useState(true);
-  const [showFilters, setShowFilters] = useState(false); // Toggle for filters suite
+  const [showFilters, setShowFilters] = useState(false);
 
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [selectedJobForApplication, setSelectedJobForApplication] = useState<any>(null);
@@ -152,7 +153,7 @@ export default function CareersPage() {
           <p className="text-zinc-300 text-lg md:text-xl max-w-2xl mx-auto mb-10">
             We are pioneering the future of technology. Explore exciting opportunities and grow with our innovative team.
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center flex-wrap gap-4">
             <Button 
               onClick={() => setShowOpenRoles(!showOpenRoles)}
               className="rounded-full bg-[#8e44ad] hover:bg-[#7d3c98] px-8 h-14 text-lg font-bold gap-3"

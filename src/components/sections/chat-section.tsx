@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -52,6 +53,7 @@ export function ChatSection() {
   }, [messages, careerStep, isLoading]);
 
   const calculateMatchScore = useCallback((job: any, profile: any) => {
+    if (!profile) return { score: 0, reason: "" };
     let score = 0;
     const reasons: string[] = [];
 
@@ -66,19 +68,11 @@ export function ChatSection() {
     if (profile.experienceYears >= jobExp) {
       score += 25;
       reasons.push("Experience meets requirement");
-    } else if (profile.experienceYears >= jobExp - 1) {
-      score += 15;
-      reasons.push("Experience closely aligns");
     }
 
-    if (profile.domain.toLowerCase().includes(job.department.toLowerCase()) || 
-        job.title.toLowerCase().includes(profile.domain.toLowerCase())) {
+    if (profile.domain?.toLowerCase().includes(job.department?.toLowerCase() || "")) {
       score += 20;
       reasons.push(`${profile.domain} specialization`);
-    }
-
-    if (job.title.toLowerCase().includes(profile.seniority.toLowerCase())) {
-      score += 10;
     }
     
     return { 
@@ -91,13 +85,10 @@ export function ChatSection() {
     setIsLoading(true);
     try {
       const response = await companyQnaFlow({ question: text });
-      
       if (response.intent === 'careers') {
         updateCareerStep('offering_help');
-        addMessage('ai', response.answer);
-      } else {
-        addMessage('ai', response.answer);
       }
+      addMessage('ai', response.answer);
     } catch (e) {
       addMessage('ai', "I'm having a small connection sync issue. You can browse our [Careers](/careers) or [Services](/services) directly.");
     } finally {
@@ -143,9 +134,7 @@ export function ChatSection() {
       return;
     }
 
-    updateCareerStep('submitting');
     setIsLoading(true);
-
     try {
       const jobsSnap = await getDocs(query(collection(db, 'jobs'), where('isActive', '==', true)));
       const jobs = jobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -160,11 +149,10 @@ export function ChatSection() {
       setMatchedJobs(matches);
       updateCareerStep('matching_jobs');
       addMessage('ai', matches.length > 0 
-        ? `I've found ${matches.length} roles that align with your ${candidateProfile?.domain} background! Select a role to apply instantly.` 
-        : "I couldn't find a high-affinity match (60%+) right now, but our team reviews all profiles. You can still apply manually.");
+        ? `I've found ${matches.length} roles that align with your background! Select a role to apply instantly.` 
+        : "I couldn't find a high-affinity match right now, but our team reviews all profiles.");
     } catch (e) {
       addMessage('ai', "Failed to fetch live roles. Please try again.");
-      updateCareerStep('idle');
     } finally {
       setIsLoading(false);
     }
@@ -182,9 +170,7 @@ export function ChatSection() {
       return;
     }
 
-    updateCareerStep('submitting');
     setIsLoading(true);
-
     try {
       const appId = 'APP_' + Math.random().toString(36).substr(2, 9);
       await addDoc(collection(db, 'jobApplications'), {
@@ -193,41 +179,18 @@ export function ChatSection() {
         jobTitle: selectedJob.title,
         candidateName: candidateProfile?.name,
         candidateEmail: candidateProfile?.email,
-        candidatePhone: candidateProfile?.phone,
-        skills: candidateProfile?.skills,
-        experienceYears: candidateProfile?.experienceYears,
-        candidate_score: selectedJob.matchScore,
-        recommended_by_ai: true,
         appliedAt: serverTimestamp(),
         appliedVia: 'ai_agent',
         status: 'New'
       });
 
-      console.log(`SIMULATION: Email sent to ${candidateProfile?.email} (Application Received)`);
-      console.log(`SIMULATION: Email sent to hr@quantumfusion.in (New AI Match: ${selectedJob.matchScore}%)`);
-      
       updateCareerStep('submitted');
-      addMessage('ai', (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-2xl">
-          <p className="font-black text-green-700 text-sm">Application Submitted Successfully!</p>
-          <p className="text-xs text-green-600 mt-1">Reference: {appId}</p>
-          <p className="text-[10px] text-zinc-500 mt-2">A confirmation has been sent to your email. Our HR team has been notified of your high-affinity match.</p>
-        </div>
-      ));
+      addMessage('ai', "Application Submitted Successfully! Our team will review your profile shortly.");
     } catch (e) {
       addMessage('ai', "Submission failed. Please apply manually on the careers page.");
-      updateCareerStep('idle');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSendMessage = () => {
-    if (inputValue.trim() === '' || isLoading) return;
-    const userText = inputValue;
-    addMessage('user', userText);
-    setInputValue('');
-    handleNormalQna(userText);
   };
 
   const renderContent = (content: string | React.ReactNode) => {
@@ -238,19 +201,7 @@ export function ChatSection() {
         {parts.map((part, i) => {
           const match = part.match(/\[(.*?)\]\((.*?)\)/);
           if (match) {
-            const isExternal = match[2].startsWith('http');
-            return (
-              <Link 
-                key={i} 
-                href={match[2]} 
-                className="text-primary font-black hover:underline inline-flex items-center gap-0.5 mx-1"
-                target={isExternal ? '_blank' : undefined}
-                rel={isExternal ? 'noopener noreferrer' : undefined}
-              >
-                {match[1]}
-                {isExternal && <ExternalLink className="h-2 w-2" />}
-              </Link>
-            );
+            return <Link key={i} href={match[2]} className="text-primary font-bold hover:underline mx-1">{match[1]}</Link>;
           }
           return part;
         })}
@@ -262,8 +213,7 @@ export function ChatSection() {
     return (
       <Button
         variant="default"
-        size="lg"
-        className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl z-[40] bg-primary text-white hover:scale-110 transition-transform p-0 flex items-center justify-center border-4 border-white/20"
+        className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl z-[40] bg-primary text-white hover:scale-110 transition-transform p-0 flex items-center justify-center"
         onClick={() => setIsOpen(true)}
       >
         <MessageCircle className="h-8 w-8" />
@@ -274,31 +224,29 @@ export function ChatSection() {
   return (
     <Card 
       className={cn(
-        "fixed z-[40] flex flex-col bg-background animate-in slide-in-from-bottom duration-300",
-        "inset-0 w-full h-full rounded-none", // Mobile (Full screen)
-        "sm:inset-auto sm:bottom-4 sm:right-4 sm:w-[calc(100%-2rem)] sm:max-w-[340px] sm:max-h-[70vh] sm:rounded-[2.5rem]", // Small tablets
-        "md:bottom-6 md:right-6 md:max-w-[380px] md:max-h-[75vh]", // Tablets / Small Laptops
-        "lg:max-w-[400px] lg:max-h-[80vh]", // Laptops
-        "xl:max-w-[420px]", // Wide screens
-        "shadow-2xl border-none overflow-hidden"
+        "fixed z-[40] flex flex-col bg-background animate-in slide-in-from-bottom duration-300 shadow-2xl border-none overflow-hidden",
+        "bottom-0 right-0 w-full h-[100dvh] rounded-none", // Mobile Fit Fix
+        "sm:bottom-6 sm:right-6 sm:w-[340px] sm:h-[550px] sm:max-h-[80vh] sm:rounded-[2rem]", // Compact Desktop
+        "md:w-[360px] md:h-[600px]",
+        "lg:w-[380px]"
       )}
     >
       <CardHeader className="flex flex-row items-center justify-between p-5 border-b bg-primary text-primary-foreground flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-white/20 flex items-center justify-center border border-white/30">
-            <Bot className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+          <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center border border-white/30">
+            <Bot className="h-6 w-6 text-white" />
           </div>
           <div>
-            <CardTitle className="text-xs sm:text-sm font-black tracking-tight">QuantumAI</CardTitle>
+            <CardTitle className="text-sm font-black tracking-tight">QuantumAI</CardTitle>
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[9px] sm:text-[10px] font-bold text-white/70 uppercase tracking-widest">Active Talent Agent</span>
+              <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Online</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={clearChat} className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-white/20 text-white rounded-xl"><Trash2 className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 sm:h-9 sm:w-9 hover:bg-white/20 text-white rounded-xl"><X className="h-4 w-4 sm:h-5 sm:w-5" /></Button>
+          <Button variant="ghost" size="icon" onClick={clearChat} className="h-8 w-8 hover:bg-white/20 text-white"><Trash2 className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 hover:bg-white/20 text-white"><X className="h-4 w-4" /></Button>
         </div>
       </CardHeader>
       
@@ -308,16 +256,13 @@ export function ChatSection() {
             {messages.map((msg) => (
               <div key={msg.id} className={cn("flex flex-col", msg.role === 'user' ? 'items-end' : 'items-start')}>
                 <div className={cn(
-                    "max-w-[90%] rounded-[1.5rem] px-5 py-3 sm:py-4 text-sm shadow-sm transition-all leading-relaxed font-medium",
+                    "max-w-[85%] rounded-[1.5rem] px-5 py-3 text-sm shadow-sm transition-all leading-relaxed",
                     msg.role === 'user'
                       ? 'bg-primary text-primary-foreground rounded-tr-none'
                       : 'bg-zinc-100 dark:bg-zinc-900 text-foreground rounded-tl-none border border-zinc-200 dark:border-zinc-800'
                   )}>
                   {renderContent(msg.content)}
                 </div>
-                <span className="text-[9px] text-zinc-400 mt-1.5 px-2 font-black uppercase tracking-tighter">
-                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
               </div>
             ))}
 
@@ -332,42 +277,56 @@ export function ChatSection() {
                 onConfirmProfile={handleConfirmProfile}
                 onApplyOnBehalf={handleApplyOnBehalf}
                 onFinalSubmit={handleFinalSubmit}
+                onManualEntry={() => updateCareerStep('resume_upload')} // Simple mapping for V2
               />
             )}
 
             {isLoading && (
-              <div className="flex justify-start items-center space-x-3 animate-in fade-in duration-300">
-                <div className="bg-zinc-100 dark:bg-zinc-900 rounded-2xl p-2.5 h-10 w-10 flex items-center justify-center border">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div className="flex justify-start items-center space-x-2 animate-pulse">
+                <div className="bg-zinc-100 dark:bg-zinc-900 rounded-full h-8 w-8 flex items-center justify-center border">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 </div>
-                <span className="text-[11px] text-zinc-500 font-black italic uppercase tracking-widest">Processing...</span>
               </div>
             )}
           </div>
         </ScrollArea>
       </CardContent>
 
-      <CardFooter className="p-4 sm:p-5 border-t bg-background flex-shrink-0">
-        <div className="relative w-full flex items-center gap-3">
+      <CardFooter className="p-4 border-t bg-background flex-shrink-0">
+        <div className="relative w-full flex items-center gap-2">
           <Input
             type="text"
-            placeholder="Ask about hiring, products, or services..."
+            placeholder="Type your message..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-            className="flex-grow h-12 sm:h-14 rounded-2xl text-sm focus-visible:ring-primary border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 pr-14 font-medium"
+            className="flex-grow h-12 rounded-2xl text-sm focus-visible:ring-primary bg-zinc-50 dark:bg-zinc-900 pr-12"
             disabled={isLoading}
           />
           <Button 
-            onClick={handleSendMessage} 
+            onClick={() => {
+              if (inputValue.trim() === '' || isLoading) return;
+              const userText = inputValue;
+              addMessage('user', userText);
+              setInputValue('');
+              handleNormalQna(userText);
+            }} 
             size="icon" 
             disabled={isLoading || inputValue.trim() === ''} 
-            className="absolute right-1.5 top-1.5 h-9 w-9 sm:h-11 sm:w-11 rounded-xl bg-primary hover:bg-primary/90 transition-all shadow-xl shadow-primary/20"
+            className="absolute right-1.5 top-1.5 h-9 w-9 rounded-xl bg-primary"
           >
-            <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Send className="h-4 w-4" />
           </Button>
         </div>
       </CardFooter>
     </Card>
   );
+
+  function handleSendMessage() {
+    if (inputValue.trim() === '' || isLoading) return;
+    const userText = inputValue;
+    addMessage('user', userText);
+    setInputValue('');
+    handleNormalQna(userText);
+  }
 }
