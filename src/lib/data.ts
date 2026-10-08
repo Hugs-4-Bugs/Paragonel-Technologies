@@ -53,13 +53,13 @@ export const baseServices = [
 export const basePortfolio = [
   {
     id: 'p-1',
-    name: 'AcquisitionOS: Intelligent Sales Engine',
+    name: 'AcquisitionOS: AI-Native Client Acquisition Platform',
     category: 'Sales Technology',
     imageUrl: '/images/AI-Driven-Recruitment.png',
-    description: 'AcquisitionOS is our flagship lead acquisition and CRM platform. \n\n**The Problem:** Sales teams were spending 60% of their time on manual research and outreach to low-intent leads.\n\n**The Solution:** We built a custom RAG (Retrieval Augmented Generation) pipeline that aggregates signals from 12+ data sources. Our proprietary scoring engine uses custom LLMs to rank leads by intent, allowing sales teams to focus only on high-value conversations.\n\n**The Result:** Our beta clients saw a 40% reduction in customer acquisition costs and a 3x increase in outreach response rates within the first 90 days.',
+    description: 'AcquisitionOS is our flagship AI-native client acquisition platform, built to take businesses from prospect discovery to qualified pipeline. **The Problem:** Sales teams spend significant time manually researching companies, identifying opportunities, finding business gaps, personalizing outreach, and managing follow-ups across disconnected tools. **The Solution:** We built an end-to-end acquisition workflow covering prospect discovery, multi-source company research, signal interpretation, opportunity and gap detection, AI-generated opportunity reports, lead scoring, personalized outreach, reply and conversation analysis, meeting workflows, pipeline management, proposal generation, and closing, with LLM-powered reasoning turning fragmented business signals into actionable prospect context and next-best actions. **The Result:** AcquisitionOS is currently in private beta, where real-user feedback is driving product refinement and workflow validation as we prepare for broader customer adoption.',
     status: 'Live',
     techs: ['Spring Boot', 'Next.js', 'Python', 'Vector DB', 'AWS'],
-    link: 'https://acquisitionos.vercel.app',
+    link: 'https://acquisitionosbeta.vercel.app/',
     createdAt: new Date('2024-01-01').toISOString()
   },
   {
@@ -113,7 +113,16 @@ export const baseTestimonials = [
     content: 'As a startup, you need to move fast without breaking things. Their Fractional CTO service saved us from making critical architectural mistakes in our first six months. They built our MVP to enterprise standards, allowing us to scale without a rewrite.',
     rating: 5,
     avatarUrl: ''
-  }
+  },
+  {
+  id: 'base-t-4',
+  name: 'Dhiraj Singh',
+  role: 'Founder',
+  company: 'Maa Arogyam',
+  content: 'They transformed our vision into a professional and modern website that represents Maa Arogyam exactly the way we wanted. The website has helped us present our services more clearly and build greater trust with our customers.',
+  rating: 5,
+  avatarUrl: ''
+}
 ];
 
 export const dummyJobs: Job[] = [
