@@ -320,41 +320,666 @@ export const dummyJobs: Job[] = [
 
 export const blogPosts: BlogPost[] = [
   {
-    id: '1',
-    title: 'The Engineering Logic Behind AcquisitionOS',
-    date: 'February 15, 2025',
-    author: 'Prabhat Sharma',
-    excerpt: 'A deep dive into why we built a custom lead acquisition engine and how our RAG pipeline outperforms traditional CRM manual outreach.',
-    body: `
-Building a CRM in 2025 requires more than just database tables. It requires a reasoning engine. When we started building AcquisitionOS, we realized that the biggest bottleneck for sales teams wasn't storing data—it was knowing who to talk to and what to say.
+  id: '1',
+  title: 'The Engineering Logic Behind AcquisitionOS: Building an AI-Native Customer Acquisition Engine',
+  date: 'October 8, 2026',
+  author: 'Prabhat Sharma',
+  excerpt: 'A deep dive into why we built a custom lead acquisition engine, how AcquisitionOS turns raw prospects into researched opportunities, and why AI-native workflows can move beyond traditional CRM-based manual outreach.',
+  body: `
+Building a customer acquisition platform in 2026 requires much more than storing contacts, companies, activities, and deal stages.
 
-### The Problem with Traditional CRMs
-Most CRMs are glorified spreadsheets. They wait for a human to input data, and then they wait for a human to act on it. In a world of high-velocity sales, this delay is lethal. We wanted to build a system that acts as a technical co-pilot for the sales team.
+Traditional CRM systems are primarily designed to record what a sales team already knows.
 
-### Our Solution: The RAG Pipeline
-We integrated a Retrieval Augmented Generation (RAG) pipeline into the core of AcquisitionOS. This isn't just about indexing text; it's about indexing "intent."
+We wanted to build something fundamentally different.
 
-**How it works under the hood:**
-1. **Multi-Source Ingestion**: We aggregate signals from various public and private data sources, including social movements, company filings, and news events.
-2. **Contextual Indexing**: Instead of basic keyword matching, we use vector embeddings (via Pinecone and OpenAI/Gemini) to understand the "meaning" behind a company's recent activities.
-3. **LLM Scoring Engine**: Our custom model analyzes these embeddings to prioritize leads that are most likely to convert *right now*.
+AcquisitionOS was designed around a simple question:
 
-### Technology Choice: Why Java & Spring Boot?
-While Python is the king of AI, we chose Java with Spring Boot for the backend of AcquisitionOS. 
+**What if the system could do the acquisition work instead of simply helping a salesperson record it?**
 
-**Why? Scale and Predictability.**
-For a platform that needs to handle high-concurrency data ingestion and mission-critical sales workflows, the strong typing and robust ecosystem of the JVM provided the reliability our enterprise clients demand. We use Python as a microservice for the heavy-lifting AI tasks, connected via secure internal APIs. This "Polyglot Microservices" approach gives us the best of both worlds: the raw power of Java for scaling and the agility of Python for machine learning.
+That question led us to build AcquisitionOS as an AI-native customer acquisition platform that takes businesses through the complete journey:
 
-The result is a platform that doesn't just store your leads—it finds them, scores them, and helps you close them.
-    `,
-    thumbnailUrl: '/images/AI-Driven-Recruitment.png',
-    category: 'Product Engineering',
-    tags: ['AI', 'CRM', 'SaaS', 'Spring Boot', 'RAG'],
-    status: 'Published',
-    slug: 'engineering-logic-acquisition-os',
-    createdAt: new Date('2025-02-15').toISOString(),
-    updatedAt: new Date('2025-02-15').toISOString()
-  },
+**Discover → Research → Find Gaps → Build Opportunity Context → Score → Personalize → Engage → Analyze → Close**
+
+The goal is not to build another CRM.
+
+The goal is to build an intelligent acquisition engine.
+
+---
+
+### The Problem With Traditional CRM-Based Outreach
+
+Most traditional CRM workflows begin after a prospect has already been identified.
+
+A salesperson typically has to:
+
+1. Find a company.
+2. Search for the right decision-maker.
+3. Visit the company's website.
+4. Search social platforms and public information.
+5. Understand what the company does.
+6. Identify potential problems or opportunities.
+7. Decide whether the company is worth contacting.
+8. Write an outreach message.
+9. Send the message.
+10. Track the response.
+11. Follow up.
+12. Move the opportunity through a pipeline.
+13. Prepare a proposal once the opportunity becomes qualified.
+
+The CRM records these activities, but much of the actual intelligence work still happens outside the CRM.
+
+This creates a major bottleneck.
+
+Salespeople spend valuable time doing research, switching between tools, collecting context, writing repetitive messages, and manually deciding which prospects deserve attention.
+
+AcquisitionOS was built to move that intelligence into the platform itself.
+
+---
+
+### From Lead Database to Acquisition Engine
+
+We designed AcquisitionOS around the complete acquisition lifecycle.
+
+Instead of asking:
+
+**"Where should I store this lead?"**
+
+we ask:
+
+**"Why should this business become an opportunity, what is happening inside that business, what gap can we identify, and what should we do next?"**
+
+That distinction changes the architecture.
+
+A lead is not the final output.
+
+A lead is the starting point for an intelligence workflow.
+
+AcquisitionOS discovers potential businesses, enriches the information available about them, evaluates their relevance, researches their business context, identifies potential gaps or triggers, generates opportunity intelligence, and then uses that intelligence to drive personalized engagement.
+
+---
+
+### Our Custom Lead Acquisition Engine
+
+One of the most important decisions we made was to build our own lead acquisition layer rather than treating lead lists as an external dependency.
+
+The acquisition engine can discover businesses through multiple sources and create structured lead records that can move into the rest of the AcquisitionOS workflow.
+
+The architecture separates discovery from downstream intelligence.
+
+This allows the system to:
+
+- Discover businesses from multiple sources.
+- Create structured lead records.
+- Preserve source attribution.
+- Separate verified and unverified information.
+- Enrich available business and contact information.
+- Score and audit leads.
+- Feed qualified prospects into intelligence and outreach workflows.
+- Maintain the lead's state throughout the acquisition lifecycle.
+
+The objective is not simply to produce a large number of leads.
+
+The objective is to produce **usable acquisition opportunities**.
+
+A business with only a phone number, for example, should not receive a fabricated email address simply because an outreach workflow expects one.
+
+AcquisitionOS is designed around the principle that missing information should remain missing rather than being invented.
+
+---
+
+### The Real Differentiator: Finding Business Gaps
+
+Finding a company is only the first step.
+
+The real value begins when the system starts understanding the company.
+
+For each prospect, AcquisitionOS can use the available business context and public signals to understand things such as:
+
+- What the company does.
+- What market it operates in.
+- What services or products it provides.
+- What its digital presence looks like.
+- What technology or operational signals are visible.
+- What growth or expansion signals may exist.
+- What problems or gaps may be observable.
+- What services could potentially create value for that business.
+
+This changes the outreach philosophy completely.
+
+Instead of:
+
+**"Hi, we provide software development services. Are you interested?"**
+
+the system can build outreach around an actual observation.
+
+The objective is to understand:
+
+**"What appears to be happening inside this business, what opportunity or gap can we identify, and why would solving that matter to them?"**
+
+---
+
+### Business Research → Opportunity Report → Outreach
+
+This became one of the core ideas behind AcquisitionOS.
+
+The system should not jump directly from:
+
+**Lead Found → Email Sent**
+
+Instead, the intelligence layer creates an intermediate understanding of the opportunity.
+
+The conceptual flow is:
+
+**Business Discovery**
+
+↓  
+
+**Research & Enrichment**
+
+↓  
+
+**Business Gap / Trigger Detection**
+
+↓  
+
+**Opportunity Context**
+
+↓  
+
+**Business-Specific Report**
+
+↓  
+
+**Lead Scoring**
+
+↓  
+
+**Personalized Outreach**
+
+This means the outreach message is not generated in isolation.
+
+It is generated from the context discovered during the research process.
+
+That gives the sales team something more valuable than a contact record:
+
+**a reason to start the conversation.**
+
+---
+
+### Our AI and RAG Architecture
+
+The original vision for AcquisitionOS included a Retrieval Augmented Generation architecture because generic LLM conversations are not enough for customer acquisition.
+
+An AI model needs context.
+
+It needs the relevant information about the prospect, the business, previous activities, available signals, communication history, and the current workflow state.
+
+The purpose of the retrieval layer is therefore not simply to search documents.
+
+It is to retrieve the right acquisition context at the right point in the workflow.
+
+The broader intelligence pipeline can be represented as:
+
+1. **Retrieve**
+   - Gather relevant prospect, company, activity, and research context.
+
+2. **Understand**
+   - Interpret the available information and identify meaningful signals.
+
+3. **Reason**
+   - Determine potential business gaps, triggers, relevance, and opportunity context.
+
+4. **Score**
+   - Prioritize prospects based on the available intelligence.
+
+5. **Generate**
+   - Create personalized outreach, reports, recommendations, and sales assistance.
+
+6. **Act**
+   - Execute the appropriate workflow through configured communication channels.
+
+7. **Learn From Activity**
+   - Use replies, engagement, pipeline state, and subsequent interactions as additional context.
+
+This is why we think of AcquisitionOS as an **AI-native acquisition system**, rather than a CRM with an AI chatbot attached to it.
+
+---
+
+### Claude, ChatGPT and Model-Agnostic Intelligence
+
+We have used Claude during development for reasoning-heavy parts of the AcquisitionOS workflow and are now building deeper model integrations into the product.
+
+Claude can support areas such as:
+
+- Company research.
+- Signal interpretation.
+- Business-gap identification.
+- Opportunity-context generation.
+- Lead scoring.
+- Personalized outreach.
+- Reply analysis.
+- Sales assistance.
+- Proposal assistance.
+- Complex reasoning across multiple pieces of prospect context.
+
+The long-term architecture is intentionally not tied to a single AI provider.
+
+AcquisitionOS already supports user-provided AI API keys, and we are working toward deeper integrations with Claude and ChatGPT as well as an MCP server.
+
+Our vision is for these assistants to be able to interact directly with AcquisitionOS.
+
+The distinction is important.
+
+We do not want Claude or ChatGPT to simply sit beside the CRM as another chat window.
+
+We want them to be able to work with the underlying acquisition intelligence, data, context, and workflow state provided by AcquisitionOS.
+
+In other words:
+
+**AI should execute meaningful acquisition work, not simply talk about it.**
+
+---
+
+### AcquisitionOS Architecture
+
+The current architecture separates customer-facing acquisition workflows from the asynchronous infrastructure responsible for processing them.
+
+The high-level architecture can be represented as:
+
+\`\`\`mermaid
+flowchart TD
+
+    ST[Sales Team] --> AOS[AcquisitionOS]
+
+    AOS --> DISC[Business Discovery]
+    DISC --> LEADS[(Lead Records)]
+
+    LEADS --> SCORE[Scoring & Audit]
+
+    SCORE --> INTEL[Intelligence & Engagement]
+
+    INTEL --> RESEARCH[Business Research]
+    RESEARCH --> GAP[Gap / Trigger Detection]
+    GAP --> REPORT[Opportunity Context & Report]
+
+    REPORT --> OUT[Outreach Generation]
+    OUT --> CHANNELS[Communication Channels]
+
+    CHANNELS --> PIPE[Deal Pipeline]
+    PIPE --> DEAL[Deal Management]
+    DEAL --> PROP[Proposal Generation]
+
+    INTEL --> ASSIST[Sales Assistant]
+
+    AOS --> TASKS[Workflow & Task Engine]
+
+    TASKS --> REALTIME[Realtime Tasks]
+    TASKS --> EMAIL[Email Tasks]
+    TASKS --> SCHEDULE[Scheduled Workflows]
+    TASKS --> PAYMENT[Payment Recovery]
+
+    REALTIME --> EMAIL
+
+    TASKS --> REDIS[(Redis)]
+    TASKS --> DB[(Async Database Layer)]
+
+    EMAIL --> CHANNELS
+
+    PIPE --> ANALYTICS[Market / Acquisition Analytics]
+    CHANNELS --> NOTIFY[Notifications & Reminders]
+
+    ANALYTICS --> INTEL
+    NOTIFY --> INTEL
+\`\`\`
+
+This separation allows acquisition workflows to run without forcing every operation into a synchronous request-response cycle.
+
+Research, scheduled workflows, realtime activities, email tasks, payment recovery, and other background operations can be delegated to task-processing infrastructure.
+
+That architecture becomes increasingly important as the number of prospects and workflows increases.
+
+---
+
+### Why Asynchronous Processing Matters
+
+Customer acquisition is inherently asynchronous.
+
+A single acquisition workflow may involve:
+
+- Searching multiple sources.
+- Retrieving company information.
+- Enriching available data.
+- Running AI analysis.
+- Generating an opportunity report.
+- Creating personalized content.
+- Sending communication.
+- Waiting for a reply.
+- Scheduling a follow-up.
+- Updating the pipeline.
+- Triggering another action.
+
+Trying to perform every operation inside a single synchronous request would create slow and fragile workflows.
+
+Our architecture therefore separates the API layer from background task execution.
+
+The system includes dedicated task flows for realtime work, workflow tasks, email tasks, scheduling, and payment recovery.
+
+Redis is used as part of the task and realtime infrastructure, while the database layer provides persistent application state.
+
+This gives AcquisitionOS a foundation for long-running and high-volume acquisition workflows.
+
+---
+
+### From AI Research to Automated Outreach
+
+Once the opportunity context has been generated, AcquisitionOS can use that context to create personalized outreach.
+
+The key difference is that personalization should not mean simply inserting:
+
+**{{firstName}}**
+
+or
+
+**{{companyName}}**
+
+into a template.
+
+Real personalization requires understanding why the prospect is relevant.
+
+A message can therefore be based on:
+
+- The company's business model.
+- A visible business gap.
+- A relevant trigger.
+- A growth signal.
+- The prospect's role.
+- The service that could address the identified opportunity.
+- The research performed before outreach.
+
+The resulting workflow becomes:
+
+**Discover → Research → Identify Gap → Prepare Context → Personalize → Send → Track**
+
+This is fundamentally different from sending the same generic message to hundreds of contacts.
+
+---
+
+### The Outreach Engine
+
+AcquisitionOS can connect the intelligence layer to communication channels so that researched opportunities can move directly into configured outreach workflows.
+
+The system can generate communication based on the available opportunity context and the authenticated user's profile information.
+
+That includes dynamically using configured sender information such as:
+
+- Name.
+- Email.
+- Phone number.
+- Company.
+- Signature.
+
+The system should never invent missing profile information.
+
+If a user has not configured a particular field, the workflow can omit it rather than generating false information.
+
+This makes the outreach system reusable across different users, businesses, and sales teams.
+
+---
+
+### Reply Intelligence and the Path to Closing
+
+Sending the first message is not the end of acquisition.
+
+A real acquisition platform needs to understand what happens after outreach.
+
+AcquisitionOS therefore connects communication activity with the broader sales workflow.
+
+The intended lifecycle is:
+
+**Prospect → Research → Outreach → Reply → Qualification → Deal → Proposal → Close**
+
+Reply analysis can help determine what the prospect is communicating and what action should happen next.
+
+The Sales Assistant can then support the sales team with contextual guidance instead of treating every conversation as an isolated chat.
+
+This creates a bridge between AI-generated intelligence and actual sales execution.
+
+---
+
+### Deal Pipeline and Proposal Generation
+
+Once a prospect becomes a genuine opportunity, AcquisitionOS moves beyond outreach.
+
+The architecture includes a deal pipeline and deal-management layer that can track the progression of opportunities.
+
+From there, proposal generation can become part of the same acquisition workflow.
+
+This matters because the system should not stop being intelligent once a lead replies.
+
+The ultimate objective is:
+
+**turning acquisition intelligence into revenue.**
+
+---
+
+### Why We Built the Sales Assistant
+
+We did not want the Sales Assistant to be another generic AI chat window.
+
+The assistant should understand the selected lead, the available research, the opportunity context, communication history, and the current stage of the sales process.
+
+That allows it to support questions such as:
+
+- What should I say next?
+- What is the strongest opportunity here?
+- What gap did we identify?
+- How should I respond to this reply?
+- What objections should I expect?
+- What should the next action be?
+- How should this opportunity be positioned in a proposal?
+
+The assistant therefore becomes another interface into the AcquisitionOS intelligence layer.
+
+---
+
+### AcquisitionOS Is More Than a CRM
+
+A CRM primarily answers:
+
+**"What happened?"**
+
+An acquisition engine should also answer:
+
+**"What is happening?"**
+
+**"Why does it matter?"**
+
+**"Who should we contact?"**
+
+**"What opportunity exists?"**
+
+**"What should we say?"**
+
+**"What should we do next?"**
+
+That is the architectural philosophy behind AcquisitionOS.
+
+We are building a system that connects discovery, intelligence, reasoning, engagement, and sales execution into one continuous workflow.
+
+---
+
+### Our Long-Term Vision
+
+The long-term vision for AcquisitionOS is not to become another dashboard where salespeople spend their entire day manually updating records.
+
+We want AcquisitionOS to become the underlying **customer acquisition operating system** for businesses.
+
+The future workflow looks more like:
+
+**Business Goal**
+
+↓
+
+**AI discovers relevant opportunities**
+
+↓
+
+**Researches the business**
+
+↓
+
+**Identifies gaps, triggers and potential needs**
+
+↓
+
+**Builds an opportunity report**
+
+↓
+
+**Scores and prioritizes the prospect**
+
+↓
+
+**Creates a personalized acquisition strategy**
+
+↓
+
+**Executes outreach**
+
+↓
+
+**Understands replies**
+
+↓
+
+**Assists with qualification**
+
+↓
+
+**Manages the opportunity**
+
+↓
+
+**Generates proposals**
+
+↓
+
+**Supports the path to close**
+
+The human remains in control of important decisions, relationships, and commercial judgment.
+
+But the repetitive research, context gathering, analysis, drafting, and workflow execution can increasingly be handled by the system.
+
+---
+
+### The Bigger Idea: AI That Actually Does the Work
+
+There is a major difference between:
+
+**AI that answers questions**
+
+and
+
+**AI that executes workflows.**
+
+A chatbot can tell you how to research a company.
+
+AcquisitionOS is being designed to actually perform that research.
+
+A chatbot can suggest that a business might have a problem.
+
+AcquisitionOS is being designed to research the business, identify the observable gap, create the opportunity context, and use that context in the acquisition workflow.
+
+A chatbot can write an email.
+
+AcquisitionOS can connect that generated communication to the actual prospect, sender identity, workflow, communication channel, and sales pipeline.
+
+That is the direction we are taking.
+
+---
+
+### The AcquisitionOS Philosophy
+
+The core philosophy can be summarized in one sentence:
+
+**We built the complexity so the sales team can focus on the conversation.**
+
+Behind a simple workflow are multiple systems working together:
+
+- Lead discovery.
+- Data enrichment.
+- Verification.
+- Research.
+- Signal interpretation.
+- Gap detection.
+- Opportunity intelligence.
+- Lead scoring.
+- AI reasoning.
+- Personalized content generation.
+- Workflow automation.
+- Communication channels.
+- Reply intelligence.
+- Sales assistance.
+- Deal management.
+- Proposal generation.
+- Analytics.
+- Notifications.
+- Background task processing.
+
+The user should not need to understand all of that complexity.
+
+They should simply be able to define what they want to acquire and let AcquisitionOS help execute the work.
+
+---
+
+### From CRM to Customer Acquisition OS
+
+This is ultimately why we chose the name **AcquisitionOS**.
+
+It is not intended to be just another CRM.
+
+It is an operating layer for customer acquisition.
+
+The journey we are building is:
+
+**Discover → Enrich → Research → Understand → Score → Engage → Analyze → Close**
+
+And the long-term vision extends beyond a standalone application.
+
+With deeper Claude and ChatGPT integrations, MCP, user-provided AI models, intelligent workflows, and increasingly autonomous acquisition agents, we want AcquisitionOS to become infrastructure that other AI assistants can use to perform real customer-acquisition work.
+
+The future we are building is one where a business does not simply ask:
+
+**"Show me my leads."**
+
+It can ask:
+
+**"Find me the businesses that need what I sell, understand why they need it, show me the opportunity, start the conversation, and help me close it."**
+
+That is the engineering logic behind AcquisitionOS.
+
+And that is the direction we are continuing to build toward.
+  `,
+  thumbnailUrl: '/images/AI-Driven-Recruitment.png',
+  category: 'Product Engineering',
+  tags: [
+    'AI',
+    'AcquisitionOS',
+    'CRM',
+    'SaaS',
+    'RAG',
+    'Lead Intelligence',
+    'Sales Automation',
+    'Claude',
+    'ChatGPT',
+    'MCP',
+    'Spring Boot'
+  ],
+  status: 'Published',
+  slug: 'engineering-logic-acquisition-os',
+  createdAt: new Date('2026-10-08').toISOString(),
+  updatedAt: new Date('2026-10-08').toISOString()
+}, 
   {
     id: '2',
     title: 'How CodeGuard AI Saves AWS Bills for DevOps Teams',
