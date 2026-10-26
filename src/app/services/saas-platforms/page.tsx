@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Layers, Zap, ChevronRight, LayoutGrid, Users, Scaling, Palette } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'SaaS Platforms | QuantumFusion Solutions',
-  description: 'End-to-end SaaS platform development from ideation and design to deployment and maintenance by QuantumFusion Solutions.',
+  title: 'SaaS Platforms | Paragonel',
+  description: 'End-to-end SaaS platform development from ideation and design to deployment and maintenance by Paragonel.',
 };
 
 const saasFeatures = [
@@ -30,7 +30,7 @@ export default function SaaSPlatformsPage() {
               SaaS <span className="text-primary">Platforms</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Bring your Software-as-a-Service vision to life with QuantumFusion Solutions. We offer comprehensive SaaS development services, from initial concept and UI/UX design to robust backend engineering, deployment, and ongoing maintenance.
+              Bring your Software-as-a-Service vision to life with Paragonel. We offer comprehensive SaaS development services, from initial concept and UI/UX design to robust backend engineering, deployment, and ongoing maintenance.
             </p>
           </header>
         </ScrollFadeIn>
@@ -74,7 +74,7 @@ export default function SaaSPlatformsPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-muted-foreground">
               <p>
-                QuantumFusion Solutions is your trusted partner for building innovative and successful SaaS applications. We combine technical expertise with a deep understanding of SaaS business models to deliver platforms that are not only technologically sound but also market-ready and user-loved. Our agile development process ensures flexibility and transparency throughout the project lifecycle.
+                Paragonel is your trusted partner for building innovative and successful SaaS applications. We combine technical expertise with a deep understanding of SaaS business models to deliver platforms that are not only technologically sound but also market-ready and user-loved. Our agile development process ensures flexibility and transparency throughout the project lifecycle.
               </p>
               <ul className="list-disc list-inside space-y-2 pl-4">
                 <li>Full-stack development (frontend, backend, database).</li>

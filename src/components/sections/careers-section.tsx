@@ -111,7 +111,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
       <div className="container mx-auto px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-12">
           <h1 className="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
-            Join <span className="text-primary">QuantumFusion</span>
+            Join <span className="text-primary">Paragonel</span>
           </h1>
           <p className="text-xl text-zinc-500 max-w-2xl mx-auto font-medium">
             Explore exciting opportunities and grow with our innovative team.

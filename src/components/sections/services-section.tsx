@@ -49,7 +49,7 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
               Our Core <span className="text-primary">Services</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto font-medium">
-              QuantumFusion Solutions delivers a comprehensive suite of IT services designed to propel your business into the future.
+              Paragonel delivers a comprehensive suite of IT services designed to propel your business into the future.
             </p>
           </ScrollFadeIn>
         </div>

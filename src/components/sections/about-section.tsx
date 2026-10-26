@@ -14,7 +14,7 @@ export function AboutSection() {
       <div className="container mx-auto px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-16">
           <h1 className="text-4xl md:text-7xl font-black tracking-tighter mb-6 text-foreground">
-            About <span className="text-primary">QuantumFusion Solutions</span>
+            About <span className="text-primary">Paragonel</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed">
             Pioneering the future of IT with intelligent solutions in AI, Cloud Computing, DevOps, and SaaS Platforms.
@@ -26,7 +26,7 @@ export function AboutSection() {
             <div className="text-center p-12">
                <ShieldCheck className="h-32 w-32 text-primary mx-auto mb-6 neon-icon" />
                <h3 className="text-3xl font-black text-primary mb-2">Team Collaboration</h3>
-               <p className="text-muted-foreground font-medium uppercase tracking-widest text-xs">A QuantumFusion Brand Identity</p>
+               <p className="text-muted-foreground font-medium uppercase tracking-widest text-xs">A Paragonel Brand Identity</p>
             </div>
           </ScrollFadeIn>
           <ScrollFadeIn delay="200ms">
@@ -36,7 +36,7 @@ export function AboutSection() {
               "Our mission is to eliminate the gap between 'we have this problem' and 'we have a working solution' — by building AI-native software that is precise, fast, and built to actually solve real pain rather than check a feature box."
             </p>
             <p className="text-muted-foreground leading-relaxed text-lg">
-              Founded with the vision to fuse cutting-edge technology with strategic business insights, QuantumFusion Solutions empowers organizations to navigate the complexities of the digital age. We believe in the transformative power of AI, the scalability of the Cloud, the efficiency of DevOps, and the agility of SaaS.
+              Founded with the vision to fuse cutting-edge technology with strategic business insights, Paragonel empowers organizations to navigate the complexities of the digital age. We believe in the transformative power of AI, the scalability of the Cloud, the efficiency of DevOps, and the agility of SaaS.
             </p>
           </ScrollFadeIn>
         </div>
@@ -62,13 +62,13 @@ export function AboutSection() {
                 <p className="text-primary font-bold mb-6">Founder & Lead Architect</p>
                 <div className="space-y-4 text-muted-foreground leading-relaxed mb-8">
                   <p>
-                    Prabhat Sharma is the visionary Founder and Lead Architect of QuantumFusion Solutions, holding a Bachelor of Engineering in Computer Science. A specialist Java Backend Developer, he brings expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructures (AWS/GCP).
+                    Prabhat Sharma is the visionary Founder and Lead Architect of Paragonel, holding a Bachelor of Engineering in Computer Science. A specialist Java Backend Developer, he brings expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructures (AWS/GCP).
                   </p>
                   <p>
                     Before embarking on his journey as a solo founder, Prabhat spent significant years as an engineer at Netcore Cloud. During his tenure there, he specialized in architecting and maintaining backend systems at massive scale—handling millions of real-time events and data streams.
                   </p>
                   <p>
-                    Today, he leverages that high-scale expertise to build QuantumFusion's portfolio of SaaS products, including AcquisitionOS (AI CRM) and SystemFoundry (Architecture Simulator), while helping global clients solve their most complex technical bottlenecks through precision engineering.
+                    Today, he leverages that high-scale expertise to build Paragonel's portfolio of SaaS products, including AcquisitionOS (AI CRM) and SystemFoundry (Architecture Simulator), while helping global clients solve their most complex technical bottlenecks through precision engineering.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-4">
@@ -128,7 +128,7 @@ export function AboutSection() {
               {
                 year: "2024",
                 title: "Inception",
-                description: "QuantumFusion Solutions founded. CodeGuard AI published on VS Code Marketplace (AWS cost intelligence)."
+                description: "Paragonel founded. CodeGuard AI published on VS Code Marketplace (AWS cost intelligence)."
               },
               {
                 year: "2025",

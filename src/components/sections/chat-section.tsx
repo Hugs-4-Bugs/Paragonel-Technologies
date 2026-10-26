@@ -46,7 +46,7 @@ export function ChatSection() {
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      addMessage('ai', "Hi! I'm QuantumAI, your career & company companion. I can help you find your next engineering role at QuantumFusion. How can I help?");
+      addMessage('ai', "Hi! I'm ParagonelAI, your career & company companion. I can help you find your next engineering role at Paragonel. How can I help?");
     }
   }, [isOpen, messages.length, addMessage]);
 
@@ -195,7 +195,7 @@ export function ChatSection() {
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-white/20 flex items-center justify-center"><Bot className="h-5 w-5 sm:h-6 sm:w-6" /></div>
           <div>
-            <CardTitle className="text-sm sm:text-base font-black">QuantumAI</CardTitle>
+            <CardTitle className="text-sm sm:text-base font-black">ParagonelAI</CardTitle>
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
               <span className="text-[9px] sm:text-[10px] font-bold opacity-70 uppercase">Online</span>

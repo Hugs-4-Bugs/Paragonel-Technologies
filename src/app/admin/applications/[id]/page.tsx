@@ -105,7 +105,7 @@ export default function ApplicationDetail() {
                 <History className="h-5 w-5 text-primary" />
                 Internal Evaluation & Notes
               </CardTitle>
-              <CardDescription>Visible only to QuantumFusion team.</CardDescription>
+              <CardDescription>Visible only to Paragonel team.</CardDescription>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
               <Textarea 

@@ -41,7 +41,7 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: FetchTechNewsInputSchema },
   output: { schema: FetchTechNewsOutputSchema },
-  prompt: `You are a tech news curator for QuantumFusion Solutions, an IT company specializing in AI, Cloud, DevOps, and SaaS.
+  prompt: `You are a tech news curator for Paragonel, an IT company specializing in AI, Cloud, DevOps, and SaaS.
 Your task is to generate {{count}} recent and plausible news headlines and short summaries related to our core domains: {{#each domains}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}.
 
 The news should be highly relevant to our business and clients. Focus on breakthroughs, significant company partnerships (fictional or real), or major industry trends that impact our services.
@@ -75,9 +75,9 @@ const fetchTechNewsFlow = ai.defineFlow(
       return {
         newsItems: [
           {
-            title: "QuantumFusion Solutions Announces New AI-Powered DevOps Framework",
+            title: "Paragonel Announces New AI-Powered DevOps Framework",
             summary: "Our latest framework integrates generative AI to automate complex CI/CD workflows, reducing deployment times by up to 40%.",
-            source: "QuantumFusion Press",
+            source: "Paragonel Press",
             link: "/services/devops-automation",
             publishedDate: "Today"
           },

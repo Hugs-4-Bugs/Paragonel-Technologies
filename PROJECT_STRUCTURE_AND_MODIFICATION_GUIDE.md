@@ -1,7 +1,7 @@
 
-# QuantumFusion Solutions Website: Structure & Modification Guide
+# Paragonel Website: Structure & Modification Guide
 
-This document provides an overview of the project structure and guidance on where to find and modify specific features of the QuantumFusion Solutions website.
+This document provides an overview of the project structure and guidance on where to find and modify specific features of the Paragonel website.
 
 ## General Project Structure
 
@@ -53,8 +53,8 @@ This document provides an overview of the project structure and guidance on wher
 ### 1. Branding & General Look/Feel
 
 *   **Company Name**:
-    *   Global Metadata: `src/app/layout.tsx` (in `metadata` object, currently "QuantumFusion Solutions - Shaping The Future For Tomorrow").
-    *   Visual Text (if logo is text): `src/components/layout/navbar.tsx`, `src/components/layout/footer.tsx`. Currently set to "QuantumFusion Solutions".
+    *   Global Metadata: `src/app/layout.tsx` (in `metadata` object, currently "Paragonel - Shaping The Future For Tomorrow").
+    *   Visual Text (if logo is text): `src/components/layout/navbar.tsx`, `src/components/layout/footer.tsx`. Currently set to "Paragonel".
     *   Throughout content in various section components (e.g., `src/components/sections/hero.tsx`, `src/components/sections/about-section.tsx`).
 *   **Company Logo**:
     *   Place your logo image file (e.g., `qfs-logo.png`) in the `public/` directory.

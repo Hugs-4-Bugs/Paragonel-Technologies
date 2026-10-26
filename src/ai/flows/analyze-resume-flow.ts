@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview QuantumAI V2 Resume Analysis Flow.
+ * @fileOverview ParagonelAI V2 Resume Analysis Flow.
  * Extracts deep structured data from a resume or raw text.
  */
 
@@ -33,7 +33,7 @@ const prompt = ai.definePrompt({
   input: { schema: AnalyzeResumeInputSchema },
   output: { schema: AnalyzeResumeOutputSchema },
   prompt: `
-    You are the Lead Recruitment Agent for QuantumFusion Solutions.
+    You are the Lead Recruitment Agent for Paragonel.
     Analyze the provided resume and extract a structured candidate profile.
 
     {{#if resumeDataUri}}

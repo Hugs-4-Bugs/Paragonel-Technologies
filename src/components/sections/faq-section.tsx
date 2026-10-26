@@ -13,8 +13,8 @@ import { HelpCircle } from 'lucide-react';
 const faqItems = [
   {
     id: 'faq1',
-    question: 'What is QuantumFusion Solutions?',
-    answer: 'QuantumFusion Solutions is a premier IT company specializing in AI Solutions, Cloud Infrastructure, DevOps Automation, and SaaS Platforms. We help businesses innovate and achieve digital transformation.',
+    question: 'What is Paragonel?',
+    answer: 'Paragonel is a premier IT company specializing in AI Solutions, Cloud Infrastructure, DevOps Automation, and SaaS Platforms. We help businesses innovate and achieve digital transformation.',
   },
   {
     id: 'faq2',
@@ -23,13 +23,13 @@ const faqItems = [
   },
   {
     id: 'faq3',
-    question: 'How does QuantumFusion Solutions approach AI development?',
+    question: 'How does Paragonel approach AI development?',
     answer: 'Our AI development process is collaborative and iterative. We work closely with clients to understand their needs, develop custom AI models, and integrate them seamlessly into their existing workflows for maximum impact.',
   },
   {
     id: 'faq4',
     question: 'Can you help migrate our infrastructure to the cloud?',
-    answer: 'Absolutely. QuantumFusion Solutions offers comprehensive cloud migration services, from initial assessment and strategy to execution and post-migration support, ensuring a smooth transition to platforms like AWS, Azure, or GCP.',
+    answer: 'Absolutely. Paragonel offers comprehensive cloud migration services, from initial assessment and strategy to execution and post-migration support, ensuring a smooth transition to platforms like AWS, Azure, or GCP.',
   },
   {
     id: 'faq5',
@@ -38,7 +38,7 @@ const faqItems = [
   },
   {
     id: 'faq6',
-    question: 'How can I apply for a job at QuantumFusion Solutions?',
+    question: 'How can I apply for a job at Paragonel?',
     answer: 'Please visit our Careers page to view current openings and submit your application. We are always looking for talented individuals to join our team!',
   },
 ];
@@ -53,7 +53,7 @@ export function FaqSection() {
             Frequently Asked <span className="text-primary">Questions</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Find quick answers to common questions about QuantumFusion Solutions and our services.
+            Find quick answers to common questions about Paragonel and our services.
           </p>
         </ScrollFadeIn>
 

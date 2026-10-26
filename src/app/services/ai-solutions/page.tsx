@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Brain, Zap, ChevronRight, Lightbulb, LineChart, CheckCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'AI Solutions | QuantumFusion Solutions',
+  title: 'AI Solutions | Paragonel',
   description: 'Custom AI solutions including machine learning, NLP, and computer vision to drive innovation and efficiency for your business.',
 };
 
@@ -30,7 +30,7 @@ export default function AISolutionsPage() {
               AI <span className="text-primary">Solutions</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Harness the power of Artificial Intelligence with QuantumFusion Solutions. We build custom AI models, develop intelligent automation, and provide strategic consulting to transform your business operations and unlock new opportunities.
+              Harness the power of Artificial Intelligence with Paragonel. We build custom AI models, develop intelligent automation, and provide strategic consulting to transform your business operations and unlock new opportunities.
             </p>
           </header>
         </ScrollFadeIn>
@@ -74,7 +74,7 @@ export default function AISolutionsPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-muted-foreground">
               <p>
-                At QuantumFusion Solutions, we go beyond off-the-shelf AI. We partner with you to understand your unique challenges and opportunities, designing and implementing bespoke AI solutions that deliver measurable results. From automating complex processes to uncovering hidden insights in your data, our AI expertise can help you innovate faster, make smarter decisions, and gain a competitive edge.
+                At Paragonel, we go beyond off-the-shelf AI. We partner with you to understand your unique challenges and opportunities, designing and implementing bespoke AI solutions that deliver measurable results. From automating complex processes to uncovering hidden insights in your data, our AI expertise can help you innovate faster, make smarter decisions, and gain a competitive edge.
               </p>
               <ul className="list-disc list-inside space-y-2 pl-4">
                 <li>Custom model development and deployment.</li>

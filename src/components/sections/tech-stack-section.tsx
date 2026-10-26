@@ -116,7 +116,7 @@ export function TechStackSection() {
         <div className="container mx-auto px-4 md:px-6">
           <ScrollFadeIn className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-4">
-              Why Businesses Choose <span className="text-primary">QuantumFusion</span>
+              Why Businesses Choose <span className="text-primary">Paragonel</span>
             </h2>
           </ScrollFadeIn>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

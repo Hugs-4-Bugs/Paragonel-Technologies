@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -8,6 +7,7 @@ import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Shield } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +35,14 @@ const moreNavLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
-const authNavLinksBase = [
+type NavLink = {
+  href: string;
+  label: string;
+  icon?: LucideIcon;
+  action?: () => void;
+};
+
+const authNavLinksBase: NavLink[] = [
   { href: "/auth/login", label: "Login", icon: LogIn },
   { href: "/auth/signup", label: "Sign Up", icon: UserPlus },
 ];
@@ -44,13 +51,13 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isAuthenticated, user, logout, isLoading } = useAuth(); 
 
-  const getMobileNavLinks = () => {
+  const getMobileNavLinks = (): NavLink[] => {
     if (isLoading) return []; 
     
-    let links = [...mainNavLinks, ...moreNavLinks];
+    let links: NavLink[] = [...mainNavLinks, ...moreNavLinks];
     if (isAuthenticated && user) {
       // Check if user is the admin
-      if (user.email === 'admin@quantumfusion.in') {
+      if (user.email === 'admin@paragonel.com') {
         links.push({ href: "/admin", label: "Admin CMS", icon: Shield });
       }
       links.push({ href: "/profile", label: "My Profile", icon: UserCircle });
@@ -73,15 +80,26 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center space-x-2 mb-0 -ml-6">
-          <Image
-            src="/images/QuantumFusion-Logo.png" 
-            alt="QuantumFusion Solutions Logo"
-            width={200}
-            height={120}
-            className="h-20 w-25 md:h-25 md:w-25 rounded-lg"
-            data-ai-hint="company logo abstract"
-            priority
-          />
+          <div className="relative h-20 w-[200px] md:h-24 md:w-[220px]">
+            <Image
+              src="/images/logo3.png"
+              alt="Paragonel Logo"
+              width={2172}
+              height={724}
+              className="h-full w-full object-contain dark:hidden"
+              data-ai-hint="company logo abstract"
+              priority
+            />
+            <Image
+              src="/images/logo4.png"
+              alt="Paragonel Logo"
+              width={2172}
+              height={724}
+              className="hidden h-full w-full object-contain dark:block"
+              data-ai-hint="company logo abstract"
+              priority
+            />
+          </div>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
@@ -131,7 +149,7 @@ export function Navbar() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {user.email === 'admin@quantumfusion.in' && (
+                    {user.email === 'admin@paragonel.com' && (
                       <DropdownMenuItem asChild>
                          <Link href="/admin" className="cursor-pointer font-bold text-primary">
                            <Shield className="mr-2 h-4 w-4" />
@@ -186,7 +204,7 @@ export function Navbar() {
               <SheetHeader className="p-6 border-b">
                 <SheetTitle className="flex items-center justify-between">
                   <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
-                    QuantumFusion
+                    Paragonel
                   </Link>
                 </SheetTitle>
               </SheetHeader>

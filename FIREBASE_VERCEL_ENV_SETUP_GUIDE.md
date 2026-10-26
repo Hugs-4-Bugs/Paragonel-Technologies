@@ -1,12 +1,12 @@
 
 # Guide: Setting Up Firebase Environment Variables on Vercel
 
-This guide provides step-by-step instructions on how to configure your Firebase project's web configuration keys as environment variables in your Vercel project. These keys are essential for the Firebase SDK (used for Firestore in the Profile section) to connect to your Firebase backend when your QuantumFusion Solutions website is deployed on Vercel.
+This guide provides step-by-step instructions on how to configure your Firebase project's web configuration keys as environment variables in your Vercel project. These keys are essential for the Firebase SDK (used for Firestore in the Profile section) to connect to your Firebase backend when your Paragonel website is deployed on Vercel.
 
 ## Prerequisites
 
 1.  **Vercel Account**: You must have an active Vercel account.
-2.  **Vercel Project**: Your QuantumFusion Solutions website should already be connected to a project on Vercel.
+2.  **Vercel Project**: Your Paragonel website should already be connected to a project on Vercel.
 3.  **Firebase Project**: You need an active Firebase project with Firestore enabled.
 4.  **Firebase Web App Configuration**: You need your Firebase project's web app configuration details.
     *   Go to your Firebase project in the [Firebase Console](https://console.firebase.google.com/).
@@ -31,7 +31,7 @@ This guide provides step-by-step instructions on how to configure your Firebase 
     *   Go to [vercel.com](https://vercel.com/) and log in to your account.
 
 2.  **Navigate to Your Project**:
-    *   From your Vercel dashboard, select the project for your QuantumFusion Solutions website.
+    *   From your Vercel dashboard, select the project for your Paragonel website.
 
 3.  **Go to Project Settings**:
     *   Once inside your project's dashboard, click on the **"Settings"** tab.
@@ -89,7 +89,7 @@ This guide provides step-by-step instructions on how to configure your Firebase 
 ## Verification
 
 Once the redeployment is complete:
-*   Visit your live Vercel URL for the QuantumFusion Solutions website.
+*   Visit your live Vercel URL for the Paragonel website.
 *   Navigate to the Profile page after logging in. It should now be able to connect to Firestore and load/save your profile data.
 *   Check your browser's developer console for any Firebase-related errors. The "client is offline" error should be resolved.
 
@@ -99,4 +99,4 @@ Once the redeployment is complete:
 
 ---
 
-By following these steps, your deployed QuantumFusion Solutions website on Vercel will have the necessary Firebase configuration to allow the Firebase SDK to connect to your Firestore database.
+By following these steps, your deployed Paragonel website on Vercel will have the necessary Firebase configuration to allow the Firebase SDK to connect to your Firestore database.

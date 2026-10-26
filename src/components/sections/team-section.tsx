@@ -34,8 +34,8 @@ const teamMembers: TeamMember[] = [
     name: 'Prabhat Sharma',
     title: 'Founder & Lead Architect',
     imageUrl: '/images/Prabhat.png',
-    aiHint: 'Prabhat Sharma Founder CEO QuantumFusion Solutions',
-    bio: 'Prabhat Sharma is the visionary Founder and Lead Architect of QuantumFusion Solutions, holding a Bachelor of Engineering in Computer Science. A specialist Java Backend Developer, he brings expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructures (AWS/GCP). \n\nBefore embarking on his journey as a solo founder, Prabhat spent significant years as an engineer at Netcore Cloud, where he played a critical role in maintaining backend systems operating at massive scale—handling millions of real-time events per second. This background in high-concurrency engineering is the foundation of QuantumFusion’s "Precision Engineering" philosophy. \n\nToday, Prabhat leads a lean team of innovators, bridging the gap between complex business pain and AI-native solutions. He is the lead architect behind our proprietary products including AcquisitionOS (AI-powered CRM) and SystemFoundry (Architecture Simulator), while providing technical advisory to high-growth startups globally.',
+    aiHint: 'Prabhat Sharma Founder CEO Paragonel',
+    bio: 'Prabhat Sharma is the visionary Founder and Lead Architect of Paragonel, holding a Bachelor of Engineering in Computer Science. A specialist Java Backend Developer, he brings expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructures (AWS/GCP). \n\nBefore embarking on his journey as a solo founder, Prabhat spent significant years as an engineer at Netcore Cloud, where he played a critical role in maintaining backend systems operating at massive scale—handling millions of real-time events per second. This background in high-concurrency engineering is the foundation of Paragonel’s "Precision Engineering" philosophy. \n\nToday, Prabhat leads a lean team of innovators, bridging the gap between complex business pain and AI-native solutions. He is the lead architect behind our proprietary products including AcquisitionOS (AI-powered CRM) and SystemFoundry (Architecture Simulator), while providing technical advisory to high-growth startups globally.',
     socials: { 
       linkedin: 'https://www.linkedin.com/in/prabhat-kumar-6963661a4/', 
       github: 'https://github.com/Hugs-4-Bugs', 
@@ -49,7 +49,7 @@ const teamMembers: TeamMember[] = [
     name: 'Vivek Sharma',
     title: 'CTO, Cloud & DevOps Architect',
     imageUrl: '/images/Vivek.png',
-    aiHint: 'Vivek Sharma CTO QuantumFusion',
+    aiHint: 'Vivek Sharma CTO Paragonel',
     bio: 'Vivek is a seasoned infrastructure specialist focusing on high-availability systems and automated release cycles. He manages our DevOps division, ensuring that every piece of software we ship for clients is deployed on unshakeable cloud foundations. His expertise spans Kubernetes orchestration, Terraform automation, and advanced security protocols.',
     socials: { 
       linkedin: 'https://www.linkedin.com/company/quantumfusion-solutions', 
@@ -76,7 +76,7 @@ const teamMembers: TeamMember[] = [
     title: 'Principal AI Researcher',
     imageUrl: '/images/Lena.png',
     aiHint: 'Lena Petrova AI Researcher',
-    bio: 'Dr. Petrova leads our R&D initiatives in Natural Language Processing and Multi-agent systems. With a background in applied machine learning, she ensures that QuantumFusion’s AI solutions leverage state-of-the-art models like Gemini and GPT while maintaining strict data security and ethical standards for our enterprise clients.',
+    bio: 'Dr. Petrova leads our R&D initiatives in Natural Language Processing and Multi-agent systems. With a background in applied machine learning, she ensures that Paragonel’s AI solutions leverage state-of-the-art models like Gemini and GPT while maintaining strict data security and ethical standards for our enterprise clients.',
     socials: { 
       linkedin: 'https://www.linkedin.com/company/quantumfusion-solutions', 
     },

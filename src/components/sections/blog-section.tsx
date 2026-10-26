@@ -23,7 +23,7 @@ export function BlogSection() {
             Our <span className="text-primary">Blog</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Stay informed with the latest insights, trends, and news from QuantumFusion Solutions and the tech world.
+            Stay informed with the latest insights, trends, and news from Paragonel and the tech world.
           </p>
         </ScrollFadeIn>
 

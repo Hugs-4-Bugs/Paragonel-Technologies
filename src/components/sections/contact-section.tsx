@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -46,7 +45,7 @@ export function ContactSection() {
       
       toast({
         title: "Message Sent!",
-        description: "Thank you for reaching out to QuantumFusion Solutions. We'll get back to you soon.",
+        description: "Thank you for reaching out to Paragonel. We'll get back to you soon.",
       });
       setFormData({ name: '', email: '', company: '', message: '' });
     } catch (e) {
@@ -65,7 +64,7 @@ export function ContactSection() {
             Get In <span className="text-primary">Touch</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            We're excited to discuss how QuantumFusion Solutions can elevate your business. Reach out to us for inquiries, partnerships, or career opportunities.
+            We're excited to discuss how Paragonel can elevate your business. Reach out to us for inquiries, partnerships, or career opportunities.
           </p>
         </ScrollFadeIn>
 
@@ -126,14 +125,14 @@ export function ContactSection() {
                   <Mail className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-foreground">Email Us</h4>
-                    <a href="mailto:contact@quantumfusion.in" className="hover:text-primary transition-colors">contact@quantumfusion.in</a>
+                    <a href="mailto:contact@paragonel.com" className="hover:text-primary transition-colors">contact@paragonel.com</a>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <Phone className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-foreground">Call Us</h4>
-                    <a href="tel:+917250063206" className="hover:text-primary transition-colors">+91 7250063206</a>
+                    <a href="tel:+919663076023" className="hover:text-primary transition-colors">+91 9663076023</a>
                   </div>
                 </div>
               </CardContent>

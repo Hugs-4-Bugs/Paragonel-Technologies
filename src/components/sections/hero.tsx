@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -13,12 +12,12 @@ export function Hero() {
       <div className="relative z-10 container px-4 md:px-6 text-center">
         <ScrollFadeIn>
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-primary-foreground mb-6">
-            QuantumFusion <span className="text-primary">Solutions</span>
+            Paragonel <span className="text-primary"></span>
           </h1>
         </ScrollFadeIn>
         <ScrollFadeIn delay="200ms">
           <p className="text-xl sm:text-2xl md:text-3xl font-medium text-primary-foreground tracking-normal mb-4">
-            Shaping the Future for Tomorrow.
+            Shaping the Future
           </p>
           <p className="max-w-3xl mx-auto text-base sm:text-lg md:text-lg text-primary-foreground/80 mb-10 leading-relaxed">
             We build AI-native software and scalable cloud platforms that solve real business pain. From intelligent CRMs to developer cost intelligence tools, we fusion precision engineering with business outcomes.
@@ -38,7 +37,7 @@ export function Hero() {
             asChild
             variant="outline"
             size="lg" 
-            className="rounded-full px-8 py-6 text-lg border-primary-foreground/80 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+            className="rounded-full px-8 py-6 text-lg border-primary-foreground/80 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto bg-white/80 dark:bg-transparent dark:border-primary-foreground/80 dark:text-primary-foreground text-slate-900 dark:text-primary-foreground"
           >
              <Link href="/contact">
               Get In Touch

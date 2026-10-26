@@ -2,7 +2,7 @@
 import type { Job, BlogPost } from '@/types';
 
 /**
- * @fileOverview Base foundation data for QuantumFusion Solutions.
+ * @fileOverview Base foundation data for Paragonel.
  * These items are permanent and represent the core identity of the brand.
  * CMS items added via Firestore will be appended to these lists.
  */
@@ -81,7 +81,7 @@ export const basePortfolio = [
     description: 'A VS Code extension providing real-time cost feedback for cloud infrastructure.\n\n**The Problem:** Developers often don\'t realize the cost implications of the resources they provision via IaC until the monthly bill arrives.\n\n**The Solution:** CodeGuard AI performs static analysis on Terraform and CloudFormation files as they are written. It queries a global pricing engine to show exactly how much each line of code will cost per month, highlighting over-provisioned instances and suggesting cheaper alternatives.',
     status: 'Published',
     techs: ['VS Code API', 'TypeScript', 'Node.js', 'LLM'],
-    link: 'https://marketplace.visualstudio.com/items?itemName=QuantumFusion.codeguard-ai',
+    link: 'https://marketplace.visualstudio.com/items?itemName=Paragonel.codeguard-ai',
     createdAt: new Date('2024-01-10').toISOString()
   }
 ];
@@ -92,7 +92,7 @@ export const baseTestimonials = [
     name: 'Dr. Anita Desai',
     role: 'Medical Director',
     company: 'Maa-Aarogyam Health Centre',
-    content: 'QuantumFusion transformed our health data processing. Their AI platform didn\'t just automate tasks; it redesigned how we interact with patient history. We\'ve seen a massive reduction in paperwork and much faster diagnosis cycles. Their engineering precision is truly world-class.',
+    content: 'Paragonel transformed our health data processing. Their AI platform didn\'t just automate tasks; it redesigned how we interact with patient history. We\'ve seen a massive reduction in paperwork and much faster diagnosis cycles. Their engineering precision is truly world-class.',
     rating: 5,
     avatarUrl: ''
   },
@@ -101,7 +101,7 @@ export const baseTestimonials = [
     name: 'Rajesh Kumar',
     role: 'CEO',
     company: 'TechIndia Corp',
-    content: 'The migration to the cloud was daunting for our legacy systems. QuantumFusion handled it with surgical precision. Their work on AcquisitionOS proved to us they understand SaaS better than anyone in the market. A stellar technical partner.',
+    content: 'The migration to the cloud was daunting for our legacy systems. Paragonel handled it with surgical precision. Their work on AcquisitionOS proved to us they understand SaaS better than anyone in the market. A stellar technical partner.',
     rating: 5,
     avatarUrl: ''
   },
@@ -130,7 +130,7 @@ export const dummyJobs: Job[] = [
     id: 'ENG-001',
     jobId: 'ENG001',
     title: 'Senior AI Engineer (RAG Specialist)',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Bangalore / Remote',
     department: 'Engineering',
     description: 'Lead the development of next-gen RAG pipelines for AcquisitionOS. You will optimize vector embeddings, manage LLM orchestration, and build agentic workflows that solve complex business logic.',
@@ -149,7 +149,7 @@ export const dummyJobs: Job[] = [
     id: 'ENG-002',
     jobId: 'ENG002',
     title: 'Backend Lead (Java/Spring Boot)',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Bangalore',
     department: 'Engineering',
     description: 'Architect high-concurrency microservices for our core SaaS products. You will leverage your experience in building systems that handle millions of events per second.',
@@ -168,7 +168,7 @@ export const dummyJobs: Job[] = [
     id: 'ENG-003',
     jobId: 'ENG003',
     title: 'Cloud Architect (AWS/IaC)',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Remote',
     department: 'Engineering',
     description: 'Design unshakeable cloud foundations for global clients. Focus on multi-region high-availability setups using Terraform and Kubernetes.',
@@ -187,7 +187,7 @@ export const dummyJobs: Job[] = [
     id: 'DES-001',
     jobId: 'DES001',
     title: 'Senior Product Designer',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Mumbai',
     department: 'Design',
     description: 'Craft the user experience for complex AI-native platforms. You will work directly with founders to translate business pain into intuitive digital interfaces.',
@@ -206,7 +206,7 @@ export const dummyJobs: Job[] = [
     id: 'MKT-001',
     jobId: 'MKT001',
     title: 'Growth Marketing Manager',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Remote',
     department: 'Marketing',
     description: 'Drive user acquisition for our SaaS portfolio. Execute data-driven campaigns across LinkedIn, Twitter, and niche developer communities.',
@@ -225,7 +225,7 @@ export const dummyJobs: Job[] = [
     id: 'OPS-001',
     jobId: 'OPS001',
     title: 'Technical Project Manager',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Bangalore',
     department: 'Operations',
     description: 'Bridge the gap between client vision and engineering execution. Manage agile sprints and ensure milestone-based delivery for high-impact projects.',
@@ -244,7 +244,7 @@ export const dummyJobs: Job[] = [
     id: 'ENG-004',
     jobId: 'ENG004',
     title: 'Frontend Engineer (React/Next.js)',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Remote',
     department: 'Engineering',
     description: 'Build responsive, high-performance web applications using the latest Next.js features. Focus on building clean, accessible, and fast user interfaces.',
@@ -263,7 +263,7 @@ export const dummyJobs: Job[] = [
     id: 'ENG-005',
     jobId: 'ENG005',
     title: 'DevOps Engineer (Junior-Mid)',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Pune',
     department: 'Engineering',
     description: 'Support our core infrastructure team in managing CI/CD pipelines and monitoring production health. Great opportunity to learn advanced IaC.',
@@ -282,7 +282,7 @@ export const dummyJobs: Job[] = [
     id: 'SAL-001',
     jobId: 'SAL001',
     title: 'Enterprise Account Executive',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Bangalore',
     department: 'Sales',
     description: 'Scale our client base by selling custom AI and Cloud transformation solutions to mid-market and enterprise organizations.',
@@ -301,7 +301,7 @@ export const dummyJobs: Job[] = [
     id: 'ENG-006',
     jobId: 'ENG006',
     title: 'Software Engineer Intern',
-    company: 'QuantumFusion Solutions',
+    company: 'Paragonel',
     location: 'Remote',
     department: 'Engineering',
     description: 'Learn from high-performance engineers by assisting in the development of our internal AI tools. Requires strong first-principles thinking.',
@@ -984,7 +984,7 @@ And that is the direction we are continuing to build toward.
     id: '2',
     title: 'How CodeGuard AI Saves AWS Bills for DevOps Teams',
     date: 'March 02, 2025',
-    author: 'QuantumFusion Team',
+    author: 'Paragonel Team',
     excerpt: 'An technical exploration of our VS Code extension that identifies cost-inefficient Infrastructure as Code patterns before they are deployed.',
     body: `
 Cloud bills are the silent killer of startups. CodeGuard AI was born out of a simple need: knowing exactly how much a Terraform change will cost *before* running \`terraform apply\`.
@@ -1013,7 +1013,7 @@ Along with cost, it scans for open S3 buckets, permissive security groups, and u
     title: 'Transitioning from Engineer to Solo Founder',
     date: 'April 10, 2025',
     author: 'Prabhat Sharma',
-    excerpt: 'The story of QuantumFusion Solutions: Moving from a high-growth engineering role at Netcore Cloud to building a portfolio of AI-native products.',
+    excerpt: 'The story of Paragonel: Moving from a high-growth engineering role at Netcore Cloud to building a portfolio of AI-native products.',
     body: `
 Transitioning from a secure engineering job to building your own company is both the most terrifying and rewarding experience of my career. 
 
@@ -1026,7 +1026,7 @@ My time at Netcore Cloud was invaluable. I learned how to build systems that ope
 3. **Scaling with AI**: 2024 saw the explosion of Generative AI. We doubled down on AI-native thinking, ensuring every solution we build is designed for an AI-first world.
 
 ### The Vision Ahead
-QuantumFusion is still in its early chapters. Our mission remains clear: to eliminate the gap between problem and solution. Whether we are building a custom platform for a client or scaling our own SaaS products, we lead with code, not slides.
+Paragonel is still in its early chapters. Our mission remains clear: to eliminate the gap between problem and solution. Whether we are building a custom platform for a client or scaling our own SaaS products, we lead with code, not slides.
 
 This journey from HSR Layout to global deployments is just beginning, and I couldn't be more excited about what we're building next.
     `,

@@ -36,7 +36,7 @@ const prompt = ai.definePrompt({
   model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: RecommendRelatedContentInputSchema },
   output: { schema: RecommendRelatedContentOutputSchema },
-  prompt: `You are a content curator for QuantumFusion Solutions, an innovative IT company specializing in AI, Cloud, DevOps, and SaaS.
+  prompt: `You are a content curator for Paragonel, an innovative IT company specializing in AI, Cloud, DevOps, and SaaS.
 Based on the job titles a user has shown interest in, your task is to generate 3 relevant and engaging recommendations for blog posts, articles, or case studies from our website that would appeal to them.
 The recommendations should be related to our company's work and expertise.
 

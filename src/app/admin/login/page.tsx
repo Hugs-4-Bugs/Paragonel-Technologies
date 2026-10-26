@@ -85,7 +85,7 @@ export default function AdminLoginPage() {
             </div>
             <CardTitle className="text-2xl font-bold">Admin Portal</CardTitle>
             <CardDescription>
-              Secure login for QuantumFusion Solutions management.
+              Secure login for Paragonel management.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -98,7 +98,7 @@ export default function AdminLoginPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="admin@quantumfusion.in" {...field} />
+                        <Input placeholder="admin@paragonel.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -135,7 +135,7 @@ export default function AdminLoginPage() {
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Testing Credentials</AlertTitle>
           <AlertDescription className="text-blue-700 dark:text-blue-400 text-sm">
-            Email: <span className="font-mono font-bold">admin@quantumfusion.in</span><br />
+            Email: <span className="font-mono font-bold">admin@paragonel.com</span><br />
             Password: <span className="font-mono font-bold">admin123</span>
           </AlertDescription>
         </Alert>

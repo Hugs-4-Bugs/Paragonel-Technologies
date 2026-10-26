@@ -1,11 +1,11 @@
 # Guide: Setting Up GOOGLE_API_KEY on Vercel
 
-This guide provides step-by-step instructions on how to configure your `GOOGLE_API_KEY` as an environment variable in your Vercel project. This key is essential for the Genkit AI features (like Personalized Insights, Tech News, and the Q&A Chatbot) to function correctly when your QuantumFusion Solutions website is deployed on Vercel.
+This guide provides step-by-step instructions on how to configure your `GOOGLE_API_KEY` as an environment variable in your Vercel project. This key is essential for the Genkit AI features (like Personalized Insights, Tech News, and the Q&A Chatbot) to function correctly when your Paragonel website is deployed on Vercel.
 
 ## Prerequisites
 
 1.  **Vercel Account**: You must have an active Vercel account.
-2.  **Vercel Project**: Your QuantumFusion Solutions website should already be connected to a project on Vercel.
+2.  **Vercel Project**: Your Paragonel website should already be connected to a project on Vercel.
 3.  **Google AI API Key**: You need to have your Google AI API key ready. You can obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ## Step-by-Step Instructions
@@ -15,7 +15,7 @@ This guide provides step-by-step instructions on how to configure your `GOOGLE_A
     *   Go to [vercel.com](https://vercel.com/) and log in to your account.
 
 2.  **Navigate to Your Project**:
-    *   From your Vercel dashboard, select the project for your QuantumFusion Solutions website.
+    *   From your Vercel dashboard, select the project for your Paragonel website.
 
 3.  **Go to Project Settings**:
     *   Once inside your project's dashboard, click on the **"Settings"** tab.
@@ -45,7 +45,7 @@ This guide provides step-by-step instructions on how to configure your `GOOGLE_A
 ## Verification
 
 Once the redeployment is complete:
-*   Visit your live Vercel URL for the QuantumFusion Solutions website.
+*   Visit your live Vercel URL for the Paragonel website.
 *   The "Personalized Insights For You" section and the "Latest Tech Insights" section should now load their content correctly.
 *   The AI Chatbot should also be functional.
 
@@ -57,4 +57,4 @@ If these sections still show errors, double-check that the API key was copied co
 
 ---
 
-By following these steps, your deployed QuantumFusion Solutions website on Vercel will have the necessary API key to power its AI features.
+By following these steps, your deployed Paragonel website on Vercel will have the necessary API key to power its AI features.

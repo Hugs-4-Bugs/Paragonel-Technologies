@@ -30,7 +30,7 @@ const blogSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   slug: z.string().min(5, 'Slug is required'),
   category: z.string().min(2, 'Category is required'),
-  author: z.string().default('QuantumFusion Team'),
+  author: z.string().default('Paragonel Team'),
   thumbnailUrl: z.string().url('Invalid image URL').optional().or(z.literal('')),
   excerpt: z.string().max(300, 'Excerpt too long').min(10, 'Excerpt is required'),
   body: z.string().min(50, 'Body content is required'),

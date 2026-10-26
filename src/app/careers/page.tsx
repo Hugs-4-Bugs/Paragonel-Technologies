@@ -136,7 +136,7 @@ export default function CareersPage() {
       <section className="pt-20 pb-12 text-center px-4">
         <ScrollFadeIn>
           <h1 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">
-            Join <span className="text-[#4da3ff]">QuantumFusion Solutions</span>
+            Join <span className="text-[#4da3ff]">Paragonel</span>
           </h1>
           <p className="text-zinc-300 text-lg md:text-xl max-w-2xl mx-auto mb-10">
             Precision engineering for the next generation. Join our AI-native team.
@@ -265,7 +265,7 @@ export default function CareersPage() {
       <section className="py-24 bg-[#14152e] border-y border-white/5">
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-black mb-4">Why Join QuantumFusion?</h2>
+            <h2 className="text-3xl md:text-5xl font-black mb-4">Why Join Paragonel?</h2>
             <p className="text-zinc-400">We are a product-first AI company building the future of work.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -295,7 +295,7 @@ export default function CareersPage() {
               { title: "Health Insurance", text: "Comprehensive family health plans.", icon: Heart },
               { title: "Learning Budget", text: "Annual stipend for courses and conferences.", icon: GraduationCap },
               { title: "Flexible Leave", text: "Generous PTO and wellness breaks.", icon: Clock },
-              { title: "Equity Options", text: "Be a real owner of QuantumFusion.", icon: Trophy },
+              { title: "Equity Options", text: "Be a real owner of Paragonel.", icon: Trophy },
               { title: "Annual Offsites", text: "Meet the team in exotic locations.", icon: Monitor },
               { title: "Gadget Stipend", text: "Get the latest tech to do your best work.", icon: Building }
             ].map((perk, i) => (

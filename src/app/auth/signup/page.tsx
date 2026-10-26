@@ -149,7 +149,7 @@
 //           <CardHeader className="text-center">
 //             <UserPlus className="mx-auto h-12 w-12 text-primary mb-4 neon-icon" />
 //             <CardTitle className="text-3xl">Create Account</CardTitle>
-//             <CardDescription>Join QuantumFusion Solutions to unlock exclusive features.</CardDescription>
+//             <CardDescription>Join Paragonel to unlock exclusive features.</CardDescription>
 //           </CardHeader>
 //           <CardContent>
 //             <Form {...form}>
@@ -488,7 +488,7 @@ export default function SignupPage() {
             <UserPlus className="mx-auto h-20 w-20 text-primary mb-2 animate-pulse-light neon-icon" />
             <CardTitle className="text-3xl font-extrabold tracking-tight drop-shadow-md">Create Account</CardTitle>
             <CardDescription className="text-muted-foreground mt-1 text-sm">
-              Join QuantumFusion Solutions to unlock exclusive features.
+              Join Paragonel to unlock exclusive features.
             </CardDescription>
           </CardHeader>
           <CardContent>

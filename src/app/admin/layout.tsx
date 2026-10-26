@@ -80,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-zinc-900 border-b z-[60] flex items-center justify-between px-4 admin-header shadow-sm">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-6 w-6 text-primary" />
-          <span className="font-bold text-lg tracking-tight">QuantumCMS</span>
+          <span className="font-bold text-lg tracking-tight">ParagonelCMS</span>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
           {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -97,7 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="h-16 flex items-center justify-between px-4 border-b shrink-0">
             <div className={cn("flex items-center gap-2 transition-all duration-300", isCollapsed && "lg:opacity-0 lg:w-0 overflow-hidden")}>
               <ShieldCheck className="h-7 w-7 text-primary shrink-0" />
-              <span className="font-black text-xl tracking-tighter whitespace-nowrap">QuantumCMS</span>
+              <span className="font-black text-xl tracking-tighter whitespace-nowrap">ParagonelCMS</span>
             </div>
             <Button 
               variant="ghost" 

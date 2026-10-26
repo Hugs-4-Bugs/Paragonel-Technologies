@@ -2,8 +2,8 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Our Team | QuantumFusion Solutions',
-  description: 'Meet the innovators at QuantumFusion Solutions. A lean team of engineers obsessed with building software that works.',
+  title: 'Our Team | Paragonel',
+  description: 'Meet the innovators at Paragonel. A lean team of engineers obsessed with building software that works.',
 };
 
 export default function TeamLayout({ children }: { children: React.ReactNode }) {

@@ -1,7 +1,7 @@
 
-# QuantumFusion Solutions: Backend API Requirements Guide (Phase 2.1)
+# Paragonel: Backend API Requirements Guide (Phase 2.1)
 
-This document specifies the technical requirements for a backend system (Java Spring Boot, Node.js, or Python) to support the full operational lifecycle of the QuantumFusion Solutions platform, including Recruiting (ATS), Lead Management, CMS, and Security Auditing.
+This document specifies the technical requirements for a backend system (Java Spring Boot, Node.js, or Python) to support the full operational lifecycle of the Paragonel platform, including Recruiting (ATS), Lead Management, CMS, and Security Auditing.
 
 ---
 
@@ -91,7 +91,7 @@ Records for `Jobs`, `Blogs`, `Applications`, and `Leads` must never be physicall
 ---
 
 ## IV. Success Criteria
-A successful backend implementation will allow the QuantumFusion frontend to:
+A successful backend implementation will allow the Paragonel frontend to:
 1.  Manage a full hiring funnel without external tools.
 2.  Maintain a secure audit trail for all content and operational changes.
 3.  Scale the admin team by assigning granular roles (Founder/HR).

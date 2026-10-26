@@ -1,8 +1,8 @@
-
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 import { NewsletterSubscription } from '@/components/sections/newsletter-subscription';
 import { Facebook, Linkedin, Twitter, Instagram, Settings, MapPin, Mail, Phone } from 'lucide-react';
 import { useCookieConsent } from "@/hooks/use-cookie-consent.tsx";
@@ -22,6 +22,8 @@ const footerNavLinks = [
 
 export function Footer() {
   const { openSettings, isMounted } = useCookieConsent();
+  const { resolvedTheme } = useTheme();
+  const footerLogoSrc = resolvedTheme === "dark" ? "/images/logo4.png" : "/images/logo3.png";
 
   return (
     <footer className="border-t border-border/40 bg-background relative z-10">
@@ -31,8 +33,8 @@ export function Footer() {
           <div className="space-y-6">
             <Link href="/" className="inline-block">
               <Image
-                src="/images/QuantumFusion-Logo.png" 
-                alt="QuantumFusion Solutions"
+                src={footerLogoSrc}
+                alt="Paragonel"
                 width={180}
                 height={60}
                 className="h-auto w-auto dark:brightness-110"
@@ -40,7 +42,7 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              QuantumFusion Solutions is an AI-native technology company building the next generation of digital platforms and intelligent automation for global businesses.
+              Paragonel is an AI-native technology company building the next generation of digital platforms and intelligent automation for global businesses.
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
@@ -49,11 +51,11 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Mail className="h-4 w-4 text-primary" />
-                <a href="mailto:contact@quantumfusion.in">contact@quantumfusion.in</a>
+                <a href="mailto:contact@paragonel.com">contact@paragonel.com</a>
               </div>
               <div className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Phone className="h-4 w-4 text-primary" />
-                <a href="tel:+917250063206">+91 72500 63206</a>
+                <a href="tel:+919663076023">+91 9663076023</a>
               </div>
             </div>
           </div>
@@ -100,7 +102,7 @@ export function Footer() {
         
         <div className="border-t border-border/40 pt-10 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row items-center gap-x-6 gap-y-3 text-sm text-muted-foreground font-medium">
-            <p>&copy; {new Date().getFullYear()} QuantumFusion Solutions.</p>
+            <p>&copy; {new Date().getFullYear()} Paragonel.</p>
             {isMounted && (
               <button 
                 onClick={openSettings} 

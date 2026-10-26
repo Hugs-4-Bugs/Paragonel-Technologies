@@ -19,8 +19,8 @@ interface RegisteredUser extends User {
 let simulatedUserDatabase: RegisteredUser[] = [
   {
     uid: 'admin-testing-uid',
-    email: 'admin@quantumfusion.in',
-    fullName: 'Quantum Admin',
+    email: 'admin@paragonel.com',
+    fullName: 'Paragonel Admin',
     password: 'admin123'
   }
 ];

@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GitFork, Zap, ChevronRight, SlidersHorizontal, Repeat, ShieldAlert, Gauge } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'DevOps Automation | QuantumFusion Solutions',
-  description: 'Accelerate software delivery with CI/CD pipelines, Infrastructure as Code, and automated testing by QuantumFusion Solutions.',
+  title: 'DevOps Automation | Paragonel',
+  description: 'Accelerate software delivery with CI/CD pipelines, Infrastructure as Code, and automated testing by Paragonel.',
 };
 
 const devopsFeatures = [
@@ -30,7 +30,7 @@ export default function DevOpsAutomationPage() {
               DevOps <span className="text-primary">Automation</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Streamline your software development lifecycle with QuantumFusion Solutions' DevOps automation services. We implement robust CI/CD pipelines, manage infrastructure as code, and integrate automated testing to enhance speed, quality, and reliability.
+              Streamline your software development lifecycle with Paragonel' DevOps automation services. We implement robust CI/CD pipelines, manage infrastructure as code, and integrate automated testing to enhance speed, quality, and reliability.
             </p>
           </header>
         </ScrollFadeIn>
@@ -74,7 +74,7 @@ export default function DevOpsAutomationPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-muted-foreground">
               <p>
-                QuantumFusion Solutions helps you embrace a DevOps culture by implementing best practices and cutting-edge automation tools. Our approach focuses on collaboration, efficiency, and continuous improvement, enabling your teams to deliver high-quality software faster and more reliably. Reduce manual effort, minimize errors, and improve deployment frequency with our tailored DevOps solutions.
+                Paragonel helps you embrace a DevOps culture by implementing best practices and cutting-edge automation tools. Our approach focuses on collaboration, efficiency, and continuous improvement, enabling your teams to deliver high-quality software faster and more reliably. Reduce manual effort, minimize errors, and improve deployment frequency with our tailored DevOps solutions.
               </p>
               <ul className="list-disc list-inside space-y-2 pl-4">
                 <li>Containerization with Docker and Kubernetes.</li>

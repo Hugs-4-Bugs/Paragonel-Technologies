@@ -2,7 +2,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Our Services | QuantumFusion Solutions',
+  title: 'Our Services | Paragonel',
   description: 'Precision engineering and intelligent innovation for AI Solutions, Cloud Infrastructure, DevOps, and SaaS Platforms.',
 };
 

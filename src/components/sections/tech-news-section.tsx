@@ -43,7 +43,7 @@ export function TechNewsSection() {
             Latest Tech <span className="text-primary">Insights</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Stay updated with the most recent developments and trends in AI, Cloud, DevOps, and SaaS from QuantumFusion Solutions.
+            Stay updated with the most recent developments and trends in AI, Cloud, DevOps, and SaaS from Paragonel.
           </p>
         </ScrollFadeIn>
 

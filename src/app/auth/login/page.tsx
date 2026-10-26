@@ -73,7 +73,7 @@
 //         <CardHeader className="text-center">
 //           <LogIn className="mx-auto h-12 w-12 text-primary mb-4 neon-icon" />
 //           <CardTitle className="text-3xl">Welcome Back</CardTitle>
-//           <CardDescription>Log in to your QuantumFusion Solutions account.</CardDescription>
+//           <CardDescription>Log in to your Paragonel account.</CardDescription>
 //         </CardHeader>
 //         <CardContent>
 //           <Form {...form}>
@@ -236,7 +236,7 @@ function LoginPageContent() {
         <CardHeader className="text-center mb-2">
           <LogIn className="mx-auto h-20 w-20 text-primary mb-2 animate-pulse-light neon-icon" /> {/* Larger icon, more prominent animation */}
           <CardTitle className="text-3xl text-foreground font-extrabold tracking-tight drop-shadow-md">Welcome Back</CardTitle>
-          <CardDescription className="text-muted-foreground mt-1 text-sm">Log in to your QuantumFusion Solutions account.</CardDescription>
+          <CardDescription className="text-muted-foreground mt-1 text-sm">Log in to your Paragonel account.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>

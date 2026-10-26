@@ -73,7 +73,7 @@ const prompt = ai.definePrompt({
   input: {schema: FormatApplicationEmailInputSchema},
   output: {schema: FormatApplicationEmailOutputSchema},
   prompt: `
-You are an expert HR assistant at QuantumFusion Solutions. Your task is to format a job application into two emails:
+You are an expert HR assistant at Paragonel. Your task is to format a job application into two emails:
 1. A detailed email for the hiring manager (erprabhat72@gmail.com).
 2. A confirmation email for the applicant.
 
@@ -107,7 +107,7 @@ const formatApplicationEmailFlow = ai.defineFlow(
       return {
         adminEmailSubject: `New Job Application: ${input.jobTitle} - ${input.fullName}`,
         adminEmailBody: `New application received for ${input.jobTitle}. Name: ${input.fullName}, Email: ${input.email}. Please review in the dashboard.`,
-        applicantConfirmationSubject: `Application Received: ${input.jobTitle} at QuantumFusion Solutions`,
+        applicantConfirmationSubject: `Application Received: ${input.jobTitle} at Paragonel`,
         applicantConfirmationBody: `Dear ${input.fullName}, thank you for your application. Our team will review your profile shortly.`,
       };
     }

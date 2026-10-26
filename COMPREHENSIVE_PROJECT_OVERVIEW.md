@@ -1,11 +1,11 @@
 
-# QuantumFusion Solutions: Comprehensive Project Overview
+# Paragonel: Comprehensive Project Overview
 
-This document provides a detailed overview of the QuantumFusion Solutions website project, covering its architecture, features, technology stack, and data flow. It is intended to serve as a central knowledge base for understanding how the application is built and how its various components interact.
+This document provides a detailed overview of the Paragonel website project, covering its architecture, features, technology stack, and data flow. It is intended to serve as a central knowledge base for understanding how the application is built and how its various components interact.
 
 ## 1. Project Introduction
 
-QuantumFusion Solutions is an innovative IT company focused on delivering cutting-edge solutions in Artificial Intelligence (AI), Cloud Computing, DevOps, and SaaS Platforms. This website serves as its primary online presence, designed to:
+Paragonel is an innovative IT company focused on delivering cutting-edge solutions in Artificial Intelligence (AI), Cloud Computing, DevOps, and SaaS Platforms. This website serves as its primary online presence, designed to:
 - Showcase company expertise, services, and portfolio.
 - Attract potential clients and partners.
 - Provide a platform for job seekers to explore and apply for opportunities.
@@ -239,7 +239,7 @@ These pages primarily display static information using components from `src/comp
 All flows are defined in `src/ai/flows/` and registered in `src/ai/dev.ts`. They use the global Genkit `ai` instance from `src/ai/genkit.ts`.
 
 ### 5.1. `companyQnaFlow` (`company-qna-flow.ts`)
-- **Purpose**: Answers user questions about QuantumFusion Solutions.
+- **Purpose**: Answers user questions about Paragonel.
 - **Input**: `{ question: string }`
 - **Output**: `{ answer: string }`
 - **Logic**:
@@ -325,4 +325,4 @@ All flows are defined in `src/ai/flows/` and registered in `src/ai/dev.ts`. They
 - **Advanced Search & Filtering**: More sophisticated job search capabilities.
 - **Voice Input for Chat**: Integrate browser's SpeechRecognition API for real voice input.
 
-This document provides a solid understanding of the QuantumFusion Solutions website as it currently stands.
+This document provides a solid understanding of the Paragonel website as it currently stands.

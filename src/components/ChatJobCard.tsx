@@ -62,7 +62,7 @@ export function ChatJobCard({ job, onApply, isApplied }: ChatJobCardProps) {
             : "bg-primary text-white shadow-lg shadow-primary/20 hover:scale-[1.02]"
         )}
       >
-        {isApplied ? 'Application Selected' : 'Apply with QuantumAI'}
+        {isApplied ? 'Application Selected' : 'Apply with ParagonelAI'}
       </Button>
     </div>
   );

@@ -124,7 +124,7 @@ export default function HomePage() {
                   <h3 className="text-3xl font-black mb-1">Prabhat Sharma</h3>
                   <p className="text-primary font-bold mb-6">Founder & Lead Architect</p>
                   <p className="text-muted-foreground leading-relaxed mb-8">
-                    "We don't build software to check a box—we build AI-native products that solve real business pain. My goal for QuantumFusion is to fuse precision engineering with meaningful outcomes for every client we serve, leveraging a background in massive-scale systems to ensure unshakeable reliability."
+                    "We don't build software to check a box—we build AI-native products that solve real business pain. My goal for Paragonel is to fuse precision engineering with meaningful outcomes for every client we serve, leveraging a background in massive-scale systems to ensure unshakeable reliability."
                   </p>
                   <div className="flex flex-wrap gap-4">
                     <Button asChild size="sm" className="rounded-full shadow-lg h-10 px-6 font-bold">

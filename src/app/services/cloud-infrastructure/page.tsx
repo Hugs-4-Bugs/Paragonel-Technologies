@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cloud, Zap, ChevronRight, Server, ShieldCheck, TrendingUp, Settings } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Cloud Infrastructure | QuantumFusion Solutions',
-  description: 'Scalable, secure, and cost-effective cloud solutions including migration, management, and cloud-native development by QuantumFusion Solutions.',
+  title: 'Cloud Infrastructure | Paragonel',
+  description: 'Scalable, secure, and cost-effective cloud solutions including migration, management, and cloud-native development by Paragonel.',
 };
 
 const cloudFeatures = [
@@ -30,7 +30,7 @@ export default function CloudInfrastructurePage() {
               Cloud <span className="text-primary">Infrastructure</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              QuantumFusion Solutions empowers your business with robust, scalable, and secure cloud infrastructure. We specialize in cloud migration, management, and the development of cloud-native applications to optimize your operations and foster innovation.
+              Paragonel empowers your business with robust, scalable, and secure cloud infrastructure. We specialize in cloud migration, management, and the development of cloud-native applications to optimize your operations and foster innovation.
             </p>
           </header>
         </ScrollFadeIn>
@@ -74,7 +74,7 @@ export default function CloudInfrastructurePage() {
             </CardHeader>
             <CardContent className="space-y-4 text-muted-foreground">
               <p>
-                Leverage the full potential of cloud computing with QuantumFusion Solutions. We provide end-to-end cloud services, from strategic planning and migration to ongoing optimization and security. Our expertise ensures your cloud infrastructure is agile, resilient, and perfectly aligned with your business objectives, enabling you to scale efficiently and innovate without limits.
+                Leverage the full potential of cloud computing with Paragonel. We provide end-to-end cloud services, from strategic planning and migration to ongoing optimization and security. Our expertise ensures your cloud infrastructure is agile, resilient, and perfectly aligned with your business objectives, enabling you to scale efficiently and innovate without limits.
               </p>
               <ul className="list-disc list-inside space-y-2 pl-4">
                 <li>Multi-cloud and hybrid cloud strategies.</li>

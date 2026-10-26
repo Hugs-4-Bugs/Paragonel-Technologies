@@ -94,7 +94,7 @@ export function ChatCareerFlow({
     return (
       <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-2xl border border-primary/10 w-full animate-pulse my-2">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        <span className="text-xs sm:text-sm font-bold text-primary">QuantumAI is extracting your profile...</span>
+        <span className="text-xs sm:text-sm font-bold text-primary">ParagonelAI is extracting your profile...</span>
       </div>
     );
   }

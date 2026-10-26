@@ -2,7 +2,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Portfolio | QuantumFusion Solutions',
+  title: 'Portfolio | Paragonel',
   description: 'Explore our portfolio of AI-native products and custom platforms including AcquisitionOS, SystemFoundry, and CodeGuard AI.',
 };
 

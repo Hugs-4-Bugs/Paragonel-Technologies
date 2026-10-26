@@ -36,7 +36,7 @@ export default function TeamPage() {
             <Rocket className="h-16 w-16 text-primary/30 mx-auto mb-8" />
             <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tight">We're Growing the Core</h2>
             <p className="text-muted-foreground text-lg md:text-xl mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-              QuantumFusion is in a high-growth phase. We are looking for first-principles thinkers who want to build the future of AI-native software.
+              Paragonel is in a high-growth phase. We are looking for first-principles thinkers who want to build the future of AI-native software.
             </p>
             <Button asChild size="lg" className="rounded-full px-12 text-lg h-16 font-black shadow-2xl shadow-primary/20 hover:scale-105 transition-transform">
               <Link href="/careers">Join the Mission</Link>

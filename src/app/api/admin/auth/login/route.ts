@@ -3,7 +3,7 @@ import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 
 // Default credentials for testing purposes
-const DEFAULT_ADMIN_EMAIL = 'admin@quantumfusion.in';
+const DEFAULT_ADMIN_EMAIL = 'admin@paragonel.com';
 const DEFAULT_ADMIN_PASSWORD_HASH = bcrypt.hashSync('admin123', 10);
 
 const JWT_SECRET = new TextEncoder().encode(
