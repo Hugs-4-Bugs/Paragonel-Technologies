@@ -12,7 +12,7 @@ export function Hero() {
       <div className="relative z-10 container px-4 md:px-6 text-center">
         <ScrollFadeIn>
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-primary-foreground mb-6">
-            Paragonel <span className="text-primary"></span>
+            Paragonel <span className="text-primary"> Technologies</span>
           </h1>
         </ScrollFadeIn>
         <ScrollFadeIn delay="200ms">
