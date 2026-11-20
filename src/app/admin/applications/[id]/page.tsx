@@ -31,6 +31,7 @@ export default function ApplicationDetail() {
   const [isSaving, setIsSaving] = useState(false);
   const [app, setApp] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
+  const [resumeLoading, setResumeLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,6 +73,35 @@ export default function ApplicationDetail() {
       toast({ title: "Failed to save notes", variant: "destructive" });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Phase 4 IU-0 slice 3: fetch a short-lived signed resume URL from the server
+  // (authorized route). The raw Storage object path is never placed in the DOM;
+  // each click requests a fresh signed URL, so expiry is handled by re-requesting.
+  const handleDownloadResume = async () => {
+    if (!id || resumeLoading) return;
+    setResumeLoading(true);
+    try {
+      const res = await fetch(`/api/admin/applications/${id}/resume`, { cache: 'no-store' });
+      if (res.status === 401) {
+        router.push('/admin/login');
+        return;
+      }
+      if (res.status === 404) {
+        toast({ title: 'No resume', description: 'This application has no resume on file.', variant: 'destructive' });
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || 'Could not generate resume link.');
+      }
+      const data = (await res.json()) as { url: string };
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      toast({ title: 'Resume unavailable', description: e instanceof Error ? e.message : 'Please try again.', variant: 'destructive' });
+    } finally {
+      setResumeLoading(false);
     }
   };
 
@@ -162,14 +192,21 @@ export default function ApplicationDetail() {
                   <Download className="h-5 w-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold truncate">Candidate_Resume.pdf</p>
-                  <p className="text-[10px] text-zinc-500">Secure Download Available</p>
+                  <p className="text-xs font-bold truncate">Candidate Resume</p>
+                  <p className="text-[10px] text-zinc-500">Secure signed link · 5-min access</p>
                 </div>
               </div>
-              <Button asChild className="w-full bg-white text-zinc-900 hover:bg-zinc-200 font-black h-12">
-                <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer">
-                  Download Resume
-                </a>
+              <Button
+                onClick={handleDownloadResume}
+                disabled={resumeLoading || !app.resumeUrl}
+                className="w-full bg-white text-zinc-900 hover:bg-zinc-200 font-black h-12"
+              >
+                {resumeLoading ? (
+                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                ) : (
+                  <Download className="h-5 w-5 mr-2" />
+                )}
+                {app.resumeUrl ? 'Download Resume' : 'No Resume on File'}
               </Button>
             </CardContent>
           </Card>
