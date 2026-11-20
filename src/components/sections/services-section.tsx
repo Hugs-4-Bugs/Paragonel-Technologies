@@ -56,7 +56,7 @@ export function ServicesSection({ isFullPage = false }: ServicesSectionProps) {
       )}
 
       <div className={isFullPage ? "" : "container mx-auto px-4 md:px-6"}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 xl:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 xl:gap-10">
           {displayedServices.map((service: any, index: number) => {
             const Icon = iconMap[service.iconName] || Layers;
             return (
