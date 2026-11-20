@@ -1,23 +1,39 @@
-
 "use client";
 
-import React, { useMemo } from 'react';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { History, ShieldAlert, Clock, User } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 
+type Log = {
+  id: string;
+  action?: string;
+  resourceType?: string;
+  resourceId?: string;
+  adminEmail?: string;
+  timestamp?: { seconds: number };
+};
+
 export default function ActivityLogsPage() {
-  const firestore = useFirestore();
+  const [logs, setLogs] = useState<Log[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const logsQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'adminActivityLogs'), orderBy('timestamp', 'desc'), limit(100));
-  }, [firestore]);
+  const loadLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/activity', { cache: 'no-store' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setLogs(data.logs as Log[]);
+    } catch {
+      setLogs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const { data: logs, loading } = useCollection(logsQuery);
+  useEffect(() => { loadLogs(); }, [loadLogs]);
 
   return (
     <div className="space-y-8">
@@ -37,7 +53,7 @@ export default function ActivityLogsPage() {
                 <div key={i} className="p-6"><Skeleton className="h-12 w-full" /></div>
               ))
             ) : logs && logs.length > 0 ? (
-              logs.map((log: any) => (
+              logs.map((log) => (
                 <div key={log.id} className="p-6 flex items-start gap-6 hover:bg-zinc-50/50 transition-colors">
                   <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
                     <ShieldAlert className="h-5 w-5 text-primary" />

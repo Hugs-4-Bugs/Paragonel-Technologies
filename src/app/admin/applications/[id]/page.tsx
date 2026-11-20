@@ -1,47 +1,74 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useDoc, useFirestore } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowLeft, Download, Mail, Phone, Calendar, Briefcase, User, Info, Save, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { logActivity } from '@/lib/audit';
+
+type Application = {
+  id: string;
+  candidateName?: string;
+  candidateEmail?: string;
+  candidatePhone?: string;
+  jobTitle?: string;
+  status?: string;
+  appliedAt?: { seconds: number };
+  appliedVia?: string;
+  internalNotes?: string;
+  skills?: string[];
+  resumeUrl?: string;
+};
 
 export default function ApplicationDetail() {
   const { id } = useParams();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [notes, setInternalNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-
-  const appRef = useMemo(() => {
-    if (!firestore || !id) return null;
-    return doc(firestore, 'jobApplications', id as string);
-  }, [firestore, id]);
-
-  const { data: app, loading } = useDoc(appRef);
+  const [app, setApp] = useState<Application | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (app) setInternalNotes(app.internalNotes || '');
-  }, [app]);
+    let cancelled = false;
+    (async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/admin/applications/${id}`, { cache: 'no-store' });
+        if (!res.ok) {
+          if (!cancelled) setApp(null);
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setApp(data.application as Application);
+          setInternalNotes(data.application?.internalNotes || '');
+        }
+      } catch {
+        if (!cancelled) setApp(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [id]);
 
   const handleSaveNotes = async () => {
-    if (!firestore || !id) return;
+    if (!id) return;
     setIsSaving(true);
     try {
-      await updateDoc(doc(firestore, 'jobApplications', id as string), {
-        internalNotes: notes,
-        updatedAt: serverTimestamp()
+      const res = await fetch(`/api/admin/applications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ internalNotes: notes }),
       });
-      await logActivity('admin', 'Updated internal notes on application', 'JobApplication', id as string);
+      if (!res.ok) throw new Error();
       toast({ title: "Notes Saved", description: "Internal evaluation recorded." });
-    } catch (e) {
+    } catch {
       toast({ title: "Failed to save notes", variant: "destructive" });
     } finally {
       setIsSaving(false);
@@ -89,7 +116,7 @@ export default function ApplicationDetail() {
               <div className="pt-4 border-t">
                 <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-3">Skills Captured</p>
                 <div className="flex flex-wrap gap-2">
-                  {app.skills?.map((s: string) => (
+                  {app.skills?.map((s) => (
                     <Badge key={s} variant="outline" className="bg-zinc-50 dark:bg-zinc-800 text-xs py-1 px-3 border-zinc-200">
                       {s}
                     </Badge>
@@ -108,7 +135,7 @@ export default function ApplicationDetail() {
               <CardDescription>Visible only to Paragonel team.</CardDescription>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
-              <Textarea 
+              <Textarea
                 placeholder="Add interview feedback, technical ratings, or screening notes here..."
                 className="min-h-[200px] border-zinc-200 focus-visible:ring-1 text-sm leading-relaxed"
                 value={notes}

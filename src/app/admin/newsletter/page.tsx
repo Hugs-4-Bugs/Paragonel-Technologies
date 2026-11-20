@@ -1,36 +1,52 @@
-
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, Search, Download, Trash2, Mail } from 'lucide-react';
+import { Users, Search, Download, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
+type Subscriber = {
+  id: string;
+  email: string;
+  source?: string;
+  subscribedAt?: { seconds: number };
+};
+
 export default function NewsletterPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const firestore = useFirestore();
+  const [subscribers, setSubscribers] = useState<Subscriber[] | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const subsQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'newsletterSubscribers'), orderBy('subscribedAt', 'desc'));
-  }, [firestore]);
+  const loadSubs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/newsletter', { cache: 'no-store' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setSubscribers(data.subscribers as Subscriber[]);
+    } catch {
+      setSubscribers([]);
+      toast({ title: "Failed to load subscribers", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
 
-  const { data: subscribers, loading } = useCollection(subsQuery);
+  useEffect(() => { loadSubs(); }, [loadSubs]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure? This cannot be undone.")) return;
-    if (!firestore) return;
     try {
-      await deleteDoc(doc(firestore, 'newsletterSubscribers', id));
+      const res = await fetch(`/api/admin/newsletter/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
       toast({ title: "Subscriber Removed" });
-    } catch (e) {
+      setSubscribers(prev => prev?.filter(s => s.id !== id) ?? null);
+    } catch {
       toast({ title: "Delete Failed", variant: "destructive" });
     }
   };
@@ -38,9 +54,9 @@ export default function NewsletterPage() {
   const handleExportCSV = () => {
     if (!subscribers) return;
     const headers = ["Email", "Source", "Subscribed At"];
-    const rows = subscribers.map((s: any) => [
-      s.email, 
-      s.source || 'Footer', 
+    const rows = subscribers.map((s) => [
+      s.email,
+      s.source || 'Footer',
       s.subscribedAt?.seconds ? new Date(s.subscribedAt.seconds * 1000).toISOString() : ''
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
@@ -53,7 +69,7 @@ export default function NewsletterPage() {
     document.body.removeChild(link);
   };
 
-  const filteredSubs = subscribers?.filter((s: any) => s.email.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredSubs = subscribers?.filter((s) => s.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="space-y-8">
@@ -73,9 +89,9 @@ export default function NewsletterPage() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-          <Input 
-            placeholder="Filter emails..." 
-            className="pl-10 h-11 rounded-xl" 
+          <Input
+            placeholder="Filter emails..."
+            className="pl-10 h-11 rounded-xl"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -96,7 +112,7 @@ export default function NewsletterPage() {
             {loading ? (
               <TableRow><TableCell colSpan={4}><Skeleton className="h-10 w-full" /></TableCell></TableRow>
             ) : filteredSubs && filteredSubs.length > 0 ? (
-              filteredSubs.map((sub: any) => (
+              filteredSubs.map((sub) => (
                 <TableRow key={sub.id} className="hover:bg-zinc-50/50">
                   <TableCell className="font-bold text-sm">{sub.email}</TableCell>
                   <TableCell className="text-xs font-medium text-zinc-500 uppercase">{sub.source || 'Website Footer'}</TableCell>
