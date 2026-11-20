@@ -1,6 +1,11 @@
 
 import type { Job, BlogPost } from '@/types';
 
+// Re-export so consumers (e.g. Genkit flows) can import these types from the
+// data module alongside the data itself.
+export type { Job, BlogPost };
+
+
 /**
  * @fileOverview Base foundation data for Paragonel.
  * These items are permanent and represent the core identity of the brand.

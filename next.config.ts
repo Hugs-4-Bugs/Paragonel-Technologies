@@ -1,8 +1,12 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  // Phase 1 (G12): the 39 previously-masked TypeScript errors are now fixed
+  // (`tsc --noEmit` is clean), so build-time type checking is re-enabled.
+  // ESLint remains disabled at build time because the repo has no ESLint
+  // configuration (pre-existing condition, tracked separately).
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
     ignoreDuringBuilds: true,

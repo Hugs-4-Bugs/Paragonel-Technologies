@@ -11,8 +11,8 @@ import React from 'react';
 
 interface JobCardProps {
   job: Job;
-  onApplyNowClick: (job: Job) => void;
-  onViewDetailsClick: (job: Job) => void;
+  onApplyNowClick?: (job: Job) => void;
+  onViewDetailsClick?: (job: Job) => void;
 }
 
 export function JobCard({ job, onApplyNowClick, onViewDetailsClick }: JobCardProps) {
@@ -24,7 +24,7 @@ export function JobCard({ job, onApplyNowClick, onViewDetailsClick }: JobCardPro
     if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
       return;
     }
-    onViewDetailsClick(job);
+    onViewDetailsClick?.(job);
   };
   
   const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -33,7 +33,7 @@ export function JobCard({ job, onApplyNowClick, onViewDetailsClick }: JobCardPro
       if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
         return;
       }
-      onViewDetailsClick(job);
+      onViewDetailsClick?.(job);
     }
   };
 
@@ -103,7 +103,7 @@ export function JobCard({ job, onApplyNowClick, onViewDetailsClick }: JobCardPro
           className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 py-2 shadow-md hover:shadow-lg transition-shadow"
           onClick={(e) => {
             e.stopPropagation(); // Prevent card click from firing
-            onApplyNowClick(job);
+            onApplyNowClick?.(job);
           }}
           onKeyDown={(e) => {
              if (e.key === 'Enter' || e.key === ' ') {

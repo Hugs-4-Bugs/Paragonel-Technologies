@@ -89,6 +89,18 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Public services catalogue. The public Services page and the homepage
+    // services section read this collection client-side (src/app/services,
+    // src/components/sections/services-section). Without a read rule the
+    // production Firestore default-denies these reads, leaving the Services
+    // page blank (G16). Public READ is restricted to active, non-deleted
+    // service records only; all writes go through /api/admin/services (Admin
+    // SDK), so writes remain denied to clients.
+    match /services/{serviceId} {
+      allow read: if resource.data.isActive == true && resource.data.deletedAt == null;
+      allow write: if false; // use /api/admin/services (Admin SDK)
+    }
+
     // User profiles. Simulated end-user auth (localStorage) — no Firebase Auth
     // to gate by uid yet. TODO: restrict to request.auth.uid == userId once
     // Firebase Auth is adopted (separate workstream). Left open intentionally

@@ -3,6 +3,7 @@ export interface Job {
   jobId: string;
   title: string;
   company: string;
+  companyLogoUrl?: string;
   location: string;
   department: string;
   description: string;
@@ -42,6 +43,10 @@ export interface BlogPost {
   category: string;
   author: string;
   thumbnailUrl?: string;
+  imageUrl?: string;
+  aiHint?: string;
+  date?: string;
+  comments?: number;
   excerpt: string;
   body: string;
   tags: string[];
@@ -62,13 +67,15 @@ export interface UserProfile {
   skills?: string[];
   resumeUrl?: string;
   resumeDataUri?: string;
+  appliedJobs?: string[];
+  updatedAt?: any;
 }
 
 export interface ApplicationFormValues {
   fullName: string;
   email: string;
   phone: string;
-  resume: FileList;
+  resume?: FileList;
   highestQualification: string;
   specialization: string;
   university: string;
@@ -77,6 +84,19 @@ export interface ApplicationFormValues {
   primarySkills: string;
   secondarySkills?: string;
   isFresher: boolean;
+  companyName?: string;
+  jobTitleExperience?: string;
+  fromDate?: string;
+  toDate?: string;
+  isCurrentlyWorking?: boolean;
+  jobDescription?: string;
+  coverLetter?: string;
+  linkedinProfile?: string;
+  portfolioWebsite?: string;
+  preferredJobLocation: string;
+  currentCTC?: string;
+  expectedSalary: string;
+  noticePeriod: string;
   acceptTerms: boolean;
   notifySimilarJobs: boolean;
   jobId: string;

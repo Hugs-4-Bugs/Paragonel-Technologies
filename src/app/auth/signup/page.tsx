@@ -543,7 +543,7 @@ export default function SignupPage() {
                           </Button>
                         )}
                          {otpVerified && (
-                            <ShieldCheck className="h-8 w-8 text-green-500 flex-shrink-0" title="Email Verified" />
+                            <ShieldCheck className="h-8 w-8 text-green-500 flex-shrink-0" aria-label="Email Verified" />
                         )}
                       </div>
                       <FormMessage />

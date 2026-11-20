@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Boxes, ExternalLink, ArrowRight } from 'lucide-react';
 import { basePortfolio } from '@/lib/data';
+import { stripMarkdown } from '@/lib/markdown-utils';
 
 export const metadata: Metadata = {
   title: 'Our Product | Paragonel',
@@ -65,7 +66,7 @@ export default function OurProductPage() {
                         {project.name}
                       </CardTitle>
                       <CardDescription className="text-base text-zinc-500 font-medium leading-relaxed mb-8 line-clamp-4">
-                        {project.description}
+                        {stripMarkdown(project.description)}
                       </CardDescription>
                       <div className="flex flex-wrap gap-2 mb-6">
                         {project.techs?.map((tech) => (

@@ -8,6 +8,7 @@ import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
+import { Markdown } from '@/components/markdown';
 import { ArrowLeft, CalendarDays, User, Loader2, Tag, Quote, Clock, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -151,9 +152,18 @@ export default function BlogPostPage() {
                     </div>
                   )}
                   
-                  <div className="whitespace-pre-wrap">
+                  {/* Safe Markdown rendering — never raw `**` markers (Phase 1 §9) */}
+                  <Markdown className="prose prose-zinc dark:prose-invert max-w-none
+                    prose-headings:font-black prose-headings:tracking-tight
+                    prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6
+                    prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-4
+                    prose-p:text-lg prose-p:leading-[1.8] prose-p:text-zinc-700 dark:prose-p:text-zinc-300
+                    prose-li:text-lg prose-li:text-zinc-700 dark:prose-li:text-zinc-300
+                    prose-strong:text-foreground prose-strong:font-black
+                    prose-img:rounded-[2rem] prose-img:shadow-xl
+                  ">
                     {post.body}
-                  </div>
+                  </Markdown>
 
                   <div className="lg:hidden mt-16 flex flex-wrap gap-3 items-center pt-8 border-t">
                     <Tag className="h-5 w-5 text-zinc-400 mr-2" />

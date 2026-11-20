@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTheme } from "next-themes";
 import { NewsletterSubscription } from '@/components/sections/newsletter-subscription';
 import { Facebook, Linkedin, Twitter, Github, Settings, MapPin, Mail, Phone } from 'lucide-react';
-import { useCookieConsent } from "@/hooks/use-cookie-consent.tsx";
+import { useCookieConsent } from "@/hooks/use-cookie-consent";
 import { Button } from "@/components/ui/button";
 
 const footerNavLinks = [

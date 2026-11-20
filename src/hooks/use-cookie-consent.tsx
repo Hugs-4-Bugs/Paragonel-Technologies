@@ -67,7 +67,7 @@ export const CookieConsentProvider: React.FC<{ children: ReactNode }> = ({ child
         }
       } else {
         // This case (consent=true but no prefs) is unlikely but handle by defaulting to all accepted
-        const allAccepted = { essential: true, functional: true, analytics: true, marketing: true, performance: true };
+        const allAccepted: CookiePreferences = { essential: true, functional: true, analytics: true, marketing: true, performance: true };
         setPreferencesState(allAccepted);
         localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify(allAccepted));
       }

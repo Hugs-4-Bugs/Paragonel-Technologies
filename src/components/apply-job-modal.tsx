@@ -42,7 +42,7 @@ interface ApplyJobModalProps {
   job: Job | null;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB — aligned with server MAX_RESUME_BYTES (G17)
 const ACCEPTED_FILE_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"];
 
 const formSchema = z.object({
@@ -170,9 +170,9 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
                   <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="email@example.com" {...field} readOnly={isAuthenticated} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input placeholder="+91" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="resume" render={({ field: { onChange, ...rest } }) => (
+                  <FormField control={form.control} name="resume" render={({ field: { onChange, value, ...rest } }) => (
                       <FormItem className="md:col-span-2">
-                        <FormLabel>Resume (PDF/DOCX - Max 10MB)</FormLabel>
+                        <FormLabel>Resume (PDF/DOCX - Max 5MB)</FormLabel>
                         <FormControl><Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => onChange(e.target.files)} {...rest} /></FormControl>
                         <FormMessage />
                       </FormItem>
