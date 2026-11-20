@@ -11,7 +11,7 @@ export const baseServices = [
   {
     id: 'base-ai',
     title: 'AI Solutions & LLM Ops',
-    description: 'We don\'t just plug in APIs. We build custom RAG pipelines, fine-tuned models, and agentic workflows that live within your secure cloud boundary. Our solutions focus on automating the "thinking" tasks of your business.',
+    description: 'We integrate large language models into real product workflows — retrieval-augmented generation, agentic orchestration, prompt evaluation, and LLM operations — so AI assists your team instead of bolting onto it. Built inside your own cloud boundary, with your own provider keys.',
     iconName: 'Brain',
     slug: 'ai-solutions',
     imageUrl: '/images/ai-abstract.png',
@@ -20,8 +20,8 @@ export const baseServices = [
   },
   {
     id: 'base-cloud',
-    title: 'Enterprise Cloud Strategy',
-    description: 'Architecting for the next million users. We specialize in high-availability, multi-region AWS and GCP setups that prioritize security and cost-efficiency. Our cloud foundations are built to be unshakeable.',
+    title: 'Cloud Infrastructure & Platform Engineering',
+    description: 'High-availability, multi-region infrastructure on AWS and GCP, engineered for security and cost control. We architect distributed backends, event-driven systems, and scalable platform foundations — the kind of high-concurrency engineering our founder built at Netcore Cloud.',
     iconName: 'Cloud',
     slug: 'cloud-infrastructure',
     imageUrl: '/images/cloud-abstract.png',
@@ -31,7 +31,7 @@ export const baseServices = [
   {
     id: 'base-devops',
     title: 'DevOps & Reliability',
-    description: 'Transforming release cycles from weeks to minutes. We implement Infrastructure as Code (IaC) and automated CI/CD pipelines that enable your engineering team to ship with total confidence and zero downtime.',
+    description: 'Infrastructure as Code, automated CI/CD, observability, and release engineering that lets your team ship with confidence. We build the pipelines, guards, and rollback paths that make frequent, safe deploys a routine instead of a risk.',
     iconName: 'GitFork',
     slug: 'devops-automation',
     imageUrl: '/images/devops-pipeline.png',
@@ -40,8 +40,8 @@ export const baseServices = [
   },
   {
     id: 'base-saas',
-    title: 'Custom SaaS Platforms',
-    description: 'Turning vision into market-ready products. From initial wireframing to scaling a global backend, we handle the full technical lifecycle of your platform so you can focus on user growth.',
+    title: 'Custom SaaS / Product Engineering',
+    description: 'Full-lifecycle product builds — from architecture and MVP to a scaled, maintained platform. We have shipped our own SaaS products (AcquisitionOS, SystemFoundry, CodeGuard AI), so we understand what it takes to take a product from idea to live users.',
     iconName: 'Layers',
     slug: 'saas-platforms',
     imageUrl: '/images/saas-platform-dashboard.png',
@@ -56,10 +56,10 @@ export const basePortfolio = [
     name: 'AcquisitionOS: AI-Native Client Acquisition Platform',
     category: 'Sales Technology',
     imageUrl: '/images/AI-Driven-Recruitment.png',
-    description: 'AcquisitionOS is our flagship AI-native client acquisition platform, built to take businesses from prospect discovery to qualified pipeline. **The Problem:** Sales teams spend significant time manually researching companies, identifying opportunities, finding business gaps, personalizing outreach, and managing follow-ups across disconnected tools. **The Solution:** We built an end-to-end acquisition workflow covering prospect discovery, multi-source company research, signal interpretation, opportunity and gap detection, AI-generated opportunity reports, lead scoring, personalized outreach, reply and conversation analysis, meeting workflows, pipeline management, proposal generation, and closing, with LLM-powered reasoning turning fragmented business signals into actionable prospect context and next-best actions. **The Result:** AcquisitionOS is currently in private beta, where real-user feedback is driving product refinement and workflow validation as we prepare for broader customer adoption.',
-    status: 'Live',
+    description: 'AcquisitionOS is Paragonel\u2019s flagship AI-native client acquisition platform, built to take businesses from prospect discovery to qualified pipeline. **The Problem:** Sales teams spend significant time manually researching companies, identifying opportunities, finding business gaps, personalizing outreach, and managing follow-ups across disconnected tools. **The Solution:** A connected acquisition workflow covering prospect discovery, multi-source company research, signal interpretation, opportunity and gap detection, AI-generated opportunity reports, lead scoring, personalized outreach, reply and conversation analysis, meeting workflows, pipeline management, proposal generation, and closing. **Status:** AcquisitionOS is currently in private beta, where real-user feedback is driving product refinement and workflow validation as we prepare for broader adoption.',
+    status: 'Private Beta',
     techs: ['Spring Boot', 'Next.js', 'Python', 'Vector DB', 'AWS'],
-    link: 'https://acquisitionosbeta.vercel.app/',
+    link: 'https://acquisitionos.net',
     createdAt: new Date('2024-01-01').toISOString()
   },
   {
@@ -67,8 +67,8 @@ export const basePortfolio = [
     name: 'SystemFoundry: Infrastructure Simulator',
     category: 'Cloud Engineering',
     imageUrl: '/images/Career-Path-Visualization.png',
-    description: 'A visual architecture simulator for complex cloud systems.\n\n**The Problem:** Architectural mistakes are expensive. Testing infrastructure changes often requires deploying them, leading to technical debt and wasted budget.\n\n**The Solution:** SystemFoundry allows engineers to "drag-and-drop" infrastructure components. The AI engine then simulates real-world load, calculates projected monthly costs, and identifies potential bottlenecks or security risks before a single line of Terraform is written.\n\n**The Result:** Used internally for all client engagements, reducing post-deployment configuration errors by 75% and optimizing initial cloud costs by an average of 20%.',
-    status: 'Live',
+    description: 'A visual architecture simulator for complex cloud systems.\n\n**The Problem:** Architectural mistakes are expensive. Testing infrastructure changes often requires deploying them, leading to technical debt and wasted budget.\n\n**The Solution:** SystemFoundry allows engineers to drag-and-drop infrastructure components. The engine then simulates real-world load, calculates projected monthly costs, and identifies potential bottlenecks or security risks before a single line of Terraform is written.\n\n**Status:** Used internally for Paragonel\u2019s own cloud engineering work as an architecture validation tool.',
+    status: 'Internal Tool',
     techs: ['D3.js', 'React', 'Firebase', 'Serverless'],
     link: 'https://systemfoundry.vercel.app',
     createdAt: new Date('2024-01-05').toISOString()
@@ -78,7 +78,7 @@ export const basePortfolio = [
     name: 'CodeGuard AI: Cost Intelligence',
     category: 'Developer Tools',
     imageUrl: '/images/Personalized-Learning.png',
-    description: 'A VS Code extension providing real-time cost feedback for cloud infrastructure.\n\n**The Problem:** Developers often don\'t realize the cost implications of the resources they provision via IaC until the monthly bill arrives.\n\n**The Solution:** CodeGuard AI performs static analysis on Terraform and CloudFormation files as they are written. It queries a global pricing engine to show exactly how much each line of code will cost per month, highlighting over-provisioned instances and suggesting cheaper alternatives.',
+    description: 'A VS Code extension providing real-time cost feedback for cloud infrastructure.\n\n**The Problem:** Developers often don\u2019t realize the cost implications of the resources they provision via IaC until the monthly bill arrives.\n\n**The Solution:** CodeGuard AI performs static analysis on Terraform and CloudFormation files as they are written. It queries a pricing engine to show how much each line of code will cost per month, highlighting over-provisioned instances and suggesting cheaper alternatives.\n\n**Status:** Published on the VS Code Marketplace.',
     status: 'Published',
     techs: ['VS Code API', 'TypeScript', 'Node.js', 'LLM'],
     link: 'https://marketplace.visualstudio.com/items?itemName=Paragonel.codeguard-ai',
@@ -88,41 +88,14 @@ export const basePortfolio = [
 
 export const baseTestimonials = [
   {
-    id: 'base-t-1',
-    name: 'Dr. Anita Desai',
-    role: 'Medical Director',
-    company: 'Maa-Aarogyam Health Centre',
-    content: 'Paragonel transformed our health data processing. Their AI platform didn\'t just automate tasks; it redesigned how we interact with patient history. We\'ve seen a massive reduction in paperwork and much faster diagnosis cycles. Their engineering precision is truly world-class.',
-    rating: 5,
-    avatarUrl: ''
-  },
-  {
-    id: 'base-t-2',
-    name: 'Rajesh Kumar',
-    role: 'CEO',
-    company: 'TechIndia Corp',
-    content: 'The migration to the cloud was daunting for our legacy systems. Paragonel handled it with surgical precision. Their work on AcquisitionOS proved to us they understand SaaS better than anyone in the market. A stellar technical partner.',
-    rating: 5,
-    avatarUrl: ''
-  },
-  {
-    id: 'base-t-3',
-    name: 'Amit Sharma',
+    id: 'base-t-4',
+    name: 'Dhiraj Singh',
     role: 'Founder',
-    company: 'StartScale AI',
-    content: 'As a startup, you need to move fast without breaking things. Their Fractional CTO service saved us from making critical architectural mistakes in our first six months. They built our MVP to enterprise standards, allowing us to scale without a rewrite.',
+    company: 'Maa Arogyam',
+    content: 'They transformed our vision into a professional and modern website that represents Maa Arogyam exactly the way we wanted. The website has helped us present our services more clearly and build greater trust with our customers.',
     rating: 5,
     avatarUrl: ''
-  },
-  {
-  id: 'base-t-4',
-  name: 'Dhiraj Singh',
-  role: 'Founder',
-  company: 'Maa Arogyam',
-  content: 'They transformed our vision into a professional and modern website that represents Maa Arogyam exactly the way we wanted. The website has helped us present our services more clearly and build greater trust with our customers.',
-  rating: 5,
-  avatarUrl: ''
-}
+  }
 ];
 
 export const dummyJobs: Job[] = [
@@ -323,7 +296,7 @@ export const blogPosts: BlogPost[] = [
   id: '1',
   title: 'The Engineering Logic Behind AcquisitionOS: Building an AI-Native Customer Acquisition Engine',
   date: 'October 8, 2026',
-  author: 'Prabhat Sharma',
+  author: 'Prabhat Kumar',
   excerpt: 'A deep dive into why we built a custom lead acquisition engine, how AcquisitionOS turns raw prospects into researched opportunities, and why AI-native workflows can move beyond traditional CRM-based manual outreach.',
   body: `
 Building a customer acquisition platform in 2026 requires much more than storing contacts, companies, activities, and deal stages.
@@ -1012,7 +985,7 @@ Along with cost, it scans for open S3 buckets, permissive security groups, and u
     id: '3',
     title: 'Transitioning from Engineer to Solo Founder',
     date: 'April 10, 2025',
-    author: 'Prabhat Sharma',
+    author: 'Prabhat Kumar',
     excerpt: 'The story of Paragonel: Moving from a high-growth engineering role at Netcore Cloud to building a portfolio of AI-native products.',
     body: `
 Transitioning from a secure engineering job to building your own company is both the most terrifying and rewarding experience of my career. 

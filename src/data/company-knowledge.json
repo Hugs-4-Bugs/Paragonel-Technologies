@@ -1,60 +1,62 @@
 {
   "company": {
     "name": "Paragonel",
-    "founder": "Prabhat Sharma",
-    "ceo": "Prabhat Sharma",
+    "legalName": "Paragonel Technologies Pvt. Ltd.",
+    "founder": "Prabhat Kumar",
+    "ceo": "Prabhat Kumar",
     "founded": "2024",
-    "tagline": "Shaping the Future for Tomorrow",
-    "description": "Paragonel is an AI-native technology company founded by Prabhat Sharma. We build our own SaaS products (AcquisitionOS, SystemFoundry, CodeGuard AI) and deliver custom digital platforms for global clients. We specialize in AI integration, cloud infrastructure, DevOps automation, and full-stack engineering.",
+    "tagline": "Shaping the Future",
+    "description": "Paragonel is an AI-native product-engineering company. We build our own SaaS products (AcquisitionOS, SystemFoundry, CodeGuard AI) and deliver custom digital platforms and engineering services. We specialize in AI integration, cloud infrastructure, DevOps automation, and full-stack product engineering.",
     "mission": "To eliminate the gap between business problems and working solutions by building AI-native software that actually solves real pain.",
-    "vision": "To be the leading catalyst in global digital transformation through precision engineering.",
+    "vision": "To make AcquisitionOS the operating system its customers use to run client acquisition end-to-end, and to let our engineering services practice feed and be fed by that product work.",
     "location": "HSR Layout, Bangalore, 560102, India",
-    "phone": "+91 7250063206",
+    "phone": "+91 9663076023",
     "email": "contact@paragonel.com",
-    "website": "https://quantumfusion-solutions.vercel.app",
-    "linkedin": "https://www.linkedin.com/company/quantumfusion-solutions",
+    "website": "https://acquisitionos.net",
+    "linkedin": "",
     "twitter": "https://x.com/kattyPrabhat",
-    "technologies": ["AI/ML", "Next.js", "React", "Node.js", "Firebase", "Spring Boot", "AWS", "Azure", "GCP", "DevOps", "Kubernetes", "Docker", "Java", "Python"],
+    "technologies": ["AI/ML", "Next.js", "React", "Node.js", "Firebase", "Spring Boot", "AWS", "GCP", "DevOps", "Kubernetes", "Docker", "Java", "Python"],
     "founder_details": {
-      "name": "Prabhat Sharma",
-      "title": "Lead Architect & Founder",
-      "background": "Bachelor of Engineering in Computer Science. Specialized Java Backend Developer with extensive experience building massive-scale systems at Netcore Cloud, handling millions of real-time events.",
+      "name": "Prabhat Kumar",
+      "title": "Founder & CEO",
+      "background": "Bachelor of Engineering in Computer Science. Specialist Java Backend Developer with experience building massive-scale systems at Netcore Cloud, handling millions of real-time events.",
       "expertise": ["High-concurrency engineering", "Spring Boot", "Cloud-native architectures", "AI systems", "Full-stack development"]
     }
   },
   "pages": [
-    { "name": "Home", "url": "/", "description": "Overview of mission, company stats, and technical solutions." },
-    { "name": "About", "url": "/about", "description": "Details about our journey, core values, and leadership under Prabhat Sharma." },
-    { "name": "Services", "url": "/services", "description": "Specializations in AI Solutions, Cloud Infrastructure, DevOps, and SaaS Platforms." },
-    { "name": "Portfolio", "url": "/portfolio", "description": "Real-world projects like AcquisitionOS, SystemFoundry, and CodeGuard AI." },
+    { "name": "Home", "url": "/", "description": "Overview of what Paragonel builds, its services, and its flagship product AcquisitionOS." },
+    { "name": "Services", "url": "/services", "description": "Specializations in AI Solutions, Cloud Infrastructure, DevOps, and Custom SaaS / Product Engineering." },
+    { "name": "Our Product", "url": "/our-product", "description": "Paragonel products including AcquisitionOS, SystemFoundry, and CodeGuard AI." },
+    { "name": "About", "url": "/about", "description": "Company identity, engineering philosophy, and founder Prabhat Kumar." },
     { "name": "Blog", "url": "/blog", "description": "Engineering deep dives and product development insights." },
     { "name": "Careers", "url": "/careers", "description": "Hiring information for first-principles thinkers and engineers." },
-    { "name": "Contact", "url": "/contact", "description": "Inquiries for partnerships, sales, and technical advisory." }
+    { "name": "Contact", "url": "/contact", "description": "Inquiries for projects, product beta access, partnerships, and careers." }
   ],
   "products": [
     {
       "name": "AcquisitionOS",
-      "status": "Live",
-      "type": "AI CRM",
-      "description": "An AI-powered sales engine that uses RAG pipelines to aggregate signals from 12+ data sources, reducing customer acquisition costs by 40%."
+      "status": "Private Beta",
+      "type": "AI-Native Client Acquisition Platform",
+      "description": "An AI-native client acquisition operating system that unifies prospect discovery, research, gap detection, opportunity reporting, scoring, personalized outreach, reply handling, meeting workflows, pipeline management, and proposal generation into a single connected workflow. Currently in private beta.",
+      "link": "https://acquisitionos.net"
     },
     {
       "name": "SystemFoundry",
-      "status": "Live",
+      "status": "Internal Tool",
       "type": "Architecture Simulator",
-      "description": "A visual simulator for cloud systems that predicts costs and identifies bottlenecks before deployment."
+      "description": "A visual simulator for cloud systems that projects costs and identifies bottlenecks before deployment. Used internally for Paragonel's cloud engineering work."
     },
     {
       "name": "CodeGuard AI",
       "status": "Published",
       "type": "VS Code Extension",
-      "description": "Real-time cloud cost intelligence for developers, providing feedback on Terraform and CloudFormation files."
+      "description": "Real-time cloud cost intelligence for developers, providing feedback on Terraform and CloudFormation files. Published on the VS Code Marketplace."
     }
   ],
   "services": [
-    { "id": "ai", "name": "AI Solutions & LLM Ops", "focus": "Custom RAG, fine-tuned models, agentic workflows." },
-    { "id": "cloud", "name": "Enterprise Cloud Strategy", "focus": "AWS/GCP high-availability, multi-region setups." },
-    { "id": "devops", "name": "DevOps & Reliability", "focus": "CI/CD pipelines, Infrastructure as Code (IaC)." },
-    { "id": "saas", "name": "Custom SaaS Platforms", "focus": "Full technical lifecycle from wireframe to scale." }
+    { "id": "ai", "name": "AI Solutions & LLM Ops", "focus": "LLM integration, retrieval-augmented generation, agentic workflows, LLM operations." },
+    { "id": "cloud", "name": "Cloud Infrastructure & Platform Engineering", "focus": "AWS/GCP high-availability, multi-region, distributed systems." },
+    { "id": "devops", "name": "DevOps & Reliability", "focus": "Infrastructure as Code, CI/CD pipelines, observability, SRE." },
+    { "id": "saas", "name": "Custom SaaS / Product Engineering", "focus": "Full product lifecycle from architecture and MVP to a scaled, maintained platform." }
   ]
 }

@@ -1,100 +1,114 @@
-
 import { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GitFork, Zap, ChevronRight, SlidersHorizontal, Repeat, ShieldAlert, Gauge } from 'lucide-react';
+import { GitFork, GitBranch, Activity, ShieldCheck, Gauge, Rocket, ChevronRight, Boxes, ClipboardCheck, Bell } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'DevOps Automation | Paragonel',
-  description: 'Accelerate software delivery with CI/CD pipelines, Infrastructure as Code, and automated testing by Paragonel.',
+  title: 'DevOps & Reliability | Paragonel',
+  description:
+    'Infrastructure as Code, automated CI/CD, observability, and release engineering from Paragonel. Ship frequently and safely with pipelines, guards, and rollback paths that make deploys routine.',
 };
 
-const devopsFeatures = [
-  { title: "CI/CD Pipelines", description: "Automate build, test, and deployment processes.", icon: Repeat },
-  { title: "Infrastructure as Code (IaC)", description: "Manage and provision infrastructure through code.", icon: SlidersHorizontal },
-  { title: "Automated Testing", description: "Ensure software quality with comprehensive test automation.", icon: Zap },
-  { title: "Monitoring & Observability", description: "Gain insights into application performance and health.", icon: Gauge },
+const capabilities = [
+  { title: 'Infrastructure as Code', description: 'Terraform-managed infrastructure that is versioned, reviewable, and reproducible. No click-ops, no drift, no surprise snowflake environments.', icon: Boxes },
+  { title: 'CI/CD pipelines', description: 'Automated build, test, and deploy pipelines with stage gates and approvals so a release is a routine event, not a high-stress night.', icon: GitBranch },
+  { title: 'Observability', description: 'Metrics, logs, and traces wired so you know what is happening before a customer tells you. We instrument the signals that matter, not everything.', icon: Activity },
+  { title: 'Release & rollback engineering', description: 'Progressive delivery, health-gated rollouts, and a rollback path that actually works — because the deploy that fails is the one without one.', icon: Rocket },
+  { title: 'Security in the pipeline', description: 'Secret scanning, dependency review, and least-privilege deploy identities baked into the pipeline so security is a gate, not an afterthought.', icon: ShieldCheck },
+  { title: 'Alerting & on-call hygiene', description: 'Alerts that fire for real symptoms, with the runbooks that tell the on-call engineer what to do. We cut noise so signals survive.', icon: Bell },
 ];
 
-export default function DevOpsAutomationPage() {
+export default function DevOpsPage() {
   return (
     <div className="section-padding bg-background">
       <div className="container mx-auto px-4 md:px-6">
         <ScrollFadeIn>
           <header className="text-center mb-16">
             <GitFork className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              DevOps <span className="text-primary">Automation</span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Streamline your software development lifecycle with Paragonel' DevOps automation services. We implement robust CI/CD pipelines, manage infrastructure as code, and integrate automated testing to enhance speed, quality, and reliability.
+            <span className="text-primary font-black uppercase tracking-[0.3em] text-xs mb-4 block">Service</span>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">DevOps &amp; <span className="text-primary">Reliability</span></h1>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Infrastructure as Code, automated CI/CD, observability, and release engineering that lets your team ship with confidence. We build the pipelines, guards, and rollback paths that make frequent, safe deploys a routine instead of a risk.
             </p>
           </header>
         </ScrollFadeIn>
 
-        <ScrollFadeIn delay="200ms">
-          <div className="relative w-full h-72 md:h-96 rounded-xl overflow-hidden shadow-2xl mb-16">
-            <Image
-              src="/images/devops-pipeline.png"
-              alt="Abstract DevOps pipeline visualization"
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-              data-ai-hint="devops automation pipeline"
-              priority
-            />
+        <ScrollFadeIn delay="150ms">
+          <div className="relative w-full h-72 md:h-96 rounded-2xl overflow-hidden shadow-2xl mb-16">
+            <Image src="/images/devops-pipeline.png" alt="DevOps pipeline conceptual visual" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" priority unoptimized />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
           </div>
         </ScrollFadeIn>
 
+        <ScrollFadeIn delay="200ms" className="mb-16 max-w-4xl mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold mb-6">The problem we address</h2>
+          <p className="text-muted-foreground leading-relaxed text-lg mb-4">
+            A release that takes a manual runbook, an environment that drifts from its definition, an incident discovered by a customer email, a deploy with no rollback — these are the everyday costs of ad-hoc DevOps. The team ships slowly because shipping is risky, and shipping is risky because there is no safe path to ship often.
+          </p>
+          <p className="text-muted-foreground leading-relaxed text-lg">
+            It matters because release velocity is a competitive advantage only when it is safe. A fast team that breaks production loses the lead; a careful team that never ships loses the market. Good DevOps makes &ldquo;fast and safe&rdquo; the default instead of a trade-off.
+          </p>
+        </ScrollFadeIn>
+
         <ScrollFadeIn delay="300ms" className="mb-16">
-          <h2 className="text-3xl font-bold text-center mb-10">Our DevOps Expertise</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {devopsFeatures.map((feature, index) => (
-              <Card key={index} className="text-center shadow-lg hover:shadow-xl transition-shadow">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">What we deliver</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {capabilities.map((feature) => (
+              <Card key={feature.title} className="shadow-lg hover:shadow-xl transition-shadow rounded-2xl">
                 <CardHeader>
-                  <feature.icon className="h-10 w-10 text-primary mx-auto mb-3 neon-icon" />
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                  <feature.icon className="h-8 w-8 text-primary mb-3 neon-icon" />
+                  <CardTitle className="text-lg">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground text-sm">{feature.description}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </ScrollFadeIn>
 
-        <ScrollFadeIn delay="400ms" className="mb-16">
-          <Card className="bg-card shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-2xl md:text-3xl">Accelerate Your Innovation Cycle</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-muted-foreground">
+        <ScrollFadeIn delay="400ms" className="mb-16 max-w-4xl mx-auto">
+          <Card className="bg-card shadow-xl rounded-2xl">
+            <CardHeader><CardTitle className="text-2xl">How we approach it</CardTitle></CardHeader>
+            <CardContent className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                Paragonel helps you embrace a DevOps culture by implementing best practices and cutting-edge automation tools. Our approach focuses on collaboration, efficiency, and continuous improvement, enabling your teams to deliver high-quality software faster and more reliably. Reduce manual effort, minimize errors, and improve deployment frequency with our tailored DevOps solutions.
+                We make the path to production boring on purpose. Everything that can be versioned is versioned, everything that can be automated is automated, and every deploy has a health gate and a rollback. We instrument the few signals that matter so the team can see a problem before it becomes an incident.
               </p>
-              <ul className="list-disc list-inside space-y-2 pl-4">
-                <li>Containerization with Docker and Kubernetes.</li>
-                <li>Security integration throughout the SDLC (DevSecOps).</li>
-                <li>Configuration management and orchestration.</li>
-                <li>Performance and reliability engineering.</li>
-              </ul>
+              <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <h4 className="font-bold text-foreground mb-2 flex items-center gap-2"><Gauge className="h-4 w-4 text-primary" /> Engagement</h4>
+                  <p className="text-sm">Pipeline and IaC setup for a new product, or a reliability overhaul of an existing release process that has become a bottleneck.</p>
+                </div>
+                <div>
+                  <h4 className="font-bold text-foreground mb-2 flex items-center gap-2"><ClipboardCheck className="h-4 w-4 text-primary" /> Typical deliverables</h4>
+                  <p className="text-sm">Terraform modules, CI/CD pipelines, observability dashboards, alert rules with runbooks, and a tested rollback procedure.</p>
+                </div>
+              </div>
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
+                <h4 className="font-bold text-foreground mb-2">Technology we use</h4>
+                <p className="text-sm">Terraform, GitHub Actions / GitLab CI, Kubernetes, Docker, Prometheus / Grafana / OpenTelemetry, AWS and GCP native services.</p>
+              </div>
             </CardContent>
           </Card>
         </ScrollFadeIn>
 
+        <ScrollFadeIn delay="450ms" className="mb-16 max-w-4xl mx-auto">
+          <div className="rounded-2xl border border-primary/20 bg-secondary/30 dark:bg-secondary/10 p-6 md:p-8">
+            <h3 className="font-bold text-foreground mb-2">Where we are explicit</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We do not promise zero downtime or zero incidents. We promise a release path that is automated, health-gated, and reversible, and observability that shows you what is happening. Reliability is a practice, not a one-time fix.
+            </p>
+          </div>
+        </ScrollFadeIn>
+
         <ScrollFadeIn delay="500ms" className="text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-6">Ready to Modernize Your Development?</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto mb-8">
-            Let's discuss how DevOps automation can revolutionize your workflows.
-          </p>
+          <h2 className="text-2xl md:text-3xl font-bold mb-6">Make shipping safe and routine</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto mb-8">Tell us where your release process hurts. We will build the pipeline and the guardrails.</p>
           <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/contact">
-              Talk to Our DevOps Team <ChevronRight className="ml-2 h-5 w-5" />
-            </Link>
+            <Link href="/contact">Discuss your DevOps needs <ChevronRight className="ml-2 h-5 w-5" /></Link>
           </Button>
         </ScrollFadeIn>
       </div>

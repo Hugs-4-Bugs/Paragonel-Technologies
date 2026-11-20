@@ -37,7 +37,7 @@ const faqItems = [
   },
   {
     q: "Can I see your previous products?",
-    a: "Yes. AcquisitionOS and SystemFoundry are live and used by clients today. CodeGuard AI is available on the VS Code Marketplace. You can explore these and other projects on our Portfolio page."
+    a: "Yes. AcquisitionOS — our AI-native client acquisition platform — is currently in private beta; you can explore it and request access at acquisitionos.net. SystemFoundry is an internal infrastructure simulator we use for our own cloud engineering work. CodeGuard AI, a VS Code extension for real-time cloud cost intelligence, is published on the VS Code Marketplace. You can read about all three on our Our Product page."
   },
   {
     q: "Who will I be working with?",

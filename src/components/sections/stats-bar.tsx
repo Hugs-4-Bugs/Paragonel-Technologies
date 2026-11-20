@@ -4,10 +4,10 @@
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 
 const stats = [
-  { label: "Products Built", value: "4+" },
-  { label: "Years Experience", value: "3+" },
+  { label: "Products Shipped", value: "3" },
+  { label: "Founded", value: "2024" },
   { label: "Technologies", value: "10+" },
-  { label: "Global Delivery", value: "India-Based" },
+  { label: "Based In", value: "India" },
 ];
 
 export function StatsBar() {

@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Shield } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,13 +21,12 @@ import { useAuth } from "@/contexts/auth-context";
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
   { href: "/services", label: "Services" },
-  { href: "/portfolio", label: "Portfolio" },
+  { href: "/our-product", label: "Our Product" },
+  { href: "/about", label: "About" },
 ];
 
 const moreNavLinks = [
-  { href: "/team", label: "Team" },
   { href: "/careers", label: "Careers" },
   { href: "/blog", label: "Blog" },
   { href: "/testimonials", label: "Testimonials" },
@@ -56,10 +55,6 @@ export function Navbar() {
     
     let links: NavLink[] = [...mainNavLinks, ...moreNavLinks];
     if (isAuthenticated && user) {
-      // Check if user is the admin
-      if (user.email === 'admin@paragonel.com') {
-        links.push({ href: "/admin", label: "Admin CMS", icon: Shield });
-      }
       links.push({ href: "/profile", label: "My Profile", icon: UserCircle });
       links.push({ href: "#", label: "Logout", icon: LogOut, action: () => { logout(); setIsMobileMenuOpen(false); } });
     } else {
@@ -149,14 +144,7 @@ export function Navbar() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {user.email === 'admin@paragonel.com' && (
-                      <DropdownMenuItem asChild>
-                         <Link href="/admin" className="cursor-pointer font-bold text-primary">
-                           <Shield className="mr-2 h-4 w-4" />
-                           Admin Panel
-                         </Link>
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                        <Link href="/profile" className="cursor-pointer">
                          <Settings2 className="mr-2 h-4 w-4" />

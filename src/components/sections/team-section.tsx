@@ -8,7 +8,7 @@ import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Linkedin, Twitter, Github, Instagram, Globe, UserCircle, Brain, CloudCog, Layers2 } from 'lucide-react';
+import { Linkedin, Github, Instagram, Globe, UserCircle, Brain } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 interface TeamMember {
@@ -31,54 +31,15 @@ interface TeamMember {
 const teamMembers: TeamMember[] = [
   {
     id: '1',
-    name: 'Prabhat Sharma',
-    title: 'Founder & Lead Architect',
+    name: 'Prabhat Kumar',
+    title: 'Founder & CEO',
     imageUrl: '/images/Prabhat.png',
-    aiHint: 'Prabhat Sharma Founder CEO Paragonel',
-    bio: 'Prabhat Sharma is the visionary Founder and Lead Architect of Paragonel, holding a Bachelor of Engineering in Computer Science. A specialist Java Backend Developer, he brings expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructures (AWS/GCP). \n\nBefore embarking on his journey as a solo founder, Prabhat spent significant years as an engineer at Netcore Cloud, where he played a critical role in maintaining backend systems operating at massive scale—handling millions of real-time events per second. This background in high-concurrency engineering is the foundation of Paragonel’s "Precision Engineering" philosophy. \n\nToday, Prabhat leads a lean team of innovators, bridging the gap between complex business pain and AI-native solutions. He is the lead architect behind our proprietary products including AcquisitionOS (AI-powered CRM) and SystemFoundry (Architecture Simulator), while providing technical advisory to high-growth startups globally.',
-    socials: { 
-      linkedin: 'https://www.linkedin.com/in/prabhat-kumar-6963661a4/', 
-      github: 'https://github.com/Hugs-4-Bugs', 
-      instagram: 'https://www.instagram.com/_s_4_sharma/', 
-      globe: 'https://www.prabhat.online/' 
-    },
-    icon: Brain,
-  },
-  {
-    id: '2',
-    name: 'Vivek Sharma',
-    title: 'CTO, Cloud & DevOps Architect',
-    imageUrl: '/images/Vivek.png',
-    aiHint: 'Vivek Sharma CTO Paragonel',
-    bio: 'Vivek is a seasoned infrastructure specialist focusing on high-availability systems and automated release cycles. He manages our DevOps division, ensuring that every piece of software we ship for clients is deployed on unshakeable cloud foundations. His expertise spans Kubernetes orchestration, Terraform automation, and advanced security protocols.',
-    socials: { 
-      linkedin: 'https://www.linkedin.com/company/quantumfusion-solutions', 
-      instagram: 'https://www.instagram.com/viveksharma75_/' 
-    },
-    icon: CloudCog,
-  },
-  {
-    id: '3',
-    name: 'Ajay Pal',
-    title: 'Head of SaaS Platforms',
-    imageUrl: '/images/Ajay.png',
-    aiHint: 'Ajay Pal Head of SaaS',
-    bio: 'Ajay orchestrates our SaaS development lifecycle, focusing on the intersection of user experience and scalable backend logic. He leads the product strategy for our internal tools and works directly with clients to translate their vision into market-ready digital platforms. His approach prioritizes rapid iteration and meaningful user growth.',
-    socials: { 
-      linkedin: 'https://www.linkedin.com/in/ajay-pal-21b8ab269/', 
-      instagram: 'https://www.instagram.com/6549ima_j_a_y_p_a_l/' 
-    },
-    icon: Layers2,
-  },
-  {
-    id: '4',
-    name: 'Dr. Lena Petrova',
-    title: 'Principal AI Researcher',
-    imageUrl: '/images/Lena.png',
-    aiHint: 'Lena Petrova AI Researcher',
-    bio: 'Dr. Petrova leads our R&D initiatives in Natural Language Processing and Multi-agent systems. With a background in applied machine learning, she ensures that Paragonel’s AI solutions leverage state-of-the-art models like Gemini and GPT while maintaining strict data security and ethical standards for our enterprise clients.',
-    socials: { 
-      linkedin: 'https://www.linkedin.com/company/quantumfusion-solutions', 
+    aiHint: 'Prabhat Kumar Founder CEO Paragonel',
+    bio: 'Prabhat Kumar is the Founder & CEO of Paragonel Technologies Pvt. Ltd. He holds a Bachelor of Engineering in Computer Science and is a specialist Java backend developer, with expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructure (AWS/GCP).\n\nBefore founding Paragonel, Prabhat spent significant years as an engineer at Netcore Cloud, working on backend systems operating at massive scale — handling millions of real-time events. That background in high-concurrency engineering is the foundation of Paragonel\u2019s "Precision Engineering" philosophy: small, named, verifiable systems built to behave exactly as specified.\n\nToday, Prabhat leads Paragonel as the architect behind its product portfolio — including AcquisitionOS, an AI-native client acquisition platform now in private beta — while overseeing the engineering services the company delivers.',
+    socials: {
+      linkedin: 'https://www.linkedin.com/in/prabhat-kumar-6963661a4/',
+      github: 'https://github.com/Hugs-4-Bugs',
+      globe: 'https://www.prabhat.online/'
     },
     icon: Brain,
   },

@@ -4,15 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { NewsletterSubscription } from '@/components/sections/newsletter-subscription';
-import { Facebook, Linkedin, Twitter, Instagram, Settings, MapPin, Mail, Phone } from 'lucide-react';
+import { Facebook, Linkedin, Twitter, Github, Settings, MapPin, Mail, Phone } from 'lucide-react';
 import { useCookieConsent } from "@/hooks/use-cookie-consent.tsx";
 import { Button } from "@/components/ui/button";
 
 const footerNavLinks = [
   { href: "/about", label: "About Us" },
   { href: "/services", label: "Services" },
-  { href: "/portfolio", label: "Portfolio" },
-  { href: "/team", label: "Team" },
+  { href: "/our-product", label: "Our Product" },
   { href: "/careers", label: "Careers" },
   { href: "/blog", label: "Blog" },
   { href: "/testimonials", label: "Testimonials" },
@@ -42,7 +41,7 @@ export function Footer() {
               />
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              Paragonel is an AI-native technology company building the next generation of digital platforms and intelligent automation for global businesses.
+              Paragonel Technologies Pvt. Ltd. — an AI-native product-engineering company. We build our own SaaS products, including AcquisitionOS, and deliver cloud, DevOps, AI, and product-engineering services.
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
@@ -115,29 +114,32 @@ export function Footer() {
           </div>
           
           <div className="flex items-center gap-6">
-            <Link 
-              href="https://www.linkedin.com/company/quantumfusion-solutions" 
-              target="_blank" 
+            <Link
+              href="https://www.linkedin.com/in/prabhat-kumar-6963661a4/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-all hover:scale-110"
               aria-label="LinkedIn"
             >
               <Linkedin className="h-5 w-5" />
             </Link>
-            <Link 
-              href="https://x.com/kattyPrabhat" 
-              target="_blank" 
+            <Link
+              href="https://x.com/kattyPrabhat"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-all hover:scale-110"
-              aria-label="Twitter"
+              aria-label="X (Twitter)"
             >
               <Twitter className="h-5 w-5" />
             </Link>
-            <Link 
-              href="https://www.instagram.com/_s_4_sharma/" 
-              target="_blank" 
+            <Link
+              href="https://github.com/Hugs-4-Bugs"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-all hover:scale-110"
-              aria-label="Instagram"
+              aria-label="GitHub"
             >
-              <Instagram className="h-5 w-5" />
+              <Github className="h-5 w-5" />
             </Link>
           </div>
         </div>

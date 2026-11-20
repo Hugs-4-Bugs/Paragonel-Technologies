@@ -34,7 +34,7 @@ export default function ServicesPage() {
               Our <span className="text-primary">Services</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed">
-              Precision engineering and intelligent innovation for the next generation of digital leaders.
+              Four focused engineering services — AI, cloud infrastructure, DevOps, and custom product engineering — grounded in products we have shipped ourselves.
             </p>
           </ScrollFadeIn>
 

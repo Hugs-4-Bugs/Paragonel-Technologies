@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'About Us | Paragonel',
-  description: 'Pioneering the future of IT with intelligent solutions in AI, Cloud Computing, DevOps, and SaaS Platforms.',
+  description: 'Paragonel Technologies is an AI-native product-engineering company. Meet founder & CEO Prabhat Kumar and the Precision Engineering philosophy behind our products and services.',
 };
 
 export default function AboutPage() {
