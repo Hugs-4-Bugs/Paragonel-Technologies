@@ -18,9 +18,10 @@ export default function BlogPostPage() {
   const postQuery = useMemo(() => {
     if (!firestore || !slug) return null;
     return query(
-      collection(firestore, 'blogPosts'), 
+      collection(firestore, 'blogPosts'),
       where('slug', '==', slug),
       where('status', '==', 'Published'),
+      where('deletedAt', '==', null),
       limit(1)
     );
   }, [firestore, slug]);

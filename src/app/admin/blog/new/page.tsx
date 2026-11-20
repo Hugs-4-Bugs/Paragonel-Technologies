@@ -21,11 +21,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Loader2, Save, BookOpen, Image as ImageIcon, Search, Clock } from 'lucide-react';
 import { useFirestore } from '@/firebase';
-import { collection, addDoc, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
-import { logActivity } from '@/lib/audit';
 import { cn } from '@/lib/utils';
 import { useAutosave } from '@/hooks/useAutosave';
 import { SaveStatusIndicator } from '@/components/cms/SaveStatusIndicator';
@@ -136,44 +134,37 @@ export default function NewBlogPage() {
   }, [title, form]);
 
   async function onSubmit(values: BlogFormValues) {
-    if (isLoading || !firestore) return;
+    if (isLoading) return;
     setIsLoading(true);
-    
+
     try {
-      const blogData = {
-        ...values,
-        tags: values.tags ? values.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-        publishedAt: values.status === 'Published' ? new Date().toISOString() : null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        deletedAt: null,
-        isDraft: false,
-      };
-
-      const docRef = await addDoc(collection(firestore, 'blogPosts'), blogData);
-      
-      // Store initial revision
-      const revRef = collection(firestore, 'blogPosts', docRef.id, 'revisions');
-      await addDoc(revRef, {
-        ...blogData,
-        timestamp: serverTimestamp()
+      // Phase 4 IU-0 slice 2: create via JWT-verified server route (Admin SDK).
+      // The server writes the post + initial revision + audit log; the client
+      // no longer touches Firestore (and no longer calls the client logActivity,
+      // which silently failed once adminActivityLogs was locked in slice 1).
+      const res = await fetch('/api/admin/blog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.issues?.join('; ') || data?.error || 'The server rejected the request.');
+      }
 
-      await logActivity('admin', `Created blog post: ${values.title}`, 'BlogPost', docRef.id);
-      
       // Cleanup draft
       localStorage.removeItem(AUTOSAVE_KEY);
       localStorage.removeItem('current_draft_id_blog');
-      
+
       setIsDirty(false);
       toast({ title: 'Insight Published', description: 'The article is now live.' });
       router.push('/admin/blog');
     } catch (error: any) {
       console.error("Save Article Error:", error);
-      toast({ 
-        title: 'Publishing Failed', 
-        description: error.message || 'The server rejected the request.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Publishing Failed',
+        description: error.message || 'The server rejected the request.',
+        variant: 'destructive'
       });
     } finally {
       setIsLoading(false);

@@ -27,8 +27,6 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Save, Briefcase } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
@@ -64,23 +62,26 @@ export default function EditJobPage() {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const docRef = doc(db, 'jobs', id as string);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+        // Phase 4 IU-0 slice 2: load via JWT-verified server route (Admin SDK),
+        // since drafts/archived jobs are no longer readable by the client SDK.
+        const res = await fetch(`/api/admin/jobs/${id}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        const j = data.job;
+        if (j) {
           form.reset({
-            jobId: data.jobId,
-            title: data.title,
-            department: data.department,
-            location: data.location,
-            employmentType: data.employmentType,
-            workArrangement: data.workArrangement || 'Remote',
-            experienceRequired: data.experienceRequired,
-            salaryRange: data.salaryRange || '',
-            skills: data.skills.join(', '),
-            description: data.description,
-            deadline: data.deadline || '',
-            status: data.status || (data.isActive ? 'Active' : 'Draft'),
+            jobId: j.jobId,
+            title: j.title,
+            department: j.department,
+            location: j.location,
+            employmentType: j.employmentType,
+            workArrangement: j.workArrangement || 'Remote',
+            experienceRequired: j.experienceRequired,
+            salaryRange: j.salaryRange || '',
+            skills: Array.isArray(j.skills) ? j.skills.join(', ') : '',
+            description: j.description,
+            deadline: j.deadline || '',
+            status: j.status || (j.isActive ? 'Active' : 'Draft'),
           });
         }
       } catch (error) {
@@ -95,16 +96,19 @@ export default function EditJobPage() {
   async function onSubmit(values: JobFormValues) {
     setIsLoading(true);
     try {
-      await updateDoc(doc(db, 'jobs', id as string), {
-        ...values,
-        isActive: values.status === 'Active',
-        skills: values.skills.split(',').map(s => s.trim()).filter(Boolean),
-        updatedAt: new Date().toISOString(),
+      const res = await fetch(`/api/admin/jobs/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.issues?.join('; ') || data?.error || 'Update failed.');
+      }
       toast({ title: 'Success', description: 'Job details updated successfully.' });
       router.push('/admin/jobs');
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to update job.', variant: 'destructive' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error?.message || 'Failed to update job.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

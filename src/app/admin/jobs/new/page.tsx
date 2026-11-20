@@ -27,7 +27,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Save, Briefcase } from 'lucide-react';
 import { useFirestore } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
@@ -133,36 +132,35 @@ export default function NewJobPage() {
   }, [form.watch]);
 
   async function onSubmit(values: JobFormValues) {
-    if (isLoading || !firestore) return;
+    if (isLoading) return;
     setIsLoading(true);
-    
-    try {
-      const jobData = {
-        ...values,
-        isActive: values.status === 'Active',
-        skills: values.skills.split(',').map(s => s.trim()).filter(Boolean),
-        postedDate: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        deletedAt: null,
-        isDraft: false,
-      };
 
-      await addDoc(collection(firestore, 'jobs'), jobData);
-      
+    try {
+      // Phase 4 IU-0 slice 2: create via JWT-verified server route (Admin SDK).
+      // The server re-validates and writes; the client no longer touches Firestore.
+      const res = await fetch('/api/admin/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.issues?.join('; ') || data?.error || 'The server rejected the request.');
+      }
+
       // Clear draft
       localStorage.removeItem(AUTOSAVE_KEY);
       localStorage.removeItem('current_draft_id_job');
-      
+
       setIsDirty(false);
       toast({ title: 'Job Posted', description: 'The role is now visible on the Careers page.' });
       router.push('/admin/jobs');
     } catch (error: any) {
       console.error("Post Job Error:", error);
-      toast({ 
-        title: 'Posting Failed', 
-        description: error.message || 'Check your database permissions.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Posting Failed',
+        description: error.message || 'Check your database permissions.',
+        variant: 'destructive'
       });
     } finally {
       setIsLoading(false);

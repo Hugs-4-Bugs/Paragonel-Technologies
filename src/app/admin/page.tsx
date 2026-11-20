@@ -21,10 +21,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { dummyJobs, blogPosts, baseServices } from '@/lib/data';
 import { formatDistanceToNow } from 'date-fns';
-import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 
 type Stats = {
   jobs: number;
@@ -87,11 +84,9 @@ export default function AdminDashboard() {
   ];
 
   const handleSeedDatabase = async () => {
-    // SECURITY (Phase 4 IU-0): the "Seed Database" button previously batch-wrote
-    // dummy data to the production database from the client. It is now disabled
-    // in production. In development (emulator) it still seeds jobs/blogPosts/
-    // services for local testing. When jobs/blogPosts writes are locked in the
-    // next IU-0 slice, seeding must move to a server-side /api/admin/seed route.
+    // Phase 4 IU-0 slice 2: seeding now runs server-side via /api/admin/seed
+    // (Admin SDK batch), because jobs/blogPosts writes are locked to public
+    // clients. The route re-checks NODE_ENV and refuses in production.
     if (process.env.NODE_ENV === 'production') {
       toast({
         title: 'Seeding disabled in production',
@@ -100,33 +95,18 @@ export default function AdminDashboard() {
       });
       return;
     }
-    if (!db || isSeeding) return;
+    if (isSeeding) return;
     if (!confirm("This will populate your local database with foundation data. Proceed?")) return;
 
     setIsSeeding(true);
     try {
-      const batch = writeBatch(db);
-
-      // Seed Jobs
-      dummyJobs.forEach(job => {
-        const jobRef = doc(collection(db, 'jobs'), job.id);
-        batch.set(jobRef, { ...job, deletedAt: null, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      const res = await fetch('/api/admin/seed', { method: 'POST' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      toast({
+        title: "Database Seeded",
+        description: `Local data loaded (${data.seeded?.jobs ?? 0} jobs, ${data.seeded?.blogPosts ?? 0} posts, ${data.seeded?.services ?? 0} services).`,
       });
-
-      // Seed Blogs
-      blogPosts.forEach(post => {
-        const postRef = doc(collection(db, 'blogPosts'), post.id);
-        batch.set(postRef, { ...post, deletedAt: null, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-      });
-
-      // Seed Services
-      baseServices.forEach(service => {
-        const sRef = doc(collection(db, 'services'), service.id);
-        batch.set(sRef, { ...service, createdAt: serverTimestamp() });
-      });
-
-      await batch.commit();
-      toast({ title: "Database Seeded", description: "Local data is now loaded." });
     } catch (e) {
       toast({ title: "Seeding Failed", variant: "destructive" });
     } finally {

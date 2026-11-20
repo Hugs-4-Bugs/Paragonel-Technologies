@@ -136,7 +136,7 @@ export function ChatSection() {
 
     setIsLoading(true);
     try {
-      const jobsSnap = await getDocs(query(collection(db, 'jobs'), where('isActive', '==', true)));
+      const jobsSnap = await getDocs(query(collection(db, 'jobs'), where('isActive', '==', true), where('deletedAt', '==', null)));
       const allJobs = jobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
       const matches = allJobs.map(job => {

@@ -1,19 +1,24 @@
 /**
- * Security regression test for firestore.rules (Phase 4, IU-0 slice 1).
+ * Security regression test for firestore.rules (Phase 4, IU-0 slices 1 + 2).
  *
  * Run against the Firestore emulator:
  *   firebase emulators:exec --only firestore "node test/security-rules.test.mjs"
+ * (or, with the emulator already running on :8080: `node test/security-rules.test.mjs`)
  *
  * What it verifies:
- *   1. Anonymous client reads on the LOCKED PII collections are DENIED:
- *        leads, jobApplications, newsletterSubscribers, adminActivityLogs
- *   2. Anonymous client CREATE on the inbound collections is DENIED
- *      (Phase 1B invariant preserved).
- *   3. Anonymous client reads on PUBLIC collections still WORK:
- *        jobs (active), blogPosts (published)
- *      and that non-public jobs/blogPosts are NOT readable.
- *   4. The Firebase Admin SDK can still read/write every collection
- *      (server-side /api/admin/** paths keep working — Admin bypasses rules).
+ *   SLICE 1 (PII lockdown — must still hold):
+ *     1. Anonymous client reads on the LOCKED PII collections are DENIED:
+ *          leads, jobApplications, newsletterSubscribers, adminActivityLogs
+ *     2. Anonymous client CREATE on the inbound collections is DENIED.
+ *   SLICE 2 (CMS content lockdown — this slice):
+ *     3. Anonymous client WRITE (create/update) on `jobs` and `blogPosts` is
+ *        DENIED. Admin CRUD must go through /api/admin/jobs|blog (Admin SDK).
+ *     4. Anonymous client reads on PUBLIC collections still WORK for the public
+ *        subset only: jobs (active+not-deleted), blogPosts (published+not-deleted).
+ *        Inactive jobs, draft posts, soft-deleted records are NOT readable.
+ *     5. The `blogPosts/{post}/revisions` subcollection is DENIED to clients.
+ *     6. The Firebase Admin SDK can still read/write every collection
+ *        (server-side /api/admin/** paths keep working — Admin bypasses rules).
  *
  * No test runner is installed in this repo, so this is a plain Node script
  * with an explicit exit code (0 = pass, 1 = fail).
@@ -24,6 +29,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   connectFirestoreEmulator,
 } from 'firebase/firestore';
 import { initializeApp as adminInit, getApps } from 'firebase-admin/app';
@@ -63,14 +69,21 @@ function check(label, ok) {
 async function expectDeniedRead(coll, id, label) {
   try {
     const snap = await getDoc(doc(db, coll, id));
-    // No throw but no data → still a secure denial (emulator may return empty).
     check(`${label}: anonymous read DENIED (no data leaked)`, !snap.exists());
   } catch (e) {
-    // FirebaseError carries the reason in .code (e.g. 'permission-denied'),
-    // not always in .message. Any throw here means no doc data was returned.
     const code = String(e?.code || '');
     const denied = /permission|denied|insufficient/i.test(code) || /permission|denied|insufficient/i.test(e?.message || '');
     if (!denied) console.log(`    [diag] ${label} err code=${code} name=${e?.name} msg=${(e?.message||'').slice(0,120)}`);
+    check(`${label}: anonymous read DENIED`, true);
+  }
+}
+
+/** Denial check for an arbitrary doc path (used for subcollections). */
+async function expectDeniedReadPath(segments, label) {
+  try {
+    const snap = await getDoc(doc(db, ...segments));
+    check(`${label}: anonymous read DENIED (no data leaked)`, !snap.exists());
+  } catch (e) {
     check(`${label}: anonymous read DENIED`, true);
   }
 }
@@ -86,11 +99,22 @@ async function expectAllowedRead(coll, id, label) {
 
 async function expectDeniedCreate(coll, label) {
   try {
-    await setDoc(doc(db, coll, 'should-not-exist'), { x: 1 });
+    await setDoc(doc(db, coll, 'should-not-exist-' + Math.random().toString(36).slice(2, 8)), { x: 1 });
     check(`${label}: anonymous create DENIED`, false);
   } catch (e) {
     const denied = /permission|insufficient/i.test(e?.message || '');
     check(`${label}: anonymous create DENIED`, denied);
+  }
+}
+
+/** Anonymous UPDATE on an existing doc must be denied. */
+async function expectDeniedUpdate(coll, id, label) {
+  try {
+    await updateDoc(doc(db, coll, id), { updatedAt: 'attacker' });
+    check(`${label}: anonymous update DENIED`, false);
+  } catch (e) {
+    const denied = /permission|insufficient/i.test(e?.message || '');
+    check(`${label}: anonymous update DENIED`, denied);
   }
 }
 
@@ -101,39 +125,69 @@ async function expectAdminOk(label, fn) {
 
 async function main() {
   // Seed via Admin SDK (bypasses rules).
+  // Slice 1 PII docs.
   await adminDb.doc('leads/l1').set({ name: 'A', email: 'a@x', status: 'New', createdAt: new Date() });
   await adminDb.doc('jobApplications/a1').set({ candidateName: 'A', candidateEmail: 'a@x', appliedAt: new Date() });
   await adminDb.doc('newsletterSubscribers/s1').set({ email: 'a@x', subscribedAt: new Date() });
   await adminDb.doc('adminActivityLogs/g1').set({ action: 'test', timestamp: new Date() });
-  await adminDb.doc('jobs/active').set({ isActive: true, deletedAt: null, title: 'T' });
-  await adminDb.doc('jobs/inactive').set({ isActive: false, deletedAt: null, title: 'T' });
-  await adminDb.doc('blogPosts/pub').set({ status: 'Published', deletedAt: null, title: 'P' });
-  await adminDb.doc('blogPosts/draft').set({ status: 'Draft', deletedAt: null, title: 'D' });
 
-  console.log('\n=== Phase 4 IU-0 slice 1 — firestore.rules regression ===\n');
+  // Slice 2 jobs docs: active, inactive, soft-deleted.
+  await adminDb.doc('jobs/active').set({ isActive: true, deletedAt: null, title: 'T', status: 'Active' });
+  await adminDb.doc('jobs/inactive').set({ isActive: false, deletedAt: null, title: 'T', status: 'Draft' });
+  await adminDb.doc('jobs/softdeleted').set({ isActive: true, deletedAt: new Date(), title: 'T', status: 'Active' });
 
-  // 1. Locked PII collections: anonymous read MUST be denied.
+  // Slice 2 blogPosts docs: published, draft, soft-deleted published.
+  await adminDb.doc('blogPosts/pub').set({ status: 'Published', deletedAt: null, title: 'P', slug: 'p' });
+  await adminDb.doc('blogPosts/draft').set({ status: 'Draft', deletedAt: null, title: 'D', slug: 'd' });
+  await adminDb.doc('blogPosts/softdeleted').set({ status: 'Published', deletedAt: new Date(), title: 'SD', slug: 'sd' });
+
+  // Revision under a published post (must be denied to clients).
+  await adminDb.doc('blogPosts/pub/revisions/r1').set({ body: 'v1', timestamp: new Date() });
+
+  console.log('\n=== Phase 4 IU-0 slice 1 + slice 2 — firestore.rules regression ===\n');
+
+  // --- SLICE 1: locked PII collections — anonymous read MUST be denied. ---
   await expectDeniedRead('leads', 'l1', 'leads');
   await expectDeniedRead('jobApplications', 'a1', 'jobApplications');
   await expectDeniedRead('newsletterSubscribers', 's1', 'newsletterSubscribers');
   await expectDeniedRead('adminActivityLogs', 'g1', 'adminActivityLogs');
 
-  // 2. Anonymous CREATE on inbound collections MUST be denied (Phase 1B).
+  // --- SLICE 1: anonymous CREATE on inbound collections MUST be denied. ---
   await expectDeniedCreate('leads', 'leads create');
   await expectDeniedCreate('jobApplications', 'jobApplications create');
   await expectDeniedCreate('newsletterSubscribers', 'newsletterSubscribers create');
 
-  // 3. Public reads still work; non-public do not.
+  // --- SLICE 2: anonymous WRITE on jobs / blogPosts MUST be denied. ---
+  await expectDeniedCreate('jobs', 'jobs create');
+  await expectDeniedCreate('blogPosts', 'blogPosts create');
+  await expectDeniedUpdate('jobs', 'active', 'jobs update');
+  await expectDeniedUpdate('blogPosts', 'pub', 'blogPosts update');
+
+  // --- SLICE 2: public reads work ONLY for the public subset. ---
   await expectAllowedRead('jobs', 'active', 'jobs (active) read');
   await expectDeniedRead('jobs', 'inactive', 'jobs (inactive) read');
+  await expectDeniedRead('jobs', 'softdeleted', 'jobs (soft-deleted) read');
   await expectAllowedRead('blogPosts', 'pub', 'blogPosts (published) read');
   await expectDeniedRead('blogPosts', 'draft', 'blogPosts (draft) read');
+  await expectDeniedRead('blogPosts', 'softdeleted', 'blogPosts (soft-deleted published) read');
 
-  // 4. Admin SDK still operates every collection (server-side routes work).
+  // --- SLICE 2: revisions subcollection denied to clients. ---
+  await expectDeniedReadPath(['blogPosts', 'pub', 'revisions', 'r1'], 'blogPosts revisions read');
+  try {
+    await setDoc(doc(db, 'blogPosts', 'pub', 'revisions', 'attacker'), { x: 1 });
+    check('blogPosts revisions create DENIED', false);
+  } catch (e) {
+    check('blogPosts revisions create DENIED', /permission|insufficient/i.test(e?.message || ''));
+  }
+
+  // --- SLICE 1 + 2: Admin SDK still operates every collection (server routes). ---
   await expectAdminOk('admin write leads', () => adminDb.doc('leads/l1').update({ status: 'Contacted' }));
   await expectAdminOk('admin write jobApplications', () => adminDb.doc('jobApplications/a1').update({ status: 'Reviewing' }));
   await expectAdminOk('admin write adminActivityLogs', () => adminDb.doc('adminActivityLogs/g1').update({ action: 'updated' }));
   await expectAdminOk('admin read newsletterSubscribers', () => adminDb.doc('newsletterSubscribers/s1').get());
+  await expectAdminOk('admin write jobs', () => adminDb.doc('jobs/active').update({ title: 'T2' }));
+  await expectAdminOk('admin write blogPosts', () => adminDb.doc('blogPosts/pub').update({ title: 'P2' }));
+  await expectAdminOk('admin write blogPosts revisions', () => adminDb.doc('blogPosts/pub/revisions/r1').set({ body: 'v2' }));
 
   console.log(results.join('\n'));
   console.log(`\n${pass} passed, ${fail} failed`);

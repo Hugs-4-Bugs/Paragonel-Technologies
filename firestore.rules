@@ -3,46 +3,58 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // =====================================================================
-    // SECURITY (Phase 4, IU-0 slice 1 — PII read-lockdown):
+    // SECURITY (Phase 4, IU-0 slice 2 — jobs/blogPosts CMS lockdown):
     //
-    // Admin data access for `leads`, `jobApplications`, `newsletterSubscribers`
-    // and `adminActivityLogs` has been moved SERVER-SIDE to JWT-verified
-    // `/api/admin/**` route handlers that use the Firebase Admin SDK (which
-    // bypasses these rules). The admin CRM/CMS/Activity pages now fetch/mutate
-    // through those routes instead of the client SDK.
+    // Slice 1 moved PII collections (leads, jobApplications,
+    // newsletterSubscribers, adminActivityLogs) server-side and locked them.
     //
-    // Therefore these four collections are now DENIED to all client (browser)
-    // access — anonymous or otherwise. Public inbound submissions still work
-    // because /api/contact, /api/newsletter and /api/job-applications write via
-    // the Admin SDK (`create: if false` here is enforced and bypassed server-side).
+    // Slice 2 (this change) does the same for the CMS content collections:
+    //   * `jobs` and `blogPosts` WRITE is now DENIED to all client access.
+    //     Admin CRUD (list/get/create/update/publish/unpublish/delete) runs
+    //     through JWT-verified `/api/admin/jobs/**` and `/api/admin/blog/**`
+    //     route handlers that use the Admin SDK (bypasses these rules).
+    //   * The `blogPosts/{post}/revisions` subcollection is likewise DENIED —
+    //     the initial revision is written by `/api/admin/blog` (Admin SDK).
+    //   * Public READ is preserved but tightened to ONLY the public subset:
+    //       jobs       -> isActive == true && deletedAt == null
+    //       blogPosts  -> status == 'Published' && deletedAt == null
+    //     so drafts, archived jobs and soft-deleted records are never exposed.
+    //   * The admin dashboard "Seed Database" button now calls
+    //     `/api/admin/seed` (Admin SDK batch, dev-only) instead of a client
+    //     writeBatch, so local seeding still works after the write lock.
     //
-    // STILL OPEN (next IU-0 slices — do NOT close here without the matching
-    // server-side migration, or admin breaks):
-    //   * `jobs` and `blogPosts` WRITE remain `if true` because the blog/jobs
-    //     admin CMS still writes client-side. Locking them requires migrating
-    //     blog/jobs CRUD to `/api/admin/**` (next slice).
-    //   * `users` read/write remains open because candidate signup/profile uses
+    // STILL OPEN (separate IU-0 workstreams — do NOT close here without the
+    // matching migration, or features break):
+    //   * `users` read/write remains open — candidate signup/profile uses
     //     simulated end-user auth (no Firebase Auth yet). Locking requires
-    //     Firebase Auth for end-users (separate workstream).
+    //     Firebase Auth for end-users.
     //   * Signed resume URLs (Storage) — applications detail still shows a
     //     raw object path; a `/api/admin/applications/[id]/resume` signed-URL
     //     route is the documented follow-up.
+    //   * `drafts` has NO match here → default-deny. The `useAutosave` hook
+    //     still attempts client writes to `drafts`; those silently fail and
+    //     fall back to localStorage. Migrating autosave to a server route is a
+    //     follow-up (not PII; out of this slice's scope).
+    //   * `services` has NO match here → default-deny. Public service pages
+    //     read `services` client-side; if that read breaks it is a separate
+    //     fix (migrate to a public read rule or server route). The dev seed
+    //     writes services via the Admin SDK, which bypasses rules.
     // =====================================================================
 
-    // Public job listings: read active, non-deleted jobs.
-    // WRITE stays open for now (admin jobs CMS is still client-side — next slice).
+    // Public job listings: read active, non-deleted jobs ONLY.
+    // WRITE denied — admin jobs CMS runs via /api/admin/jobs (Admin SDK).
     match /jobs/{jobId} {
       allow read: if resource.data.isActive == true && resource.data.deletedAt == null;
-      allow write: if true; // TODO(next slice): migrate /admin/jobs CRUD to /api/admin/jobs, then `allow write: if false`.
+      allow write: if false; // use /api/admin/jobs (Admin SDK)
     }
 
-    // Blog posts: read published, non-deleted; revisions subcollection.
-    // WRITE stays open for now (admin blog CMS is still client-side — next slice).
+    // Blog posts: read published, non-deleted ONLY; revisions subcollection
+    // fully denied (written/read via /api/admin/blog, Admin SDK).
     match /blogPosts/{postId} {
       allow read: if resource.data.status == 'Published' && resource.data.deletedAt == null;
-      allow write: if true; // TODO(next slice): migrate /admin/blog CRUD to /api/admin/blog, then `allow write: if false`.
+      allow write: if false; // use /api/admin/blog (Admin SDK)
       match /revisions/{revId} {
-        allow read, write: if true; // TODO(next slice): lock with blog CMS migration.
+        allow read, write: if false; // use /api/admin/blog (Admin SDK)
       }
     }
 
