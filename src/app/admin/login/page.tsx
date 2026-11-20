@@ -133,10 +133,11 @@ export default function AdminLoginPage() {
 
         <Alert className="bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800">
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Testing Credentials</AlertTitle>
+          <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Authorized Access Only</AlertTitle>
           <AlertDescription className="text-blue-700 dark:text-blue-400 text-sm">
-            Email: <span className="font-mono font-bold">admin@paragonel.com</span><br />
-            Password: <span className="font-mono font-bold">admin123</span>
+            This panel is restricted to authorized administrators. Credentials are
+            configured via server environment variables and are not stored in the
+            client bundle. Contact the site owner if you need access.
           </AlertDescription>
         </Alert>
       </div>

@@ -1,43 +1,73 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow public read access to active jobs and published blog posts
+
+    // =====================================================================
+    // SECURITY NOTE (Phase 1A audit):
+    // This app does NOT use Firebase Auth for admin access. Admin auth is a
+    // custom JWT cookie verified in Next.js middleware (process.env.JWT_SECRET).
+    // request.auth is therefore null for ALL client Firestore reads/writes, so
+    // rules cannot distinguish admin from anonymous visitors.
+    //
+    // True least-privilege enforcement on the data collections requires either
+    // adopting Firebase Auth or moving admin data access server-side (Route
+    // Handlers / Server Actions). That is OUT of Phase 1A scope.
+    //
+    // These rules preserve current client-side functionality (public create on
+    // leads/applications/newsletter, public read of published jobs/blog, admin
+    // CRUD client-side) while LOCKING DOWN the unused `admins` collection.
+    //
+    // DO NOT DEPLOY until the access model is updated. Deploying restrictive
+    // read rules without the matching server-side/Firebase-Auth changes would
+    // break the admin CRM and CMS pages.
+    // =====================================================================
+
+    // Public job listings: read active, non-deleted jobs.
+    // Admin creates/edits/deletes jobs client-side (no Firebase Auth yet).
     match /jobs/{jobId} {
       allow read: if resource.data.isActive == true && resource.data.deletedAt == null;
-      allow write: if true; // Admin panel simulated auth
+      allow write: if true; // admin panel (client-side)
     }
+
+    // Blog posts: read published, non-deleted; revisions subcollection for admin authoring.
     match /blogPosts/{postId} {
       allow read: if resource.data.status == 'Published' && resource.data.deletedAt == null;
-      allow write: if true; // Admin panel simulated auth
-      
+      allow write: if true; // admin CMS (client-side)
       match /revisions/{revId} {
-        allow read, write: if true;
+        allow read, write: if true; // admin authoring history (client-side)
       }
     }
-    
-    // Allow creation of applications and leads by anyone
+
+    // Public-submit collections. Public create is required by the website
+    // (contact form -> leads; careers -> jobApplications; footer -> newsletter).
+    // Admin manages them client-side (status updates, soft-delete, etc.).
     match /jobApplications/{appId} {
       allow create: if true;
-      allow read, write: if true; // Admin panel access
+      allow read, update, delete: if true; // admin panel (client-side)
     }
     match /leads/{leadId} {
       allow create: if true;
-      allow read, write: if true; // Admin panel access
+      allow read, update, delete: if true; // admin CRM (client-side)
     }
     match /newsletterSubscribers/{subId} {
       allow create: if true;
-      allow read, write: if true; // Admin panel access
+      allow read, update, delete: if true; // admin panel (client-side)
     }
-    
-    // Admin collections
-    match /admins/{adminId} {
-      allow read, write: if true;
-    }
+
+    // Admin activity log: written and read by the admin panel client-side.
     match /adminActivityLogs/{logId} {
-      allow read, create: if true;
+      allow read, create: if true; // admin audit log (client-side)
     }
-    
-    // User profiles
+
+    // `admins` collection is NOT used by any client code (admin auth is env/JWT
+    // based). LOCKED DOWN — deny all.
+    match /admins/{adminId} {
+      allow read, write: if false;
+    }
+
+    // User profiles. Simulated end-user auth (localStorage) — no Firebase Auth
+    // to gate by uid yet. TODO: restrict to request.auth.uid == userId once
+    // Firebase Auth is adopted.
     match /users/{userId} {
       allow read, write: if true;
     }
