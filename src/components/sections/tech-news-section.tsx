@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { fetchTechNews, type FetchTechNewsOutput, type FetchTechNewsInput } from '@/ai/flows/fetch-tech-news';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,8 @@ export function TechNewsSection() {
   const [newsOutput, setNewsOutput] = useState<FetchTechNewsOutput | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const firedRef = useRef(false);
 
   useEffect(() => {
     const getNews = async () => {
@@ -31,11 +33,29 @@ export function TechNewsSection() {
         setIsLoading(false);
       }
     };
-    getNews();
+    // Defer the Genkit/Gemini call until the section is near the viewport, so it
+    // never blocks the initial homepage load and never fires if unseen.
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      getNews();
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !firedRef.current) {
+          firedRef.current = true;
+          getNews();
+          obs.disconnect();
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
   }, []);
 
   return (
-    <section className="section-padding bg-background">
+    <section ref={sectionRef} className="section-padding bg-background">
       <div className="container mx-auto px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-16">
           <Newspaper className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
