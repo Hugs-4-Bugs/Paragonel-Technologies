@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2 } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Brain, Cloud, GitBranch, Boxes, ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,9 +21,16 @@ import { useAuth } from "@/contexts/auth-context";
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
-  { href: "/services", label: "Services" },
+  { href: "/services", label: "Services", mega: true },
   { href: "/our-product", label: "Our Product" },
   { href: "/about", label: "About" },
+];
+
+const servicesMega = [
+  { href: "/services/ai-solutions", label: "AI Solutions & LLM Ops", icon: Brain, desc: "AI-native systems, RAG, LLM orchestration, evaluation." },
+  { href: "/services/cloud-infrastructure", label: "Cloud Infrastructure", icon: Cloud, desc: "Platform engineering, cloud architecture, reliability." },
+  { href: "/services/devops-automation", label: "DevOps & Reliability", icon: GitBranch, desc: "CI/CD, IaC, containers, observability." },
+  { href: "/services/saas-platforms", label: "Custom SaaS & Product Eng.", icon: Boxes, desc: "Full product builds — architecture, MVP, scale." },
 ];
 
 const moreNavLinks = [
@@ -98,11 +105,51 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
-          {mainNavLinks.map((link) => (
-            <Button variant="link" asChild key={link.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3">
-              <Link href={link.href}>{link.label}</Link>
-            </Button>
-          ))}
+          {mainNavLinks.map((link) =>
+            link.mega ? (
+              <div key={link.href} className="group relative">
+                <Link
+                  href={link.href}
+                  className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3 py-2"
+                >
+                  {link.label}
+                  <ChevronDown className="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" />
+                </Link>
+                {/* Mega-menu panel */}
+                <div className="invisible absolute left-1/2 top-full z-50 w-[560px] -translate-x-1/2 pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
+                  <div className="rounded-2xl border border-border bg-background/95 p-4 shadow-2xl backdrop-blur">
+                    <div className="grid grid-cols-2 gap-2">
+                      {servicesMega.map((s) => (
+                        <Link
+                          key={s.href}
+                          href={s.href}
+                          className="group/item flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-accent"
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <s.icon className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-black tracking-tight text-foreground">{s.label}</div>
+                            <div className="text-xs text-muted-foreground">{s.desc}</div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                    <Link
+                      href="/services"
+                      className="mt-3 flex items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20"
+                    >
+                      View All Services <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Button variant="link" asChild key={link.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3">
+                <Link href={link.href}>{link.label}</Link>
+              </Button>
+            )
+          )}
           {moreNavLinks.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

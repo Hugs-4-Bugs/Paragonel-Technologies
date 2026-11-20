@@ -1,6 +1,8 @@
 
 import dynamic from 'next/dynamic';
-import { Hero } from '@/components/sections/hero';
+import { HeroEcosystem } from '@/components/sections/hero-ecosystem';
+import { TechMarquee } from '@/components/sections/tech-marquee';
+import { EngineeringProcess } from '@/components/sections/engineering-process';
 import { ServicesSection } from '@/components/sections/services-section';
 import { AcquisitionOSFeature } from '@/components/sections/acquisitionos-feature';
 import { Separator } from '@/components/ui/separator';
@@ -11,7 +13,6 @@ import { BookOpen, LayoutDashboard, Mail, ArrowRight, Globe, Linkedin, Building2
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatsBar } from '@/components/sections/stats-bar';
 import { TargetClients } from '@/components/sections/target-clients';
-import { ProcessSection } from '@/components/sections/process-section';
 import { TechStackSection, CompactTechShowcase } from '@/components/sections/tech-stack-section';
 import { basePortfolio, blogPosts } from '@/lib/data';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
@@ -43,8 +44,9 @@ const TestimonialsSection = dynamic(() =>
 export default function HomePage() {
   return (
     <>
-      {/* 1. Hero */}
-      <Hero />
+      {/* 1. Cinematic hero + infinite tech marquee */}
+      <HeroEcosystem />
+      <TechMarquee />
       <StatsBar />
 
       {/* 2. Company introduction */}
@@ -197,8 +199,8 @@ export default function HomePage() {
       <CompactTechShowcase />
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
-      {/* 10. Process + Target clients */}
-      <ProcessSection />
+      {/* 10. Engineering process + Target clients */}
+      <EngineeringProcess />
       <TargetClients />
       <AiContent />
       <TechNewsSection />

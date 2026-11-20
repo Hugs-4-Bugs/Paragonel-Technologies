@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
+import { AcquisitionWorkflow } from '@/components/sections/acquisition-workflow';
+import { IntegrationsDirectory } from '@/components/sections/integrations-directory';
+import { WorkflowRecipes } from '@/components/sections/workflow-recipes';
 import {
   Search, Microscope, GitCompareArrows, FileText, Gauge, Sparkles, Send, MessageSquare,
   CalendarClock, KanbanSquare, FileSignature, Handshake, ArrowRight, ExternalLink,
@@ -176,21 +179,9 @@ export default function AcquisitionOSPage() {
             </p>
           </ScrollFadeIn>
 
-          {/* Stepper */}
+          {/* Interactive workflow — click a node to open its detail */}
           <ScrollFadeIn className="mb-16">
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12 gap-3">
-              {lifecycle.map((s) => (
-                <a
-                  key={s.n}
-                  href={`#stage-${s.n}`}
-                  className="group flex flex-col items-center text-center p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-card hover:border-primary hover:bg-primary/5 transition-all"
-                >
-                  <s.icon className="h-6 w-6 text-primary mb-2 group-hover:scale-110 transition-transform" />
-                  <span className="text-[10px] font-black text-muted-foreground tracking-widest">{s.n}</span>
-                  <span className="text-xs font-bold mt-1 leading-tight">{s.name}</span>
-                </a>
-              ))}
-            </div>
+            <AcquisitionWorkflow />
           </ScrollFadeIn>
 
           {/* Stage detail cards */}
@@ -285,31 +276,29 @@ export default function AcquisitionOSPage() {
             </p>
           </ScrollFadeIn>
           <ScrollFadeIn>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {integrations.map((it) => (
-                <Card key={it.name} className="rounded-2xl border-zinc-200 dark:border-zinc-800 bg-card">
-                  <CardContent className="p-5 flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-sm">{it.name}</span>
-                      <Badge variant="outline" className={`text-[10px] font-black border ${badgeStyle[it.badge] || ''}`}>{it.badge}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{it.note}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-3 justify-center mt-8 text-xs text-muted-foreground">
-              {['AVAILABLE', 'DECLARED', 'IN DEVELOPMENT', 'BUILDING', 'COMING SOON', 'PLANNED'].map((b) => (
-                <span key={b} className="inline-flex items-center gap-1.5">
-                  <span className={`inline-block h-2 w-2 rounded-full border ${badgeStyle[b]?.split(' ').find((c) => c.startsWith('bg-')) || ''}`} /> {b}
-                </span>
-              ))}
-            </div>
+            <IntegrationsDirectory integrations={integrations} badgeStyle={badgeStyle} />
           </ScrollFadeIn>
         </div>
       </section>
 
-      {/* 6. Trust, privacy & security */}
+      {/* 6. Workflow recipes */}
+      <section className="section-padding bg-background">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl">
+          <ScrollFadeIn className="text-center mb-12">
+            <span className="text-primary font-black uppercase tracking-[0.3em] text-xs mb-4 block">Workflow recipes</span>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6">How stages chain together</h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Conceptual examples of how connected stages compose into a working acquisition motion. Click a recipe to see
+              its stage sequence and the scenario it illustrates.
+            </p>
+          </ScrollFadeIn>
+          <ScrollFadeIn>
+            <WorkflowRecipes />
+          </ScrollFadeIn>
+        </div>
+      </section>
+
+      {/* 7. Trust, privacy & security */}
       <section className="section-padding bg-background">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl">
           <ScrollFadeIn className="text-center mb-12">

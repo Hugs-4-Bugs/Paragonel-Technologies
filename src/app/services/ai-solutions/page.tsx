@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
+import { FlowDiagram } from '@/components/sections/flow-diagram';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Brain, Bot, Database, GitBranch, ShieldCheck, Gauge, ChevronRight, Workflow, KeyRound, ClipboardCheck } from 'lucide-react';
 
@@ -42,6 +43,21 @@ export default function AISolutionsPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
           </div>
         </ScrollFadeIn>
+
+        <FlowDiagram
+          eyebrow="AI architecture"
+          title="From data sources to evaluated AI output"
+          caption="A retrieval-augmented, orchestrated pipeline that grounds LLM output in your data and measures when it is working."
+          stages={[
+            { label: "Data Sources", icon: "Database" },
+            { label: "Ingestion", icon: "ArrowDownToLine" },
+            { label: "Processing", icon: "Cpu" },
+            { label: "Embeddings / Retrieval", icon: "Search" },
+            { label: "LLM Orchestration", icon: "Brain" },
+            { label: "Application", icon: "Boxes" },
+            { label: "Evaluation / Monitoring", icon: "Gauge" },
+          ]}
+        />
 
         <ScrollFadeIn delay="200ms" className="mb-16 max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold mb-6">The problem we address</h2>

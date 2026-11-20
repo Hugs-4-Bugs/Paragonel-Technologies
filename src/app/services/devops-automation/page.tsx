@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
+import { FlowDiagram } from '@/components/sections/flow-diagram';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GitFork, GitBranch, Activity, ShieldCheck, Gauge, Rocket, ChevronRight, Boxes, ClipboardCheck, Bell } from 'lucide-react';
 
@@ -42,6 +43,22 @@ export default function DevOpsPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
           </div>
         </ScrollFadeIn>
+
+        <FlowDiagram
+          eyebrow="CI/CD pipeline"
+          title="From commit to monitored production"
+          caption="An automated, gated pipeline that ships safely and observes what it ships."
+          stages={[
+            { label: "Code", icon: "Code2" },
+            { label: "Commit", icon: "GitFork" },
+            { label: "Build", icon: "Cpu" },
+            { label: "Test", icon: "ShieldCheck" },
+            { label: "Security Checks", icon: "Lock" },
+            { label: "Artifact", icon: "Boxes" },
+            { label: "Deploy", icon: "Rocket" },
+            { label: "Monitor", icon: "Activity" },
+          ]}
+        />
 
         <ScrollFadeIn delay="200ms" className="mb-16 max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold mb-6">The problem we address</h2>
