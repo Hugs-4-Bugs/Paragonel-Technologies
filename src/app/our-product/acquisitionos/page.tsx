@@ -196,7 +196,8 @@ export default function AcquisitionOSPage() {
           {/* Stage detail cards */}
           <div className="space-y-6">
             {lifecycle.map((s) => (
-              <ScrollFadeIn key={s.n} id={`stage-${s.n}`} className="scroll-mt-28">
+              <div key={s.n} id={`stage-${s.n}`} className="scroll-mt-28">
+              <ScrollFadeIn>
                 <Card className="rounded-[2rem] border-zinc-200 dark:border-zinc-800 bg-card overflow-hidden">
                   <div className="grid md:grid-cols-[auto_1fr_auto] gap-6 md:gap-8 p-6 md:p-8 items-start">
                     <div className="flex md:flex-col items-center md:items-start gap-4 md:gap-2">
@@ -220,6 +221,7 @@ export default function AcquisitionOSPage() {
                   </div>
                 </Card>
               </ScrollFadeIn>
+              </div>
             ))}
           </div>
         </div>

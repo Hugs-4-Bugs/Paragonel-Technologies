@@ -139,28 +139,58 @@ export function TechStackSection() {
 }
 
 export function CompactTechShowcase() {
-  const techs = ["Java", "Spring Boot", "Python", "React", "Next.js", "PostgreSQL", "AWS", "Docker", "Kubernetes", "Firebase"];
-  
+  // Technology familiarity — what we work with. This is distinct from:
+  //  - service capability (the four services on the Services page),
+  //  - proven delivery (the products on the Our Product page),
+  //  - active product features (what is live inside AcquisitionOS today).
+  const techGroups = [
+    { label: 'Languages', items: ['Java', 'Python', 'TypeScript', 'JavaScript'] },
+    { label: 'Web & Frameworks', items: ['Next.js', 'React', 'Node.js', 'Spring Boot', 'Flutter'] },
+    { label: 'Cloud & DevOps', items: ['AWS', 'GCP', 'Kubernetes', 'Docker', 'Terraform', 'GitHub Actions'] },
+    { label: 'Data & AI', items: ['PostgreSQL', 'Firebase', 'Vector DB', 'Genkit', 'OpenAI / Anthropic / Google AI'] },
+  ];
+
   return (
     <section className="py-24 bg-background border-t border-zinc-100 dark:border-zinc-900">
       <div className="container mx-auto px-4 md:px-6">
-        <ScrollFadeIn className="text-center mb-12">
+        <ScrollFadeIn className="text-center mb-10">
           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-3 block">
             Technical Foundation
           </span>
-          <h2 className="text-2xl md:text-3xl font-bold">Technologies We Work With</h2>
+          <h2 className="text-2xl md:text-4xl font-black tracking-tight">Technologies We Work With</h2>
+          <p className="mt-4 text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            We build AI-native software, distributed backends, and full-stack SaaS products. The technologies below are
+            what we work with day to day &mdash; familiarity, not a claim that each is a separately delivered service. Our
+            four delivered services live on the Services page; our shipped products on the Our Product page; and the
+            features live inside AcquisitionOS today on its product page.
+          </p>
         </ScrollFadeIn>
-        
-        <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
-          {techs.map((tech) => (
-            <div 
-              key={tech} 
-              className="px-6 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:text-primary hover:border-primary/50 hover:shadow-lg transition-all cursor-default"
-            >
-              {tech}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          {techGroups.map((group) => (
+            <div key={group.label} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40 p-5">
+              <h4 className="text-[11px] font-black uppercase tracking-widest text-primary mb-3">{group.label}</h4>
+              <div className="flex flex-wrap gap-2">
+                {group.items.map((tech) => (
+                  <span
+                    key={tech}
+                    className="px-3 py-1.5 rounded-xl bg-background border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-600 dark:text-zinc-400"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
             </div>
           ))}
         </div>
+
+        <ScrollFadeIn className="text-center mt-8">
+          <p className="text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            We build: AI-native platforms, distributed &amp; event-driven backends, multi-tenant SaaS, cloud
+            infrastructure, CI/CD, and developer tooling. We do not present technology familiarity as proof of a delivered
+            client engagement &mdash; only the products we ship and the services we sell carry that weight.
+          </p>
+        </ScrollFadeIn>
       </div>
     </section>
   );
