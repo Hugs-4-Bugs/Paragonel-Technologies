@@ -35,11 +35,6 @@ import { formatApplicationEmail } from "@/ai/flows/format-application-email-flow
 import { Loader2, Send, Briefcase, User, GraduationCap, BriefcaseBusiness, Info, ShieldCheck } from "lucide-react";
 import { educationQualifications, noticePeriods, generateYearOptions, locations as preferredLocations } from "@/lib/data";
 import { useAuth } from "@/contexts/auth-context";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { initializeApp, getApp, getApps } from "firebase/app";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { firebaseConfig } from "@/firebase/config";
 
 interface ApplyJobModalProps {
   isOpen: boolean;
@@ -109,40 +104,46 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
     if (!job) return;
     setIsSubmitting(true);
 
+    // Phase 1B: submit through the server-side /api/job-applications route
+    // (validation, rate limiting, duplicate check, resume upload via Firebase
+    // Admin Storage, Firestore write via Admin SDK). The browser no longer
+    // uploads to Storage or writes to Firestore directly, and no Firebase
+    // credentials reach the client.
     try {
-      const storage = getStorage(getApps().length === 0 ? initializeApp(firebaseConfig) : getApp());
-      const resumeFile = values.resume[0];
-      const storageRef = ref(storage, `resumes/${Date.now()}_${resumeFile.name}`);
-      
-      // 1. Upload to Storage
-      const uploadResult = await uploadBytes(storageRef, resumeFile);
-      const resumeUrl = await getDownloadURL(uploadResult.ref);
+      const form = new FormData();
+      form.set('jobId', String(job.id));
+      form.set('jobTitle', String(job.title));
+      form.set('fullName', values.fullName);
+      form.set('email', values.email);
+      form.set('phone', values.phone);
+      form.set('primarySkills', values.primarySkills);
+      if (values.coverLetter) form.set('coverLetter', values.coverLetter);
+      if (values.linkedinProfile) form.set('linkedinProfile', values.linkedinProfile);
+      if (values.portfolioWebsite) form.set('portfolioWebsite', values.portfolioWebsite);
+      if (values.expectedSalary) form.set('expectedSalary', values.expectedSalary);
+      if (values.noticePeriod) form.set('noticePeriod', values.noticePeriod);
+      if (values.preferredJobLocation) form.set('preferredJobLocation', values.preferredJobLocation);
+      const resumeFile = values.resume?.[0];
+      if (resumeFile) form.append('resume', resumeFile);
 
-      // 2. Save to Firestore (ATS)
-      if (db) {
-        await addDoc(collection(db, 'jobApplications'), {
-          applicationId: 'APP_' + Math.random().toString(36).substr(2, 9),
-          candidateName: values.fullName,
-          candidateEmail: values.email,
-          candidatePhone: values.phone,
-          jobId: job.id,
-          jobTitle: job.title,
-          resumeUrl: resumeUrl,
-          status: 'New',
-          appliedAt: serverTimestamp(),
-          appliedVia: 'form',
-          deletedAt: null,
-          skills: values.primarySkills.split(',').map(s => s.trim())
+      const res = await fetch('/api/job-applications', { method: 'POST', body: form });
+      const payload = await res.json().catch(() => ({}));
+
+      if (res.status === 201) {
+        toast({
+          title: "Application Received!",
+          description: `Thanks ${values.fullName}, we've received your application for ${job.title}.`,
         });
+        onOpenChange(false);
+      } else if (res.status === 409) {
+        toast({ title: "Already applied", description: payload.error || "You have already applied for this role.", variant: "destructive" });
+      } else if (res.status === 429) {
+        toast({ title: "Too many attempts", description: "Please wait a moment and try again.", variant: "destructive" });
+      } else {
+        toast({ title: "Submission Error", description: payload.error || "Please check your details and try again.", variant: "destructive" });
       }
-
-      toast({
-        title: "Application Received!",
-        description: `Thanks ${values.fullName}, we've received your application for ${job.title}.`,
-      });
-      onOpenChange(false);
-    } catch (error) {
-      toast({ title: "Submission Error", variant: "destructive" });
+    } catch {
+      toast({ title: "Network Error", description: "Could not reach the server. Please try again.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }

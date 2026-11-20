@@ -38,20 +38,28 @@ service cloud.firestore {
       }
     }
 
-    // Public-submit collections. Public create is required by the website
-    // (contact form -> leads; careers -> jobApplications; footer -> newsletter).
-    // Admin manages them client-side (status updates, soft-delete, etc.).
+    // Public-submit collections. Phase 1B: public browser CREATE is now DENIED.
+    // Submissions must go through the server-side API routes (/api/contact,
+    // /api/newsletter, /api/job-applications), which write via the Firebase Admin
+    // SDK. The Admin SDK bypasses these rules entirely, so server-side writes keep
+    // working while direct browser writes are blocked.
+    //
+    // NOTE: read/update/delete remain open (unchanged from Phase 1A) because the
+    // admin CRM/CMS still reads these collections client-side and admin auth is
+    // JWT-based (no Firebase Auth to gate by uid yet). Full read-lockdown is the
+    // documented Firebase-Auth/server-side-CRM migration and is OUT of Phase 1B
+    // scope. Do NOT deploy these rules until that migration lands.
     match /jobApplications/{appId} {
-      allow create: if true;
-      allow read, update, delete: if true; // admin panel (client-side)
+      allow create: if false; // Phase 1B: browser writes blocked; use /api/job-applications
+      allow read, update, delete: if true; // admin panel (client-side) — see NOTE
     }
     match /leads/{leadId} {
-      allow create: if true;
-      allow read, update, delete: if true; // admin CRM (client-side)
+      allow create: if false; // Phase 1B: browser writes blocked; use /api/contact
+      allow read, update, delete: if true; // admin CRM (client-side) — see NOTE
     }
     match /newsletterSubscribers/{subId} {
-      allow create: if true;
-      allow read, update, delete: if true; // admin panel (client-side)
+      allow create: if false; // Phase 1B: browser writes blocked; use /api/newsletter
+      allow read, update, delete: if true; // admin panel (client-side) — see NOTE
     }
 
     // Admin activity log: written and read by the admin panel client-side.

@@ -10,8 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Phone, MapPin, Send, Loader2, Briefcase } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function ContactSection() {
   const { toast } = useToast();
@@ -31,25 +29,34 @@ export function ContactSection() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
+    // Phase 1B: submissions go through the server-side /api/contact route
+    // (validation, rate limiting, dedupe, Firebase Admin SDK write to the CRM,
+    // and email notifications). The browser never writes to Firestore directly,
+    // and Firebase credentials are never exposed to the client.
     try {
-      if (db) {
-        await addDoc(collection(db, 'leads'), {
-          ...formData,
-          source: 'Contact Page',
-          status: 'New',
-          createdAt: serverTimestamp(),
-          deletedAt: null,
-        });
-      }
-      
-      toast({
-        title: "Message Sent!",
-        description: "Thank you for reaching out to Paragonel. We'll get back to you soon.",
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
-      setFormData({ name: '', email: '', company: '', message: '' });
-    } catch (e) {
-      toast({ title: "Submission Error", variant: "destructive" });
+      const payload = await res.json().catch(() => ({}));
+
+      if (res.status === 201) {
+        toast({
+          title: "Message Sent!",
+          description: "Thank you for reaching out to Paragonel. We'll get back to you soon.",
+        });
+        setFormData({ name: '', email: '', company: '', message: '' });
+      } else if (res.status === 409) {
+        toast({ title: "Already received", description: payload.error || "This message was already submitted.", variant: "destructive" });
+      } else if (res.status === 429) {
+        toast({ title: "Too many attempts", description: "Please wait a moment and try again.", variant: "destructive" });
+      } else {
+        toast({ title: "Submission Error", description: payload.error || "Please check your details and try again.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Network Error", description: "Could not reach the server. Please try again.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
