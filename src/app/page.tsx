@@ -6,6 +6,7 @@ import { EngineeringProcess } from '@/components/sections/engineering-process';
 import { ServicesSection } from '@/components/sections/services-section';
 import { SelectedWorkSection } from '@/components/sections/selected-work-section';
 import { AcquisitionOSFeature } from '@/components/sections/acquisitionos-feature';
+import { ProblemsWeSolve } from '@/components/sections/problems-we-solve';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -85,6 +86,10 @@ export default async function HomePage() {
           </ScrollFadeIn>
         </div>
       </section>
+      <Separator className="my-0 container mx-auto max-w-7xl" />
+
+      {/* 2b. Business problems we address + why Paragonel (buyer-journey: problem → differentiation) */}
+      <ProblemsWeSolve />
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       {/* 3. Core Services */}
