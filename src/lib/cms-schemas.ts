@@ -230,3 +230,71 @@ export function buildBlogTogglePayload(
   else if (status === 'Draft') patch.publishedAt = null;
   return patch;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Services                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Services CMS schema (Phase 1). The public Services page + homepage section
+ * read `title, slug, description, iconName, imageUrl, isActive, order` from the
+ * `services` collection. The admin Services CMS was previously client-only
+ * (direct Firestore writes), which is blocked by `firestore.rules`
+ * (`allow write: if false` on `services`) — so create/edit/delete never worked
+ * in production. This schema + the `/api/admin/services/**` routes move all
+ * writes server-side via the Admin SDK (which bypasses the rules), mirroring
+ * the jobs/blog CMS.
+ */
+export const serviceFormSchema = z.object({
+  title: z.string().min(2, 'Service title is required'),
+  slug: z
+    .string()
+    .min(2, 'Slug is required')
+    .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers and hyphens only'),
+  description: z.string().min(20, 'Description must be at least 20 characters'),
+  iconName: z.string().min(2, 'Icon name is required (e.g. Brain, Cloud)'),
+  imageUrl: z.string().url('Invalid image URL').optional().or(z.literal('')),
+  order: z.coerce.number().int().min(0, 'Order must be 0 or higher').default(0),
+  isActive: z.boolean().default(true),
+});
+export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
+
+/** Firestore document for a NEW service. */
+export function buildServiceCreatePayload(values: ServiceFormValues): Record<string, unknown> {
+  const now = Timestamp.now();
+  return {
+    title: values.title,
+    slug: values.slug,
+    description: values.description,
+    iconName: values.iconName,
+    imageUrl: values.imageUrl || '',
+    order: values.order,
+    isActive: values.isActive,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  };
+}
+
+/** Update patch for an existing service (does not touch createdAt/deletedAt). */
+export function buildServiceUpdatePayload(values: ServiceFormValues): Record<string, unknown> {
+  return {
+    title: values.title,
+    slug: values.slug,
+    description: values.description,
+    iconName: values.iconName,
+    imageUrl: values.imageUrl || '',
+    order: values.order,
+    isActive: values.isActive,
+    updatedAt: Timestamp.now(),
+  };
+}
+
+/** Normalize a PATCH toggle payload `{ isActive: boolean }` into a patch. */
+export function buildServiceTogglePayload(isActive: boolean): Record<string, unknown> {
+  return {
+    isActive,
+    updatedAt: Timestamp.now(),
+  };
+}
+

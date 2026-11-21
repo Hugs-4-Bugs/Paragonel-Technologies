@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { 
-  Plus, 
-  Search, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  Edit,
+  Trash2,
   Layers,
   Eye
 } from 'lucide-react';
@@ -20,17 +20,15 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,27 +36,66 @@ import { Card } from '@/components/ui/card';
 
 export default function AdminServicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const firestore = useFirestore();
+  const [services, setServices] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
 
-  const servicesQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'services'), orderBy('order', 'asc'));
-  }, [firestore]);
+  // Phase 1: services are locked to public writes (`allow write: if false`) and
+  // public reads are restricted to `isActive==true && deletedAt==null` (G16), so
+  // the admin list — which must see hidden services too — fetches server-side
+  // via /api/admin/services (Admin SDK) instead of useCollection.
+  const loadServices = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/services', { cache: 'no-store' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setServices(data.services);
+    } catch {
+      setServices([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const { data: services, loading } = useCollection(servicesQuery);
+  useEffect(() => {
+    loadServices();
+  }, [loadServices]);
 
   const handleDelete = async (id: string) => {
-    if (!firestore || !confirm('Are you sure you want to delete this service?')) return;
+    if (!confirm('Are you sure you want to delete this service? This cannot be undone.')) return;
+    setDeleting(true);
     try {
-      await deleteDoc(doc(firestore, 'services', id));
+      const res = await fetch(`/api/admin/services/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
       toast({ title: 'Success', description: 'Service removed successfully.' });
-    } catch (e) {
+      loadServices();
+    } catch {
       toast({ title: 'Error', description: 'Failed to delete service.', variant: 'destructive' });
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const filteredServices = services?.filter((s: any) => 
+  const handleToggleActive = async (id: string, currentIsActive: boolean) => {
+    try {
+      const res = await fetch(`/api/admin/services/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentIsActive }),
+      });
+      if (!res.ok) throw new Error();
+      toast({
+        title: 'Visibility Updated',
+        description: `Service is now ${!currentIsActive ? 'Active' : 'Hidden'}.`,
+      });
+      loadServices();
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update visibility.', variant: 'destructive' });
+    }
+  };
+
+  const filteredServices = services?.filter((s) =>
     s.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -84,9 +121,9 @@ export default function AdminServicesPage() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-          <Input 
-            placeholder="Filter services..." 
-            className="pl-12 h-14 rounded-2xl border-zinc-200 bg-white shadow-sm font-medium" 
+          <Input
+            placeholder="Filter services..."
+            className="pl-12 h-14 rounded-2xl border-zinc-200 bg-white shadow-sm font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -116,20 +153,27 @@ export default function AdminServicesPage() {
                 </TableRow>
               ))
             ) : filteredServices && filteredServices.length > 0 ? (
-              filteredServices.map((service: any) => (
+              filteredServices.map((service) => (
                 <TableRow key={service.id} className="group hover:bg-zinc-50/50 border-b border-zinc-50 transition-colors">
-                  <TableCell className="px-8 font-black text-primary">{service.order || '-'}</TableCell>
+                  <TableCell className="px-8 font-black text-primary">{service.order ?? '-'}</TableCell>
                   <TableCell className="font-black text-lg">{service.title}</TableCell>
                   <TableCell className="font-mono text-xs text-zinc-500">/{service.slug}</TableCell>
                   <TableCell>
-                    <Badge variant={service.isActive !== false ? "default" : "secondary"} className="rounded-lg px-3 py-1 font-bold">
-                      {service.isActive !== false ? "Active" : "Hidden"}
+                    <Badge
+                      variant={service.isActive !== false ? 'default' : 'secondary'}
+                      className="rounded-lg px-3 py-1 font-bold cursor-pointer"
+                      onClick={() => handleToggleActive(service.id, service.isActive !== false)}
+                      title="Click to toggle visibility"
+                    >
+                      {service.isActive !== false ? 'Active' : 'Hidden'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right px-8">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-zinc-100 transition-colors"><MoreVertical className="h-5 w-5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-zinc-100 transition-colors" disabled={deleting}>
+                          <MoreVertical className="h-5 w-5" />
+                        </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-52 rounded-2xl p-2 shadow-2xl border-zinc-100">
                         <DropdownMenuItem asChild className="rounded-xl font-bold h-11">
@@ -139,7 +183,10 @@ export default function AdminServicesPage() {
                           <Link href={`/admin/services/${service.id}/edit`}><Edit className="mr-3 h-4 w-4 text-zinc-400" /> Edit Content</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator className="my-2" />
-                        <DropdownMenuItem onClick={() => handleDelete(service.id)} className="rounded-xl font-bold h-11 text-destructive focus:text-destructive focus:bg-destructive/5">
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(service.id)}
+                          className="rounded-xl font-bold h-11 text-destructive focus:text-destructive focus:bg-destructive/5"
+                        >
                           <Trash2 className="mr-3 h-4 w-4" /> Delete Service
                         </DropdownMenuItem>
                       </DropdownMenuContent>
