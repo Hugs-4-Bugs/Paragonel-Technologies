@@ -45,6 +45,15 @@ node scripts/gen-env-local.js
 bash scripts/dev-supervisor.sh
 ```
 
+**One-command recovery:** the three steps above are wrapped by
+`scripts/resume-dev.sh` (idempotent — safe to re-run when the server is already
+up; it will not duplicate the process):
+
+```bash
+cd /home/z/my-project/paragonel-technologies
+bash scripts/resume-dev.sh
+```
+
 Then re-seed the emulator (emulator data is in-memory):
 
 ```bash
@@ -80,6 +89,19 @@ NON-EMPTY dev-placeholder `NEXT_PUBLIC_FIREBASE_*` values (so
   `/home/z/my-project/`), committed code, and the **Vercel deployments** (C/D).
 - **What does not:** every process, the Firestore emulator's in-memory data,
   and the `localhost:3000` preview.
+
+### 05C re-confirmation (2026-11-21)
+
+The failure category was re-confirmed during Prompt 05C: the dev server did not
+crash — `logs/dev-server.log` showed **no** OOM / heap / `EADDRINUSE` /
+segfault / compilation-error signature, only healthy request logs ending
+`GET /api/health 200`. The "dead server" observed between turns was a
+**workspace/container recycle** (the workspace was destroyed between batches and
+had to be re-cloned to `develop @ 5f3e3c5` to start 05C). This matches §A/§B
+exactly: a userspace supervisor cannot survive container destruction. The
+correct recovery is `bash scripts/resume-dev.sh` (above), not a supervisor
+restart. The production Vercel deployment (§D, `master`) is independent of this
+temporary local process and is not affected by recycles.
 
 ## C. Independent Vercel Preview deployment (durable — develop)
 

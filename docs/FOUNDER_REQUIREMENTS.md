@@ -446,7 +446,7 @@ not begin it in this task.
 
 ---
 
-## 19. Implementation status tracker (Prompt 05A + 05B)
+## 19. Implementation status tracker (Prompt 05A + 05B + 05C)
 
 This section is the live implementation status, appended **in addition to** the
 existing requirements above — it does not replace or weaken any prior
@@ -473,7 +473,8 @@ requirement. Status labels:
 | Header/footer logo size and theme consistency (Prompt 05B) | DONE — navbar restored to pre-05A dimensions (`h-20 w-[200px] md:h-24 md:w-[220px]`); footer mirrors the header's two-image swap (logo3 light / logo4 dark), no `dark:brightness-110`; verified in-browser that dark-mode header + footer both render `logo4.png` |
 | Favicon / avatar mark (Prompt 05B) | DONE — founder-supplied mark installed as `src/app/icon.png` (512×512) + `src/app/favicon.ico` (multi-size) + `public/images/paragonel-mark.png` for avatar use |
 | Services catalogue + detailed compositions (Prompt 05B) | DONE — 5 engineering domains + 13 offerings; editorial landing (`/services`) with a distinct composition per domain; dynamic `/services/[slug]` detail pages; CMS (`getPublicServices`) preserved; legacy 4 static service routes preserved |
-| AcquisitionOS / product-page visual transformation | PENDING — Prompt 05C |
+| AcquisitionOS / product-page visual transformation (Prompt 05C) | DONE — `/our-product/acquisitionos` redesigned onto the 05A editorial system: positioning + the 6-problem framing, a premium interactive 12-stage `LifecycleWorkflow` (connected node track, click-to-reveal detail, conceptual-labelled), scoring sample (signals-not-predictions), honest integration directory, trust, roadmap, CTA. 12-stage terminology/order/detail preserved verbatim. Beta URL (`acquisitionosbeta.vercel.app`) behind CTAs only — verified 0 visible-text URL occurrences; 0 `.net` refs; Private Beta labelled throughout; canonical = `paragonel.vercel.app/...` |
+| Runtime stability (Prompt 05C P0) | DONE — failure cause re-confirmed as workspace/container recycle (no OOM/heap/EADDRINUSE/crash signature in `logs/dev-server.log`; workspace was destroyed between batches and re-cloned to start 05C). Supervisor already meets the 10 requirements (one authoritative server, stale cleanup, bounded backoff, `wait $dev_pid` no false-crash loop, health-check, honest container-destruction caveat). Added `scripts/resume-dev.sh` (one-command recycle recovery) + RUNTIME.md 05C confirmation |
 | About / company story / Selected Work / case studies | PENDING — Prompt 05D |
 | Editorial blog redesign | PENDING — Prompt 05E |
 | Remaining responsive / motion / accessibility polish | PENDING — Prompt 05F |
@@ -501,7 +502,7 @@ the relevant content remains marked for clarification rather than invented.
 
 ### 19.3 Remaining implementation sequence (not dropped)
 
-- **Prompt 05C — AcquisitionOS + product pages:** premium product storytelling,
+- **Prompt 05C — AcquisitionOS + product pages:** ✅ DONE (see row above). premium product storytelling,
   real product visuals, product workflows, honest private-beta status, clear
   product CTA, preserve the 12-stage lifecycle.
 - **Prompt 05D — About / company story / Selected Work:** company identity,
