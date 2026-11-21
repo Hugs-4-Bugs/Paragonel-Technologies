@@ -10,6 +10,10 @@ import { basePortfolio } from '@/lib/data';
 import { stripMarkdown } from '@/lib/markdown-utils';
 import { TechnologyEcosystem } from '@/components/sections/technology-ecosystem';
 
+// ISR so published tech-ecosystem entries (CMS) appear within 60s of an admin
+// mutation (revalidatePublicContent('techEcosystem') also purges this route).
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Our Product | Paragonel',
   description:

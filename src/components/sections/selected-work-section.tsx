@@ -3,6 +3,8 @@ import { ArrowUpRight, ExternalLink } from 'lucide-react';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
 import { MotionCard } from '@/components/motion/motion-card';
 import { SELECTED_WORK, type WorkStatusTone } from '@/lib/selected-work';
+import { getPublishedClientProjects } from '@/lib/public-data';
+import { mapClientProjectToWorkEntry } from '@/lib/client-project-mapper';
 
 /**
  * SelectedWorkSection — Paragonel's verified public project inventory
@@ -30,9 +32,13 @@ const TONE_DOT: Record<WorkStatusTone, string> = {
   client: 'bg-violet-500',
 };
 
-export function SelectedWorkSection({ compact = false }: { compact?: boolean }) {
+export async function SelectedWorkSection({ compact = false }: { compact?: boolean }) {
+  // Merge static products with published CMS client projects (Prompt 05L §2).
+  // No duplicate source — client engagements live in the clientProjects CMS
+  // collection; products live in selected-work.ts.
+  const clientProjects = (await getPublishedClientProjects()).map(mapClientProjectToWorkEntry);
   const flagship = SELECTED_WORK.find((w) => w.flagship);
-  const rest = SELECTED_WORK.filter((w) => !w.flagship);
+  const rest = [...SELECTED_WORK.filter((w) => !w.flagship), ...clientProjects];
 
   return (
     <section className="pt-section pt-surface-quiet">

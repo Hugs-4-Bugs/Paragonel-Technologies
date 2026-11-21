@@ -36,7 +36,7 @@
  * claimed without a measured/approved source.
  */
 import type { LucideIcon } from 'lucide-react';
-import { Rocket, Code2, Server, FolderGit2, Globe } from 'lucide-react';
+import { Rocket, Code2, Server } from 'lucide-react';
 
 export type WorkStatusTone = 'beta' | 'live' | 'internal' | 'client';
 
@@ -99,43 +99,12 @@ export const SELECTED_WORK: WorkEntry[] = [
     href: '/our-product/systemfoundry',
     ctaLabel: 'Explore SystemFoundry',
   },
-  {
-    slug: 'maa-arogyam',
-    icon: FolderGit2,
-    title: 'Maa Arogyam',
-    kind: 'Client engagement · Website build',
-    status: 'Delivered',
-    statusTone: 'client',
-    body:
-      'Paragonel built the Maa Arogyam website — a professional, modern web presence for the organization. Described only as a website engagement. No outcome metric, testimonial, or endorsement is claimed without evidence.',
-    href: '/contact',
-    ctaLabel: 'Start a conversation',
-  },
-  {
-    slug: 'primorian',
-    icon: Globe,
-    title: 'Primorian',
-    kind: 'Client engagement · Website build',
-    status: 'Delivered',
-    statusTone: 'client',
-    body:
-      'Paragonel delivered the Primorian website end-to-end — a direct client engagement confirmed by the founder. The brand is also referenced as "Primorian Life"; the exact public brand spelling is being finalised with the founder. Described only as an end-to-end website delivery. No outcome metric, testimonial, or endorsement is claimed without a measured or approved source.',
-    href: '/contact',
-    ctaLabel: 'Start a conversation',
-  },
-  {
-    slug: 'dietmended',
-    icon: FolderGit2,
-    title: 'DietMended',
-    kind: 'Client engagement · Direct project',
-    status: 'Client engagement',
-    statusTone: 'client',
-    body:
-      'DietMended is a direct client engagement confirmed by the founder (exact spelling and capitalisation being finalised). The specific scope and deliverables are not published here without founder-supplied detail. No outcome metric, testimonial, or endorsement is claimed without an approved source.',
-    href: '/contact',
-    ctaLabel: 'Start a conversation',
-  },
 ];
 
-/** Non-flagship entries (used by the homepage compact work index). */
+/**
+ * Non-flagship entries (used by the homepage compact work index). Client
+ * engagements are NO LONGER in this static array — they are managed via the
+ * Client Projects CMS (Prompt 05L §2) and merged into the public surfaces by
+ * SelectedWorkSection + HomeProducts via mapClientProjectToWorkEntry.
+ */
 export const OTHER_WORK: WorkEntry[] = SELECTED_WORK.filter((w) => !w.flagship);

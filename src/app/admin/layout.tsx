@@ -20,7 +20,9 @@ import {
   PanelLeftClose,
   PanelLeft,
   FileUser,
-  MessageSquareQuote
+  MessageSquareQuote,
+  FolderGit2,
+  Network
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -36,6 +38,8 @@ const sidebarItems = [
   { href: '/admin/blog', label: 'Blog', icon: BookOpen },
   { href: '/admin/services', label: 'Services', icon: Layers },
   { href: '/admin/testimonials', label: 'Testimonials', icon: MessageSquareQuote },
+  { href: '/admin/client-projects', label: 'Client Projects', icon: FolderGit2 },
+  { href: '/admin/tech-ecosystem', label: 'Tech Ecosystem', icon: Network },
   { href: '/admin/newsletter', label: 'Newsletter', icon: Users },
   { href: '/admin/activity', label: 'Audit Logs', icon: History },
 ];

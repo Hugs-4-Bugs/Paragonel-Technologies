@@ -88,7 +88,7 @@ export async function verifyAdminPermission(
  * must not turn a successful mutation into a 500 (the data is already persisted
  * and will surface on the next ISR tick within 60s).
  */
-export function revalidatePublicContent(kind: 'blog' | 'jobs' | 'services' | 'testimonials'): void {
+export function revalidatePublicContent(kind: 'blog' | 'jobs' | 'services' | 'testimonials' | 'clientProjects' | 'techEcosystem'): void {
   try {
     if (kind === 'blog') {
       revalidatePath('/blog');
@@ -103,6 +103,12 @@ export function revalidatePublicContent(kind: 'blog' | 'jobs' | 'services' | 'te
       revalidatePath('/testimonials');
       revalidatePath('/portfolio');
       revalidatePath('/'); // homepage testimonials marquee section
+    } else if (kind === 'clientProjects') {
+      revalidatePath('/testimonials');
+      revalidatePath('/portfolio');
+      revalidatePath('/');
+    } else if (kind === 'techEcosystem') {
+      revalidatePath('/our-product');
     }
   } catch (e) {
     console.error('[revalidate] failed:', e instanceof Error ? e.message : e);

@@ -159,6 +159,59 @@ export async function getPublishedTestimonials(limit = 50): Promise<any[]> {
   }
 }
 
+/**
+ * Published client projects / case studies (Prompt 05L §2). Renders publicly
+ * ONLY when status==='published' && !deletedAt. The Selected Work surface
+ * merges these with the static product entries. Static fallback is EMPTY — no
+ * fabricated projects. Single equality filter (status) to avoid composite
+ * indexes; deletedAt filtered in memory.
+ */
+export async function getPublishedClientProjects(limit = 50): Promise<any[]> {
+  const db = getAdminDb();
+  if (!db) return [];
+  try {
+    const snap = await db
+      .collection('clientProjects')
+      .where('status', '==', 'published')
+      .limit(100)
+      .get();
+    const items = snap.docs
+      .map((d) => serializeDoc(d as any))
+      .filter((t) => !t.deletedAt);
+    items.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    return items.slice(0, limit);
+  } catch (err) {
+    console.error('[public-data] getPublishedClientProjects failed:', err instanceof Error ? err.message : err);
+    return [];
+  }
+}
+
+/**
+ * Published technology-ecosystem entries (Prompt 05L §3). Renders publicly
+ * ONLY when status==='published' && publicDisplayPermission && !deletedAt.
+ * Static fallback is the curated array in technology-ecosystem.tsx (so the
+ * section still renders truthfully if Firestore is unreachable).
+ */
+export async function getPublishedTechEcosystem(limit = 50): Promise<any[]> {
+  const db = getAdminDb();
+  if (!db) return [];
+  try {
+    const snap = await db
+      .collection('techEcosystem')
+      .where('status', '==', 'published')
+      .limit(100)
+      .get();
+    const items = snap.docs
+      .map((d) => serializeDoc(d as any))
+      .filter((t) => !t.deletedAt && t.publicDisplayPermission === true);
+    items.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    return items.slice(0, limit);
+  } catch (err) {
+    console.error('[public-data] getPublishedTechEcosystem failed:', err instanceof Error ? err.message : err);
+    return [];
+  }
+}
+
 /** Public blog posts: published, non-deleted, newest first. */
 export async function getPublishedPosts(limit = 50): Promise<any[]> {
   const db = getAdminDb();

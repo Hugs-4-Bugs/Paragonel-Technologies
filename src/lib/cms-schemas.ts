@@ -160,6 +160,155 @@ export function buildTestimonialStatusPayload(status: TestimonialFormValues['sta
   return { status, updatedAt: Timestamp.now() };
 }
 
+/* -------------------------------------------------------------------------- */
+/* Client Projects — founder-confirmed client engagements (Prompt 05L §2)      */
+/* -------------------------------------------------------------------------- */
+/* Full CMS CRUD for client projects/case studies. The public Selected Work
+ * surface merges these published entries with the static product entries.
+ * scope/services/technologies are OPTIONAL so a project can be published with
+ * just the verified company name + engagement type while the founder supplies
+ * fuller detail later — no scope is ever invented. */
+
+const CLIENT_PROJECT_STATUSES = ['draft', 'published'] as const;
+/** Icon key → Lucide icon mapping lives in selected-work-section.tsx. */
+const CLIENT_PROJECT_ICONS = ['folder', 'globe', 'code', 'server', 'rocket'] as const;
+
+export const clientProjectSchema = z.object({
+  companyName: z.string().min(2, 'Company name is required'),
+  projectTitle: z.string().min(2, 'Project title is required'),
+  slug: z.string().min(2, 'Slug is required').regex(/^[a-z0-9-]+$/, 'Slug must be lowercase, hyphens/numbers only'),
+  description: z.string().min(10, 'Description is required').max(2000),
+  scope: z.string().max(2000).optional(),
+  servicesDelivered: z.string().max(1000).optional(), // comma-list → array
+  technologies: z.string().max(1000).optional(), // comma-list → array
+  websiteUrl: z.string().max(500).optional(),
+  mediaUrls: z.string().max(2000).optional(), // comma-list → array
+  logoUrl: z.string().max(500).optional(),
+  iconKey: z.enum(CLIENT_PROJECT_ICONS).default('folder'),
+  permissionDisplayName: z.boolean().default(true),
+  permissionDisplayLogo: z.boolean().default(false),
+  status: z.enum(CLIENT_PROJECT_STATUSES).default('draft'),
+  displayOrder: z.coerce.number().int().min(0).default(0),
+});
+export type ClientProjectFormValues = z.infer<typeof clientProjectSchema>;
+
+function splitList(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+export function buildClientProjectCreatePayload(values: ClientProjectFormValues): Record<string, unknown> {
+  const now = Timestamp.now();
+  return {
+    companyName: values.companyName,
+    projectTitle: values.projectTitle,
+    slug: values.slug,
+    description: values.description,
+    scope: values.scope ?? '',
+    servicesDelivered: splitList(values.servicesDelivered),
+    technologies: splitList(values.technologies),
+    websiteUrl: values.websiteUrl ?? '',
+    mediaUrls: splitList(values.mediaUrls),
+    logoUrl: values.logoUrl ?? '',
+    iconKey: values.iconKey,
+    permissionDisplayName: values.permissionDisplayName,
+    permissionDisplayLogo: values.permissionDisplayLogo,
+    status: values.status,
+    displayOrder: values.displayOrder,
+    isActive: values.status === 'published',
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  };
+}
+
+export function buildClientProjectUpdatePayload(values: ClientProjectFormValues): Record<string, unknown> {
+  return {
+    companyName: values.companyName,
+    projectTitle: values.projectTitle,
+    slug: values.slug,
+    description: values.description,
+    scope: values.scope ?? '',
+    servicesDelivered: splitList(values.servicesDelivered),
+    technologies: splitList(values.technologies),
+    websiteUrl: values.websiteUrl ?? '',
+    mediaUrls: splitList(values.mediaUrls),
+    logoUrl: values.logoUrl ?? '',
+    iconKey: values.iconKey,
+    permissionDisplayName: values.permissionDisplayName,
+    permissionDisplayLogo: values.permissionDisplayLogo,
+    status: values.status,
+    displayOrder: values.displayOrder,
+    isActive: values.status === 'published',
+    updatedAt: Timestamp.now(),
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Technology Ecosystem — integrations overview (Prompt 05L §3)               */
+/* -------------------------------------------------------------------------- */
+/* Admin-managed technology/integration entries. Categories are the four
+ * evidence-backed kinds from §3 — live, dev, evaluated, planned. Exploratory
+ * vendor discussions (Broadchat, VoiceLink, etc.) are NOT added without
+ * evidence + permission. */
+
+const ECOSYSTEM_CATEGORIES = ['live', 'dev', 'evaluated', 'planned'] as const;
+const ECOSYSTEM_STATUSES = ['draft', 'published'] as const;
+
+export const techEcosystemSchema = z.object({
+  organizationName: z.string().min(2, 'Organization name is required'),
+  category: z.enum(ECOSYSTEM_CATEGORIES),
+  relationshipStatus: z.string().min(2, 'Relationship status is required').max(120),
+  description: z.string().min(10, 'Description is required').max(1000),
+  evidenceReference: z.string().max(500).optional(),
+  logoUrl: z.string().max(500).optional(),
+  linkUrl: z.string().max(500).optional(),
+  publicDisplayPermission: z.boolean().default(false),
+  logoPermission: z.boolean().default(false),
+  displayOrder: z.coerce.number().int().min(0).default(0),
+  status: z.enum(ECOSYSTEM_STATUSES).default('draft'),
+});
+export type TechEcosystemFormValues = z.infer<typeof techEcosystemSchema>;
+
+export function buildTechEcosystemCreatePayload(values: TechEcosystemFormValues): Record<string, unknown> {
+  const now = Timestamp.now();
+  return {
+    organizationName: values.organizationName,
+    category: values.category,
+    relationshipStatus: values.relationshipStatus,
+    description: values.description,
+    evidenceReference: values.evidenceReference ?? '',
+    logoUrl: values.logoUrl ?? '',
+    linkUrl: values.linkUrl ?? '',
+    publicDisplayPermission: values.publicDisplayPermission,
+    logoPermission: values.logoPermission,
+    displayOrder: values.displayOrder,
+    status: values.status,
+    isActive: values.status === 'published' && values.publicDisplayPermission,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  };
+}
+
+export function buildTechEcosystemUpdatePayload(values: TechEcosystemFormValues): Record<string, unknown> {
+  return {
+    organizationName: values.organizationName,
+    category: values.category,
+    relationshipStatus: values.relationshipStatus,
+    description: values.description,
+    evidenceReference: values.evidenceReference ?? '',
+    logoUrl: values.logoUrl ?? '',
+    linkUrl: values.linkUrl ?? '',
+    publicDisplayPermission: values.publicDisplayPermission,
+    logoPermission: values.logoPermission,
+    displayOrder: values.displayOrder,
+    status: values.status,
+    isActive: values.status === 'published' && values.publicDisplayPermission,
+    updatedAt: Timestamp.now(),
+  };
+}
+
 /** Split a comma-list skills string into a trimmed, de-duplicated array. */
 function splitSkills(raw: string): string[] {
   return raw

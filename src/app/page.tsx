@@ -8,7 +8,7 @@ import { HomeBlog } from '@/components/home/blog';
 import { HomeApproach } from '@/components/home/approach';
 import { HomeEngagement } from '@/components/home/engagement';
 import { HomeConversion } from '@/components/home/conversion';
-import { getPublishedTestimonials } from '@/lib/public-data';
+import { getPublishedTestimonials, getPublishedClientProjects } from '@/lib/public-data';
 import { TestimonialsMarquee } from '@/components/sections/testimonials-marquee';
 
 /**
@@ -39,6 +39,10 @@ export default async function HomePage() {
   // Published testimonials only (drafts/pending never leak). Empty until the
   // founder publishes real, approved client feedback — never fabricated.
   const testimonials = await getPublishedTestimonials();
+  // Published client projects (Prompt 05L §2) — passed as raw serializable docs
+  // to HomeProducts (a client component); the icon mapping happens client-side
+  // so no function crosses the server→client boundary.
+  const clientProjects = await getPublishedClientProjects();
   return (
     <>
       <HomeHero />
@@ -62,7 +66,7 @@ export default async function HomePage() {
       <div className="pt-shell"><div className="pt-hair" /></div>
       <HomeWhyParagonel />
       <HomeCapabilities />
-      <HomeProducts />
+      <HomeProducts clientProjects={clientProjects} />
       {testimonials.length > 0 ? (
         <TestimonialsMarquee
           testimonials={testimonials}

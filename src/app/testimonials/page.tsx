@@ -2,6 +2,10 @@ import { SelectedWorkSection } from '@/components/sections/selected-work-section
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import type { Metadata } from 'next';
 
+// ISR so published client projects (CMS) appear within 60s of an admin
+// mutation (revalidatePublicContent('clientProjects') also purges this route).
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Selected Work — Paragonel',
   description: 'Factual project engagements delivered by Paragonel Technologies.',

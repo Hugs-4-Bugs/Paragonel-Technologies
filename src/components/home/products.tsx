@@ -6,7 +6,8 @@ import { motion, useScroll, useTransform, useMotionValueEvent, useReducedMotion 
 import { ArrowUpRight, ExternalLink } from 'lucide-react';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
 import { MotionCard } from '@/components/motion/motion-card';
-import { OTHER_WORK, type WorkStatusTone } from '@/lib/selected-work';
+import { OTHER_WORK, type WorkEntry, type WorkStatusTone } from '@/lib/selected-work';
+import { mapClientProjectToWorkEntry, type ClientProjectDoc } from '@/lib/client-project-mapper';
 
 const PIPELINE = [
   'Discover', 'Research', 'Find Gaps', 'Opportunity Report', 'Score',
@@ -24,7 +25,10 @@ const TONE_DOT: Record<WorkStatusTone, string> = {
   client: 'bg-violet-500',
 };
 
-export function HomeProducts() {
+export function HomeProducts({ clientProjects = [] }: { clientProjects?: ClientProjectDoc[] }) {
+  // Map raw CMS docs → WorkEntry client-side so the icon (a function) never
+  // crosses the server→client prop boundary.
+  const cpEntries: WorkEntry[] = (clientProjects ?? []).map(mapClientProjectToWorkEntry);
   const reduce = useReducedMotion();
   const section = useRef<HTMLDivElement>(null);
   const [activeCount, setActiveCount] = useState(reduce ? PIPELINE.length : 1);
@@ -128,7 +132,7 @@ export function HomeProducts() {
 
         {/* Other work — compact labeled index (shared verified data) */}
         <RevealGroup stagger={0.08} className="mt-10 grid gap-6 md:grid-cols-3">
-          {OTHER_WORK.map((w) => {
+          {[...OTHER_WORK, ...cpEntries].map((w) => {
             const inner = (
               <>
                 <div className="flex items-center gap-2">
