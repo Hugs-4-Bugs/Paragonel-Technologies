@@ -7,6 +7,8 @@ import { DomainVisual } from '@/components/services/domain-visuals';
 import {
   getDomainBySlug,
   getOfferingsForDomain,
+  getOfferingStatus,
+  STATUS_META,
   type ServiceOffering,
   type ServiceDomain,
 } from '@/lib/services-catalogue';
@@ -20,6 +22,7 @@ import {
 export function OfferingDetail({ offering }: { offering: ServiceOffering }) {
   const domain = getDomainBySlug(offering.domainSlug) as ServiceDomain;
   const siblings = getOfferingsForDomain(offering.domainSlug).filter((o) => o.slug !== offering.slug);
+  const st = getOfferingStatus(offering);
 
   return (
     <>
@@ -34,9 +37,16 @@ export function OfferingDetail({ offering }: { offering: ServiceOffering }) {
       <section className="pt-hero-backdrop">
         <div className="pt-shell pt-section" style={{ paddingTop: 'clamp(4rem, 8vw, 6rem)' }}>
           <Reveal>
-            <span className="pt-eyebrow">{domain.index} — {domain.name}</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="pt-eyebrow">{domain.index} — {domain.name}</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-0.5 text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+                <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[st].tone}`} />
+                {STATUS_META[st].label}
+              </span>
+            </div>
             <h1 className="pt-display mt-6 text-foreground">{offering.name}</h1>
             <p className="pt-lead mt-6 max-w-2xl">{offering.tagline}</p>
+            <p className="mt-4 max-w-2xl text-xs text-muted-foreground">{STATUS_META[st].blurb}</p>
           </Reveal>
         </div>
       </section>

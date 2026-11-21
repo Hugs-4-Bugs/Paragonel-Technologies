@@ -44,8 +44,24 @@ and 13 individual offerings, published as the new editorial `/services` landing
 4. **Data Engineering & Analytics** — Data Engineering & Pipelines · Analytics & BI
 5. **Experience & Interface Engineering** — UI/UX & Product Design · Frontend Engineering
 
-Source of truth: `src/lib/services-catalogue.ts`. No offering is published as
-"delivered at enterprise scale"; product references stay limited to verified
+**Expanded taxonomy (✅ implemented — Prompt 05E, newer approved direction):**
+the five domains above are preserved as a subset; the catalogue is expanded to
+**13 capability families**, each with a delivery status — **Deliver Now** (8:
+Product/Software/App Eng, AI/ML, Cloud/Infra/Platform, Data, UX, Automation &
+Digital Ops, Enterprise Integration, Advisory & Managed Eng) · **Specialist
+Support** (3: Cybersecurity/App Sec, Quality Eng, Industry-Specific Solutions) ·
+**Research & Emerging** (2: IoT/Embedded/Edge, Emerging Tech & Applied Research).
+New `/industries` route (8 industry solution patterns, conceptual-labelled).
+**Core specialization (§2 of `docs/CAPABILITY_STRATEGY.md`):** Paragonel is
+positioned as the company that **engineers AI-native systems end-to-end — the
+intelligence, the platform, the security, and the evidence behind it** — with
+three pillars (AI-native workflow systems; engineering intelligence & trust;
+platform & data engineering for AI). NOT pursued: generic horizontal SaaS
+(CRM/LMS/CMS), regulated critical infra without a specialist partner, chatbot-only
+positioning, pure staff augmentation, RPA-as-usual. See `docs/CAPABILITY_STRATEGY.md`
++ `docs/MARKET_OPPORTUNITY_RESEARCH.md` (35 evidence-backed problems).
+
+Source of truth: `src/lib/services-catalogue.ts`. No offering is published as"delivered at enterprise scale"; product references stay limited to verified
 Paragonel work (AcquisitionOS private beta, CodeGuard AI, SystemFoundry). The
 admin CMS (`getPublicServices`) continues to surface admin-published services
 alongside the structured catalogue.

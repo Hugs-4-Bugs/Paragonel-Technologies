@@ -11,7 +11,7 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   title: 'Services — Paragonel',
   description:
-    'Five engineering domains — Product, AI, Cloud, Data, Experience — and thirteen specific offerings. The problem each solves, what we deliver, and why it matters.',
+    'Thirteen capability families engineering AI-native systems end-to-end — product, AI, automation, cloud, data, integration, UX, advisory, security, quality, industry solutions, IoT and emerging tech. Each with an honest delivery status: Deliver Now, Specialist Support, or Research & Emerging.',
   alternates: { canonical: '/services' },
 };
 

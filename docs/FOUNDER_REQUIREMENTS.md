@@ -446,7 +446,7 @@ not begin it in this task.
 
 ---
 
-## 19. Implementation status tracker (Prompt 05A + 05B + 05C + 05D)
+## 19. Implementation status tracker (Prompt 05A + 05B + 05C + 05D + 05E)
 
 This section is the live implementation status, appended **in addition to** the
 existing requirements above — it does not replace or weaken any prior
@@ -476,7 +476,8 @@ requirement. Status labels:
 | AcquisitionOS / product-page visual transformation (Prompt 05C) | DONE — `/our-product/acquisitionos` redesigned onto the 05A editorial system: positioning + the 6-problem framing, a premium interactive 12-stage `LifecycleWorkflow` (connected node track, click-to-reveal detail, conceptual-labelled), scoring sample (signals-not-predictions), honest integration directory, trust, roadmap, CTA. 12-stage terminology/order/detail preserved verbatim. Beta URL (`acquisitionosbeta.vercel.app`) behind CTAs only — verified 0 visible-text URL occurrences; 0 `.net` refs; Private Beta labelled throughout; canonical = `paragonel.vercel.app/...` |
 | Runtime stability (Prompt 05C P0) | DONE — failure cause re-confirmed as workspace/container recycle (no OOM/heap/EADDRINUSE/crash signature in `logs/dev-server.log`; workspace was destroyed between batches and re-cloned to start 05C). Supervisor already meets the 10 requirements (one authoritative server, stale cleanup, bounded backoff, `wait $dev_pid` no false-crash loop, health-check, honest container-destruction caveat). Added `scripts/resume-dev.sh` (one-command recycle recovery) + RUNTIME.md 05C confirmation |
 | About / company story / Selected Work / case studies (Prompt 05D) | DONE — `/about` redesigned onto the editorial system: company introduction, why Paragonel exists, 5 engineering-philosophy principles, founder (verified facts only — Prabhat Kumar, Founder & CEO, BE CS, prior: Netcore Cloud; NO fabricated quote/years/awards/journey), 5 engineering disciplines (narrative + link to /services; 13-offering catalogue framed as scope not 13 engagements), 3-step engagement process (CTA → /contact). `/portfolio` is now a real Selected Work page (was a 307→/our-product redirect) with a page h1. New single source of truth `src/lib/selected-work.ts` drives the homepage work index (`home/products.tsx`), `/portfolio`, and `/testimonials` — no duplicate arrays. Fabricated `portfolio-section.tsx` (TechCorp/EduFuture/SkillUp/Remote Team + 40% metric + placeholder case-study buttons) DELETED; `basePortfolio` wrong images + SystemFoundry external link + CodeGuard 404 marketplace URL removed. Verified: 4 projects only (AcquisitionOS=Private Beta, CodeGuard AI=Published, SystemFoundry=Internal, Maa Arogyam=Delivered); 0 fabricated names on any public route; 0 `.net`; 0 visible-text beta URL; no overflow@375; tsc 0; clean build 0 |
-| Editorial blog redesign | PENDING — Prompt 05E |
+| Capability expansion + specialization + hero fix (Prompt 05E) | DONE — expanded `/services` from 5 domains/13 offerings → **13 capability families** with a per-domain + per-offering `status` field (Deliver Now / Specialist Support / Research & Emerging). Original 5 domains + 13 offerings preserved as a subset (backward-compatible slugs). New `docs/MARKET_OPPORTUNITY_RESEARCH.md` (35 evidence-backed problems, 10 briefs, 5 product directions, 5 rejected, scoring methodology, 120 search results across 15 queries) + `docs/CAPABILITY_STRATEGY.md` (15-20yr vision, 13-family taxonomy w/ status, industry strategy, product-company strategy, 12/36/60mo priorities, specialization: ONE primary identity "engineers AI-native systems end-to-end" + 3 pillars + adjacent + industry focus + explicit NOT-pursue list). New `/industries` route (8 industry solution patterns, conceptual-labelled, no fake case studies). New `HomePositioning` section (3 dimensions: Our Products / Engineering Solutions / Applied Research). Homepage hero fixed: 4-line headline → 2-line controlled headline, header-aware padding (clears sticky h-24), CTAs at mt-7, compact core-pillars panel replacing the 5-domain index. **Hero verified at all 5 required viewports — primary CTA visible in first viewport, 0 horizontal overflow**: 1440×900 (CTA bottom 660<900), 1366×768 (654<768), 1280×720 (644<720), 375×812 (566<812), 390×844 (548<844). Verified: tsc 0; clean build 0; all routes 200 (incl new `/industries` + 10 new offering slugs); 0 `.net`; 0 visible-text beta URL; Private Beta throughout; 0 fabricated content; no regression to About/Portfolio/AcquisitionOS/CMS/auth/jobs/blog/contact. Specialization does NOT pursue: generic horizontal SaaS (CRM/LMS/CMS), regulated critical infra without specialist, chatbot-only positioning, pure staff augmentation, RPA-as-usual |
+| Editorial blog redesign | PENDING |
 | Remaining responsive / motion / accessibility polish | PENDING — Prompt 05F |
 | Vercel deployment recovery | BLOCKED — exact Vercel build error is still unknown (logs access-restricted); local clean build passes |
 
@@ -508,7 +509,14 @@ the relevant content remains marked for clarification rather than invented.
 - **Prompt 05D — About / company story / Selected Work:** ✅ DONE (see row above). company identity,
   founder/company story, actual engineering work, verified case studies, trust
   evidence, engagement process. No fabricated testimonials or customer outcomes.
-- **Prompt 05E — Blog redesign:** editorial layout, stronger typography,
+- **Prompt 05E — Capability expansion + specialization + hero fix:** ✅ DONE (see row
+  above). Expanded `/services` to 13 capability families with Deliver Now /
+  Specialist Support / Research & Emerging status; new `/industries` route;
+  product-company positioning (3 dimensions); homepage hero fixed (CTAs above
+  fold on all 5 required viewports); `MARKET_OPPORTUNITY_RESEARCH.md` +
+  `CAPABILITY_STRATEGY.md` (specialization: ONE primary identity + 3 pillars +
+  what NOT to pursue). Blog redesign deferred to a later prompt.
+- **Editorial blog redesign:** PENDING — editorial layout, stronger typography,
   restrained corners, article navigation, reading experience, code presentation,
   related articles, responsive reading layouts. Preserve existing CMS + content.
 - **Prompt 05F — Final experience polish:** responsive browser QA, accessibility,

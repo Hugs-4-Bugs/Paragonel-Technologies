@@ -4,13 +4,25 @@ import Link from 'next/link';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
 import { DomainVisual } from '@/components/services/domain-visuals';
-import { DOMAINS, getOfferingsForDomain, type ServiceOffering } from '@/lib/services-catalogue';
+import {
+  DOMAINS,
+  getOfferingsForDomain,
+  getDomainStatus,
+  getOfferingStatus,
+  STATUS_META,
+  type ServiceOffering,
+  type CapabilityStatus,
+} from '@/lib/services-catalogue';
 
 /**
- * Services landing (Prompt 05B). Editorial composition built on the Prompt 05A
- * design system. Five engineering-domain sections, each with a DISTINCT visual
- * composition (DomainVisual) + its offerings as numbered editorial rows that
- * link to /services/[slug] detail pages.
+ * Services landing (Prompt 05B, expanded in 05E). Editorial composition built
+ * on the 05A design system. Thirteen capability-family sections, each with a
+ * DISTINCT visual composition (DomainVisual) + its offerings as numbered
+ * editorial rows that link to /services/[slug] detail pages.
+ *
+ * Each domain + offering carries a capability-status indicator (Deliver Now /
+ * Specialist Support / Research & Emerging) per docs/CAPABILITY_STRATEGY.md §3.
+ * The original five 05B domains (all Deliver Now) are preserved as a subset.
  *
  * `dynamicServices` (admin-published via the CMS / getPublicServices) are
  * preserved in a dedicated section so the admin CMS continues to surface
@@ -21,38 +33,57 @@ export function CatalogueLanding({ dynamicServices = [] }: { dynamicServices?: {
     <>
       {/* Hero */}
       <section className="pt-hero-backdrop">
-        <div className="pt-shell pt-section" style={{ paddingTop: 'clamp(6rem, 12vw, 9rem)' }}>
+        <div className="pt-shell pt-section" style={{ paddingTop: 'clamp(5rem, 10vw, 7rem)' }}>
           <Reveal>
-            <span className="pt-eyebrow">Services</span>
+            <span className="pt-eyebrow">Engineering solutions</span>
             <h1 className="pt-display mt-6 text-foreground">
-              Five engineering domains.<br />
-              <span className="text-primary">Thirteen offerings.</span> One engineering org.
+              AI-native systems,<br />
+              <span className="text-primary">engineered end-to-end.</span>
             </h1>
             <p className="pt-lead mt-7 max-w-2xl">
-              Paragonel is not a generic outsourcing shop listing every technology in existence.
-              These are the five domains we actually engineer in, and the specific offerings inside
-              each — the problem each one solves, what we deliver, and why it matters.
+              Paragonel engineers the intelligence, the platform, the security and the evidence
+              behind an AI-native system. Thirteen capability families — each with an honest
+              delivery status. Not a generic outsourcing shop listing every technology in existence.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link href="/contact" className="pt-btn pt-btn-primary">
                 Discuss a challenge <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/#approach" className="pt-btn pt-btn-ghost">
-                How we engineer
+              <Link href="/industries" className="pt-btn pt-btn-ghost">
+                Industry solutions
               </Link>
             </div>
+
+            {/* Status legend */}
+            <RevealGroup stagger={0.04} className="mt-10 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-5">
+              {(Object.keys(STATUS_META) as CapabilityStatus[]).map((k) => (
+                <RevealItem key={k} variant="fade">
+                  <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className={`h-2 w-2 rounded-full ${STATUS_META[k].tone}`} />
+                    <span className="font-medium text-foreground">{STATUS_META[k].label}</span>
+                    <span className="hidden sm:inline">— {STATUS_META[k].blurb}</span>
+                  </span>
+                </RevealItem>
+              ))}
+            </RevealGroup>
           </Reveal>
 
-          {/* Domain quick-nav */}
-          <RevealGroup stagger={0.05} className="mt-14 grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-5">
-            {DOMAINS.map((d) => (
-              <RevealItem key={d.slug} variant="fade">
-                <a href={`#${d.slug}`} className="block bg-background p-5 transition-colors hover:bg-secondary/40">
-                  <span className="pt-index text-xs">{d.index}</span>
-                  <p className="mt-2 text-sm font-medium leading-tight text-foreground">{d.name}</p>
-                </a>
-              </RevealItem>
-            ))}
+          {/* Domain quick-nav — 13 families, responsive */}
+          <RevealGroup stagger={0.04} className="mt-12 grid gap-px bg-border sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {DOMAINS.map((d) => {
+              const st = getDomainStatus(d);
+              return (
+                <RevealItem key={d.slug} variant="fade">
+                  <a href={`#${d.slug}`} className="block bg-background p-4 transition-colors hover:bg-secondary/40">
+                    <div className="flex items-center justify-between">
+                      <span className="pt-index text-xs">{d.index}</span>
+                      <span className={`h-2 w-2 rounded-full ${STATUS_META[st].tone}`} title={STATUS_META[st].label} />
+                    </div>
+                    <p className="mt-2 text-sm font-medium leading-tight text-foreground">{d.name}</p>
+                  </a>
+                </RevealItem>
+              );
+            })}
           </RevealGroup>
         </div>
       </section>
@@ -60,15 +91,23 @@ export function CatalogueLanding({ dynamicServices = [] }: { dynamicServices?: {
       {/* Domain sections */}
       {DOMAINS.map((domain) => {
         const offerings = getOfferingsForDomain(domain.slug);
+        const st = getDomainStatus(domain);
         return (
           <section key={domain.slug} id={domain.slug} className="pt-section scroll-mt-24">
             <div className="pt-shell">
               <Reveal>
                 <div className="flex flex-col gap-6 border-b border-border pb-8 md:flex-row md:items-end md:justify-between">
                   <div>
-                    <span className="pt-eyebrow">{domain.index} — {domain.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="pt-eyebrow">{domain.index} — {domain.name}</span>
+                      <span className={`inline-flex h-2 w-2 rounded-full ${STATUS_META[st].tone}`} title={STATUS_META[st].label} />
+                    </div>
                     <h2 className="pt-h2 mt-5 text-foreground">{domain.name}</h2>
                     <p className="pt-lead mt-4 max-w-xl">{domain.scope}</p>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{STATUS_META[st].label}.</span>{' '}
+                      {STATUS_META[st].blurb}
+                    </p>
                   </div>
                   <span className="pt-index text-xs shrink-0">{offerings.length} offerings</span>
                 </div>
@@ -147,6 +186,7 @@ export function CatalogueLanding({ dynamicServices = [] }: { dynamicServices?: {
 }
 
 function OfferingRow({ offering, index }: { offering: ServiceOffering; index: number }) {
+  const st = getOfferingStatus(offering);
   return (
     <RevealItem>
       <Link
@@ -156,9 +196,15 @@ function OfferingRow({ offering, index }: { offering: ServiceOffering; index: nu
         <div className="flex items-baseline gap-4">
           <span className="pt-index text-xs">{String(index).padStart(2, '0')}</span>
           <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
-              {offering.name}
-            </h3>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
+                {offering.name}
+              </h3>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-[0.6rem] uppercase tracking-wide text-muted-foreground">
+                <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[st].tone}`} />
+                {STATUS_META[st].label}
+              </span>
+            </div>
             <p className="mt-1 text-sm text-muted-foreground">{offering.tagline}</p>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground line-clamp-2">
               {offering.problem}

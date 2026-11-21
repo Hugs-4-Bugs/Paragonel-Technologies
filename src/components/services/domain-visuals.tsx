@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactElement } from 'react';
-import { Database, Cpu, Terminal, Activity, RefreshCw, Layers, Boxes, MousePointerClick } from 'lucide-react';
+import { Database, Cpu, Terminal, Activity, RefreshCw, Layers, Boxes, MousePointerClick, Network, ShieldCheck, Gauge, CircuitBoard, FlaskConical, Workflow, Repeat, ScanLine, Radio, Waypoints } from 'lucide-react';
 import { RevealGroup, RevealItem } from '@/components/motion/reveal';
 import type { CompositionVariant } from '@/lib/services-catalogue';
 
@@ -150,12 +150,173 @@ function InterfaceTiers() {
   );
 }
 
+// ── 05E expansion visuals (six new domain shapes) ───────────────────────
+
+function NetworkGraph() {
+  const nodes = [
+    { icon: Database, label: 'System A' },
+    { icon: Boxes, label: 'System B' },
+    { icon: Cpu, label: 'System C' },
+    { icon: Waypoints, label: 'Middleware' },
+  ];
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        {nodes.map((n) => (
+          <div key={n.label} className="flex items-center gap-2 border border-border bg-background p-3">
+            <n.icon className="h-4 w-4 text-primary" />
+            <span className="text-xs font-medium text-foreground">{n.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 border-t border-border pt-3 text-muted-foreground">
+        <Network className="h-4 w-4 text-primary" />
+        <span className="text-[0.7rem]">Typed contracts · event-driven · observed end-to-end</span>
+      </div>
+      <p className="mt-2 text-[0.7rem] text-muted-foreground">Connected nodes — the stack behaves as one system.</p>
+    </div>
+  );
+}
+
+function AutomationLoop() {
+  const phases = [
+    { icon: Radio, label: 'Trigger' },
+    { icon: ScanLine, label: 'Check' },
+    { icon: Workflow, label: 'Act' },
+    { icon: Repeat, label: 'Review' },
+  ];
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        {phases.map((p, i) => (
+          <div key={p.label} className="flex flex-1 flex-col items-center gap-1.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background">
+              <p.icon className="h-4 w-4 text-primary" />
+            </div>
+            <span className="text-[0.65rem] font-medium text-foreground">{p.label}</span>
+            {i < phases.length - 1 && <span className="hidden">→</span>}
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 border-t border-border pt-3 text-muted-foreground">
+        <RefreshCw className="h-4 w-4 text-primary" />
+        <span className="text-[0.7rem]">Human checkpoint on consequential actions</span>
+      </div>
+      <p className="mt-2 text-[0.7rem] text-muted-foreground">A loop with a review gate — not a brittle bot.</p>
+    </div>
+  );
+}
+
+function DefenceShield() {
+  const layers = [
+    { n: 'D1', label: 'Access control (authz-as-code)', tone: 'bg-background' },
+    { n: 'D2', label: 'Supply-chain / SBOM posture', tone: 'bg-secondary/40' },
+    { n: 'D3', label: 'Secrets & CI/CD posture', tone: 'bg-background' },
+    { n: 'D4', label: 'Monitoring & response', tone: 'bg-secondary/40' },
+  ];
+  return (
+    <div className="space-y-2">
+      {layers.map((l) => (
+        <div key={l.n} className={`flex items-center gap-3 border border-border ${l.tone} px-3 py-2.5`}>
+          <span className="pt-index text-[0.6rem]">{l.n}</span>
+          <span className="text-xs font-medium text-foreground">{l.label}</span>
+        </div>
+      ))}
+      <div className="flex items-center gap-2 border-t border-border pt-3 text-muted-foreground">
+        <ShieldCheck className="h-4 w-4 text-primary" />
+        <span className="text-[0.7rem]">OWASP 2025 · least privilege by construction</span>
+      </div>
+      <p className="mt-2 text-[0.7rem] text-muted-foreground">Defence in depth — security engineered, not audited once.</p>
+    </div>
+  );
+}
+
+function QualityGauge() {
+  const rows = [
+    { icon: Gauge, label: 'SLOs + error budgets' },
+    { icon: ScanLine, label: 'Regression on every change' },
+    { icon: ShieldCheck, label: 'Quality gates in CI' },
+  ];
+  return (
+    <div className="space-y-3">
+      {rows.map((r) => (
+        <div key={r.label} className="flex items-center gap-3 border-t border-border pt-3">
+          <r.icon className="h-4 w-4 text-primary" />
+          <span className="text-xs font-medium text-foreground">{r.label}</span>
+        </div>
+      ))}
+      <div className="mt-3 flex items-center gap-2 text-muted-foreground">
+        <Gauge className="h-4 w-4 text-primary" />
+        <span className="text-[0.7rem]">Measurable, not aspirational</span>
+      </div>
+      <p className="mt-2 text-[0.7rem] text-muted-foreground">Quality by construction — caught cheaply, early.</p>
+    </div>
+  );
+}
+
+function EdgeTier() {
+  const tiers = [
+    { n: 'T1', label: 'Devices / sensors', tone: 'bg-background' },
+    { n: 'T2', label: 'Edge compute', tone: 'bg-secondary/40' },
+    { n: 'T3', label: 'Cloud / platform', tone: 'bg-background' },
+  ];
+  return (
+    <div className="space-y-2">
+      {tiers.map((t) => (
+        <div key={t.n} className={`flex items-center gap-3 border border-border ${t.tone} px-3 py-2.5`}>
+          <span className="pt-index text-[0.6rem]">{t.n}</span>
+          <CircuitBoard className="h-4 w-4 text-primary" />
+          <span className="text-xs font-medium text-foreground">{t.label}</span>
+        </div>
+      ))}
+      <div className="mt-3 flex items-center gap-2 text-muted-foreground">
+        <Radio className="h-4 w-4 text-primary" />
+        <span className="text-[0.7rem]">Research stage — hardware partnership required</span>
+      </div>
+      <p className="mt-2 text-[0.7rem] text-muted-foreground">Device → edge → cloud — exploratory, not delivered yet.</p>
+    </div>
+  );
+}
+
+function ResearchLab() {
+  const steps = [
+    { icon: FlaskConical, label: 'Research' },
+    { icon: ScanLine, label: 'Validate' },
+    { icon: Boxes, label: 'Prototype' },
+  ];
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        {steps.map((s) => (
+          <div key={s.label} className="flex flex-1 flex-col items-center gap-1.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-dashed border-border bg-background">
+              <s.icon className="h-4 w-4 text-primary" />
+            </div>
+            <span className="text-[0.65rem] font-medium text-foreground">{s.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 border-t border-border pt-3 text-muted-foreground">
+        <FlaskConical className="h-4 w-4 text-primary" />
+        <span className="text-[0.7rem]">Applied research — separated from delivery</span>
+      </div>
+      <p className="mt-2 text-[0.7rem] text-muted-foreground">Research → validate → prototype. Not a live service.</p>
+    </div>
+  );
+}
+
 const MAP: Record<CompositionVariant, () => ReactElement> = {
   process: ProcessFlow,
   system: SystemLoop,
   architecture: ArchitectureStack,
   pipeline: PipelineFlow,
   interface: InterfaceTiers,
+  network: NetworkGraph,
+  loop: AutomationLoop,
+  shield: DefenceShield,
+  gauge: QualityGauge,
+  edge: EdgeTier,
+  lab: ResearchLab,
 };
 
 export function DomainVisual({ variant }: { variant: CompositionVariant }) {

@@ -3,6 +3,7 @@ import { HomeProblems } from '@/components/home/problems';
 import { HomeWhyParagonel } from '@/components/home/why-paragonel';
 import { HomeCapabilities } from '@/components/home/capabilities';
 import { HomeProducts } from '@/components/home/products';
+import { HomePositioning } from '@/components/home/positioning';
 import { HomeApproach } from '@/components/home/approach';
 import { HomeEngagement } from '@/components/home/engagement';
 import { HomeConversion } from '@/components/home/conversion';
@@ -52,6 +53,7 @@ export default function HomePage() {
       <HomeWhyParagonel />
       <HomeCapabilities />
       <HomeProducts />
+      <HomePositioning />
       <div className="pt-shell"><div className="pt-hair" /></div>
       <HomeApproach />
       <HomeEngagement />

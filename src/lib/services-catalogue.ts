@@ -21,14 +21,54 @@ export type CompositionVariant =
   | 'system' // domain 2: data → model → inference → loop
   | 'architecture' // domain 3: layered infra stack
   | 'pipeline' // domain 4: sources → pipeline → warehouse → surface
-  | 'interface'; // domain 5: design system → components → interaction
+  | 'interface' // domain 5: design system → components → interaction
+  | 'network' // integration: connected systems
+  | 'loop' // automation: trigger → check → act → review
+  | 'shield' // security: defence-in-depth
+  | 'gauge' // quality: measure → regress → guard
+  | 'edge' // iot: device → edge → cloud
+  | 'lab'; // emerging: research → prototype → validate
+
+/**
+ * Capability delivery status (Prompt 05E §5). Every domain and offering is
+ * assigned one of:
+ *   - 'deliver-now'    — Paragonel can credibly deliver with present skills + evidence.
+ *   - 'specialist'     — Deliverable via a validated specialist/partner (not an
+ *                        implied in-house specialist team).
+ *   - 'research'       — Under exploration / R&D; NOT an established current service.
+ *
+ * The field is optional only so the original 05B five-domain / 13-offering
+ * entries (all 'deliver-now' per docs/CAPABILITY_STRATEGY.md §3) need no
+ * per-entry rewrite; `getDomainStatus` / `getOfferingStatus` resolve the
+ * default. New 05E entries set `status` explicitly.
+ */
+export type CapabilityStatus = 'deliver-now' | 'specialist' | 'research';
+
+export const STATUS_META: Record<CapabilityStatus, { label: string; tone: string; blurb: string }> = {
+  'deliver-now': {
+    label: 'Deliver Now',
+    tone: 'bg-emerald-500',
+    blurb: 'Credibly deliverable today with Paragonel’s present engineering skills and existing evidence.',
+  },
+  specialist: {
+    label: 'Specialist Support',
+    tone: 'bg-amber-500',
+    blurb: 'Deliverable through a validated specialist or partner arrangement — not an implied in-house specialist team.',
+  },
+  research: {
+    label: 'Research & Emerging',
+    tone: 'bg-sky-500',
+    blurb: 'Under exploration, validation or R&D. Not presented as an established current delivery service.',
+  },
+};
 
 export interface ServiceDomain {
-  index: string; // 01..05
+  index: string; // 01..13
   slug: string;
   name: string;
   scope: string;
   composition: CompositionVariant;
+  status?: CapabilityStatus; // defaults to 'deliver-now' (see getDomainStatus)
 }
 
 export interface ServiceOffering {
@@ -43,6 +83,7 @@ export interface ServiceOffering {
   engagement: string;
   metaTitle: string;
   metaDescription: string;
+  status?: CapabilityStatus; // defaults to the domain's status (see getOfferingStatus)
 }
 
 export const DOMAINS: ServiceDomain[] = [
@@ -80,6 +121,71 @@ export const DOMAINS: ServiceDomain[] = [
     name: 'Experience & Interface Engineering',
     scope: 'Interfaces that make complex systems usable — interaction design, performance, accessibility, and the craft that makes a product feel deliberate.',
     composition: 'interface',
+  },
+  // ── 05E expansion (docs/CAPABILITY_STRATEGY.md §3) — eight new families ──
+  {
+    index: '06',
+    slug: 'automation-digital-operations',
+    name: 'Automation & Digital Operations',
+    scope: 'AI-native workflow automation — API-first, exception-handling, human-in-the-loop. Not brittle UI-scraping RPA: intelligent orchestration that handles real operational variance.',
+    composition: 'loop',
+    status: 'deliver-now',
+  },
+  {
+    index: '07',
+    slug: 'enterprise-integration',
+    name: 'Enterprise Integration & Business Systems',
+    scope: 'Connecting fragmented systems end-to-end — API platforms, ERP/CRM extensions, middleware, event-driven architecture. The interoperability layer that makes a stack behave as one system.',
+    composition: 'network',
+    status: 'deliver-now',
+  },
+  {
+    index: '08',
+    slug: 'advisory-managed-engineering',
+    name: 'Technology Advisory & Managed Engineering',
+    scope: 'Architecture consulting, product discovery, modernization roadmaps, technical due diligence, and ongoing engineering support — the judgment layer around the build.',
+    composition: 'process',
+    status: 'deliver-now',
+  },
+  {
+    index: '09',
+    slug: 'cybersecurity-application-security',
+    name: 'Cybersecurity, Application Security & Digital Trust',
+    scope: 'Defensive engineering — secure architecture, app-sec posture, DevSecOps, dependency/supply-chain security, secrets management. Authorized testing via specialist partners; grounded in OWASP 2025 (A01 broken access control, A03 supply chain).',
+    composition: 'shield',
+    status: 'specialist',
+  },
+  {
+    index: '10',
+    slug: 'quality-engineering',
+    name: 'Quality Engineering & Software Reliability',
+    scope: 'Automated test architecture, regression, reliability and resilience engineering. Performance/load/stress and chaos testing via specialist support where deep infrastructure is required.',
+    composition: 'gauge',
+    status: 'specialist',
+  },
+  {
+    index: '11',
+    slug: 'industry-solutions',
+    name: 'Industry-Specific Digital Solutions',
+    scope: 'Domain solutions for B2B SaaS, developer tooling, India SMB/MSME, fintech, healthcare administration, logistics, enterprise IT and government — each with its real workflow gaps. Mixed status per industry; regulated verticals via specialist partners.',
+    composition: 'process',
+    status: 'specialist',
+  },
+  {
+    index: '12',
+    slug: 'iot-embedded-edge',
+    name: 'IoT, Embedded & Edge Systems',
+    scope: 'Device connectivity, embedded software, edge computing, sensor data systems. Research/emerging — hardware-dependent; revisit via specialist partnership.',
+    composition: 'edge',
+    status: 'research',
+  },
+  {
+    index: '13',
+    slug: 'emerging-technology',
+    name: 'Emerging Technology & Applied Research',
+    scope: 'Applied research into digital twins, robotics software, spatial/AR-VR, distributed ledgers, edge-AI, and new human-computer interfaces. R&D only — not an established delivery service.',
+    composition: 'lab',
+    status: 'research',
   },
 ];
 
@@ -301,6 +407,192 @@ export const OFFERINGS: ServiceOffering[] = [
     metaTitle: 'Frontend Engineering — Paragonel',
     metaDescription: 'Fast, accessible, maintainable frontends — component systems, performance, motion that explains.',
   },
+
+  // ── 06 Automation & Digital Operations (deliver-now) ────────────────────
+  {
+    slug: 'ai-native-workflow-automation',
+    domainSlug: 'automation-digital-operations',
+    name: 'AI-Native Workflow Automation',
+    tagline: 'API-first automation that handles real variance — not brittle bots.',
+    problem:
+      'Robotic process automation fails at scale: research indicates roughly half of RPA projects fail, and over 70% plateau below 50 bots. UI-scraping bots break on interface changes, cannot handle exceptions, and cannot learn. The result is automation that works in a demo and fails in production.',
+    deliverable:
+      'API-first, event-driven automation with exception handling, human checkpoints where judgment is required, and an audit trail. Intelligence is native to the workflow (drafting, classifying, deciding within guardrails) rather than a chatbot bolted onto a manual process.',
+    why: 'Automation that survives production is built on stable APIs, explicit exception paths, and human-in-the-loop on consequential actions — the same pattern AcquisitionOS uses for outreach and scoring. It replaces brittle bots with operable systems.',
+    tech: ['Event-driven architecture', 'API orchestration', 'Human-in-the-loop review', 'Workflow engines', 'Observability'],
+    engagement:
+      'Begin with one documented, failing manual workflow. We map the stable API surface, design the exception/human-review paths, and ship automation against that scope. No fixed delivery time or guaranteed outcome is promised.',
+    metaTitle: 'AI-Native Workflow Automation — Paragonel',
+    metaDescription: 'API-first, human-in-the-loop automation that replaces brittle RPA. Built to survive production variance.',
+    status: 'deliver-now',
+  },
+  {
+    slug: 'document-intelligence',
+    domainSlug: 'automation-digital-operations',
+    name: 'Document Intelligence & Data Extraction',
+    tagline: 'Structured extraction from unstructured documents, with confidence and review.',
+    problem:
+      'Finance, legal and operations teams manually enter data from invoices, contracts and forms into downstream systems. Raw OCR is error-prone; the verification burden stays with humans.',
+    deliverable:
+      'LLM-grounded extraction that pulls structured fields from documents, attaches confidence scores, and routes low-confidence extractions to human review — rather than asserting an answer and moving on.',
+    why: 'Extraction that surfaces its own uncertainty is safer to operate than extraction that hides it. Confidence + human review is the defensible pattern; blind automation is the failure pattern.',
+    tech: ['LLM extraction', 'Confidence scoring', 'Human review queues', 'Validation rules', 'PII handling'],
+    engagement:
+      'One document type (e.g. invoices or contracts) as a scoped pilot. We deliver the extraction + review flow against that type and measure accuracy before broadening.',
+    metaTitle: 'Document Intelligence — Paragonel',
+    metaDescription: 'LLM-grounded document extraction with confidence scores and human review — not blind OCR.',
+    status: 'deliver-now',
+  },
+
+  // ── 07 Enterprise Integration & Business Systems (deliver-now) ──────────
+  {
+    slug: 'enterprise-system-integration',
+    domainSlug: 'enterprise-integration',
+    name: 'Enterprise System Integration',
+    tagline: 'The interoperability layer that makes a stack behave as one system.',
+    problem:
+      'Operations teams work across five to fifteen SaaS and on-prem systems, moving data by CSV, email and spreadsheet between them. Integrations exist individually but do not connect end-to-end; poor documentation blocks advanced use of even good tools.',
+    deliverable:
+      'API platforms, middleware and event-driven architecture that connect systems end-to-end — with typed contracts, error handling, and observability on the flow of data between systems.',
+    why: 'The cost of fragmented tools is not the tool price; it is the manual labour, errors and delay of moving data between them. Integration is where the stack either behaves as one system or does not.',
+    tech: ['API design / contracts', 'Event-driven architecture', 'Middleware', 'ERP/CRM extensions', 'iPaaS where fit'],
+    engagement:
+      'Map the current system graph + the manual handoffs. We scope the highest-pain integration first, ship it with observability, then extend. No guaranteed timeline.',
+    metaTitle: 'Enterprise System Integration — Paragonel',
+    metaDescription: 'API platforms, middleware and event-driven architecture connecting fragmented systems end-to-end.',
+    status: 'deliver-now',
+  },
+
+  // ── 08 Technology Advisory & Managed Engineering (deliver-now) ──────────
+  {
+    slug: 'technical-architecture-advisory',
+    domainSlug: 'advisory-managed-engineering',
+    name: 'Technical Architecture Advisory',
+    tagline: 'Architecture, trade-offs and limitations — stated explicitly.',
+    problem:
+      'Teams inherit systems they did not build and face decisions (modernize, rebuild, migrate, integrate) without a clear architecture picture or an honest statement of trade-offs and limitations.',
+    deliverable:
+      'Architecture assessment, modernization roadmaps, technical due diligence support, and product-discovery/feasibility work — with constraints, choices and unknowns stated plainly rather than hidden behind a recommendation.',
+    why: 'A good architecture decision requires the trade-offs to be visible. Paragonel’s stance is the same here as in its products: make architecture, trade-offs and limitations explicit; what is verified is stated, what is not is not.',
+    tech: ['Architecture review', 'Modernization roadmaps', 'Technical due diligence', 'Feasibility / discovery', 'Documentation'],
+    engagement:
+      'Scoped engagement — a defined assessment or roadmap deliverable. We do not promise free consultations or guaranteed outcomes; we commit to an explicit, written analysis.',
+    metaTitle: 'Technical Architecture Advisory — Paragonel',
+    metaDescription: 'Architecture assessment, modernization roadmaps and due diligence — trade-offs made explicit.',
+    status: 'deliver-now',
+  },
+
+  // ── 09 Cybersecurity, Application Security & Digital Trust (specialist) ──
+  {
+    slug: 'secure-architecture-appsec',
+    domainSlug: 'cybersecurity-application-security',
+    name: 'Secure Architecture & Application Security',
+    tagline: 'Defensive engineering, grounded in OWASP 2025.',
+    problem:
+      'OWASP Top 10:2025 reports broken access control in 100% of tested applications, and elevates software supply-chain failures to a top-three risk. Authorization is hand-coded per endpoint, transitive dependencies go unaudited, and secrets leak via CI/CD.',
+    deliverable:
+      'Secure architecture review, access-control policy design (authz-as-code), dependency/supply-chain posture gates, secrets-management posture, and DevSecOps integration. Defensive engineering delivered in-house; authorized penetration testing delivered via a validated specialist partner.',
+    why: 'Security is engineered, not audited-once. The 2025 risk landscape (broken access control, supply chain, misconfiguration) is addressed by shift-left defensive engineering and least-privilege by construction — the same discipline behind CodeGuard AI’s shift-left analysis.',
+    tech: ['OWASP 2025', 'Access-control policy (Cedar/OPA-class)', 'Dependency/SBOM posture', 'Secrets posture', 'DevSecOps CI gates'],
+    engagement:
+      'Posture assessment or secure-architecture engagement in-house; authorized penetration testing via a specialist partner under proper authorization. We do not imply an in-house specialist pen-test team.',
+    metaTitle: 'Secure Architecture & Application Security — Paragonel',
+    metaDescription: 'Defensive engineering grounded in OWASP 2025 — access control, supply-chain posture, DevSecOps. Authorized testing via specialist partners.',
+    status: 'specialist',
+  },
+  {
+    slug: 'ai-agent-security-governance',
+    domainSlug: 'cybersecurity-application-security',
+    name: 'AI Agent Security & Permission Governance',
+    tagline: 'Agents now execute actions — govern the actions, not just the prompts.',
+    problem:
+      'AI agents are granted permissions to delete records, send external messages, change configurations and execute code. Prompt injection bypasses application-level authorization; over-privileged agents become high-value targets. Dozens of CVEs were disclosed across major AI platforms in late 2025. Traditional security was not built for agents that act.',
+    deliverable:
+      'Agent permission scoping (least privilege, separated destructive actions), human-in-the-loop gates on consequential tools, action audit logging, and pre-deployment agent evaluation. Currently delivered as a research-grounded engagement; a productized governance layer is on the roadmap.',
+    why: 'AI security moved from prompts to actions. The defensible position is governing what an agent is permitted to do, with a human deciding on destructive paths — the same human-in-the-loop stance AcquisitionOS applies to outreach and scoring.',
+    tech: ['Permission scoping', 'Human-in-the-loop gates', 'Action audit', 'Agent evaluation', 'Prompt-injection defence'],
+    engagement:
+      'Research-grounded engagement: scope an agent’s permissions, design the human-review paths, and define the eval suite. Pen-test-grade validation via a specialist partner.',
+    metaTitle: 'AI Agent Security & Permission Governance — Paragonel',
+    metaDescription: 'Govern what AI agents are permitted to do — permission scoping, human-in-the-loop, action audit, pre-deployment eval.',
+    status: 'specialist',
+  },
+
+  // ── 10 Quality Engineering & Software Reliability (specialist) ──────────
+  {
+    slug: 'test-architecture-reliability',
+    domainSlug: 'quality-engineering',
+    name: 'Test Architecture & Reliability Engineering',
+    tagline: 'Automated quality by construction, not by hope.',
+    problem:
+      'Teams rely on manual QA and late-stage testing; regressions ship to production, reliability degrades under load, and the cost of a defect grows the later it is caught.',
+    deliverable:
+      'Test architecture (unit/integration/regression), continuous quality engineering integrated into CI, and reliability engineering (SLOs, error budgets). Performance, load, stress and chaos testing delivered via specialist support where deep infrastructure is required.',
+    why: 'Quality is a property of the architecture and the pipeline, not a final gate. Tests that run on every change catch regressions cheaply; SLOs make reliability measurable instead of aspirational.',
+    tech: ['Test architecture', 'CI quality gates', 'SLOs / error budgets', 'Regression suites', 'Specialist: load/chaos'],
+    engagement:
+      'Test-architecture engagement or ongoing quality-engineering support. Load/chaos/stress via specialist partner when required.',
+    metaTitle: 'Test Architecture & Reliability Engineering — Paragonel',
+    metaDescription: 'Automated test architecture, CI quality gates and reliability engineering. Load/chaos via specialist support.',
+    status: 'specialist',
+  },
+
+  // ── 11 Industry-Specific Digital Solutions (specialist) ─────────────────
+  {
+    slug: 'industry-solution-discovery',
+    domainSlug: 'industry-solutions',
+    name: 'Industry Solution Discovery & Engineering',
+    tagline: 'Real workflow gaps, by industry — then a scoped system to address them.',
+    problem:
+      'Industries share a pattern: workflows that organizations have normalized but that waste money, time and labour — fragmented data, manual reconciliation, poor visibility, preventable errors, and software that is overpriced or difficult to adopt. Generic tools do not fit the specific workflow.',
+    deliverable:
+      'Industry-grounded solution discovery (the real workflow, the gap, the cost) followed by a scoped system to address it — from a focused tool that removes one recurring headache to a multi-module platform. Regulated verticals (healthcare administration, government) delivered with specialist partners; see /industries for the pattern by sector.',
+    why: 'A defensible system is built against a specific workflow gap, not a generic category. Paragonel’s products (AcquisitionOS for sales, CodeGuard AI for developer tooling) are the proof that vertical depth beats horizontal breadth.',
+    tech: ['Workflow discovery', 'Domain modelling', 'Mixed stack per industry', 'Specialist partners (regulated)'],
+    engagement:
+      'Discovery engagement first — document the workflow and the gap, then propose a scoped build. No outcome metric is claimed without a measured source; no fake case studies.',
+    metaTitle: 'Industry Solution Discovery & Engineering — Paragonel',
+    metaDescription: 'Industry-grounded solution discovery and scoped engineering — real workflow gaps, no fabricated case studies.',
+    status: 'specialist',
+  },
+
+  // ── 12 IoT, Embedded & Edge Systems (research) ──────────────────────────
+  {
+    slug: 'iot-edge-research',
+    domainSlug: 'iot-embedded-edge',
+    name: 'IoT, Embedded & Edge Systems (Research)',
+    tagline: 'Exploring device connectivity, embedded software and edge compute.',
+    problem:
+      'Device data is siloed; edge processing is underused; hardware/software integration is hard to scope without a partner. No mature Paragonel offering exists yet in this space.',
+    deliverable:
+      'Currently research and prototyping only — device connectivity patterns, embedded software approaches, edge-compute architecture. Not delivered as an established service; revisit via a specialist hardware partner.',
+    why: 'IoT and edge are strategically relevant to the long-term platform vision but require hardware dependency and partnership Paragonel has not yet validated. Listed honestly as research, not as a current capability.',
+    tech: ['Device connectivity (research)', 'Embedded software (research)', 'Edge compute (research)', 'Sensor data (research)'],
+    engagement:
+      'Research / exploratory conversations only at this stage. No delivery is promised. Engage via /contact if you have a hardware partnership and want to explore.',
+    metaTitle: 'IoT, Embedded & Edge Systems (Research) — Paragonel',
+    metaDescription: 'Research-stage exploration of IoT, embedded software and edge computing — not an established delivery service.',
+    status: 'research',
+  },
+
+  // ── 13 Emerging Technology & Applied Research (research) ────────────────
+  {
+    slug: 'emerging-tech-research',
+    domainSlug: 'emerging-technology',
+    name: 'Emerging Technology & Applied Research',
+    tagline: 'Applied research into the next frontier — labelled as research.',
+    problem:
+      'Digital twins, robotics software, spatial/AR-VR, distributed ledgers, edge-AI and new human-computer interfaces are commercially relevant in places, but the relevance is uneven and the maturity is low. Adopting them prematurely is expensive; ignoring them is risky.',
+    deliverable:
+      'Applied research and feasibility assessment — where a given emerging technology is commercially relevant, where it is not, and what validation is required before investing. Prototyping where justified. Not delivered as an established service.',
+    why: 'The honest stance on emerging technology is to research it, validate it, and separate what is ready from what is not — the same stance Paragonel applies to its own product roadmap. Trendy technologies are not added to the catalogue to look large.',
+    tech: ['Digital twins (research)', 'Robotics software (research)', 'Spatial / AR-VR (research)', 'Distributed ledgers (research)', 'Edge-AI (research)'],
+    engagement:
+      'Research / feasibility engagement only. No delivery of production emerging-tech systems is promised. Engage via /contact to discuss a specific research question.',
+    metaTitle: 'Emerging Technology & Applied Research — Paragonel',
+    metaDescription: 'Applied research into digital twins, robotics software, spatial/AR-VR, distributed ledgers and edge-AI — labelled as research.',
+    status: 'research',
+  },
 ];
 
 export function getOfferingBySlug(slug: string): ServiceOffering | undefined {
@@ -313,4 +605,23 @@ export function getDomainBySlug(slug: string): ServiceDomain | undefined {
 
 export function getOfferingsForDomain(domainSlug: string): ServiceOffering[] {
   return OFFERINGS.filter((o) => o.domainSlug === domainSlug);
+}
+
+/** Resolve a domain's delivery status (defaults to 'deliver-now'). */
+export function getDomainStatus(d: ServiceDomain): CapabilityStatus {
+  return d.status ?? 'deliver-now';
+}
+
+/** Resolve an offering's delivery status (defaults to its domain's status). */
+export function getOfferingStatus(o: ServiceOffering): CapabilityStatus {
+  if (o.status) return o.status;
+  const domain = DOMAINS.find((d) => d.slug === o.domainSlug);
+  return getDomainStatus(domain ?? DOMAINS[0]);
+}
+
+/** Domains grouped by status, for status-aware rendering on /services. */
+export function getDomainsByStatus(): Record<CapabilityStatus, ServiceDomain[]> {
+  const out: Record<CapabilityStatus, ServiceDomain[]> = { 'deliver-now': [], specialist: [], research: [] };
+  for (const d of DOMAINS) out[getDomainStatus(d)].push(d);
+  return out;
 }
