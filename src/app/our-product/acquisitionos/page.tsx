@@ -135,6 +135,49 @@ export default function AcquisitionOSPage() {
         </div>
       </section>
 
+      {/* 1b. What it does — the value proposition (before the 12-stage detail). */}
+      <section className="section-padding bg-background">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl">
+          <ScrollFadeIn className="text-center mb-12">
+            <span className="text-primary font-bold uppercase tracking-[0.3em] text-xs mb-3 block">What it does</span>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-5">A connected acquisition workflow, end to end</h2>
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl mx-auto">
+              AcquisitionOS exists to solve one business problem: outbound acquisition is slow, manual, and fragmented
+              across tools that lose context at every handoff. It collapses that into one workflow — from the first
+              prospect signal to a progressing deal — so your team spends time on the judgment, not the stitching.
+            </p>
+          </ScrollFadeIn>
+          <ScrollFadeIn delay="120ms">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
+              {[
+                { t: 'Prospect discovery', d: 'Find the businesses that fit a target profile, instead of hand-picking from a list.' },
+                { t: 'Company research', d: 'Multi-source research assembled into one structured view, not five browser tabs.' },
+                { t: 'Opportunity identification', d: 'Surface gaps and signals that make an outreach worth sending.' },
+                { t: 'Lead qualification & scoring', d: 'AI-assisted scoring that prioritizes — a human confirms before anything acts.' },
+                { t: 'Personalized outreach', d: 'Drafts grounded in the research, not a mail-merge variable.' },
+                { t: 'Follow-up management', d: 'Sequenced follow-ups that carry context forward instead of starting over.' },
+                { t: 'Conversation & reply workflows', d: 'Replies are interpreted and routed so the right next step is obvious.' },
+                { t: 'Meeting & pipeline management', d: 'Meetings, stages, and pipeline in one place, connected to the deal.' },
+                { t: 'Proposal generation', d: 'Proposals drafted from the accumulated context of the engagement.' },
+                { t: 'Deal progression', d: 'Every stage hands verified context to the next, so nothing is rebuilt.' },
+              ].map((c) => (
+                <div key={c.t} className="rounded-lg border border-border bg-card p-5 shadow-sm">
+                  <h3 className="font-bold text-foreground mb-1">{c.t}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{c.d}</p>
+                </div>
+              ))}
+            </div>
+          </ScrollFadeIn>
+          <ScrollFadeIn delay="200ms" className="mt-8 max-w-3xl mx-auto rounded-lg border border-border bg-secondary/40 p-5 text-center dark:bg-secondary/15">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              The 12-stage lifecycle below is how these capabilities chain together — an interactive product
+              explanation, not the value proposition itself. Which stages are working, partial, or on the roadmap
+              is documented further down, honestly.
+            </p>
+          </ScrollFadeIn>
+        </div>
+      </section>
+
       {/* 2. Product positioning */}
       <section className="section-padding bg-background">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl">

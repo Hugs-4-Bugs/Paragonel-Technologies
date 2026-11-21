@@ -1,36 +1,51 @@
 "use client";
 
-import { motion, useReducedMotion, type Variants } from "framer-motion";
-import { ArrowRight, Sparkles, Cpu, Cloud, GitBranch, Boxes, Brain, Database, Plug, Workflow } from "lucide-react";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
+import { ArrowRight, Sparkles, Cpu, Cloud, GitBranch, Boxes, Brain, Database, Plug, Workflow, Code2, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { LucideIcon } from "lucide-react";
 
 /**
- * Cinematic hero with a connected product-engineering ecosystem visual.
- * Left: copy. Right: a hub-and-spoke node graph (animated SVG connectors) with
- * floating UI panels, including a clearly-distinguished AcquisitionOS panel.
- * All panels are illustrative — never presented as live customer data.
+ * Cinematic hero (Phase 2 §1). Left: copy with the exact founder headline +
+ * supporting message + primary/secondary CTAs. Right: a connected
+ * product-engineering ecosystem (animated SVG hub-and-spoke) with floating
+ * panels, an auto-rotating "capability spotlight" that cycles through the
+ * engineering capabilities, and a clearly-distinguished AcquisitionOS panel.
+ *
+ * Visual: deep-navy foundation with a SINGLE restrained electric-blue accent
+ * (was sky+cyan+indigo multi-blue). Reduced-motion disables travel/float/rotate.
+ * Every panel is illustrative — never presented as live customer data.
  */
-type Node = { id: string; label: string; icon: LucideIcon; x: number; y: number; tone: string };
+type Node = { id: string; label: string; icon: LucideIcon; x: number; y: number };
 
 const nodes: Node[] = [
-  { id: "ai", label: "AI / LLM Ops", icon: Brain, x: 78, y: 70, tone: "text-sky-300" },
-  { id: "cloud", label: "Cloud Platform", icon: Cloud, x: 300, y: 44, tone: "text-cyan-300" },
-  { id: "devops", label: "DevOps & CI/CD", icon: GitBranch, x: 430, y: 150, tone: "text-emerald-300" },
-  { id: "saas", label: "SaaS Products", icon: Boxes, x: 360, y: 270, tone: "text-violet-300" },
-  { id: "data", label: "Data & Retrieval", icon: Database, x: 120, y: 250, tone: "text-amber-300" },
-  { id: "api", label: "APIs & Integrations", icon: Plug, x: 250, y: 168, tone: "text-rose-300" },
+  { id: "ai", label: "AI / LLM Ops", icon: Brain, x: 78, y: 70 },
+  { id: "cloud", label: "Cloud Platform", icon: Cloud, x: 300, y: 44 },
+  { id: "devops", label: "DevOps & CI/CD", icon: GitBranch, x: 430, y: 150 },
+  { id: "saas", label: "SaaS Products", icon: Boxes, x: 360, y: 270 },
+  { id: "data", label: "Data & Retrieval", icon: Database, x: 120, y: 250 },
+  { id: "api", label: "APIs & Integrations", icon: Plug, x: 250, y: 168 },
 ];
 
 const hub = { x: 245, y: 162 };
 
-// Curved path from hub to each node
 const pathFor = (n: Node) => {
   const mx = (hub.x + n.x) / 2;
   const my = (hub.y + n.y) / 2 - 26;
   return `M ${hub.x} ${hub.y} Q ${mx} ${my} ${n.x} ${n.y}`;
 };
+
+/** Auto-rotating capability spotlight — cycles through engineering capabilities. */
+const capabilities = [
+  { icon: Brain, label: "AI / LLM Orchestration", detail: "RAG, agents & evaluation grounded in your data." },
+  { icon: Cloud, label: "Cloud-Native Platforms", detail: "Multi-region infra engineered for reliability & cost." },
+  { icon: GitBranch, label: "DevOps & Deployment", detail: "CI/CD with rollback — deploys that are routine." },
+  { icon: BarChart3, label: "Data Pipelines & Analytics", detail: "Raw signals → defensible, decision-ready metrics." },
+  { icon: Code2, label: "SaaS / Product Engineering", detail: "Architecture → MVP → scaled, operable platform." },
+  { icon: Plug, label: "API & System Integration", detail: "Webhooks, queues, CRM & productivity glue." },
+];
 
 const container: Variants = {
   hidden: {},
@@ -43,34 +58,38 @@ const item: Variants = {
 
 export function HeroEcosystem() {
   const reduce = useReducedMotion();
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (reduce) return;
+    const t = setInterval(() => setActive((i) => (i + 1) % capabilities.length), 2600);
+    return () => clearInterval(t);
+  }, [reduce]);
+
+  const cap = capabilities[active];
+
   return (
     <section className="relative isolate overflow-hidden bg-[#070b1a] text-white">
-      {/* Deep-navy gradient + electric-blue glows */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#070b1a] via-[#0a1230] to-[#070b1a]" />
-      <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-sky-500/20 blur-[120px]" />
-      <div className="absolute top-1/3 -right-24 h-96 w-96 rounded-full bg-indigo-500/20 blur-[120px]" />
-      <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-cyan-400/10 blur-[120px]" />
+      {/* Deep-navy foundation + a single restrained electric-blue accent glow */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#070b1a] via-[#0b1226] to-[#070b1a]" />
+      <div className="absolute -top-24 left-1/4 h-96 w-96 rounded-full bg-blue-500/15 blur-[130px]" />
+      <div className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full bg-blue-400/10 blur-[130px]" />
       {/* Subtle grid */}
       <div
-        className="absolute inset-0 opacity-[0.07]"
+        className="absolute inset-0 opacity-[0.06]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #3b82f6 1px, transparent 1px), linear-gradient(to bottom, #3b82f6 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
+            "linear-gradient(to right, #1e3a8a 1px, transparent 1px), linear-gradient(to bottom, #1e3a8a 1px, transparent 1px)",
+          backgroundSize: "52px 52px",
         }}
       />
 
       <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-20 md:py-28 md:grid-cols-[1.05fr_1fr] md:px-6 lg:py-32">
         {/* Copy */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="max-w-xl"
-        >
+        <motion.div variants={container} initial="hidden" animate="show" className="max-w-xl">
           <motion.span
             variants={item}
-            className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] text-sky-200"
+            className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.25em] text-blue-200"
           >
             <Sparkles className="h-3.5 w-3.5" /> Paragonel Technologies · Product Engineering &amp; AI
           </motion.span>
@@ -79,20 +98,17 @@ export function HeroEcosystem() {
             className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl"
           >
             We Engineer Digital Products That{" "}
-            <span className="bg-gradient-to-r from-sky-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-400 to-blue-200 bg-clip-text text-transparent">
               Move Businesses Forward.
             </span>
           </motion.h1>
-          <motion.p
-            variants={item}
-            className="mt-6 text-base leading-relaxed text-slate-300 sm:text-lg"
-          >
-            From AI-powered systems and intelligent automation to scalable SaaS platforms and cloud-native
-            applications, Paragonel designs and engineers technology that turns complex business challenges into
-            practical digital products.
+          <motion.p variants={item} className="mt-6 text-base leading-relaxed text-slate-300 sm:text-lg">
+            Paragonel Technologies designs and engineers AI-powered systems, scalable software products and
+            cloud-native platforms that solve practical business problems. From architecture and development to
+            automation and deployment, we turn complex requirements into working technology.
           </motion.p>
           <motion.div variants={item} className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button asChild size="lg" className="rounded-full bg-sky-500 px-7 text-base font-bold text-white hover:bg-sky-400 shadow-lg shadow-sky-500/30">
+            <Button asChild size="lg" className="rounded-md bg-blue-600 px-7 text-base font-bold text-white hover:bg-blue-500 shadow-lg shadow-blue-600/25">
               <Link href="/services">
                 Explore Our Capabilities <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -101,13 +117,13 @@ export function HeroEcosystem() {
               asChild
               variant="outline"
               size="lg"
-              className="rounded-full border-white/25 bg-white/5 px-7 text-base font-bold text-white backdrop-blur hover:bg-white/10"
+              className="rounded-md border-white/20 bg-white/5 px-7 text-base font-bold text-white backdrop-blur hover:bg-white/10"
             >
               <Link href="/our-product/acquisitionos">Discover AcquisitionOS</Link>
             </Button>
           </motion.div>
           <motion.p variants={item} className="mt-6 text-xs text-slate-400">
-            Shaping the Future · AcquisitionOS in <span className="font-bold text-sky-300">Private Beta</span>
+            Shaping the Future · AcquisitionOS in <span className="font-bold text-blue-300">Private Beta</span>
           </motion.p>
         </motion.div>
 
@@ -120,7 +136,6 @@ export function HeroEcosystem() {
         >
           <div className="relative aspect-square w-full">
             <svg viewBox="0 0 520 320" className="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid meet">
-              {/* animated connectors */}
               {nodes.map((n, i) => (
                 <motion.path
                   key={n.id}
@@ -130,17 +145,16 @@ export function HeroEcosystem() {
                   strokeWidth={1.5}
                   strokeDasharray="4 4"
                   initial={reduce ? false : { pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.55 }}
+                  animate={{ pathLength: 1, opacity: 0.5 }}
                   transition={{ duration: 1.1, delay: 0.4 + i * 0.12, ease: "easeInOut" }}
                 />
               ))}
-              {/* travelling data pulse along each wire */}
               {!reduce &&
                 nodes.map((n) => (
                   <motion.circle
                     key={`p-${n.id}`}
                     r={2.6}
-                    fill="#7dd3fc"
+                    fill="#60a5fa"
                     initial={{ offsetDistance: "0%" }}
                     animate={{ offsetDistance: "100%" }}
                     transition={{ duration: 2.4, repeat: Infinity, ease: "linear", delay: Math.random() * 2 }}
@@ -149,16 +163,16 @@ export function HeroEcosystem() {
                 ))}
               <defs>
                 <linearGradient id="wire" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#38bdf8" />
-                  <stop offset="100%" stopColor="#818cf8" />
+                  <stop offset="0%" stopColor="#3b82f6" />
+                  <stop offset="100%" stopColor="#93c5fd" />
                 </linearGradient>
               </defs>
             </svg>
 
             {/* hub */}
             <Floating delay={0.2} x="46%" y="50%" reduce={reduce}>
-              <div className="flex flex-col items-center gap-1 rounded-2xl border border-sky-400/40 bg-white/10 px-4 py-3 backdrop-blur-md shadow-xl shadow-sky-500/20">
-                <Cpu className="h-6 w-6 text-sky-300" />
+              <div className="flex flex-col items-center gap-1 rounded-xl border border-blue-400/40 bg-white/10 px-4 py-3 backdrop-blur-md shadow-xl shadow-blue-500/20">
+                <Cpu className="h-6 w-6 text-blue-300" />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white">Product Eng.</span>
               </div>
             </Floating>
@@ -172,26 +186,57 @@ export function HeroEcosystem() {
                 y={`${(n.y / 320) * 100}%`}
                 reduce={reduce}
               >
-                <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-[#0b1530]/80 px-2.5 py-2 backdrop-blur shadow-lg">
-                  <n.icon className={`h-4 w-4 ${n.tone}`} />
+                <div className="flex items-center gap-2 rounded-lg border border-white/12 bg-[#0b1226]/85 px-2.5 py-2 backdrop-blur shadow-lg">
+                  <n.icon className="h-4 w-4 text-blue-300" />
                   <span className="text-[10px] font-bold text-slate-200">{n.label}</span>
                 </div>
               </Floating>
             ))}
 
-            {/* Distinct AcquisitionOS floating panel */}
+            {/* Auto-rotating capability spotlight (top-left) */}
+            <motion.div
+              initial={reduce ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.9 }}
+              className="absolute left-0 top-2 w-[200px] rounded-xl border border-white/15 bg-[#0b1226]/90 p-3 shadow-xl backdrop-blur"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-blue-300">Capability</span>
+                <span className="text-[9px] text-slate-500">{active + 1}/{capabilities.length}</span>
+              </div>
+              <div className="mt-2 h-[52px]">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={active}
+                    initial={reduce ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduce ? undefined : { opacity: 0, y: -8 }}
+                    transition={{ duration: 0.35 }}
+                    className="flex flex-col gap-1"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <cap.icon className="h-3.5 w-3.5 text-blue-300" />
+                      <span className="text-[11px] font-bold text-white">{cap.label}</span>
+                    </div>
+                    <p className="text-[9px] leading-snug text-slate-400">{cap.detail}</p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </motion.div>
+
+            {/* Distinct AcquisitionOS floating panel (bottom-center) */}
             <motion.div
               initial={reduce ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 1.1 }}
-              className="absolute -bottom-2 left-1/2 w-[230px] -translate-x-1/2 rounded-2xl border border-sky-400/50 bg-gradient-to-br from-[#0c1a3f]/95 to-[#0a1230]/95 p-3 shadow-2xl shadow-sky-500/30 backdrop-blur"
+              className="absolute -bottom-2 left-1/2 w-[230px] -translate-x-1/2 rounded-xl border border-blue-400/45 bg-gradient-to-br from-[#0c1a3f]/95 to-[#0a1226]/95 p-3 shadow-2xl shadow-blue-500/25 backdrop-blur"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <Workflow className="h-3.5 w-3.5 text-sky-300" />
+                  <Workflow className="h-3.5 w-3.5 text-blue-300" />
                   <span className="text-[11px] font-black tracking-tight text-white">AcquisitionOS</span>
                 </div>
-                <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-sky-300">
+                <span className="rounded-full bg-blue-500/20 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-blue-300">
                   Beta
                 </span>
               </div>
@@ -201,7 +246,7 @@ export function HeroEcosystem() {
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                     <div className="h-1 flex-1 rounded-full bg-white/15">
                       <motion.div
-                        className="h-full rounded-full bg-sky-400"
+                        className="h-full rounded-full bg-blue-400"
                         initial={reduce ? false : { width: 0 }}
                         animate={{ width: `${60 + k * 12}%` }}
                         transition={{ duration: 1, delay: 1.4 + k * 0.2 }}

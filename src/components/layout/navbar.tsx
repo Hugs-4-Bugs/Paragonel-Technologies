@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Brain, Cloud, GitBranch, Boxes, ArrowRight } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Brain, Cloud, GitBranch, Boxes, ArrowRight, Code2, BarChart3 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,10 +27,10 @@ const mainNavLinks = [
 ];
 
 const servicesMega = [
-  { href: "/services/ai-solutions", label: "AI Solutions & LLM Ops", icon: Brain, desc: "AI-native systems, RAG, LLM orchestration, evaluation." },
-  { href: "/services/cloud-infrastructure", label: "Cloud Infrastructure", icon: Cloud, desc: "Platform engineering, cloud architecture, reliability." },
-  { href: "/services/devops-automation", label: "DevOps & Reliability", icon: GitBranch, desc: "CI/CD, IaC, containers, observability." },
-  { href: "/services/saas-platforms", label: "Custom SaaS & Product Eng.", icon: Boxes, desc: "Full product builds — architecture, MVP, scale." },
+  { href: "/services/ai-solutions", label: "AI Solutions", icon: Brain, desc: "AI agents, copilots, knowledge assistants, support automation." },
+  { href: "/services/custom-software", label: "Custom Software Development", icon: Code2, desc: "SaaS, enterprise apps, internal systems, workflow automation." },
+  { href: "/services/cloud-devops", label: "Cloud & DevOps", icon: Cloud, desc: "Migration, CI/CD, IaC, observability, scalability." },
+  { href: "/services/data-analytics", label: "Data & Analytics", icon: BarChart3, desc: "Dashboards, BI, pipelines, reporting, KPI monitoring." },
 ];
 
 const moreNavLinks = [

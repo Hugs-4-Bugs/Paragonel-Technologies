@@ -4,11 +4,11 @@ import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Brain, Cloud, GitFork, Layers, ArrowRight, AppWindow, Zap, Code, ShieldCheck } from 'lucide-react';
+import { Brain, Cloud, GitFork, Layers, ArrowRight, AppWindow, Zap, Code, ShieldCheck, Code2, BarChart3 } from 'lucide-react';
 import { stripMarkdown } from '@/lib/markdown-utils';
 
 const iconMap: Record<string, any> = {
-  Brain, Cloud, GitFork, Layers, AppWindow, Zap, Code, ShieldCheck
+  Brain, Cloud, GitFork, Layers, AppWindow, Zap, Code, ShieldCheck, Code2, BarChart3
 };
 
 interface ServicesSectionProps {

@@ -10,72 +10,76 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 234 63% 15%;
+    /* Light: near-white surfaces, deep neutral-navy ink, electric blue as ACCENT only. */
+    --background: 0 0% 99%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 234 63% 15%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 234 63% 15%;
-    --primary: 207 68% 53%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 94%;
-    --secondary-foreground: 234 63% 20%;
-    --muted: 210 40% 90%;
-    --muted-foreground: 234 40% 45%;
-    --accent: 270 50% 40%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 40% 18%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 9% 40%;
+    --accent: 222 47% 11%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 210 20% 85%;
-    --input: 210 20% 85%;
-    --ring: 207 68% 53%;
-    --radius: 0.5rem;
-    
+    --border: 220 14% 89%;
+    --input: 220 14% 89%;
+    --ring: 217 91% 50%;
+    --radius: 0.625rem;
+
     --background-card-neumorphic: 220 13% 95%;
     --shadow-color-dark: 220 13% 80%;
     --shadow-color-light: 0 0% 100%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 50%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 14% 90%;
+    --sidebar-ring: 217 91% 50%;
   }
 
   .dark {
-    --background: 234 63% 30%;
+    /* Dark: deep navy foundation, NEUTRAL dark surfaces (not blue-tinted cards),
+       electric blue as a restrained accent. Previously every surface was
+       blue-tinted (234° at 38–48% L) which read as "excessively blue". */
+    --background: 222 47% 9%;
     --foreground: 210 40% 96%;
-    --card: 234 55% 38%;
+    --card: 222 40% 13%;
     --card-foreground: 210 40% 96%;
-    --popover: 234 50% 35%;
+    --popover: 222 42% 11%;
     --popover-foreground: 210 40% 96%;
-    --primary: 207 68% 53%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 234 50% 42%;
+    --primary: 217 91% 56%;
+    --primary-foreground: 222 47% 8%;
+    --secondary: 222 30% 18%;
     --secondary-foreground: 210 40% 96%;
-    --muted: 234 45% 48%;
-    --muted-foreground: 210 30% 75%;
-    --accent: 270 50% 48%;
-    --accent-foreground: 210 40% 98%;
-    --border: 234 40% 45%;
-    --input: 234 40% 45%;
-    --ring: 207 68% 53%;
+    --muted: 222 25% 16%;
+    --muted-foreground: 220 14% 65%;
+    --accent: 217 91% 56%;
+    --accent-foreground: 222 47% 8%;
+    --border: 222 25% 20%;
+    --input: 222 25% 20%;
+    --ring: 217 91% 56%;
 
-    --background-card-neumorphic: 234 63% 35%;
-    --shadow-color-dark: 234 63% 25%;
-    --shadow-color-light: 234 63% 45%;
-    
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --background-card-neumorphic: 222 40% 14%;
+    --shadow-color-dark: 222 47% 5%;
+    --shadow-color-light: 222 40% 16%;
+
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 217 91% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 222 30% 16%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 222 25% 18%;
+    --sidebar-ring: 217 91% 56%;
   }
 }
 
@@ -86,9 +90,11 @@ body {
 }
 
 .animated-gradient-background {
-  background: linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), hsl(207, 68%, 45%), hsl(270, 50%, 35%));
-  background-size: 400% 400%;
-  animation: gradientAnimation 15s ease infinite;
+  /* Restrained navy gradient with a single electric-blue accent stop —
+     was blue→purple→blue→purple (excessively saturated). */
+  background: linear-gradient(-45deg, hsl(222 47% 11%), hsl(222 47% 14%), hsl(217 60% 20%), hsl(222 47% 12%));
+  background-size: 300% 300%;
+  animation: gradientAnimation 18s ease infinite;
 }
 
 @keyframes gradientAnimation {

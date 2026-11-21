@@ -4,12 +4,16 @@ import { motion, useReducedMotion } from "framer-motion";
 import {
   Database, ArrowDownToLine, Cpu, Search, Brain, Boxes, Gauge, Globe, Server, Network,
   Layers, GitFork, GitBranch, Activity, ShieldCheck, Rocket, Palette, Users, Code2, Lock,
+  Scissors, LayoutDashboard, ClipboardList, DraftingCompass, Workflow, Hammer,
+  GitCommitHorizontal, Bell, BarChart3, Cloud,
   type LucideIcon,
 } from "lucide-react";
 
 const ICONS: Record<string, LucideIcon> = {
   Database, ArrowDownToLine, Cpu, Search, Brain, Boxes, Gauge, Globe, Server, Network,
   Layers, GitFork, GitBranch, Activity, ShieldCheck, Rocket, Palette, Users, Code2, Lock,
+  Scissors, LayoutDashboard, ClipboardList, DraftingCompass, Workflow, Hammer,
+  GitCommitHorizontal, Bell, BarChart3, Cloud,
 };
 
 export type FlowStage = { label: string; icon: string };
