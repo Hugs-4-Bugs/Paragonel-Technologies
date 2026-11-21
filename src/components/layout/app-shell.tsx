@@ -20,6 +20,7 @@ import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBa
 import { CookieSettingsModal } from '@/components/cookie-consent/CookieSettingsModal';
 import { CookieConsentManager } from '@/components/cookie-consent/CookieConsentManager';
 import { CookieConsentProvider } from '@/hooks/use-cookie-consent';
+import { Ga4Analytics } from '@/components/analytics/ga4';
 import { AuthProvider } from '@/contexts/auth-context';
 import { FirebaseClientProvider } from '@/firebase';
 import { SmoothScroll } from '@/components/motion/smooth-scroll';
@@ -54,6 +55,7 @@ export function AppShell({
                 <Toaster />
                 <CookieConsentBanner />
                 <CookieSettingsModal />
+                <Ga4Analytics />
               </ThemeProvider>
             </CookieConsentManager>
           </CookieConsentProvider>
