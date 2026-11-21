@@ -107,7 +107,7 @@ export default function AdminDashboard() {
         title: "Database Seeded",
         description: `Local data loaded (${data.seeded?.jobs ?? 0} jobs, ${data.seeded?.blogPosts ?? 0} posts, ${data.seeded?.services ?? 0} services).`,
       });
-    } catch (e) {
+    } catch {
       toast({ title: "Seeding Failed", variant: "destructive" });
     } finally {
       setIsSeeding(false);

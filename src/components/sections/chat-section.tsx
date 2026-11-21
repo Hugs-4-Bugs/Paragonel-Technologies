@@ -99,7 +99,7 @@ export function ChatSection() {
         updateCareerStep('offering_help');
       }
       addMessage('ai', response.answer);
-    } catch (e) {
+    } catch {
       addMessage('ai', "I encountered a sync issue. You can explore [Careers](/careers) manually.");
     } finally {
       setIsLoading(false);
@@ -119,7 +119,7 @@ export function ChatSection() {
         setCandidateProfile({ ...profile, resumeUrl: file.name, resumeDataUri: dataUri });
         updateCareerStep('confirm_details');
         addMessage('ai', "Extraction complete. Here is the profile I built for you. Please confirm to see your job matches.");
-      } catch (err) {
+      } catch {
         addMessage('ai', "I couldn't parse that file. Please try pasting your resume content.");
         updateCareerStep('resume_upload');
       } finally {
@@ -151,7 +151,7 @@ export function ChatSection() {
       addMessage('ai', matches.length > 0 
         ? `Found ${matches.length} roles matching your profile!` 
         : "I couldn't find a direct match (>60%), but you can still apply manually.");
-    } catch (e) {
+    } catch {
       addMessage('ai', "Failed to sync live roles.");
     } finally {
       setIsLoading(false);
@@ -174,12 +174,13 @@ export function ChatSection() {
 
   if (!isOpen) {
     return (
-      <Button 
-        variant="default" 
-        className="fixed bottom-6 right-6 h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-2xl z-50 bg-primary hover:scale-110 transition-transform p-0" 
+      <Button
+        variant="default"
+        className="fixed bottom-6 right-6 h-14 w-14 sm:h-16 sm:w-16 rounded-full shadow-2xl z-50 bg-primary hover:scale-110 transition-transform p-0"
         onClick={() => setIsOpen(true)}
+        aria-label="Open Paragonel AI chat assistant"
       >
-        <MessageCircle className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+        <MessageCircle className="h-7 w-7 sm:h-8 sm:w-8 text-white" aria-hidden="true" />
       </Button>
     );
   }
@@ -255,7 +256,7 @@ export function ChatSection() {
                       });
                       updateCareerStep('submitted');
                       addMessage('ai', "Success! Your application has been received. Our team will review your profile shortly.");
-                    } catch (e) { addMessage('ai', "I had trouble saving your application. Please try applying manually on the Careers page."); }
+                    } catch { addMessage('ai', "I had trouble saving your application. Please try applying manually on the Careers page."); }
                     finally { setIsLoading(false); }
                   }}
                 />

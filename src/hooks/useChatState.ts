@@ -89,7 +89,7 @@ export function useChatState() {
           content,
           timestamp: serverTimestamp(),
         });
-      } catch (e) {}
+      } catch {}
     }
   }, [state.sessionId]);
 

@@ -120,7 +120,7 @@ export function TechNewsSection() {
            <ScrollFadeIn className="text-center py-10">
              <Newspaper className="mx-auto h-16 w-16 text-muted-foreground mb-4 opacity-50" />
              <h3 className="text-xl font-semibold text-foreground mb-2">No News Available</h3>
-             <p className="text-muted-foreground">We couldn't fetch the latest news at this moment. Please check back later.</p>
+             <p className="text-muted-foreground">We couldn&apos;t fetch the latest news at this moment. Please check back later.</p>
            </ScrollFadeIn>
         )}
       </div>

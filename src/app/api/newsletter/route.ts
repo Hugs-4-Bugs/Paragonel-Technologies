@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   // Honeypot.
-  if (typeof body === 'object' && body && 'website' in body && (body as any).website) {
+  if (typeof body === 'object' && body && 'website' in body && (body as { website?: string }).website) {
     return NextResponse.json({ success: true }, { status: 201 });
   }
 

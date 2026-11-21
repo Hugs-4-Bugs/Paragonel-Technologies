@@ -180,11 +180,17 @@ export function toJsonValue(v: unknown): unknown {
   return v;
 }
 
-/** Serialize a Firestore doc snapshot into `{ id, ...fields }` (JSON-safe). */
+/** Serialize a Firestore doc snapshot into `{ id, ...fields }` (JSON-safe).
+ * Accepts any snapshot shape whose `data()` returns something (QueryDocumentSnapshot
+ * OR DocumentSnapshot) — the Firestore return type is `DocumentData | undefined`,
+ * which doesn't structurally satisfy a narrower `Record<string, unknown>` return,
+ * so we accept `unknown` + cast inside. This removes the need for `as any` casts
+ * at every call site. */
 export function serializeDoc(
-  snap: { id: string; data: () => Record<string, unknown> | undefined }
+  snap: { id: string; data: () => unknown }
 ): Record<string, unknown> {
-  const data = snap.data() || {};
+  const raw = snap.data();
+  const data: Record<string, unknown> = (raw && typeof raw === 'object') ? raw as Record<string, unknown> : {};
   const out: Record<string, unknown> = { id: snap.id };
   for (const [k, v] of Object.entries(data)) {
     out[k] = toJsonValue(v);

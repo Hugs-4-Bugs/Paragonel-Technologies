@@ -98,7 +98,7 @@ export function CareersClient({ jobs }: CareersClientProps) {
 
     if (dateFilter !== 'Any time') {
       const now = new Date();
-      let cutoffDate = new Date(now);
+      const cutoffDate = new Date(now);
       if (dateFilter === 'Past month') cutoffDate.setMonth(now.getMonth() - 1);
       if (dateFilter === 'Past week') cutoffDate.setDate(now.getDate() - 7);
       if (dateFilter === 'Past 24 hours') cutoffDate.setHours(now.getHours() - 24);

@@ -102,7 +102,7 @@ export function AiContent() {
            <ScrollFadeIn className="text-center py-10">
              <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4 neon-icon" />
              <h3 className="text-xl font-semibold text-foreground mb-2">No Recommendations Yet</h3>
-             <p className="text-muted-foreground">We couldn't find specific recommendations for you at this moment. Explore more to get personalized content!</p>
+             <p className="text-muted-foreground">We couldn&apos;t find specific recommendations for you at this moment. Explore more to get personalized content!</p>
            </ScrollFadeIn>
         )}
       </div>

@@ -71,7 +71,7 @@ export default function AdminJobsPage() {
       if (!res.ok) throw new Error();
       toast({ title: 'Status Updated', description: `Job is now ${!currentIsActive ? 'Active' : 'Archived'}.` });
       loadJobs();
-    } catch (e) {
+    } catch {
       toast({ title: 'Error', description: 'Failed to update job status.', variant: 'destructive' });
     }
   };
@@ -83,7 +83,7 @@ export default function AdminJobsPage() {
       if (!res.ok) throw new Error();
       toast({ title: 'Success', description: 'Job deleted permanently.' });
       loadJobs();
-    } catch (e) {
+    } catch {
       toast({ title: 'Error', description: 'Failed to delete job.', variant: 'destructive' });
     }
   };

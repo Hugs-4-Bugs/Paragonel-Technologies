@@ -53,7 +53,7 @@ export async function companyQnaFlow(input: CompanyQnaInput): Promise<CompanyQna
   try {
     const { output } = await qnaPrompt(input);
     return output!;
-  } catch (error) {
+  } catch {
     return {
       answer: "I'm here to help! You can explore our [Services](/services) or [Open Roles](/careers). How else can I assist?",
       intent: 'qna'

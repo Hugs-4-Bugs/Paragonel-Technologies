@@ -102,7 +102,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  if (typeof body !== 'object' || body === null || typeof (body as any).isActive !== 'boolean') {
+  if (typeof body !== 'object' || body === null || typeof (body as { isActive?: unknown }).isActive !== 'boolean') {
     return NextResponse.json(
       { error: 'Validation failed', issues: ['isActive (boolean) is required'] },
       { status: 400 }

@@ -84,7 +84,7 @@ export function CookieSettingsModal() {
           </DialogTitle>
           <DialogDescription>
             Manage your cookie settings below. Essential cookies are always active.
-            Changes will be saved when you click "Save Preferences".
+            Changes will be saved when you click &quot;Save Preferences&quot;.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] p-6">

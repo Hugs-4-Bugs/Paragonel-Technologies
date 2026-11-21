@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
   // Honeypot: if the hidden "website" field is filled, silently accept and drop
   // (bots). Returns 201 so the bot cannot tell it was rejected.
-  if (typeof body === 'object' && body && 'website' in body && (body as any).website) {
+  if (typeof body === 'object' && body && 'website' in body && (body as { website?: string }).website) {
     return NextResponse.json({ success: true }, { status: 201 });
   }
 

@@ -113,7 +113,7 @@ export async function PATCH(
   if (
     typeof body !== 'object' ||
     body === null ||
-    (body as any).status !== 'Published' && (body as any).status !== 'Draft'
+    (body as { status?: string }).status !== 'Published' && (body as { status?: string }).status !== 'Draft'
   ) {
     return NextResponse.json(
       { error: 'Validation failed', issues: ["status must be 'Published' or 'Draft'"] },

@@ -2,19 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { 
-  Plus, 
-  Search, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
-  CheckCircle2, 
-  Clock, 
-  FileText,
-  Eye,
-  BookOpen,
-  Image as ImageIcon
-} from 'lucide-react';
+import { Plus, Search, MoreVertical, Edit, Trash2, CheckCircle2, Clock, Eye, BookOpen, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -73,7 +61,7 @@ export default function AdminBlogPage() {
       if (!res.ok) throw new Error();
       toast({ title: 'Status Updated', description: `Article is now ${newStatus}.` });
       loadPosts();
-    } catch (e) {
+    } catch {
       toast({ title: 'Error', description: 'Failed to update article status.', variant: 'destructive' });
     }
   };
@@ -85,7 +73,7 @@ export default function AdminBlogPage() {
       if (!res.ok) throw new Error();
       toast({ title: 'Success', description: 'Article deleted permanently.' });
       loadPosts();
-    } catch (e) {
+    } catch {
       toast({ title: 'Error', description: 'Failed to delete article.', variant: 'destructive' });
     }
   };

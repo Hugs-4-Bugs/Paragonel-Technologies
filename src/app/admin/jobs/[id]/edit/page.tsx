@@ -84,7 +84,7 @@ export default function EditJobPage() {
             status: j.status || (j.isActive ? 'Active' : 'Draft'),
           });
         }
-      } catch (error) {
+      } catch {
         toast({ title: 'Error', description: 'Failed to load job details.', variant: 'destructive' });
       } finally {
         setIsFetching(false);

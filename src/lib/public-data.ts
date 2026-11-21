@@ -43,9 +43,12 @@ function toISO(value: unknown): string | null {
   }
 }
 
-/** Normalize a Firestore doc into a plain JSON-safe object with ISO dates. */
-function serializeDoc<T extends Record<string, any>>(snap: { id: string; data: () => T }): T & { id: string } {
-  const data = snap.data();
+/** Normalize a Firestore doc into a plain JSON-safe object with ISO dates.
+ * Accepts `data: () => T | undefined` because DocumentSnapshot.data() returns
+ * `DocumentData | undefined` (the doc may not exist); the `| undefined` is
+ * handled inside so callers don't need `as any` casts. */
+function serializeDoc<T extends Record<string, any>>(snap: { id: string; data: () => T | undefined }): T & { id: string } {
+  const data = snap.data() || ({} as T);
   const out: Record<string, any> = { ...data, id: snap.id };
   for (const key of ['createdAt', 'updatedAt', 'postedDate', 'publishedAt', 'publishAt', 'date'] as const) {
     if (out[key] !== undefined) {
@@ -74,7 +77,7 @@ export async function getPublicServices(limit = 50): Promise<any[]> {
       .orderBy('order', 'asc')
       .limit(limit)
       .get();
-    const dynamic = snap.docs.map((d) => serializeDoc(d as any));
+    const dynamic = snap.docs.map((d) => serializeDoc(d));
     // Merge static base (guaranteed core catalogue) with dynamic CMS records,
     // de-duplicated by slug so admin edits to a base service show through.
     const slugs = new Set(dynamic.map((s) => s.slug));
@@ -100,7 +103,7 @@ export async function getPublicJobs(limit = 50): Promise<any[]> {
       .orderBy('createdAt', 'desc')
       .limit(limit)
       .get();
-    return snap.docs.map((d) => serializeDoc(d as any));
+    return snap.docs.map((d) => serializeDoc(d));
   } catch (err) {
     console.error('[public-data] getPublicJobs failed:', err instanceof Error ? err.message : err);
     return dummyJobs.filter((j) => j.isActive);
@@ -124,7 +127,7 @@ export async function getPublicJobById(id: string): Promise<any | null> {
     if (!snap.exists) return null;
     const data = snap.data() as any;
     if (!data.isActive || data.deletedAt) return null;
-    return serializeDoc(snap as any);
+    return serializeDoc(snap);
   } catch (err) {
     console.error('[public-data] getPublicJobById failed:', err instanceof Error ? err.message : err);
     return dummyJobs.find((j) => j.id === id && j.isActive) ?? null;
@@ -149,7 +152,7 @@ export async function getPublishedTestimonials(limit = 50): Promise<any[]> {
       .limit(100)
       .get();
     const items = snap.docs
-      .map((d) => serializeDoc(d as any))
+      .map((d) => serializeDoc(d))
       .filter((t) => !t.deletedAt && t.permissionDisplayFeedback === true);
     items.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
     return items.slice(0, limit);
@@ -176,7 +179,7 @@ export async function getPublishedClientProjects(limit = 50): Promise<any[]> {
       .limit(100)
       .get();
     const items = snap.docs
-      .map((d) => serializeDoc(d as any))
+      .map((d) => serializeDoc(d))
       .filter((t) => !t.deletedAt);
     items.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
     return items.slice(0, limit);
@@ -202,7 +205,7 @@ export async function getPublishedTechEcosystem(limit = 50): Promise<any[]> {
       .limit(100)
       .get();
     const items = snap.docs
-      .map((d) => serializeDoc(d as any))
+      .map((d) => serializeDoc(d))
       .filter((t) => !t.deletedAt && t.publicDisplayPermission === true);
     items.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
     return items.slice(0, limit);
@@ -226,7 +229,7 @@ export async function getPublishedPosts(limit = 50): Promise<any[]> {
       .orderBy('createdAt', 'desc')
       .limit(limit)
       .get();
-    return snap.docs.map((d) => serializeDoc(d as any));
+    return snap.docs.map((d) => serializeDoc(d));
   } catch (err) {
     console.error('[public-data] getPublishedPosts failed:', err instanceof Error ? err.message : err);
     return staticBlogPosts.filter((p) => p.status === 'Published');
@@ -249,7 +252,7 @@ export async function getPublishedPostBySlug(slug: string): Promise<any | null> 
       .limit(1)
       .get();
     if (snap.empty) return null;
-    return serializeDoc(snap.docs[0] as any);
+    return serializeDoc(snap.docs[0]);
   } catch (err) {
     console.error('[public-data] getPublishedPostBySlug failed:', err instanceof Error ? err.message : err);
     return staticBlogPosts.find((p) => p.slug === slug && p.status === 'Published') ?? null;

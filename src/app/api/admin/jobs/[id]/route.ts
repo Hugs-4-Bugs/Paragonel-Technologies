@@ -105,7 +105,7 @@ export async function PATCH(
   }
 
   // Accept { isActive: boolean } (activate/archive).
-  if (typeof body !== 'object' || body === null || typeof (body as any).isActive !== 'boolean') {
+  if (typeof body !== 'object' || body === null || typeof (body as { isActive?: unknown }).isActive !== 'boolean') {
     return NextResponse.json(
       { error: 'Validation failed', issues: ['isActive (boolean) is required'] },
       { status: 400 }

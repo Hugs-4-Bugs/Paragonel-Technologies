@@ -60,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       toast({ title: 'Logged Out', description: 'Session ended successfully.' });
       router.push('/admin/login');
       router.refresh();
-    } catch (error) {
+    } catch {
       toast({ title: 'Error', description: 'Failed to logout.', variant: 'destructive' });
     }
   };

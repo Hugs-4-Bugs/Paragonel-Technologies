@@ -36,8 +36,13 @@ export function mapClientProjectToWorkEntry(p: ClientProjectDoc): WorkEntry {
   const title = showCompany ? (p.companyName || 'Client engagement') : (p.projectTitle || 'Client engagement');
   const href = p.websiteUrl && typeof p.websiteUrl === 'string' && p.websiteUrl.trim() ? p.websiteUrl.trim() : '/contact';
   const ctaLabel = href.startsWith('http') ? 'Visit site' : 'Start a conversation';
+  // Deterministic fallback slug (NO Math.random — would break hydration + make
+  // React keys unstable). CMS docs always carry an `id` (Firestore doc ID) or a
+  // `slug`; the slugified company/project name is a stable last resort.
+  const fallbackSource = (p.companyName || p.projectTitle || 'client-engagement').toLowerCase();
+  const fallbackSlug = `cp-${fallbackSource.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
   return {
-    slug: p.slug || p.id || `cp-${Math.random().toString(36).slice(2, 8)}`,
+    slug: p.slug || p.id || fallbackSlug,
     icon: ICON_MAP[p.iconKey ?? 'folder'] ?? FolderGit2,
     title,
     kind: p.projectTitle || 'Client engagement',

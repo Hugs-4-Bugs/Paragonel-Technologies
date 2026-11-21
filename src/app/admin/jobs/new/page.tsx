@@ -108,7 +108,7 @@ export default function NewJobPage() {
         } else {
           localStorage.removeItem(AUTOSAVE_KEY);
         }
-      } catch (e) {
+      } catch {
         localStorage.removeItem(AUTOSAVE_KEY);
       }
     }

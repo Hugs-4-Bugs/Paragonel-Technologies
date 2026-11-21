@@ -88,7 +88,7 @@ export function Navbar() {
   const getMobileNavLinks = (): NavLink[] => {
     if (isLoading) return []; 
     
-    let links: NavLink[] = [...mainNavLinks, ...moreNavLinks];
+    const links: NavLink[] = [...mainNavLinks, ...moreNavLinks];
     if (isAuthenticated && user) {
       links.push({ href: "/profile", label: "My Profile", icon: UserCircle });
       links.push({ href: "#", label: "Logout", icon: LogOut, action: () => { logout(); setIsMobileMenuOpen(false); } });

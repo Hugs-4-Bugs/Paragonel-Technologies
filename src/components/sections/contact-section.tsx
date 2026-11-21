@@ -103,7 +103,7 @@ export function ContactSection() {
             Get In <span className="text-primary">Touch</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            We're excited to discuss how Paragonel can elevate your business. Reach out to us for inquiries, partnerships, or career opportunities.
+            We&apos;re excited to discuss how Paragonel can elevate your business. Reach out to us for inquiries, partnerships, or career opportunities.
           </p>
         </ScrollFadeIn>
 
@@ -218,21 +218,21 @@ export function ContactSection() {
                 <div className="flex items-start space-x-4">
                   <MapPin className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
-                    <h4 className="font-semibold text-foreground">Our Headquarters</h4>
+                    <h2 className="text-base font-semibold text-foreground">Our Headquarters</h2>
                     <p>HSR Layout, Bangalore, 560102, India</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <Mail className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
-                    <h4 className="font-semibold text-foreground">Email Us</h4>
+                    <h2 className="text-base font-semibold text-foreground">Email Us</h2>
                     <a href="mailto:contact@paragonel.com" className="hover:text-primary transition-colors">contact@paragonel.com</a>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <Phone className="h-6 w-6 text-primary mt-1 neon-icon flex-shrink-0" />
                   <div>
-                    <h4 className="font-semibold text-foreground">Call Us</h4>
+                    <h2 className="text-base font-semibold text-foreground">Call Us</h2>
                     <a href="tel:+919663076023" className="hover:text-primary transition-colors">+91 9663076023</a>
                   </div>
                 </div>

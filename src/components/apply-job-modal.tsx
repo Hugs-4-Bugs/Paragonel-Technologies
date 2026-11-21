@@ -9,11 +9,9 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -31,9 +29,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import type { Job, ApplicationFormValues } from "@/types";
-import { formatApplicationEmail } from "@/ai/flows/format-application-email-flow";
-import { Loader2, Send, Briefcase, User, GraduationCap, BriefcaseBusiness, Info, ShieldCheck } from "lucide-react";
-import { educationQualifications, noticePeriods, generateYearOptions, locations as preferredLocations } from "@/lib/data";
+import { Loader2, Send, Briefcase, User, GraduationCap, Info } from "lucide-react";
+import { educationQualifications, locations as preferredLocations } from "@/lib/data";
 import { useAuth } from "@/contexts/auth-context";
 
 interface ApplyJobModalProps {
@@ -41,9 +38,6 @@ interface ApplyJobModalProps {
   onOpenChange: (open: boolean) => void;
   job: Job | null;
 }
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB — aligned with server MAX_RESUME_BYTES (G17)
-const ACCEPTED_FILE_TYPES = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"];
 
 const formSchema = z.object({
   fullName: z.string().min(2),
@@ -150,7 +144,8 @@ export function ApplyJobModal({ isOpen, onOpenChange, job }: ApplyJobModalProps)
   }
 
   if (!job) return null;
-  const watchIsFresher = form.watch("isFresher");
+  // Watch isFresher so the form re-renders when it changes (value not read directly).
+  form.watch("isFresher");
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
