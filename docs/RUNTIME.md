@@ -18,16 +18,34 @@ cd /home/z/my-project/paragonel-technologies
 bash scripts/dev-supervisor.sh
 ```
 
-It: cleans stale processes/ports (no duplicates); starts the Firebase Firestore
-emulator on `:8080`; starts `next dev` on `:3000`; polls `GET /api/health`
-(`200 {ok:true,…}`) until alive; then **blocks supervising the process**. On a
-crash it restarts with exponential backoff (2 s, 4 s, …, cap 30 s), max **5
-restarts per 300 s** — then **halts** rather than silently looping. Logs:
-`logs/dev-server.log`, `logs/firestore-emulator.log`.
+It: runs a **pre-flight** (fails fast with a clear message if `node_modules` is
+missing, warns if `.env.local` is missing — instead of looping to the restart
+cap); cleans stale processes/ports with **`ss`** (this image has no `fuser`);
+starts the Firebase Firestore emulator on `:8080`; starts `next dev` on `:3000`;
+polls `GET /api/health` (`200 {ok:true,…}`) until alive; then **blocks
+supervising the process**. On a crash it restarts with exponential backoff
+(2 s, 4 s, …, cap 30 s), max **5 restarts per 300 s** — then **halts** rather
+than silently looping. Logs: `logs/dev-server.log`, `logs/firestore-emulator.log`,
+`logs/supervisor.log`.
 
 **This survives recoverable process crashes. It does NOT survive workspace
-recycling.** Re-run the command after a recycle, then re-seed the emulator
-(emulator data is in-memory):
+recycling.** After a recycle, `node_modules` and `.env.local` are typically gone
+(the git repo + committed code survive). Full recovery, in order:
+
+```bash
+cd /home/z/my-project/paragonel-technologies
+# 1. restore dependencies (if node_modules is missing — supervisor preflight enforces this)
+[ -d node_modules/next ] || npm install
+# 2. regenerate the gitignored .env.local (JWT_SECRET + bcrypt hash + emulator host +
+#    dev-placeholder firebase public vars). No secrets are committed; this script is
+#    the recovery path for .env.local. Committed in the repo (portable; resolves the
+#    repo root from __dirname).
+node scripts/gen-env-local.js
+# 3. start the supervised dev server (preflight -> cleanup -> emulator -> next dev -> health)
+bash scripts/dev-supervisor.sh
+```
+
+Then re-seed the emulator (emulator data is in-memory):
 
 ```bash
 JAR=$(mktemp); curl -s -c "$JAR" -X POST http://localhost:3000/api/admin/auth/login \
@@ -37,6 +55,14 @@ COOKIE=$(grep -oE 'qf_admin_token[[:space:]]+[^[:space:]]+' "$JAR" | awk '{print
 curl -s -H "Cookie: qf_admin_token=$COOKIE" -X POST http://localhost:3000/api/admin/seed
 rm -f "$JAR"
 ```
+
+`scripts/gen-env-local.js` writes `.env.local` with mode `0600`: a strong random
+`JWT_SECRET` (64 chars), `ADMIN_EMAIL=admin@example.com`, a bcrypt hash of the dev
+password `TestAdmin123!` (literal `$` escaped as `\$` so dotenv-expand does not
+mangle `$2a`/`$10`/`$<rest>`), `FIRESTORE_EMULATOR_HOST=localhost:8080`, and
+NON-EMPTY dev-placeholder `NEXT_PUBLIC_FIREBASE_*` values (so
+`src/firebase/config.ts` does not throw at module load). `SMTP_*` are left empty
+— real SMTP credentials are the founder's to provide for the SMTP-OTP auth phase.
 
 ## B. Z.ai workspace / session lifecycle
 

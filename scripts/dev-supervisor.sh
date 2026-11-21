@@ -33,16 +33,37 @@ window_start=$(date +%s)
 
 log() { printf '[supervisor %s] %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG_FILE" >&2; }
 
+# Pre-flight: fail fast with a clear message instead of looping to the restart
+# cap when the workspace was recycled and node_modules / .env.local are gone.
+# (fuser is also absent on this image — port cleanup below uses ss instead.)
+preflight() {
+  if [ ! -d "node_modules/next" ]; then
+    log "FATAL: node_modules missing (workspace recycled). Run: npm install"
+    exit 2
+  fi
+  if [ ! -f ".env.local" ]; then
+    log "WARN: .env.local missing — admin auth will 503 and client firebase config may throw. Regenerate it (see docs/RUNTIME.md). Continuing."
+  fi
+}
+
+# Resolve the PID listening on a TCP port using ss (fuser is unavailable on this
+# image). Returns the first PID on stdout, empty if none/free.
+port_pid() {
+  local port="$1"
+  ss -ltnp 2>/dev/null | grep -E ":${port}\b" \
+    | grep -oE 'pid=[0-9]+' | head -1 | cut -d= -f2
+}
+
 cleanup_stale() {
   log "cleanup: killing stale next / firebase processes on ports $PORT / $FIRESTORE_PORT"
   pkill -f "next dev" 2>/dev/null || true
   pkill -f "next-server" 2>/dev/null || true
   pkill -f "firebase emulators" 2>/dev/null || true
-  # free the ports if anything still holds them
+  # free the ports if anything still holds them (ss-based; fuser is not installed)
   for p in "$PORT" "$FIRESTORE_PORT"; do
     local pid
-    pid=$(fuser "$p/tcp" 2>/dev/null | tr -d ' ')
-    [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
+    pid=$(port_pid "$p")
+    [ -n "$pid" ] && { log "port $p held by pid $pid — killing"; kill "$pid" 2>/dev/null || true; }
   done
   sleep 2
 }
@@ -94,6 +115,7 @@ start_dev() {
 }
 
 # --- main ---
+preflight
 cleanup_stale
 start_emulator || true
 
