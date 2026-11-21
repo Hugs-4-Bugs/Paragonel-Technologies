@@ -54,6 +54,42 @@ cd /home/z/my-project/paragonel-technologies
 bash scripts/resume-dev.sh
 ```
 
+### Mandatory post-implementation finalization (Prompt 05G rule)
+
+**Every implementation task MUST end with a verified development server startup
+recovery and health check.** GLM must not declare an implementation complete
+while the expected local preview is unavailable, unless the workspace itself has
+been destroyed or the environment cannot support startup — in which case it must
+report the external lifecycle limitation and provide the one-command recovery
+path. This rule exists because the founder repeatedly had to ask GLM to restart
+the server; that workflow is unacceptable.
+
+`scripts/finalize-dev-session.sh` automates this. It detects an existing healthy
+authoritative server on `:3000` (and does NOT start a duplicate), starts
+`resume-dev.sh` only if recovery is required (preserving the Firestore emulator
+if it is already up), waits for `GET /api/health` → 200, verifies the requested
+route → 200, and prints a clear SUCCESS/FAILURE result.
+
+```bash
+# default: verifies /
+bash scripts/finalize-dev-session.sh
+# verify a specific route
+bash scripts/finalize-dev-session.sh /blog
+```
+
+GLM's completion report MUST state the actual server status at the end of
+implementation (health code + route code), not "the server was running earlier".
+
+### Dependency installation (Prompt 05G fix)
+
+The lockfile is now strictly reproducible. Install with `npm ci` (NEVER
+`--force` or `--legacy-peer-deps` — both hide real peer conflicts). The previous
+`--legacy-peer-deps` usage in `resume-dev.sh` was removed; it now uses `npm ci`.
+If `npm ci` ever fails with "lockfile out of sync", regenerate with
+`npm install --package-lock-only` (strict — no `--force`) and commit the new
+lockfile. Vercel's `vercel.json` sets `"installCommand": "npm ci"` so the
+deployment uses the same lockfile-respecting path.
+
 Then re-seed the emulator (emulator data is in-memory):
 
 ```bash

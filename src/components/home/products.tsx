@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useMotionValueEvent, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, ExternalLink } from 'lucide-react';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
+import { MotionCard } from '@/components/motion/motion-card';
 import { OTHER_WORK, type WorkStatusTone } from '@/lib/selected-work';
 
 const PIPELINE = [
@@ -145,13 +146,18 @@ export function HomeProducts() {
             );
             return (
               <RevealItem key={w.slug}>
-                {w.href ? (
-                  <Link href={w.href} className="group block h-full border-t border-border pt-6">
-                    {inner}
-                  </Link>
-                ) : (
-                  <div className="group block h-full border-t border-border pt-6">{inner}</div>
-                )}
+                <MotionCard className="group block h-full border-t border-border pt-6 rounded-[var(--pt-radius-sm)]">
+                  {w.href ? (
+                    <Link
+                      href={w.href}
+                      className="block rounded-[var(--pt-radius-sm)] focus:outline-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div>{inner}</div>
+                  )}
+                </MotionCard>
               </RevealItem>
             );
           })}

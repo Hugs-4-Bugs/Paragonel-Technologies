@@ -54,3 +54,28 @@ export const drawLine: Variants = {
   hidden: { scaleX: 0 },
   visible: { scaleX: 1, transition: { duration: 1.1, ease: EASE } },
 };
+
+// ── Interaction feedback (Prompt 05H) ──────────────────────────────────────
+// Subtle, transform-only hover + tap feedback for cards + interactive surfaces.
+// These are intentionally small (a 2px lift, a 1% press) so motion feels
+// premium, not bouncy. `useReducedMotion()` consumers should skip applying
+// these (render the rest state) — see MotionCard.
+
+/** Hover state for cards: a tiny upward lift + faint border emphasis. */
+export const hoverLift = {
+  y: -2,
+  transition: { duration: 0.25, ease: EASE },
+} as const;
+
+/** Tap/press state: a small settle back toward the rest position. */
+export const tapPress = {
+  y: 0,
+  scale: 0.99,
+  transition: { duration: 0.12, ease: EASE },
+} as const;
+
+/** Default (rest) state for a motion card — explicit so it can be a variant target. */
+export const cardRest = {
+  y: 0,
+  scale: 1,
+} as const;

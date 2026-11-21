@@ -38,7 +38,7 @@ log() { printf '[supervisor %s] %s\n' "$(date -u +%H:%M:%S)" "$*" | tee -a "$LOG
 # (fuser is also absent on this image — port cleanup below uses ss instead.)
 preflight() {
   if [ ! -d "node_modules/next" ]; then
-    log "FATAL: node_modules missing (workspace recycled). Run: npm install"
+    log "FATAL: node_modules missing (workspace recycled). Run: bash scripts/resume-dev.sh"
     exit 2
   fi
   if [ ! -f ".env.local" ]; then

@@ -18,10 +18,13 @@ cd "$(dirname "$0")/.."
 
 echo "[resume] cwd=$(pwd)"
 
-# 1. dependencies
+# 1. dependencies — use the committed lockfile (npm ci). The lockfile is strictly
+#    reproducible (no --force / --legacy-peer-deps) since the Prompt 05G
+#    @types/node peer-resolution fix. npm ci fails hard if the lockfile is out of
+#    sync — that is the desired, reproducible behavior.
 if [ ! -d "node_modules/next" ]; then
-  echo "[resume] node_modules missing — running npm install --legacy-peer-deps"
-  npm install --legacy-peer-deps || { echo "[resume] FATAL: npm install failed"; exit 2; }
+  echo "[resume] node_modules missing — running npm ci"
+  npm ci || { echo "[resume] FATAL: npm ci failed (lockfile out of sync? run: npm install --package-lock-only)"; exit 2; }
 else
   echo "[resume] node_modules present"
 fi

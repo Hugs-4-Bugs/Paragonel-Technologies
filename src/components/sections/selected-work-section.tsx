@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowUpRight, ExternalLink } from 'lucide-react';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
+import { MotionCard } from '@/components/motion/motion-card';
 import { SELECTED_WORK, type WorkStatusTone } from '@/lib/selected-work';
 
 /**
@@ -54,7 +55,7 @@ export function SelectedWorkSection({ compact = false }: { compact?: boolean }) 
         <RevealGroup stagger={0.08} className="mt-12 grid gap-px bg-border md:grid-cols-3">
           {rest.map((w) => (
             <RevealItem key={w.slug}>
-              <div className="flex h-full flex-col bg-background p-6">
+              <MotionCard className="group flex h-full flex-col bg-background p-6">
                 <div className="flex items-center gap-3">
                   <w.icon className="h-5 w-5 text-primary" />
                   <span className="pt-index text-[0.65rem]">{w.kind.toUpperCase()}</span>
@@ -68,12 +69,12 @@ export function SelectedWorkSection({ compact = false }: { compact?: boolean }) 
                 {w.href && w.ctaLabel && (
                   <Link
                     href={w.href}
-                    className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:text-primary"
+                    className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:text-primary focus:outline-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded"
                   >
-                    {w.ctaLabel} <ArrowUpRight className="h-4 w-4" />
+                    {w.ctaLabel} <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 )}
-              </div>
+              </MotionCard>
             </RevealItem>
           ))}
         </RevealGroup>

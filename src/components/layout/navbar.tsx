@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -58,7 +58,32 @@ const authNavLinksBase: NavLink[] = [
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isAuthenticated, user, logout, isLoading } = useAuth(); 
+  // Services mega-menu: state-driven (not hover-only) so it works on touch +
+  // keyboard, closes on Escape / outside-click / route change, and uses
+  // display:none when closed (so the panel does NOT contribute to scrollWidth
+  // — fixes the 768px tablet overflow from the old `invisible w-[560px]` panel).
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const servicesRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated, user, logout, isLoading } = useAuth();
+
+  // Escape closes the mega-menu; outside-click closes it.
+  useEffect(() => {
+    if (!servicesOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setServicesOpen(false);
+    };
+    const onPointer = (e: MouseEvent) => {
+      if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) {
+        setServicesOpen(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onPointer);
+    };
+  }, [servicesOpen]);
 
   const getMobileNavLinks = (): NavLink[] => {
     if (isLoading) return []; 
@@ -105,45 +130,57 @@ export function Navbar() {
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+        <nav className="hidden lg:flex items-center space-x-1 lg:space-x-2">
           {mainNavLinks.map((link) =>
             link.mega ? (
-              <div key={link.href} className="group relative">
-                <Link
-                  href={link.href}
-                  className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3 py-2"
+              <div key={link.href} className="relative" ref={servicesRef}>
+                <button
+                  type="button"
+                  onClick={() => setServicesOpen((v) => !v)}
+                  aria-expanded={servicesOpen}
+                  aria-haspopup="true"
+                  className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
                 >
                   {link.label}
-                  <ChevronDown className="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" />
-                </Link>
-                {/* Mega-menu panel */}
-                <div className="invisible absolute left-1/2 top-full z-50 w-[560px] -translate-x-1/2 pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
-                  <div className="rounded-2xl border border-border bg-background/95 p-4 shadow-2xl backdrop-blur">
-                    <div className="grid grid-cols-2 gap-2">
-                      {servicesMega.map((s) => (
-                        <Link
-                          key={s.href}
-                          href={s.href}
-                          className="group/item flex items-start gap-3 rounded-xl p-3 transition-colors hover:bg-accent"
-                        >
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <s.icon className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-black tracking-tight text-foreground">{s.label}</div>
-                            <div className="text-xs text-muted-foreground">{s.desc}</div>
-                          </div>
-                        </Link>
-                      ))}
+                  <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${servicesOpen ? "rotate-180" : ""}`} />
+                </button>
+                {/* Mega-menu panel — display:none when closed (no scrollWidth
+                    contribution → no 768px overflow). Width bounded to the
+                    viewport so it never overflows when open. */}
+                {servicesOpen && (
+                  <div
+                    className="absolute left-0 top-full z-50 pt-2"
+                    style={{ width: "min(560px, calc(100vw - 1.5rem))" }}
+                  >
+                    <div className="rounded-[var(--pt-radius-md)] border border-border bg-background/95 p-4 shadow-2xl backdrop-blur">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {servicesMega.map((s) => (
+                          <Link
+                            key={s.href}
+                            href={s.href}
+                            onClick={() => setServicesOpen(false)}
+                            className="group/item flex items-start gap-3 rounded-[var(--pt-radius-sm)] p-3 transition-colors hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                              <s.icon className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold tracking-tight text-foreground">{s.label}</div>
+                              <div className="text-xs text-muted-foreground">{s.desc}</div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                      <Link
+                        href="/services"
+                        onClick={() => setServicesOpen(false)}
+                        className="mt-3 flex items-center justify-center gap-1 rounded-[var(--pt-radius-sm)] bg-primary/10 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        View All Services <ArrowRight className="h-3 w-3" />
+                      </Link>
                     </div>
-                    <Link
-                      href="/services"
-                      className="mt-3 flex items-center justify-center gap-1 rounded-lg bg-primary/10 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20"
-                    >
-                      View All Services <ArrowRight className="h-3 w-3" />
-                    </Link>
                   </div>
-                </div>
+                )}
               </div>
             ) : (
               <Button variant="link" asChild key={link.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3">
@@ -227,7 +264,7 @@ export function Navbar() {
           </div>
         </nav>
 
-        <div className="md:hidden flex items-center">
+        <div className="lg:hidden flex items-center">
           <ThemeToggleButton />
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
