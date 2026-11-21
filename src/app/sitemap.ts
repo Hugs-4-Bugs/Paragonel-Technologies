@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { OFFERINGS } from '@/lib/services-catalogue';
-import { getPublishedPosts } from '@/lib/public-data';
+import { getPublishedPosts, getPublicJobs } from '@/lib/public-data';
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
@@ -75,5 +75,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Fall back silently — static + offering routes still ship.
   }
 
-  return [...staticRoutes, ...offeringRoutes, ...blogRoutes];
+  // Active public job detail pages (/careers/[id]).
+  let careersRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const jobs = await getPublicJobs(100);
+    careersRoutes = jobs
+      .filter((j: any) => j && j.id)
+      .map((j: any) => {
+        const v = j.updatedAt || j.createdAt;
+        const d = v ? new Date(v) : null;
+        return {
+          url: `${siteUrl}/careers/${j.id}`,
+          changeFrequency: 'weekly' as const,
+          priority: 0.6,
+          lastModified: d && !isNaN(d.getTime()) ? d : lastModified,
+        };
+      });
+  } catch {
+    // Fall back silently.
+  }
+
+  return [...staticRoutes, ...offeringRoutes, ...blogRoutes, ...careersRoutes];
 }

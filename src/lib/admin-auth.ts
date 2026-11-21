@@ -96,6 +96,7 @@ export function revalidatePublicContent(kind: 'blog' | 'jobs' | 'services'): voi
       revalidatePath('/'); // homepage "From the blog" section
     } else if (kind === 'jobs') {
       revalidatePath('/careers');
+      revalidatePath('/careers/[id]', 'page'); // purge all cached job detail pages
     } else if (kind === 'services') {
       revalidatePath('/services');
     }

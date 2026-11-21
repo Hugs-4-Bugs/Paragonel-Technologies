@@ -5,28 +5,23 @@
  * Server-side authorized via Admin SDK. `jobApplications` is locked
  * (`allow read: if false`), so the detail page fetches here instead of useDoc.
  *
- * PATCH body: { status?, deletedAt?: 'soft'|'restore', internalNotes?: string }
+ * PATCH body (validated by applicationPatchSchema):
+ *   { status?, deletedAt?: 'soft'|'restore', internalNotes?: string }
  *
- * NOTE (deferred): the `resumeUrl` field currently holds a Storage object path,
- * not a signed URL — downloading resumes in production is broken (Storage rules
- * deny all public reads). Signed-URL generation is a documented follow-up
- * (next IU-0 slice) and is intentionally NOT exposed here yet.
+ * Auth: GET uses `verifyAdmin` (any active admin may read — viewer has
+ * `cms.read`). PATCH uses `verifyAdminPermission('cms.update')` so a read-only
+ * `viewer` cannot mutate applications (closes the same privilege-escalation gap
+ * fixed for blog/jobs/services in 05I). Resume signed-URL generation is a
+ * documented follow-up — the `resumeUrl` field holds a Storage object path, not
+ * a signed URL, and is intentionally not exposed here yet.
  */
 import { NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, logActivityServer, serializeDoc, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdmin, verifyAdminPermission, logActivityServer, serializeDoc, serviceUnavailable } from '@/lib/admin-auth';
+import { applicationPatchSchema } from '@/lib/cms-schemas';
 
 export const dynamic = 'force-dynamic';
-
-const ALLOWED_STATUSES = [
-  'New',
-  'Reviewing',
-  'Shortlisted',
-  'Interview Scheduled',
-  'Rejected',
-  'Hired',
-];
 
 export async function GET(
   request: Request,
@@ -55,7 +50,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'cms.update');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -63,34 +58,40 @@ export async function PATCH(
 
   const { id } = await params;
 
-  let body: any;
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
+  const parsed = applicationPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', issues: parsed.error.issues.map((i) => i.message) },
+      { status: 400 }
+    );
+  }
+  const data = parsed.data;
+
   const update: Record<string, unknown> = {};
   const audit: string[] = [];
 
-  if (typeof body.status === 'string') {
-    if (!ALLOWED_STATUSES.includes(body.status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-    }
-    update.status = body.status;
-    audit.push(`Updated application status to ${body.status}`);
+  if (data.status) {
+    update.status = data.status;
+    audit.push(`Updated application status to ${data.status}`);
   }
 
-  if (body.deletedAt === 'soft') {
+  if (data.deletedAt === 'soft') {
     update.deletedAt = Timestamp.now();
     audit.push('Archived application');
-  } else if (body.deletedAt === 'restore') {
+  } else if (data.deletedAt === 'restore') {
     update.deletedAt = null;
     audit.push('Restored application');
   }
 
-  if (typeof body.internalNotes === 'string') {
-    update.internalNotes = body.internalNotes;
+  if (typeof data.internalNotes === 'string') {
+    update.internalNotes = data.internalNotes;
     update.updatedAt = Timestamp.now();
     audit.push('Updated internal notes on application');
   }

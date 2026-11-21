@@ -67,6 +67,7 @@ export default function ApplicationsPage() {
   };
 
   const handleSoftDelete = async (id: string, isRestoring = false) => {
+    if (!isRestoring && !confirm('Archive this application? It will be hidden from the active list and can be restored later.')) return;
     const action = isRestoring ? "Restoring" : "Archiving";
     try {
       const res = await fetch(`/api/admin/applications/${id}`, {

@@ -38,6 +38,45 @@ export const jobFormSchema = z.object({
 });
 export type JobFormValues = z.infer<typeof jobFormSchema>;
 
+/* -------------------------------------------------------------------------- */
+/* Applications + Leads (CRM) — PATCH schemas                                  */
+/* -------------------------------------------------------------------------- */
+/* No dedicated CRM permission exists in rbac.ts, so these collections reuse
+ * cms.* (matching blog/services). The schemas replace the inline
+ * ALLOWED_STATUSES allowlists + unbounded string acceptance that left the
+ * PATCH bodies un-validated. Every field is `.optional()` so a PATCH can
+ * update any subset; the route rejects an empty patch. */
+
+const APPLICATION_STATUSES = [
+  'New',
+  'Reviewing',
+  'Shortlisted',
+  'Interview Scheduled',
+  'Rejected',
+  'Hired',
+] as const;
+const LEAD_STATUSES = ['New', 'Contacted', 'Qualified', 'Closed'] as const;
+
+/**
+ * PATCH body for /api/admin/applications/[id] — status / soft-delete / restore
+ * / internalNotes. `internalNotes` capped at 5000 chars (was unbounded).
+ */
+export const applicationPatchSchema = z.object({
+  status: z.enum(APPLICATION_STATUSES).optional(),
+  deletedAt: z.enum(['soft', 'restore']).optional(),
+  internalNotes: z.string().max(5000).optional(),
+});
+export type ApplicationPatchValues = z.infer<typeof applicationPatchSchema>;
+
+/**
+ * PATCH body for /api/admin/leads/[id] — status / soft-delete / restore.
+ */
+export const leadPatchSchema = z.object({
+  status: z.enum(LEAD_STATUSES).optional(),
+  deletedAt: z.enum(['soft', 'restore']).optional(),
+});
+export type LeadPatchValues = z.infer<typeof leadPatchSchema>;
+
 /** Split a comma-list skills string into a trimmed, de-duplicated array. */
 function splitSkills(raw: string): string[] {
   return raw

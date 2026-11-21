@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AppShell } from '@/components/layout/app-shell';
@@ -75,7 +75,6 @@ export const metadata: Metadata = {
     apple: '/apple-icon.png',
   },
   manifest: '/manifest.webmanifest',
-  themeColor: '#0f172a',
   robots: {
     index: true,
     follow: true,
@@ -88,6 +87,9 @@ export const metadata: Metadata = {
     },
   },
 };
+
+// Next.js 15: themeColor lives in the viewport export (deprecated in metadata).
+export const viewport: Viewport = { themeColor: '#0f172a' };
 
 // JSON-LD Organization structured data (SEO gap G9 / PART N). Verified facts
 // only — no invented awards, team size, founding-year metrics, or members.

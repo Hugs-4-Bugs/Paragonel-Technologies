@@ -65,6 +65,7 @@ export default function LeadsPage() {
   };
 
   const handleSoftDelete = async (id: string, isRestoring = false) => {
+    if (!isRestoring && !confirm('Archive this lead? It will be hidden from the active list and can be restored later.')) return;
     try {
       const res = await fetch(`/api/admin/leads/${id}`, {
         method: 'PATCH',

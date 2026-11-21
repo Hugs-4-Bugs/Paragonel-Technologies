@@ -2,25 +2,28 @@
  * PATCH /api/admin/leads/[id] — update lead status / soft-delete / restore.
  *
  * Server-side authorized mutation via Admin SDK. Replaces the old client-side
- * `updateDoc(doc(db,'leads',id))`. Body (JSON):
+ * `updateDoc(doc(db,'leads',id))`. Body (validated by leadPatchSchema):
  *   { status?: string, deletedAt?: 'soft' | 'restore' }
  *
- * Audit entry is written server-side via logActivityServer.
+ * Auth: PATCH uses `verifyAdminPermission('cms.update')` so a read-only
+ * `viewer` cannot mutate leads (closes the same privilege-escalation gap fixed
+ * for blog/jobs/services in 05I). Audit entry written server-side via
+ * logActivityServer. No GET/POST/DELETE here by design — leads are created by
+ * the public /api/contact endpoint and use reversible soft-delete via PATCH.
  */
 import { NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdminPermission, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
+import { leadPatchSchema } from '@/lib/cms-schemas';
 
 export const dynamic = 'force-dynamic';
-
-const ALLOWED_STATUSES = ['New', 'Contacted', 'Qualified', 'Closed'];
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'cms.update');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -28,28 +31,34 @@ export async function PATCH(
 
   const { id } = await params;
 
-  let body: any;
+  let body: unknown;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
+  const parsed = leadPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', issues: parsed.error.issues.map((i) => i.message) },
+      { status: 400 }
+    );
+  }
+  const data = parsed.data;
+
   const update: Record<string, unknown> = {};
   const audit: string[] = [];
 
-  if (typeof body.status === 'string') {
-    if (!ALLOWED_STATUSES.includes(body.status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-    }
-    update.status = body.status;
-    audit.push(`Updated lead status to ${body.status}`);
+  if (data.status) {
+    update.status = data.status;
+    audit.push(`Updated lead status to ${data.status}`);
   }
 
-  if (body.deletedAt === 'soft') {
+  if (data.deletedAt === 'soft') {
     update.deletedAt = Timestamp.now();
     audit.push('Archived lead');
-  } else if (body.deletedAt === 'restore') {
+  } else if (data.deletedAt === 'restore') {
     update.deletedAt = null;
     audit.push('Restored lead');
   }

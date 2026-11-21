@@ -107,6 +107,30 @@ export async function getPublicJobs(limit = 50): Promise<any[]> {
   }
 }
 
+/**
+ * Single public job by Firestore id (for /careers/[id]). Returns null if the
+ * doc is missing, inactive, or soft-deleted — so draft/closed/archived jobs
+ * can never be rendered publicly (the route calls notFound() on null). Falls
+ * back to dummyJobs when the Admin SDK is not configured.
+ */
+export async function getPublicJobById(id: string): Promise<any | null> {
+  if (!id) return null;
+  const db = getAdminDb();
+  if (!db) {
+    return dummyJobs.find((j) => j.id === id && j.isActive) ?? null;
+  }
+  try {
+    const snap = await db.collection('jobs').doc(id).get();
+    if (!snap.exists) return null;
+    const data = snap.data() as any;
+    if (!data.isActive || data.deletedAt) return null;
+    return serializeDoc(snap as any);
+  } catch (err) {
+    console.error('[public-data] getPublicJobById failed:', err instanceof Error ? err.message : err);
+    return dummyJobs.find((j) => j.id === id && j.isActive) ?? null;
+  }
+}
+
 /** Public blog posts: published, non-deleted, newest first. */
 export async function getPublishedPosts(limit = 50): Promise<any[]> {
   const db = getAdminDb();

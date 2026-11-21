@@ -7,7 +7,7 @@
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdminPermission, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +15,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'cms.delete');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
