@@ -5,10 +5,16 @@
  * DELETE /api/admin/services/[id] — permanent delete.
  *
  * Server-side authorized via Admin SDK. Mirrors `/api/admin/jobs/[id]`.
+ *
+ * Auth: GET uses `verifyAdmin` (any active admin may read for editing). PUT /
+ * PATCH use `verifyAdminPermission('cms.update')`; DELETE uses
+ * `verifyAdminPermission('cms.delete')` — so a read-only `viewer` cannot
+ * mutate. Every successful mutation purges the public `/services` cache via
+ * `revalidatePublicContent` so the landing reflects the change immediately.
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdmin, verifyAdminPermission, revalidatePublicContent, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
 import { serviceFormSchema, buildServiceUpdatePayload, buildServiceTogglePayload } from '@/lib/cms-schemas';
 
 export const dynamic = 'force-dynamic';
@@ -40,7 +46,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'cms.update');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -70,6 +76,7 @@ export async function PUT(
     }
     await ref.update(buildServiceUpdatePayload(parsed.data));
     await logActivityServer(auth.user, 'update', 'Service', id);
+    revalidatePublicContent('services');
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin/services/[id]] put failed:', err instanceof Error ? err.message : err);
@@ -81,7 +88,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'cms.update');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -111,6 +118,7 @@ export async function PATCH(
     }
     await ref.update(buildServiceTogglePayload(isActive));
     await logActivityServer(auth.user, isActive ? 'activate' : 'hide', 'Service', id);
+    revalidatePublicContent('services');
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin/services/[id]] patch failed:', err instanceof Error ? err.message : err);
@@ -122,7 +130,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'cms.delete');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -137,6 +145,7 @@ export async function DELETE(
     }
     await ref.delete();
     await logActivityServer(auth.user, 'delete', 'Service', id);
+    revalidatePublicContent('services');
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin/services/[id]] delete failed:', err instanceof Error ? err.message : err);

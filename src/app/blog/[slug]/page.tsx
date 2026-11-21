@@ -3,6 +3,10 @@ import { notFound } from 'next/navigation';
 import { getPublishedPostBySlug, getPublishedPosts, getPublishedSlugs } from '@/lib/public-data';
 import { ArticleReader } from '@/components/blog/article-reader';
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
+  'https://paragonel.vercel.app';
+
 export const revalidate = 60;
 
 type Params = { params: Promise<{ slug: string }> };
@@ -100,11 +104,26 @@ export default async function BlogPostPage({ params }: Params) {
     mainEntityOfPage: { '@type': 'WebPage', '@id': `/blog/${post.slug}` },
   };
 
+  // JSON-LD BreadcrumbList (Prompt 05I §5.5) — Home > Blog > article.
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog` },
+      { '@type': 'ListItem', position: 3, name: post.title, item: `${siteUrl}/blog/${post.slug}` },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
       />
       <ArticleReader post={post} newer={newer} older={older} related={related} />
     </>

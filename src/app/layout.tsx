@@ -54,13 +54,28 @@ export const metadata: Metadata = {
     title: 'Paragonel Technologies — Engineering Digital Products That Move Businesses Forward',
     description:
       'AI-powered systems, intelligent automation, scalable SaaS platforms and cloud-native applications — engineered by Paragonel Technologies.',
+    // Fallback social image: the brand app icon (real, served at /icon.png).
+    // A dedicated 1200x630 Open Graph image is recommended (MANUAL — design).
+    images: [{ url: '/icon.png', alt: 'Paragonel Technologies' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Paragonel Technologies — Shaping the Future',
     description:
       'AI-powered systems, intelligent automation, scalable SaaS platforms and cloud-native applications — engineered by Paragonel Technologies.',
+    images: ['/icon.png'],
   },
+  // Declared explicitly (not just relying on Next.js file-convention auto-
+  // detection) so the icon/manifest links survive file renames. All assets
+  // exist: src/app/icon.png, src/app/apple-icon.png, src/app/favicon.ico,
+  // src/app/manifest.webmanifest (+ public/icon-192.png etc.).
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
+  manifest: '/manifest.webmanifest',
+  themeColor: '#0f172a',
   robots: {
     index: true,
     follow: true,
@@ -76,6 +91,8 @@ export const metadata: Metadata = {
 
 // JSON-LD Organization structured data (SEO gap G9 / PART N). Verified facts
 // only — no invented awards, team size, founding-year metrics, or members.
+// `sameAs` is intentionally empty until the founder provides verified social
+// profile URLs (LinkedIn / X / GitHub / Crunchbase) — MANUAL, do not invent.
 const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -95,6 +112,18 @@ const organizationJsonLd = {
   sameAs: [] as string[],
 };
 
+// JSON-LD WebSite entity (Prompt 05I §5.5). Site-wide, alongside Organization.
+// Communicates the site name to search engines for Knowledge Graph + rich
+// results. `potentialAction` SearchAction is omitted because the site has no
+// search feature — do not declare a target the site cannot fulfil.
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Paragonel Technologies',
+  url: siteUrl,
+  publisher: { '@type': 'Organization', name: 'Paragonel Technologies' },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -110,6 +139,12 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationJsonLd),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteJsonLd),
           }}
         />
       </body>

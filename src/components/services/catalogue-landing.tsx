@@ -68,18 +68,31 @@ export function CatalogueLanding({ dynamicServices = [] }: { dynamicServices?: {
             </RevealGroup>
           </Reveal>
 
-          {/* Domain quick-nav — 13 families, responsive */}
-          <RevealGroup stagger={0.04} className="mt-12 grid gap-px bg-border sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {/* Domain quick-nav — 13 families, responsive card grid.
+              Discrete bordered cards with real gaps (not a gap-px tiled sheet)
+              so there are no oversized background rectangles or empty filler
+              blocks on the partial last row — just balanced whitespace. Uniform
+              card padding + hover border-colour give a clearer visual rhythm. */}
+          <RevealGroup stagger={0.04} className="mt-12 grid gap-4 sm:grid-cols-2 sm:gap-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {DOMAINS.map((d) => {
               const st = getDomainStatus(d);
               return (
                 <RevealItem key={d.slug} variant="fade">
-                  <a href={`#${d.slug}`} className="block bg-background p-4 transition-colors hover:bg-secondary/40">
+                  <a
+                    href={`#${d.slug}`}
+                    className="group flex h-full flex-col rounded-lg border border-border bg-background p-5 transition-colors hover:border-primary/40 hover:bg-secondary/30"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="pt-index text-xs">{d.index}</span>
-                      <span className={`h-2 w-2 rounded-full ${STATUS_META[st].tone}`} title={STATUS_META[st].label} />
+                      <span
+                        className={`h-2 w-2 rounded-full ${STATUS_META[st].tone}`}
+                        title={STATUS_META[st].label}
+                        aria-label={STATUS_META[st].label}
+                      />
                     </div>
-                    <p className="mt-2 text-sm font-medium leading-tight text-foreground">{d.name}</p>
+                    <p className="mt-3 text-sm font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
+                      {d.name}
+                    </p>
                   </a>
                 </RevealItem>
               );

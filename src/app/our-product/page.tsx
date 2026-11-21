@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: 'Our Product | Paragonel',
   description:
     'Paragonel products: AcquisitionOS (AI-native client acquisition platform, private beta), SystemFoundry (infrastructure simulator), and CodeGuard AI (VS Code cost intelligence).',
+  alternates: { canonical: '/our-product' },
 };
 
 export default function OurProductPage() {

@@ -9,10 +9,15 @@
  *
  * GET order: createdAt desc (matches the previous client query). Limit 500.
  * POST body: JobFormValues (validated server-side); returns { id }.
+ *
+ * Auth: GET uses `verifyAdmin` (any active admin may list). POST uses
+ * `verifyAdminPermission('jobs.manage')` — the dedicated jobs permission held
+ * by `admin` + `super_admin` (NOT `editor`/`viewer`). On success POST purges
+ * the public `/careers` cache so the new job appears immediately.
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdmin, verifyAdminPermission, revalidatePublicContent, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
 import { jobFormSchema, buildJobCreatePayload } from '@/lib/cms-schemas';
 
 export const dynamic = 'force-dynamic';
@@ -35,7 +40,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'jobs.manage');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -60,6 +65,7 @@ export async function POST(request: Request) {
     const payload = buildJobCreatePayload(parsed.data);
     const ref = await db.collection('jobs').add(payload);
     await logActivityServer(auth.user, 'create', 'Job', ref.id);
+    revalidatePublicContent('jobs');
     return NextResponse.json({ id: ref.id }, { status: 201 });
   } catch (err) {
     console.error('[admin/jobs] create failed:', err instanceof Error ? err.message : err);

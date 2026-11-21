@@ -7,10 +7,16 @@
  * Server-side authorized via Admin SDK. With `jobs` public read now restricted
  * to `isActive==true && deletedAt==null`, the admin edit page (which must read
  * drafts/archived jobs) fetches here instead of getDoc().
+ *
+ * Auth: GET uses `verifyAdmin` (any active admin may read for editing). PUT /
+ * PATCH / DELETE use `verifyAdminPermission('jobs.manage')` — held by `admin`
+ * + `super_admin` only (NOT `editor`/`viewer`). Every successful mutation
+ * purges the public `/careers` cache via `revalidatePublicContent` so the
+ * listing reflects the change immediately.
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdmin, verifyAdminPermission, revalidatePublicContent, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
 import { jobFormSchema, buildJobUpdatePayload, buildJobTogglePayload } from '@/lib/cms-schemas';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +48,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'jobs.manage');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -72,6 +78,7 @@ export async function PUT(
     }
     await ref.update(buildJobUpdatePayload(parsed.data));
     await logActivityServer(auth.user, 'update', 'Job', id);
+    revalidatePublicContent('jobs');
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin/jobs/[id]] put failed:', err instanceof Error ? err.message : err);
@@ -83,7 +90,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'jobs.manage');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -114,6 +121,7 @@ export async function PATCH(
     }
     await ref.update(buildJobTogglePayload(isActive));
     await logActivityServer(auth.user, isActive ? 'activate' : 'archive', 'Job', id);
+    revalidatePublicContent('jobs');
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin/jobs/[id]] patch failed:', err instanceof Error ? err.message : err);
@@ -125,7 +133,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'jobs.manage');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -140,6 +148,7 @@ export async function DELETE(
     }
     await ref.delete();
     await logActivityServer(auth.user, 'delete', 'Job', id);
+    revalidatePublicContent('jobs');
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin/jobs/[id]] delete failed:', err instanceof Error ? err.message : err);

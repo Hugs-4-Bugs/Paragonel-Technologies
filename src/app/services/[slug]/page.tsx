@@ -3,6 +3,10 @@ import { notFound } from 'next/navigation';
 import { OFFERINGS, getOfferingBySlug } from '@/lib/services-catalogue';
 import { OfferingDetail } from '@/components/services/offering-detail';
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
+  'https://paragonel.vercel.app';
+
 // Revalidate so admin/CMS changes reflect without a full rebuild.
 export const revalidate = 60;
 
@@ -33,6 +37,26 @@ export default async function OfferingPage({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   const offering = getOfferingBySlug(slug);
   if (!offering) notFound();
-  return <OfferingDetail offering={offering} />;
+
+  // JSON-LD BreadcrumbList (Prompt 05I §5.5) — Home > Services > offering.
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${siteUrl}/` },
+      { '@type': 'ListItem', position: 2, name: 'Services', item: `${siteUrl}/services` },
+      { '@type': 'ListItem', position: 3, name: offering.name, item: `${siteUrl}/services/${offering.slug}` },
+    ],
+  };
+
+  return (
+    <>
+      <OfferingDetail offering={offering} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
+    </>
+  );
 }
 

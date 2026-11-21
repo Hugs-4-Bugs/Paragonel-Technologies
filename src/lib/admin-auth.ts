@@ -17,9 +17,11 @@
  * only reads the `JWT_SECRET` env var (already used by middleware/auth/me).
  */
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifySession } from '@/lib/auth/sessions';
+import type { Permission } from '@/lib/auth/rbac';
 
 export type AdminUser = { email: string; role?: string };
 
@@ -52,6 +54,54 @@ export async function verifyAdmin(request: Request): Promise<VerifyResult> {
   const r = await verifySession(request, undefined, 'admin');
   if (!r.ok) return { ok: false, response: r.response };
   return { ok: true, user: { email: r.user.email, role: r.user.role } };
+}
+
+/**
+ * Verify the admin session AND require a specific RBAC permission.
+ *
+ * Same `{ok, user:{email,role}} | {ok:false, response}` contract as
+ * `verifyAdmin`, so CMS mutation handlers can swap
+ * `verifyAdmin(request)` → `verifyAdminPermission(request, 'cms.create')`
+ * with no other code changes. Use this for every create/update/delete/publish
+ * mutation so a `viewer`-role (read-only) admin cannot write — closing the
+ * privilege-escalation gap where `verifyAdmin` (no permission check) let any
+ * active admin mutate every CMS collection. `verifyAdmin` remains correct for
+ * read/list handlers (viewer has `cms.read`; jobs reads have no dedicated read
+ * perm in the RBAC model and listing is non-sensitive).
+ */
+export async function verifyAdminPermission(
+  request: Request,
+  perm: Permission
+): Promise<VerifyResult> {
+  const r = await verifySession(request, perm, 'admin');
+  if (!r.ok) return { ok: false, response: r.response };
+  return { ok: true, user: { email: r.user.email, role: r.user.role } };
+}
+
+/**
+ * On-demand ISR revalidation after an admin content mutation, so the public
+ * pages reflect the change immediately instead of waiting up to `revalidate=60s`
+ * (the ISR interval on /blog, /blog/[slug], /careers, /services). Called from
+ * /api/admin/** route handlers after a successful Firestore write. The dynamic
+ * blog slug segment is purged with type 'page' so every cached article page is
+ * regenerated on next request. Errors are logged, never thrown — a failed purge
+ * must not turn a successful mutation into a 500 (the data is already persisted
+ * and will surface on the next ISR tick within 60s).
+ */
+export function revalidatePublicContent(kind: 'blog' | 'jobs' | 'services'): void {
+  try {
+    if (kind === 'blog') {
+      revalidatePath('/blog');
+      revalidatePath('/blog/[slug]', 'page'); // purge all cached article pages
+      revalidatePath('/'); // homepage "From the blog" section
+    } else if (kind === 'jobs') {
+      revalidatePath('/careers');
+    } else if (kind === 'services') {
+      revalidatePath('/services');
+    }
+  } catch (e) {
+    console.error('[revalidate] failed:', e instanceof Error ? e.message : e);
+  }
 }
 
 /**

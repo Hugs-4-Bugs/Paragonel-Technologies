@@ -12,10 +12,15 @@
  *
  * GET order: `order` asc, then `createdAt` desc. Limit 500.
  * POST body: ServiceFormValues (validated server-side); returns { id }.
+ *
+ * Auth: GET uses `verifyAdmin` (any active admin may list — viewer has
+ * `cms.read`). POST uses `verifyAdminPermission('cms.create')` so a read-only
+ * `viewer` cannot write. On success POST purges the public `/services` cache
+ * via `revalidatePublicContent` so the new service appears immediately.
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdmin, verifyAdminPermission, revalidatePublicContent, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
 import { serviceFormSchema, buildServiceCreatePayload } from '@/lib/cms-schemas';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +48,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'cms.create');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -68,6 +73,7 @@ export async function POST(request: Request) {
     const payload = buildServiceCreatePayload(parsed.data);
     const ref = await db.collection('services').add(payload);
     await logActivityServer(auth.user, 'create', 'Service', ref.id);
+    revalidatePublicContent('services');
     return NextResponse.json({ id: ref.id }, { status: 201 });
   } catch (err) {
     console.error('[admin/services] create failed:', err instanceof Error ? err.message : err);

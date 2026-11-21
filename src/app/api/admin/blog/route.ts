@@ -10,11 +10,17 @@
  *
  * GET order: createdAt desc (matches the previous client query). Limit 500.
  * POST body: BlogCreateValues (validated); returns { id }.
+ *
+ * Auth: GET uses `verifyAdmin` (any active admin may list — viewer has
+ * `cms.read`). POST uses `verifyAdminPermission('cms.create')` so a read-only
+ * `viewer` cannot write. On success POST purges the public blog cache
+ * (`/blog`, `/blog/[slug]`, `/`) via `revalidatePublicContent` so the new post
+ * appears immediately instead of waiting for the 60s ISR tick.
  */
 import { NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdmin, verifyAdminPermission, revalidatePublicContent, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
 import { blogCreateSchema, buildBlogCreatePayload } from '@/lib/cms-schemas';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +43,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await verifyAdmin(request);
+  const auth = await verifyAdminPermission(request, 'cms.create');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();
@@ -70,6 +76,7 @@ export async function POST(request: Request) {
       .add({ ...payload, timestamp: Timestamp.now() });
 
     await logActivityServer(auth.user, 'create', 'BlogPost', ref.id);
+    revalidatePublicContent('blog');
     return NextResponse.json({ id: ref.id }, { status: 201 });
   } catch (err) {
     console.error('[admin/blog] create failed:', err instanceof Error ? err.message : err);

@@ -45,6 +45,20 @@ const faqItems = [
   }
 ];
 
+// JSON-LD FAQPage structured data (Prompt 05I §5.5). The FAQ content is already
+// structured as Q/A pairs above — emit it as FAQPage schema for rich-result
+// eligibility. Injected via a script tag (this is a client component, so it
+// cannot export `metadata`).
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
+
 export default function FaqPage() {
   return (
     <section className="section-padding bg-background min-h-screen">
@@ -74,6 +88,10 @@ export default function FaqPage() {
           </Accordion>
         </ScrollFadeIn>
       </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
     </section>
   );
 }
