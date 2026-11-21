@@ -48,3 +48,6 @@ firestore-debug.log
 
 # local runtime artifacts (dev server logs, etc.)
 .runtime/logs/
+
+# dev-supervisor runtime logs
+/logs/
