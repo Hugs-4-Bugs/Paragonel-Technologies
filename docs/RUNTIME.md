@@ -1,150 +1,139 @@
-# Runtime & Preview — Paragonel Technologies (local dev)
+# Runtime & Preview — Paragonel Technologies
 
-This documents how the local development server is kept alive, how to inspect
-logs, how recovery works, what happens when the Z.ai workspace is recycled,
-and how to restore the browser preview. It is the durable companion to
-`scripts/dev-supervisor.sh`.
+This documents the **four distinct environments** for Paragonel and exactly what
+survives a Z.ai workspace/turn boundary. The single most important fact:
 
-## Root cause of the "black loading screen" preview
+> **A local `next dev` process is NOT durable hosting.** It dies when the Z.ai
+> workspace/turn ends. The website the founder can open at any time — without an
+> active Z.ai execution — is the **Vercel deployment**, not the local process.
 
-The Z.ai preview displays a black loading screen when **no `next dev` process
-is bound to the preview port (3000)**. In this environment the root cause is
-**workspace/preview lifecycle**, not a crash, memory exhaustion, or port
-conflict:
+## A. Local Z.ai development server (NOT durable)
 
-- Background processes started in one execution do **not** survive the end of
-  the turn / a workspace recycle. When the workspace is recycled, the `next dev`
-  process is terminated (the log ends with `Shutting down all Genkit
-  servers...`) and nothing listens on port 3000, so the preview proxy has
-  nothing to forward to.
-- Memory is not the constraint (≈4 GB total, typically >2 GB free). Port
-  conflicts and duplicate servers are prevented by the supervisor's cleanup
-  step.
-
-**Honest limitation:** no userspace supervisor (`pm2`, `nohup`, or this script)
-can survive Z.ai **container destruction**. The mechanism below keeps ONE
-authoritative server alive and self-healing **within a continuous execution**,
-and gives a one-command resume after a recycle.
-
-## How to start the application
+`scripts/dev-supervisor.sh` keeps ONE authoritative `next dev --turbopack` alive
+**only while the Z.ai workspace/turn is active**. It is for development, not for
+hosting the site.
 
 ```bash
 cd /home/z/my-project/paragonel-technologies
 bash scripts/dev-supervisor.sh
 ```
 
-This single command:
-1. Cleans any stale `next dev` / `next-server` / Firebase emulator processes
-   and frees ports 3000 and 8080 (no duplicate servers).
-2. Starts the Firebase Firestore emulator on `localhost:8080` (local data
-   only; production uses real Firestore).
-3. Starts `next dev --turbopack` on port 3000.
-4. Polls `http://localhost:3000/api/health` until the server is confirmed
-   alive, then **blocks supervising the process** until it exits.
+It: cleans stale processes/ports (no duplicates); starts the Firebase Firestore
+emulator on `:8080`; starts `next dev` on `:3000`; polls `GET /api/health`
+(`200 {ok:true,…}`) until alive; then **blocks supervising the process**. On a
+crash it restarts with exponential backoff (2 s, 4 s, …, cap 30 s), max **5
+restarts per 300 s** — then **halts** rather than silently looping. Logs:
+`logs/dev-server.log`, `logs/firestore-emulator.log`.
 
-Run it in a background terminal (or via the shell's background mechanism) so it
-stays alive while you work.
-
-## How persistence works
-
-- **One authoritative server.** The supervisor kills stale `next dev` /
-  emulator processes before starting, so there is never a duplicate.
-- **Bounded restart with exponential backoff.** If `next dev` exits, the
-  supervisor restarts it after a backoff (2 s, 4 s, 8 s, … capped at 30 s).
-  It allows at most **5 restarts per 300 s window**; if exceeded, it **stops**
-  rather than silently looping — so a real application error is never hidden by
-  an infinite restart loop.
-- **Health-check endpoint.** `GET /api/health` returns `200 {ok:true,...}`
-  when the Next.js process is alive and routing works. The supervisor polls
-  this to confirm recovery (not just port-binding).
-- **Logging.** All stdout/stderr is appended to `logs/dev-server.log`; the
-  Firebase emulator logs to `logs/firestore-emulator.log`; supervisor
-  lifecycle messages are interleaved in `logs/dev-server.log`.
-
-## How to inspect logs
+**This survives recoverable process crashes. It does NOT survive workspace
+recycling.** Re-run the command after a recycle, then re-seed the emulator
+(emulator data is in-memory):
 
 ```bash
-# Supervisor + Next.js stdout/stderr (the main log)
-tail -f logs/dev-server.log
-
-# Firebase Firestore emulator
-tail -f logs/firestore-emulator.log
-
-# Quick health check
-curl -s http://localhost:3000/api/health | jq .
+JAR=$(mktemp); curl -s -c "$JAR" -X POST http://localhost:3000/api/admin/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"TestAdmin123!"'} >/dev/null
+COOKIE=$(grep -oE 'qf_admin_token[[:space:]]+[^[:space:]]+' "$JAR" | awk '{print $2}')
+curl -s -H "Cookie: qf_admin_token=$COOKIE" -X POST http://localhost:3000/api/admin/seed
+rm -f "$JAR"
 ```
 
-## How recovery works
+## B. Z.ai workspace / session lifecycle
 
-1. If `next dev` crashes (non-zero exit), the supervisor counts one restart,
-   waits the backoff, cleans stale processes, restarts the emulator if needed,
-   and starts `next dev` again.
-2. It re-confirms `/api/health` before considering the server healthy.
-3. After 5 crashes in 300 s it halts and logs `FATAL: exceeded MAX_RESTARTS…`
-   — inspect `logs/dev-server.log` for the application error, fix it, then
-   re-run the supervisor.
+- Background processes (the supervisor included) **do not survive the end of a
+  turn or a workspace recycle.** This is the root cause of the "black loading
+  screen" Z.ai preview: when the workspace recycles, `next dev` is terminated,
+  nothing binds to `:3000`, and the Z.ai preview proxy has nothing to forward
+  to.
+- There is **no Z.ai-supported persistent application/session hosting** that
+  outlives the workspace. PM2/nohup cannot survive container destruction.
+- The Z.ai preview proxies to `http://localhost:3000`. A `200` from localhost or
+  a running PID proves the local process is up — **not** that the founder can
+  reach the site after the workspace ends.
+- **What survives a turn boundary:** the git repository (under
+  `/home/z/my-project/`), committed code, and the **Vercel deployments** (C/D).
+- **What does not:** every process, the Firestore emulator's in-memory data,
+  and the `localhost:3000` preview.
 
-## What happens after workspace recycling
+## C. Independent Vercel Preview deployment (durable — develop)
 
-If the Z.ai workspace is **recycled/destroyed** (e.g. between sessions), every
-process — including the supervisor — is gone. The preview will be black again.
-This is expected and unavoidable for userspace processes. To restore:
+This is the durable preview of the latest `develop` code. It is created
+**automatically by the GitHub ↔ Vercel integration on every push to `develop`**
+— no local process required, survives workspace recycling.
 
-1. Reopen the workspace.
-2. Run:
-   ```bash
-   cd /home/z/my-project/paragonel-technologies
-   bash scripts/dev-supervisor.sh
-   ```
-3. Wait for `dev server healthy` in `logs/dev-server.log` (typically 5–15 s).
-4. Re-seed the local Firestore (emulator data is in-memory and does not
-   survive a recycle):
-   ```bash
-   JAR=$(mktemp); curl -s -c "$JAR" -X POST http://localhost:3000/api/admin/auth/login \
-     -H 'Content-Type: application/json' \
-     -d '{"email":"admin@example.com","password":"TestAdmin123!"'} >/dev/null
-   COOKIE=$(grep -oE 'qf_admin_token[[:space:]]+[^[:space:]]+' "$JAR" | awk '{print $2}')
-   curl -s -H "Cookie: qf_admin_token=$COOKIE" -X POST http://localhost:3000/api/admin/seed
-   rm -f "$JAR"
-   ```
-5. Refresh the Z.ai preview.
+- Vercel project: `hugs4bugs-projects/paragonel-technologies`.
+- Environment: **Preview**. Branch: `develop`.
+- Build status is posted back to GitHub as a commit status
+  (`Vercel → success`) and a GitHub Deployment (`environment=Preview`).
 
-## How to restore the preview
-
-The Z.ai preview proxies to `http://localhost:3000`. If the preview is black:
+**Find the latest Preview URL** (no Vercel token needed — uses the GitHub API):
 
 ```bash
-curl -s http://localhost:3000/api/health   # 200 + JSON = server alive
+# latest deployment on develop
+DEPID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+  "https://api.github.com/repos/Hugs-4-Bugs/Paragonel-Technologies/deployments?per_page=1" \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)[0]['id'])")
+curl -s -H "Authorization: token $GH_TOKEN" \
+  "https://api.github.com/repos/Hugs-4-Bugs/Paragonel-Technologies/deployments/$DEPID/statuses?per_page=1" \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)[0]['environment_url'])"
 ```
 
-- **200** → the server is up; the issue is the preview proxy. Refresh the
-  preview / re-open the workspace tab. If it stays black, restart the
-  supervisor (one command, above).
-- **connection refused** → no server. Run the supervisor.
+The URL looks like
+`https://paragonel-technologies-<hash>-hugs4bugs-projects.vercel.app`.
+
+### ⚠️ Blocker: the Preview is gated (Vercel Authentication)
+
+Vercel **Deployment Protection** is enabled, so the Preview redirects anonymous
+visitors to `https://vercel.com/login`. **Vercel project team members** (the
+founder) can open it after logging into Vercel; anonymous visitors cannot.
+
+This sandbox has **no Vercel token** (`vercel whoami` → Logged out), so the
+agent **cannot disable Deployment Protection or create a public alias** from
+here. That is the precise blocker for an *anonymous*-public develop preview.
+
+**One-step fix (founder, in the Vercel dashboard):**
+Vercel → Project `paragonel-technologies` → **Settings → Security → Deployment
+Protection** → set "Vercel Authentication" to **Production only** (or off). The
+develop Preview then becomes anonymously accessible at the URL above. (Or
+provide a Vercel token and the agent can do it via the Vercel REST API
+`PATCH /v9/projects/{id}`.)
+
+## D. Production deployment (public — master)
+
+- URL: **https://paragonel.vercel.app/** — publicly accessible, durable, renders
+  the real application (verified: HTTP 200, no auth gate, h1
+  "Paragonel Technologies").
+- Branch: **`master`** (the GitHub Deployments API confirms Production
+  deployments come from `master`, e.g. `d3ddcc9` — **not** `develop`). `develop`
+  deploys to Preview only.
+- **Do not** promote `develop` to production or merge into `master` without an
+  explicit, verified release decision. `master`/`main` must not be touched from
+  the agent.
+- Production uses real Firestore / Vercel environment variables — **not** the
+  local emulator and **not** `.env.local`.
+
+## Quick reference — which URL for what
+
+| Need | URL | Durable? | Public? |
+|---|---|---|---|
+| Open the live website now (anyone) | https://paragonel.vercel.app/ | ✅ | ✅ (master code) |
+| See latest `develop` code (Vercel team) | Preview URL from §C | ✅ | gated (log in to Vercel) |
+| Local editing / dev crashes | http://localhost:3000 (supervisor) | ❌ (turn-bound) | localhost only |
 
 ## Admin CMS credentials (LOCAL DEV ONLY)
 
-`.env.local` (gitignored) sets `ADMIN_PASSWORD_HASH` — a bcrypt hash of the
-local test password `TestAdmin123!`, with email `admin@example.com` (from
-`.env`). **These are dev-only credentials; never reuse in production.**
-Production uses Vercel environment variables.
-
-Note: the bcrypt hash contains literal `$` characters. In `.env.local` each `$`
-is escaped as `\$` because `@next/env` (dotenv-expand) otherwise treats
-`$QloZY…` as a variable reference and mangles the hash. Do not un-escape them.
-
-## Production vs local
-
-- **Local dev**: `next dev` + Firestore emulator + the supervisor. Not deployed.
-- **Production**: Vercel builds `develop` on push and deploys to
-  `paragonel.vercel.app`. Vercel and the local dev preview are **independent
-  environments** — a local server crash never affects production, and a Vercel
-  deploy does not require the local server.
+`.env.local` (gitignored) sets `ADMIN_PASSWORD_HASH` — a bcrypt hash of the dev
+password `TestAdmin123!`, email `admin@example.com` (from `.env`). Dev-only;
+production uses Vercel env vars. The bcrypt hash contains literal `$`; in
+`.env.local` each `$` is escaped as `\$` (else `@next/env`/dotenv-expand mangles
+`$QloZY…` into an empty variable). Do not un-escape.
 
 ## Do not
 
-- Do not run two `next dev` instances on port 3000 (the supervisor prevents
-  this; do not start a second one manually).
-- Do not commit `.env.local` (it is gitignored via `.env*`).
-- Do not assume the supervisor survives container destruction — re-run it.
-- Do not silence the restart cap; a halt means there is a real error to fix.
+- Do not treat the local supervisor as permanent hosting — it is not.
+- Do not run two `next dev` instances on `:3000`.
+- Do not commit `.env.local` (gitignored via `.env*`).
+- Do not disable the supervisor's restart cap; a halt means a real error.
+- Do not promote `develop` to production or touch `master`/`main`.
+- Do not assume the develop Preview is anonymous-public until Deployment
+  Protection is changed.

@@ -7,6 +7,7 @@ import { ServicesSection } from '@/components/sections/services-section';
 import { SelectedWorkSection } from '@/components/sections/selected-work-section';
 import { AcquisitionOSFeature } from '@/components/sections/acquisitionos-feature';
 import { ProblemsWeSolve } from '@/components/sections/problems-we-solve';
+import { HowWeEngage } from '@/components/sections/how-we-engage';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -252,6 +253,10 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 11b. How engagement works (conversion path → final CTA) */}
+      <HowWeEngage />
+      <Separator className="my-0 container mx-auto max-w-7xl" />
 
       {/* 12. Final Contact CTA */}
       <section id="contact-snippet" className="section-padding bg-secondary/30 dark:bg-secondary/10">
