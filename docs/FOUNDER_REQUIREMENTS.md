@@ -443,3 +443,86 @@ not begin it in this task.
   (currently gated by Vercel Authentication — team-only). See
   `docs/RUNTIME.md` §D/§C. Do not promote `develop` to production or touch
   `master`/`main` without explicit authorization.
+
+---
+
+## 19. Implementation status tracker (Prompt 05A + 05B)
+
+This section is the live implementation status, appended **in addition to** the
+existing requirements above — it does not replace or weaken any prior
+requirement. Status labels:
+
+- **DONE** — implemented and verified.
+- **PARTIAL** — implemented, but remaining work or verification exists.
+- **PENDING** — not implemented.
+- **BLOCKED** — requires an external dependency or missing evidence.
+- **FUTURE** — explicitly deferred to a later implementation batch.
+
+| Area | Current status |
+|---|---|
+| Company identity and founder context | DONE — preserve existing content |
+| Foundation Prompt 01 documentation | DONE — preserve |
+| Runtime recovery and supervisor | DONE — preserve, subject to current environment |
+| Light theme default | DONE — preserve (`defaultTheme="light"`) |
+| AcquisitionOS contrast fix | DONE — preserve |
+| SMTP OTP and RBAC implementation | PARTIAL — implemented locally; production SMTP verification remains dependent on credentials |
+| Super Admin bootstrap | PARTIAL — implemented; production verification depends on production configuration |
+| Admin portal and management UI | DONE — continue preserving |
+| Authentication tests | PARTIAL — 45/45 reported passing in Prompt 04; rerun only relevant tests when changing auth |
+| Homepage visual transformation (Prompt 05A) | DONE — preserve and build upon it |
+| Header/footer logo size and theme consistency (Prompt 05B) | DONE — navbar restored to pre-05A dimensions (`h-20 w-[200px] md:h-24 md:w-[220px]`); footer mirrors the header's two-image swap (logo3 light / logo4 dark), no `dark:brightness-110`; verified in-browser that dark-mode header + footer both render `logo4.png` |
+| Favicon / avatar mark (Prompt 05B) | DONE — founder-supplied mark installed as `src/app/icon.png` (512×512) + `src/app/favicon.ico` (multi-size) + `public/images/paragonel-mark.png` for avatar use |
+| Services catalogue + detailed compositions (Prompt 05B) | DONE — 5 engineering domains + 13 offerings; editorial landing (`/services`) with a distinct composition per domain; dynamic `/services/[slug]` detail pages; CMS (`getPublicServices`) preserved; legacy 4 static service routes preserved |
+| AcquisitionOS / product-page visual transformation | PENDING — Prompt 05C |
+| About / company story / Selected Work / case studies | PENDING — Prompt 05D |
+| Editorial blog redesign | PENDING — Prompt 05E |
+| Remaining responsive / motion / accessibility polish | PENDING — Prompt 05F |
+| Vercel deployment recovery | BLOCKED — exact Vercel build error is still unknown (logs access-restricted); local clean build passes |
+
+### 19.1 Distinction preserved (no invented claims)
+
+- **Verified capabilities:** the five engineering domains and the 13 offerings
+  are within Paragonel's stated engineering scope; no offering is published as
+  "delivered at enterprise scale."
+- **Actual delivered work:** AcquisitionOS (private beta), CodeGuard AI (VS Code
+  Marketplace), SystemFoundry (internal tool), Maa Arogyam (engagement) —
+  referenced honestly with their real status labels.
+- **Future planned offerings:** the 13-offering catalogue is the structured
+  surface; individual offerings are not claimed as already-delivered engagements.
+- **Unverified claims:** none introduced. No invented customers, metrics,
+  testimonials, awards, certifications, uptime guarantees or performance claims.
+
+### 19.2 Pricing / free-service stance
+
+No free-service promise, free consultation, free development offer or zero-cost
+delivery claim has been introduced. The existing founder requirements contain no
+approved pricing/free-service statement; pricing claims are left unchanged and
+the relevant content remains marked for clarification rather than invented.
+
+### 19.3 Remaining implementation sequence (not dropped)
+
+- **Prompt 05C — AcquisitionOS + product pages:** premium product storytelling,
+  real product visuals, product workflows, honest private-beta status, clear
+  product CTA, preserve the 12-stage lifecycle.
+- **Prompt 05D — About / company story / Selected Work:** company identity,
+  founder/company story, actual engineering work, verified case studies, trust
+  evidence, engagement process. No fabricated testimonials or customer outcomes.
+- **Prompt 05E — Blog redesign:** editorial layout, stronger typography,
+  restrained corners, article navigation, reading experience, code presentation,
+  related articles, responsive reading layouts. Preserve existing CMS + content.
+- **Prompt 05F — Final experience polish:** responsive browser QA, accessibility,
+  performance, motion refinement, interaction consistency, theme consistency,
+  cross-page visual quality.
+
+### 19.4 Vercel blocker (unchanged)
+
+The Vercel Preview deployment of `develop` continues to fail after the Prompt 03
+authentication implementation, despite successful local builds (`tsc` + clean
+`next build` both pass). The exact Vercel build error is unknown because the
+deployment logs are access-restricted (Vercel Authentication on Preview +
+failed-deploy URL redirects to SSO; no `VERCEL_TOKEN` in the sandbox). This
+remains a **BLOCKED** release item. No speculative dependency, bundle-size,
+Firebase or Next.js change will be made without evidence from the actual log.
+Local development remains usable and visible; a healthy local preview is not a
+successful production deployment.
+

@@ -30,9 +30,25 @@ the same legend: ✅ Verified · ⏳ Pending verification · 🔜 Future plan.
 | E. Advanced Software Architecture | Distributed systems; microservices; scalable backends; event-driven architecture; performance engineering |
 
 **Current service surface (live):** four primary categories — AI Solutions,
-Custom Software Development, Cloud & DevOps, Data & Analytics. ✅
-**Planned catalogue (🔜 future):** ~13 individual offerings across the 5
-domains — separate authorized implementation prompt.
+Custom Software Development, Cloud & DevOps, Data & Analytics. ✅ (Legacy static
+routes preserved at `/services/{ai-solutions,custom-software,cloud-devops,data-analytics}`.)
+
+**Structured catalogue (✅ implemented — Prompt 05B):** five engineering domains
+and 13 individual offerings, published as the new editorial `/services` landing
++ dynamic `/services/[slug]` detail pages. The five domains as implemented
+(map to the founder taxonomy A–E above):
+
+1. **Product Engineering** — SaaS & Product Engineering · Custom Business Software · API & Systems Integration
+2. **AI & Intelligent Systems** — AI Agents & Copilots · RAG & Knowledge Systems · Workflow Automation & BPA
+3. **Cloud, Infrastructure & Platform Engineering** — Cloud Architecture & Migration · DevOps & CI/CD · Platform Engineering & Reliability
+4. **Data Engineering & Analytics** — Data Engineering & Pipelines · Analytics & BI
+5. **Experience & Interface Engineering** — UI/UX & Product Design · Frontend Engineering
+
+Source of truth: `src/lib/services-catalogue.ts`. No offering is published as
+"delivered at enterprise scale"; product references stay limited to verified
+Paragonel work (AcquisitionOS private beta, CodeGuard AI, SystemFoundry). The
+admin CMS (`getPublicServices`) continues to surface admin-published services
+alongside the structured catalogue.
 
 ## Flagship product — AcquisitionOS
 

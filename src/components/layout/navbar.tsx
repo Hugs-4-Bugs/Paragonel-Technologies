@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Brain, Cloud, GitBranch, Boxes, ArrowRight, Code2, BarChart3 } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Brain, Cloud, GitBranch, Boxes, ArrowRight, Code2, BarChart3, Layers } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,11 +26,14 @@ const mainNavLinks = [
   { href: "/about", label: "About" },
 ];
 
+// Services mega-menu — mirrors the five engineering domains on /services
+// (Prompt 05B). Anchor links jump to the domain sections on the landing page.
 const servicesMega = [
-  { href: "/services/ai-solutions", label: "AI Solutions", icon: Brain, desc: "AI agents, copilots, knowledge assistants, support automation." },
-  { href: "/services/custom-software", label: "Custom Software Development", icon: Code2, desc: "SaaS, enterprise apps, internal systems, workflow automation." },
-  { href: "/services/cloud-devops", label: "Cloud & DevOps", icon: Cloud, desc: "Migration, CI/CD, IaC, observability, scalability." },
-  { href: "/services/data-analytics", label: "Data & Analytics", icon: BarChart3, desc: "Dashboards, BI, pipelines, reporting, KPI monitoring." },
+  { href: "/services#product-engineering", label: "Product Engineering", icon: Boxes, desc: "SaaS, custom business software, API & systems integration." },
+  { href: "/services#ai-and-intelligent-systems", label: "AI & Intelligent Systems", icon: Brain, desc: "Agents, copilots, RAG, workflow automation — tied to a real outcome." },
+  { href: "/services#cloud-infrastructure-platform", label: "Cloud, Infrastructure & Platform", icon: Cloud, desc: "Architecture, migration, DevOps/CI-CD, reliability." },
+  { href: "/services#data-engineering-analytics", label: "Data Engineering & Analytics", icon: BarChart3, desc: "Pipelines, warehouse, analytics, BI — one source of truth." },
+  { href: "/services#experience-interface", label: "Experience & Interface", icon: Layers, desc: "UI/UX, design systems, frontend engineering, accessibility." },
 ];
 
 const moreNavLinks = [
@@ -80,16 +83,15 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65">
-      <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-6">
+      <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center">
-          <div className="relative h-9 w-[150px] md:h-10 md:w-[165px]">
+          <div className="relative h-20 w-[200px] md:h-24 md:w-[220px]">
             <Image
               src="/images/logo3.png"
               alt="Paragonel Logo"
               width={2172}
               height={724}
               className="h-full w-full object-contain dark:hidden"
-              data-ai-hint="company logo abstract"
               priority
             />
             <Image
@@ -98,7 +100,6 @@ export function Navbar() {
               width={2172}
               height={724}
               className="hidden h-full w-full object-contain dark:block"
-              data-ai-hint="company logo abstract"
               priority
             />
           </div>

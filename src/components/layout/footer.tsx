@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useTheme } from "next-themes";
 import { NewsletterSubscription } from '@/components/sections/newsletter-subscription';
 import { Linkedin, Twitter, Github, Settings, MapPin, Mail, Phone, ArrowRight } from 'lucide-react';
 import { useCookieConsent } from "@/hooks/use-cookie-consent";
@@ -42,8 +41,6 @@ const companyLinks = [
 
 export function Footer() {
   const { openSettings, isMounted } = useCookieConsent();
-  const { resolvedTheme } = useTheme();
-  const footerLogoSrc = resolvedTheme === "dark" ? "/images/logo4.png" : "/images/logo3.png";
 
   return (
     <footer className="border-t border-border bg-background">
@@ -64,15 +61,29 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-10 md:grid-cols-4 lg:grid-cols-5">
           {/* Brand */}
           <div className="col-span-2 space-y-5">
-            <Link href="/" className="inline-block">
-              <Image
-                src={footerLogoSrc}
-                alt="Paragonel"
-                width={180}
-                height={60}
-                className="h-auto w-auto dark:brightness-110"
-                priority
-              />
+            <Link href="/" className="inline-flex items-center">
+              {/* Same two-image light/dark swap as the header (logo3 light /
+                  logo4 dark). Identical asset + dimensions + object-contain —
+                  no brightness filter — so the footer logo is visually the
+                  same as the header in both themes. */}
+              <div className="relative h-20 w-[200px] md:h-24 md:w-[220px]">
+                <Image
+                  src="/images/logo3.png"
+                  alt="Paragonel"
+                  width={2172}
+                  height={724}
+                  className="h-full w-full object-contain dark:hidden"
+                  priority
+                />
+                <Image
+                  src="/images/logo4.png"
+                  alt="Paragonel"
+                  width={2172}
+                  height={724}
+                  className="hidden h-full w-full object-contain dark:block"
+                  priority
+                />
+              </div>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
               Paragonel Technologies Pvt. Ltd. — an AI-native product-engineering company. We build our own
