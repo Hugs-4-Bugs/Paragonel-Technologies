@@ -21,6 +21,9 @@ import {
   checkRateLimit,
   isLikelyDuplicate,
   fingerprint,
+  CONSENT_NOTICE_VERSION,
+  PRIVACY_POLICY_VERSION,
+  TERMS_VERSION,
 } from '@/lib/submission-security';
 import { sendContactNotifications } from '@/lib/email';
 
@@ -78,7 +81,13 @@ export async function POST(request: Request) {
   }
 
   // 4. Store lead FIRST (CRM record is the source of truth). Field set matches
-  //    the existing admin /admin/leads CRM for compatibility.
+  //    the existing admin /admin/leads CRM for compatibility. Consent evidence
+  //    is attached SERVER-side: the consent notice / privacy-policy / terms
+  //    versions come from server constants (not the client body, so they cannot
+  //    be forged), and the timestamp is captured here in UTC. No raw IP,
+  //    fingerprint or tracking id is stored as PII (the dedupeFingerprint is a
+  //    non-crypto hash used only for dedupe, not personal data).
+  const consentTimestamp = new Date().toISOString();
   let leadRef;
   try {
     leadRef = await db.collection('leads').add({
@@ -92,6 +101,17 @@ export async function POST(request: Request) {
       deletedAt: null,
       notificationStatus: 'pending',
       dedupeFingerprint: fp,
+      // Consent evidence (Prompt 05F). marketingConsent is recorded separately
+      // so marketing messages are never sent merely because an inquiry was
+      // submitted. Versions pin the exact notice the user acknowledged.
+      consent: {
+        acknowledged: true, // guaranteed true by the schema refine()
+        marketingConsent: data.marketingConsent === true,
+        consentNoticeVersion: CONSENT_NOTICE_VERSION,
+        privacyPolicyVersion: PRIVACY_POLICY_VERSION,
+        termsVersion: TERMS_VERSION,
+        timestampUtc: consentTimestamp,
+      },
     });
   } catch (err) {
     console.error('[contact] lead store failed:', err instanceof Error ? err.message : err);

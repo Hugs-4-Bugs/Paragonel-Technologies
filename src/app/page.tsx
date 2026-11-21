@@ -4,6 +4,7 @@ import { HomeWhyParagonel } from '@/components/home/why-paragonel';
 import { HomeCapabilities } from '@/components/home/capabilities';
 import { HomeProducts } from '@/components/home/products';
 import { HomePositioning } from '@/components/home/positioning';
+import { HomeBlog } from '@/components/home/blog';
 import { HomeApproach } from '@/components/home/approach';
 import { HomeEngagement } from '@/components/home/engagement';
 import { HomeConversion } from '@/components/home/conversion';
@@ -54,6 +55,7 @@ export default function HomePage() {
       <HomeCapabilities />
       <HomeProducts />
       <HomePositioning />
+      <HomeBlog />
       <div className="pt-shell"><div className="pt-hair" /></div>
       <HomeApproach />
       <HomeEngagement />

@@ -28,33 +28,33 @@ interface CookieCategoryDetail {
 const cookieCategoriesDetails: CookieCategoryDetail[] = [
   {
     id: 'essential',
-    title: 'Essential Cookies',
-    description: 'These cookies are strictly necessary for the website to function properly. They enable core functionalities such as user authentication, session management, security features, and remembering your cookie consent preferences. They cannot be disabled.',
+    title: 'Strictly Necessary Cookies',
+    description: 'These cookies are strictly necessary for the website to function properly. They enable core functionalities such as authentication, session management, security, theme preference, and remembering your cookie consent. They cannot be disabled. Paragonel uses these.',
     icon: ShieldCheck,
     isEssential: true,
   },
   {
     id: 'functional',
     title: 'Functional Cookies',
-    description: 'These cookies allow the website to remember choices you make (such as your username, language, or theme preferences) and provide enhanced, more personal features. Disabling these may affect certain functionalities.',
+    description: 'Would allow the website to remember choices you make (such as language or theme) for enhanced, personal features. Not currently used by Paragonel — no functional cookies or scripts are loaded. Your preference here will be recorded for if/when such a feature is added.',
     icon: Sparkles,
   },
   {
-    id: 'performance', // Added Performance Cookies
+    id: 'performance',
     title: 'Performance Cookies',
-    description: 'These cookies help improve website speed and performance by collecting anonymous data on how quickly pages load and respond. This helps us optimize the site for a smoother user experience.',
+    description: 'Would collect anonymous data on page-load speed to help optimize the site. Not currently used by Paragonel — no performance/RUM scripts are loaded. Your preference here will be recorded for if/when such a feature is added.',
     icon: Gauge,
   },
   {
     id: 'analytics',
     title: 'Analytics Cookies',
-    description: 'These cookies collect information about how you use our website, such as which pages you visit and which links you click. All data is anonymized and aggregated. This helps us understand user behavior and improve our website.',
+    description: 'Would collect anonymized, aggregated information about how visitors use the website. Not currently used by Paragonel — no analytics (e.g. Google Analytics) scripts are loaded. Your preference here will be recorded for if/when analytics is added.',
     icon: BarChart2,
   },
   {
     id: 'marketing',
     title: 'Marketing & Advertising Cookies',
-    description: 'These cookies are used to track your browsing activity across websites to build a profile of your interests and show you relevant advertisements on other sites. They may be set by us or by third-party advertising partners.',
+    description: 'Would track browsing activity across websites to show relevant advertising. Not currently used by Paragonel — no marketing or advertising (e.g. Meta Pixel) scripts are loaded, and Paragonel does not sell personal data to advertisers. Your preference here will be recorded for if/when such a feature is added.',
     icon: Megaphone,
   },
 ];

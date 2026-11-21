@@ -15,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: '/', changeFrequency: 'weekly', priority: 1.0, lastModified },
     { url: '/services', changeFrequency: 'monthly', priority: 0.9, lastModified },
+    { url: '/industries', changeFrequency: 'monthly', priority: 0.8, lastModified },
     { url: '/services/ai-solutions', changeFrequency: 'monthly', priority: 0.8, lastModified },
     { url: '/services/cloud-infrastructure', changeFrequency: 'monthly', priority: 0.8, lastModified },
     { url: '/services/devops-automation', changeFrequency: 'monthly', priority: 0.8, lastModified },
@@ -28,6 +29,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: '/testimonials', changeFrequency: 'monthly', priority: 0.6, lastModified },
     { url: '/faq', changeFrequency: 'monthly', priority: 0.5, lastModified },
     { url: '/privacy-policy', changeFrequency: 'yearly', priority: 0.4, lastModified },
+    { url: '/terms', changeFrequency: 'yearly', priority: 0.4, lastModified },
+    { url: '/cookie-policy', changeFrequency: 'yearly', priority: 0.4, lastModified },
   ];
 
   return staticRoutes;

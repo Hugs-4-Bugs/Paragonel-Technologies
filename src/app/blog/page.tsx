@@ -6,8 +6,14 @@ export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'Insights — Paragonel',
-  description: 'Engineering notes and strategies from our internal product development journey.',
+  description: 'Engineering notes, architecture thinking and lessons from building Paragonel products — AI-native systems, platform engineering, security and applied research.',
   alternates: { canonical: '/blog' },
+  openGraph: {
+    title: 'Insights — Paragonel',
+    description: 'Engineering notes, architecture thinking and lessons from building Paragonel products.',
+    type: 'website',
+    url: '/blog',
+  },
 };
 
 /**

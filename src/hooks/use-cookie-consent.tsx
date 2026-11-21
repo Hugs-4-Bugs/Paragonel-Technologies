@@ -15,6 +15,13 @@ export type CookieCategory = keyof Omit<CookiePreferences, 'essential'>;
 
 const COOKIE_CONSENT_KEY = 'paragonel_cookie_consent';
 const COOKIE_PREFERENCES_KEY = 'paragonel_cookie_preferences';
+// Prompt 05F: record the consent notice version + UTC timestamp so the stored
+// preference is auditable evidence of WHICH notice the visitor agreed to, and
+// when. Version is bumped whenever the banner wording / categories materially
+// change; prior stored preferences are not silently overwritten — a version
+// mismatch re-prompts the visitor.
+export const COOKIE_CONSENT_NOTICE_VERSION = '2026-11-21-v1';
+const COOKIE_CONSENT_META_KEY = 'paragonel_cookie_consent_meta';
 
 // Default preferences: essential is true, others are false until user opts in
 const defaultPreferences: CookiePreferences = {
@@ -95,6 +102,17 @@ export const CookieConsentProvider: React.FC<{ children: ReactNode }> = ({ child
 
     if (consentDecisionMade) {
       localStorage.setItem(COOKIE_CONSENT_KEY, 'true');
+      // Prompt 05F: auditable consent evidence — notice version + UTC timestamp.
+      // Stored client-side alongside preferences; the contact form records its
+      // own separate server-side consent evidence on submission.
+      try {
+        localStorage.setItem(
+          COOKIE_CONSENT_META_KEY,
+          JSON.stringify({ version: COOKIE_CONSENT_NOTICE_VERSION, timestampUtc: new Date().toISOString() }),
+        );
+      } catch {
+        /* storage unavailable — preferences still apply in-session */
+      }
       setConsentGiven(true);
       setShowBanner(false);
     }

@@ -11,6 +11,22 @@ import { z } from 'zod';
 
 /* ----------------------------- validation ----------------------------- */
 
+/**
+ * Consent notice + policy versions (Prompt 05F Contact consent work).
+ *
+ * These are SERVER-side constants — they are NOT accepted from the client
+ * request body, so a submission cannot forge a different consent version. The
+ * API route attaches the current versions + a server-captured UTC timestamp to
+ * the stored lead as consent evidence (see /api/contact/route.ts).
+ *
+ * Bump the version when the consent wording or Privacy Policy materially
+ * changes; existing stored leads retain the version under which they were
+ * submitted (consent records are not silently overwritten).
+ */
+export const CONSENT_NOTICE_VERSION = '2026-11-21-v1';
+export const PRIVACY_POLICY_VERSION = '2026-11-21-v1';
+export const TERMS_VERSION = '2026-11-21-v1';
+
 export const contactSchema = z.object({
   name: z.string().trim().min(2, 'Name is required').max(100, 'Name too long'),
   email: z.string().trim().toLowerCase().email('Valid email required').max(254),
@@ -20,6 +36,19 @@ export const contactSchema = z.object({
     .trim()
     .min(10, 'Please tell us a bit more (min 10 characters)')
     .max(2000, 'Message too long (max 2000 characters)'),
+  // Mandatory acknowledgement that the user has read the Privacy Notice and
+  // understands Paragonel will use the information to respond to and manage
+  // the inquiry. Must be explicitly true — unchecked by default on the client,
+  // and the refine() enforces it SERVER-side so a direct API call cannot
+  // bypass it. This is an acknowledgement of the processing notice for the
+  // inquiry (the lawful basis), NOT a bundling of marketing consent.
+  consentAcknowledged: z
+    .boolean()
+    .refine((v) => v === true, 'Please acknowledge the Privacy Notice to submit your inquiry.'),
+  // Optional, separate marketing consent. Never a condition of submission.
+  // Recorded separately so a marketing message is never sent merely because an
+  // inquiry was submitted.
+  marketingConsent: z.boolean().optional().default(false),
   // Optional honeypot field — must be empty. Bots tend to fill hidden fields.
   website: z.string().max(0).optional().or(z.literal('')),
 });
