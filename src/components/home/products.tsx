@@ -1,0 +1,159 @@
+'use client';
+
+import Link from 'next/link';
+import { useRef, useState } from 'react';
+import { motion, useScroll, useTransform, useMotionValueEvent, useReducedMotion } from 'framer-motion';
+import { ArrowUpRight, ExternalLink } from 'lucide-react';
+import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
+
+const PIPELINE = [
+  'Discover', 'Research', 'Find Gaps', 'Opportunity Report', 'Score',
+  'Personalize', 'Outreach', 'Reply', 'Meeting', 'Pipeline', 'Proposal', 'Close',
+];
+
+const OTHER_WORK = [
+  {
+    name: 'CodeGuard AI',
+    type: 'Commercial — VS Code extension',
+    body: 'Identifies AWS infrastructure cost risks in Terraform directly inside the editor, before they reach production.',
+    href: '/our-product',
+    cta: 'View product',
+  },
+  {
+    name: 'SystemFoundry',
+    type: 'Internal tool',
+    body: 'An infrastructure architecture simulator. Clearly an internal tool, not a commercial product — used to pressure-test system designs.',
+    href: '/our-product',
+    cta: 'View product',
+  },
+  {
+    name: 'Maa Arogyam',
+    type: 'Engagement',
+    body: 'A website engagement build — not a health-data platform. Delivered as a client engagement under Paragonel’s engineering process.',
+    href: '/our-product',
+    cta: 'View product',
+  },
+];
+
+export function HomeProducts() {
+  const reduce = useReducedMotion();
+  const section = useRef<HTMLDivElement>(null);
+  const [activeCount, setActiveCount] = useState(reduce ? PIPELINE.length : 1);
+
+  const { scrollYProgress } = useScroll({
+    target: section,
+    offset: ['start end', 'end start'],
+  });
+  const trackScale = useTransform(scrollYProgress, [0, 1], reduce ? [1, 1] : [0, 1]);
+
+  useMotionValueEvent(scrollYProgress, 'change', (v) => {
+    if (reduce) return;
+    setActiveCount(Math.max(1, Math.round(v * PIPELINE.length)));
+  });
+
+  return (
+    <section ref={section} id="products" className="pt-section pt-surface-quiet">
+      <div className="pt-shell">
+        <Reveal>
+          <span className="pt-eyebrow">04 — Products & engineering work</span>
+          <h2 className="pt-h2 mt-5 text-foreground">What we have actually built.</h2>
+          <p className="pt-lead mt-5 max-w-2xl">
+            A commercial flagship in private beta, a shipped developer tool, an internal
+            simulator, and a delivered engagement. No invented screenshots — where an
+            illustration is used, its illustrative nature is clear.
+          </p>
+        </Reveal>
+
+        {/* AcquisitionOS — featured */}
+        <Reveal className="mt-12">
+          <div className="pt-surface overflow-hidden rounded-[var(--pt-radius-md)]">
+            <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="p-8 lg:p-10 lg:border-r border-border">
+                <div className="flex items-center gap-3">
+                  <span className="pt-index">FLAGSHIP</span>
+                  <span className="rounded-full border border-primary/40 px-2.5 py-0.5 text-[0.7rem] font-medium tracking-wide text-primary">
+                    Private Beta
+                  </span>
+                </div>
+                <h3 className="mt-5 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+                  AcquisitionOS
+                </h3>
+                <p className="mt-3 text-base text-muted-foreground">
+                  An AI-native client acquisition platform. The full acquisition motion as
+                  one engineered system — from discovering accounts to closing the proposal.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    href="https://acquisitionosbeta.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pt-btn pt-btn-primary"
+                  >
+                    Open the beta <ExternalLink className="h-4 w-4" />
+                  </Link>
+                  <Link href="/our-product/acquisitionos" className="pt-btn pt-btn-ghost">
+                    Explore the product
+                  </Link>
+                </div>
+                <p className="mt-5 text-xs text-muted-foreground">Beta URL: acquisitionosbeta.vercel.app</p>
+              </div>
+
+              {/* Pipeline — single track that fills on scroll + nodes light up */}
+              <div className="bg-secondary/20 p-8 lg:p-10">
+                <div className="flex items-center justify-between">
+                  <span className="pt-index">ACQUISITION PIPELINE</span>
+                  <span className="text-xs text-muted-foreground">{PIPELINE.length} stages</span>
+                </div>
+
+                <div className="mt-10 overflow-x-auto pb-2">
+                  <div className="relative min-w-[36rem]">
+                    {/* background + fill tracks aligned to the node row */}
+                    <div className="absolute left-[1.6rem] right-[1.6rem] top-[0.4rem] h-[2px] bg-border" />
+                    <motion.div
+                      className="absolute left-[1.6rem] right-[1.6rem] top-[0.4rem] h-[2px] bg-primary"
+                      style={{ scaleX: trackScale, transformOrigin: 'left center' }}
+                    />
+                    <div className="relative flex justify-between">
+                      {PIPELINE.map((stage, i) => (
+                        <div key={stage} className="flex w-20 flex-col items-center gap-2">
+                          <span className="pt-pipeline-node" data-active={i < activeCount} />
+                          <span
+                            className={`text-center text-[0.7rem] leading-tight transition-colors ${
+                              i < activeCount ? 'text-foreground font-medium' : 'text-muted-foreground'
+                            }`}
+                          >
+                            {stage}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <p className="mt-8 text-xs text-muted-foreground">
+                  Discover → Research → Find Gaps → Opportunity Report → Score → Personalize →
+                  Outreach → Reply → Meeting → Pipeline → Proposal → Close.
+                </p>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        {/* Other work — compact labeled index */}
+        <RevealGroup stagger={0.08} className="mt-10 grid gap-6 md:grid-cols-3">
+          {OTHER_WORK.map((w) => (
+            <RevealItem key={w.name}>
+              <Link href={w.href} className="group block h-full border-t border-border pt-6">
+                <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{w.type}</span>
+                <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">{w.name}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{w.body}</p>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                  {w.cta} <ArrowUpRight className="h-4 w-4" />
+                </span>
+              </Link>
+            </RevealItem>
+          ))}
+        </RevealGroup>
+      </div>
+    </section>
+  );
+}

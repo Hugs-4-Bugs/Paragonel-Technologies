@@ -22,6 +22,7 @@ import { CookieConsentManager } from '@/components/cookie-consent/CookieConsentM
 import { CookieConsentProvider } from '@/hooks/use-cookie-consent';
 import { AuthProvider } from '@/contexts/auth-context';
 import { FirebaseClientProvider } from '@/firebase';
+import { SmoothScroll } from '@/components/motion/smooth-scroll';
 
 export function AppShell({
   children,
@@ -45,6 +46,7 @@ export function AppShell({
                 enableSystem
                 disableTransitionOnChange
               >
+                <SmoothScroll />
                 {!isAdminPath && <Navbar />}
                 <main className="flex-grow">{children}</main>
                 {!isAdminPath && <Footer />}

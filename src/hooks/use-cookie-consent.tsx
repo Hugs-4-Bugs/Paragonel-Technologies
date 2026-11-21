@@ -13,8 +13,8 @@ export interface CookiePreferences {
 
 export type CookieCategory = keyof Omit<CookiePreferences, 'essential'>;
 
-const COOKIE_CONSENT_KEY = 'quantumfusion_cookie_consent';
-const COOKIE_PREFERENCES_KEY = 'quantumfusion_cookie_preferences';
+const COOKIE_CONSENT_KEY = 'paragonel_cookie_consent';
+const COOKIE_PREFERENCES_KEY = 'paragonel_cookie_preferences';
 
 // Default preferences: essential is true, others are false until user opts in
 const defaultPreferences: CookiePreferences = {

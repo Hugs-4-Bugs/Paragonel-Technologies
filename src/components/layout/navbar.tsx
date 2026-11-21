@@ -79,10 +79,10 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center space-x-2 mb-0 -ml-6">
-          <div className="relative h-20 w-[200px] md:h-24 md:w-[220px]">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65">
+      <div className="container mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 md:px-6">
+        <Link href="/" className="flex items-center">
+          <div className="relative h-9 w-[150px] md:h-10 md:w-[165px]">
             <Image
               src="/images/logo3.png"
               alt="Paragonel Logo"
