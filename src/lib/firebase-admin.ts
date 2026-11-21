@@ -65,10 +65,22 @@ function initAdmin(): App | null {
     return null;
   }
 
-  adminApp = initializeApp({
-    credential: cert({ projectId, clientEmail, privateKey }),
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  });
+  // cert()/initializeApp() throw on a malformed/placeholder private key
+  // (e.g. "placeholder" during local build/prerender without real creds).
+  // Catch so getAdminDb()/getAdminBucket() return null as documented
+  // ("returns null + 503 when misconfigured") instead of crashing the
+  // process — callers (admin routes AND public-data fetchers) handle null.
+  try {
+    adminApp = initializeApp({
+      credential: cert({ projectId, clientEmail, privateKey }),
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    });
+  } catch (err) {
+    adminInitError =
+      'Firebase Admin SDK credential is misconfigured (invalid private key).';
+    console.warn(`[firebase-admin] ${adminInitError}`, err instanceof Error ? err.message : err);
+    return null;
+  }
   return adminApp;
 }
 

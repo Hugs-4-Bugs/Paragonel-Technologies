@@ -1,26 +1,22 @@
-"use client";
-
-import React, { useMemo } from 'react';
+import { getPublicServices } from '@/lib/public-data';
 import { ServicesSection } from '@/components/sections/services-section';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Layers } from 'lucide-react';
 
-export default function ServicesPage() {
-  const firestore = useFirestore();
+// Revalidate every 60s so admin publish/activate/deactivate reflects on the
+// public site without a full rebuild, while keeping SSR speed.
+export const revalidate = 60;
 
-  const servicesQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(
-      collection(firestore, 'services'), 
-      where('isActive', '==', true), 
-      orderBy('order', 'asc')
-    );
-  }, [firestore]);
-
-  const { data: services, loading } = useCollection(servicesQuery);
+/**
+ * Server Component (Phase 1A). Fetches active services on the server via the
+ * Admin SDK (bypasses firestore.rules, filters isActive && !deletedAt). The
+ * previous client version used `useCollection` against the `services`
+ * collection whose read rule denied ALL reads in production — leaving the
+ * page on a perpetual skeleton (G16 blank Services page). Now SSR with data;
+ * no client SDK shipped to the browser for this page.
+ */
+export default async function ServicesPage() {
+  const services = await getPublicServices();
 
   return (
     <div className="bg-background min-h-screen">
@@ -38,13 +34,7 @@ export default function ServicesPage() {
             </p>
           </ScrollFadeIn>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-80 rounded-[2.5rem]" />)}
-            </div>
-          ) : (
-            <ServicesSection isFullPage />
-          )}
+          <ServicesSection services={services} isFullPage />
         </div>
       </section>
     </div>

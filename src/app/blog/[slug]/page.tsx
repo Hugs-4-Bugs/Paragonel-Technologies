@@ -1,49 +1,63 @@
-"use client";
-
-import React, { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
 import { Markdown } from '@/components/markdown';
-import { ArrowLeft, CalendarDays, User, Loader2, Tag, Quote, Clock, Share2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Tag, Clock, Share2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import { getPublishedPostBySlug, getPublishedSlugs } from '@/lib/public-data';
 
-export default function BlogPostPage() {
-  const { slug } = useParams();
-  const firestore = useFirestore();
+export const revalidate = 60;
 
-  const postQuery = useMemo(() => {
-    if (!firestore || !slug) return null;
-    return query(
-      collection(firestore, 'blogPosts'),
-      where('slug', '==', slug),
-      where('status', '==', 'Published'),
-      where('deletedAt', '==', null),
-      limit(1)
-    );
-  }, [firestore, slug]);
-  
-  const { data: posts, loading } = useCollection(postQuery);
-  const post = posts?.[0];
+type Params = { params: Promise<{ slug: string }> };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="font-bold text-zinc-500">Retrieving article...</p>
-      </div>
-    );
-  }
+/** Per-article metadata — fixes the missing per-post metadata gap (R-K1/G9). */
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPublishedPostBySlug(slug);
+  if (!post) return { title: 'Post Not Found — Paragonel' };
+  const title = post.metaTitle || post.title;
+  const description = post.metaDescription || post.excerpt || '';
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'article',
+      images: post.thumbnailUrl ? [{ url: post.thumbnailUrl }] : undefined,
+    },
+    twitter: { card: 'summary_large_image', title, description },
+    alternates: { canonical: `/blog/${post.slug}` },
+  };
+}
+
+/** Pre-render known published slugs at build; others resolve at request time. */
+export async function generateStaticParams() {
+  return getPublishedSlugs();
+}
+
+/**
+ * Server Component (Phase 1A/1D). Fetches the published post by slug via the
+ * Admin SDK (filters status=='Published' && deletedAt==null). The previous
+ * client version used `useCollection` against the `blogPosts` read rule that
+ * denied ALL reads in production → `post` was always undefined → "Post Not
+ * Found" for every article, including /blog/engineering-logic-acquisition-os.
+ * Drafts/unpublished never resolve publicly. Timestamps are ISO-serialized
+ * server-side so `new Date(post.createdAt)` works (the old code received a
+ * Firestore Timestamp object and produced Invalid Date).
+ */
+export default async function BlogPostPage({ params }: Params) {
+  const { slug } = await params;
+  const post = await getPublishedPostBySlug(slug);
 
   if (!post) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <h1 className="text-4xl font-bold mb-4">Post Not Found</h1>
-        <p className="text-zinc-500 mb-8">The article you're looking for doesn't exist or has been moved.</p>
+        <p className="text-zinc-500 mb-8">The article you&apos;re looking for doesn&apos;t exist, isn&apos;t published yet, or has been moved.</p>
         <Button asChild>
           <Link href="/blog">Return to Blog</Link>
         </Button>
@@ -51,7 +65,8 @@ export default function BlogPostPage() {
     );
   }
 
-  const readingTime = Math.ceil((post.body?.split(' ').length || 0) / 200);
+  const readingTime = Math.max(1, Math.ceil((post.body?.split(/\s+/).length || 0) / 200));
+  const publishedDate = post.publishedAt || post.createdAt;
 
   return (
     <div className="bg-background pb-32">
@@ -69,7 +84,7 @@ export default function BlogPostPage() {
                   <Clock className="mr-1.5 h-3.5 w-3.5" />
                   {readingTime} min read
                </span>
-               <Button variant="ghost" size="icon" className="rounded-full h-10 w-10">
+               <Button variant="ghost" size="icon" className="rounded-full h-10 w-10" aria-label="Share">
                   <Share2 className="h-4 w-4" />
                </Button>
             </div>
@@ -88,7 +103,7 @@ export default function BlogPostPage() {
               <div className="flex flex-wrap items-center justify-center gap-8 text-zinc-500 font-bold border-y py-6 border-zinc-100 dark:border-zinc-800">
                 <div className="flex items-center">
                   <CalendarDays className="mr-2.5 h-5 w-5 text-primary" />
-                  <span>{new Date(post.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
+                  <span>{publishedDate ? new Date(publishedDate).toLocaleDateString(undefined, { dateStyle: 'long' }) : ''}</span>
                 </div>
                 <div className="flex items-center">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xs mr-3">
@@ -126,19 +141,13 @@ export default function BlogPostPage() {
                        ))}
                     </div>
                   </div>
-                  <div className="p-6 rounded-3xl bg-secondary/10 border border-primary/5">
-                     <Quote className="h-6 w-6 text-primary/40 mb-4" />
-                     <p className="text-sm font-bold text-zinc-500 italic leading-relaxed">
-                        "Engineering is the art of organizing and directing men and controlling the forces and materials of nature for the benefit of the human race."
-                     </p>
-                  </div>
                </div>
             </aside>
 
             <div className="lg:col-span-9">
               <ScrollFadeIn delay="200ms">
-                <div className="prose prose-zinc dark:prose-invert max-w-none 
-                  prose-headings:font-black prose-headings:tracking-tight 
+                <div className="max-w-none
+                  prose-headings:font-black prose-headings:tracking-tight
                   prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6
                   prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-4
                   prose-p:text-lg prose-p:leading-[1.8] prose-p:text-zinc-700 dark:prose-p:text-zinc-300
@@ -151,7 +160,7 @@ export default function BlogPostPage() {
                       {post.excerpt}
                     </div>
                   )}
-                  
+
                   {/* Safe Markdown rendering — never raw `**` markers (Phase 1 §9) */}
                   <Markdown className="prose prose-zinc dark:prose-invert max-w-none
                     prose-headings:font-black prose-headings:tracking-tight
@@ -181,11 +190,11 @@ export default function BlogPostPage() {
                    <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 rounded-full blur-[100px] group-hover:bg-primary/30 transition-colors duration-700"></div>
                    <div className="space-y-4 text-center md:text-left relative z-10 max-w-xl">
                       <h3 className="text-4xl font-black tracking-tight">Stay ahead of the curve</h3>
-                      <p className="text-zinc-400 text-lg font-medium">Join 2,500+ CTOs and engineers receiving our weekly breakdown of AI engineering and cloud strategy.</p>
+                      <p className="text-zinc-400 text-lg font-medium">Join engineers receiving our breakdown of AI engineering and cloud strategy.</p>
                    </div>
                    <div className="relative z-10 shrink-0">
                     <Button asChild size="lg" className="rounded-full px-12 shadow-2xl font-black h-16 text-lg hover:scale-105 transition-transform bg-white text-zinc-900 hover:bg-zinc-200">
-                        <Link href="/contact">Get Weekly Insights</Link>
+                      <Link href="/contact">Get In Touch</Link>
                     </Button>
                    </div>
                  </div>

@@ -41,20 +41,26 @@ service cloud.firestore {
     //     writes services via the Admin SDK, which bypasses rules.
     // =====================================================================
 
-    // Public job listings: read active, non-deleted jobs ONLY.
-    // WRITE denied — admin jobs CMS runs via /api/admin/jobs (Admin SDK).
+    // Public job listings: READ + WRITE fully denied to clients.
+    // Public reads now go through the server (Admin SDK) via
+    // src/lib/public-data.ts -> getPublicJobs() (filters isActive && !deletedAt
+    // server-side). The previous `allow read: if resource.data.isActive == ...`
+    // rule DENIED ALL reads in production (resource.data is undefined for `list`
+    // and the get comparison threw a null-value error), leaving /careers blank.
+    // Admin CRUD runs via /api/admin/jobs (Admin SDK).
     match /jobs/{jobId} {
-      allow read: if resource.data.isActive == true && resource.data.deletedAt == null;
-      allow write: if false; // use /api/admin/jobs (Admin SDK)
+      allow read, write: if false;
     }
 
-    // Blog posts: read published, non-deleted ONLY; revisions subcollection
-    // fully denied (written/read via /api/admin/blog, Admin SDK).
+    // Blog posts: READ + WRITE fully denied to clients. Public reads via the
+    // server (src/lib/public-data.ts -> getPublishedPosts / getPublishedPostBySlug,
+    // filtering status=='Published' && deletedAt==null). The previous
+    // resource.data read rule had the same production break as jobs. Revisions
+    // subcollection fully denied (written/read via /api/admin/blog, Admin SDK).
     match /blogPosts/{postId} {
-      allow read: if resource.data.status == 'Published' && resource.data.deletedAt == null;
-      allow write: if false; // use /api/admin/blog (Admin SDK)
+      allow read, write: if false;
       match /revisions/{revId} {
-        allow read, write: if false; // use /api/admin/blog (Admin SDK)
+        allow read, write: if false;
       }
     }
 
@@ -89,16 +95,23 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Public services catalogue. The public Services page and the homepage
-    // services section read this collection client-side (src/app/services,
-    // src/components/sections/services-section). Without a read rule the
-    // production Firestore default-denies these reads, leaving the Services
-    // page blank (G16). Public READ is restricted to active, non-deleted
-    // service records only; all writes go through /api/admin/services (Admin
-    // SDK), so writes remain denied to clients.
+    // Public services catalogue. READ + WRITE fully denied to clients. Public
+    // reads go through the server (src/lib/public-data.ts -> getPublicServices,
+    // filtering isActive && !deletedAt server-side). The previous
+    // `allow read: if resource.data.isActive == true && deletedAt == null` rule
+    // DENIED ALL reads in production (resource.data is undefined for `list`; the
+    // get comparison threw a null-value error) — the root cause of the blank
+    // Services page (G16). Admin CRUD runs via /api/admin/services (Admin SDK).
     match /services/{serviceId} {
-      allow read: if resource.data.isActive == true && resource.data.deletedAt == null;
-      allow write: if false; // use /api/admin/services (Admin SDK)
+      allow read, write: if false;
+    }
+
+    // Testimonials: no approved testimonials exist yet (Content Truth Register
+    // §5). The public Testimonials section has been replaced with a factual
+    // "Selected Work" case study (static, server-rendered). Lock the collection
+    // fully so no unapproved/fabricated quote can ever be served.
+    match /testimonials/{testimonialId} {
+      allow read, write: if false;
     }
 
     // User profiles. Simulated end-user auth (localStorage) — no Firebase Auth
