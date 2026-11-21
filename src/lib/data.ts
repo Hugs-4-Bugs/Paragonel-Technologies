@@ -62,10 +62,15 @@ export const basePortfolio = [
     id: 'p-1',
     name: 'AcquisitionOS: AI-Native Client Acquisition Platform',
     category: 'Sales Technology',
-    imageUrl: '/images/AI-Driven-Recruitment.png',
+    // No verified product screenshot exists — image intentionally omitted
+    // (Prompt 05D §6: never present a generic illustration as a real screenshot).
+    imageUrl: '',
     description: 'AcquisitionOS is Paragonel\u2019s flagship AI-native client acquisition platform, built to take businesses from prospect discovery to qualified pipeline. **The Problem:** Sales teams spend significant time manually researching companies, identifying opportunities, finding business gaps, personalizing outreach, and managing follow-ups across disconnected tools. **The Solution:** A connected acquisition workflow covering prospect discovery, multi-source company research, signal interpretation, opportunity and gap detection, AI-generated opportunity reports, lead scoring, personalized outreach, reply and conversation analysis, meeting workflows, pipeline management, proposal generation, and closing. **Status:** AcquisitionOS is currently in private beta, where real-user feedback is driving product refinement and workflow validation as we prepare for broader adoption.',
     status: 'Private Beta',
     techs: ['Spring Boot', 'Next.js', 'Python', 'Vector DB', 'AWS'],
+    // Approved beta destination (kept for the flagship card's internal use;
+    // the /our-product index renders the flagship CTA to /our-product/acquisitionos,
+    // so this URL is never shown as visible text).
     link: 'https://acquisitionosbeta.vercel.app/',
     createdAt: new Date('2024-01-01').toISOString()
   },
@@ -73,22 +78,26 @@ export const basePortfolio = [
     id: 'p-2',
     name: 'SystemFoundry: Infrastructure Simulator',
     category: 'Cloud Engineering',
-    imageUrl: '/images/Career-Path-Visualization.png',
+    imageUrl: '',
     description: 'A visual architecture simulator for complex cloud systems.\n\n**The Problem:** Architectural mistakes are expensive. Testing infrastructure changes often requires deploying them, leading to technical debt and wasted budget.\n\n**The Solution:** SystemFoundry allows engineers to drag-and-drop infrastructure components. The engine then simulates real-world load, calculates projected monthly costs, and identifies potential bottlenecks or security risks before a single line of Terraform is written.\n\n**Status:** Used internally for Paragonel\u2019s own cloud engineering work as an architecture validation tool.',
     status: 'Internal Tool',
     techs: ['D3.js', 'React', 'Firebase', 'Serverless'],
-    link: 'https://systemfoundry.vercel.app',
+    // Internal tool — no public/external link (Prompt 05D §4).
+    link: '',
     createdAt: new Date('2024-01-05').toISOString()
   },
   {
     id: 'p-3',
     name: 'CodeGuard AI: Cost Intelligence',
     category: 'Developer Tools',
-    imageUrl: '/images/Personalized-Learning.png',
+    imageUrl: '',
     description: 'A VS Code extension providing real-time cost feedback for cloud infrastructure.\n\n**The Problem:** Developers often don\u2019t realize the cost implications of the resources they provision via IaC until the monthly bill arrives.\n\n**The Solution:** CodeGuard AI performs static analysis on Terraform and CloudFormation files as they are written. It queries a pricing engine to show how much each line of code will cost per month, highlighting over-provisioned instances and suggesting cheaper alternatives.\n\n**Status:** Published on the VS Code Marketplace.',
     status: 'Published',
     techs: ['VS Code API', 'TypeScript', 'Node.js', 'LLM'],
-    link: 'https://marketplace.visualstudio.com/items?itemName=Paragonel.codeguard-ai',
+    // The previously-cached Marketplace URL did not resolve when re-checked
+    // (HTTP 404). Per §4 "do not invent a link", no URL is published until a
+    // verified listing URL is provided.
+    link: '',
     createdAt: new Date('2024-01-10').toISOString()
   }
 ];

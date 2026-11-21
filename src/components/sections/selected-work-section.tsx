@@ -1,136 +1,128 @@
-import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { FolderGit2, Rocket, Code2, Server, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { ArrowUpRight, ExternalLink } from 'lucide-react';
+import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
+import { SELECTED_WORK, type WorkStatusTone } from '@/lib/selected-work';
 
 /**
- * Selected Work / What We've Built (Phase 2 §5).
+ * SelectedWorkSection — Paragonel's verified public project inventory
+ * (Prompt 05D §4/§5).
  *
- * Multiple factual proof points — NOT padded with fabricated testimonials.
- * Per the Content Truth Register §5, NO client quotes are approved for
- * publication, so every card is a factual project/build entry with no
- * invented quote, metric, or endorsement.
+ * Single source of truth: `src/lib/selected-work.ts`. The same data drives the
+ * homepage work index (`home/products.tsx`) and this section (rendered on
+ * /portfolio and /testimonials) — no duplicate, conflicting arrays.
  *
- * Cards:
- *  1. AcquisitionOS — Paragonel's flagship product (private beta). Verified.
- *  2. CodeGuard AI — published on the VS Code Marketplace. Verified.
- *  3. SystemFoundry — internal infrastructure tool. Verified (internal).
- *  4. Maa Arogyam — delivered client engagement (website build). Verified.
- *
- * DietMended is NOT listed: no logo or verified reference exists in the
- * workspace (flagged as a blocker). Primoreon is explicitly excluded.
+ * Content rules enforced by the data module:
+ *  - Exactly four verified entries (AcquisitionOS, CodeGuard AI,
+ *    SystemFoundry, Maa Arogyam). No TechCorp / EduFuture / SkillUp / Remote
+ *    Team Collaboration Suite. No DietMended / Primoreon. Quantum AI not merged.
+ *  - Honest status labels (Private Beta / Published / Internal / Delivered).
+ *  - No fabricated testimonials, metrics, case-study buttons, or stock images.
+ *  - AcquisitionOS CTA -> /our-product/acquisitionos (the approved beta URL
+ *    lives behind the product page's CTA, never as visible text here).
  *
  * Server Component — static, no Firestore read, no client SDK.
  */
-type WorkCard = {
-  icon: typeof FolderGit2;
-  title: string;
-  kind: string;
-  status: string;
-  statusTone: 'beta' | 'live' | 'internal' | 'client';
-  body: string;
-  href?: string;
-  ctaLabel?: string;
+const TONE_DOT: Record<WorkStatusTone, string> = {
+  beta: 'bg-primary',
+  live: 'bg-emerald-500',
+  internal: 'bg-zinc-400',
+  client: 'bg-violet-500',
 };
 
-const work: WorkCard[] = [
-  {
-    icon: Rocket,
-    title: 'AcquisitionOS',
-    kind: 'Flagship product · AI-native client acquisition platform',
-    status: 'Private Beta',
-    statusTone: 'beta',
-    body:
-      'Paragonel’s own AI-native client acquisition platform — a connected workflow from prospect discovery to deal progression, built on a retrieval-augmented, human-in-the-loop architecture. Currently in private beta, with real-user feedback driving product refinement. Listed here as a product we engineered and operate; no outcome metric is claimed without a measured source.',
-    href: '/our-product/acquisitionos',
-    ctaLabel: 'Explore AcquisitionOS',
-  },
-  {
-    icon: Code2,
-    title: 'CodeGuard AI',
-    kind: 'Developer tool · VS Code extension',
-    status: 'Published',
-    statusTone: 'live',
-    body:
-      'A VS Code extension for real-time cloud cost intelligence — shift-left cost analysis and recommendations surfaced to developers inside the editor. Published on the VS Code Marketplace. Listed factually as a shipped developer tool; adoption numbers are not claimed without a measured source.',
-  },
-  {
-    icon: Server,
-    title: 'SystemFoundry',
-    kind: 'Internal tool · Infrastructure simulator',
-    status: 'Internal',
-    statusTone: 'internal',
-    body:
-      'An infrastructure simulator Paragonel uses for its own cloud-engineering work — scenario modelling for platform and reliability decisions. Honestly labelled as an internal tool, not a commercial product.',
-  },
-  {
-    icon: FolderGit2,
-    title: 'Maa Arogyam',
-    kind: 'Client engagement · Website build',
-    status: 'Delivered',
-    statusTone: 'client',
-    body:
-      'Paragonel built the Maa Arogyam website — a professional, modern web presence for the organization. Listed factually as work delivered; no client outcome metric, quote, or endorsement is claimed without evidence.',
-    href: '/our-product',
-    ctaLabel: 'See our product work',
-  },
-];
+export function SelectedWorkSection({ compact = false }: { compact?: boolean }) {
+  const flagship = SELECTED_WORK.find((w) => w.flagship);
+  const rest = SELECTED_WORK.filter((w) => !w.flagship);
 
-const toneClass: Record<WorkCard['statusTone'], string> = {
-  beta: 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/30',
-  live: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30',
-  internal: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-300 border-zinc-500/30',
-  client: 'bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/30',
-};
-
-export function SelectedWorkSection() {
   return (
-    <section className="section-padding bg-background">
-      <div className="container mx-auto px-4 md:px-6">
-        <ScrollFadeIn className="mx-auto mb-12 max-w-2xl text-center">
-          <span className="text-primary font-bold uppercase tracking-[0.3em] text-xs mb-3 block">What we’ve built</span>
-          <h2 className="text-3xl font-black tracking-tight text-foreground md:text-4xl">
-            Selected work
-          </h2>
-          <p className="mt-4 text-muted-foreground leading-relaxed">
-            Real engineering work — our own products and a delivered client engagement — presented factually.
-            We do not publish client quotes, outcome metrics, or endorsements without evidence.
-          </p>
-        </ScrollFadeIn>
+    <section className="pt-section pt-surface-quiet">
+      <div className="pt-shell">
+        {!compact && (
+          <Reveal>
+            <span className="pt-eyebrow">Selected work</span>
+            <h2 className="pt-h1 mt-6 text-foreground">What we have actually built.</h2>
+            <p className="pt-lead mt-6 max-w-2xl">
+              Real engineering work — our own products and a delivered client engagement —
+              presented factually. We do not publish client quotes, outcome metrics, or
+              endorsements without evidence, and we do not present conceptual illustrations as
+              real product screenshots.
+            </p>
+          </Reveal>
+        )}
 
-        <div className="grid gap-6 md:grid-cols-2">
-          {work.map((w, i) => (
-            <ScrollFadeIn key={w.title} delay={`${i * 80}ms`}>
-              <Card className="h-full rounded-lg border-border shadow-sm transition-shadow hover:shadow-md">
-                <CardContent className="space-y-4 p-6 md:p-7">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
-                        <w.icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-black tracking-tight text-foreground">{w.title}</h3>
-                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{w.kind}</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className={`shrink-0 border ${toneClass[w.statusTone]}`}>{w.status}</Badge>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{w.body}</p>
-                  {w.href && w.ctaLabel && (
-                    <Button asChild variant="link" className="h-auto p-0 text-primary">
-                      <Link href={w.href} className="flex items-center gap-1">
-                        {w.ctaLabel} <ExternalLink className="h-3.5 w-3.5" />
-                      </Link>
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </ScrollFadeIn>
+        {flagship && <FlagshipBlock entry={flagship} />}
+
+        <RevealGroup stagger={0.08} className="mt-12 grid gap-px bg-border md:grid-cols-3">
+          {rest.map((w) => (
+            <RevealItem key={w.slug}>
+              <div className="flex h-full flex-col bg-background p-6">
+                <div className="flex items-center gap-3">
+                  <w.icon className="h-5 w-5 text-primary" />
+                  <span className="pt-index text-[0.65rem]">{w.kind.toUpperCase()}</span>
+                </div>
+                <div className="mt-4 flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${TONE_DOT[w.statusTone]}`} />
+                  <span className="text-xs uppercase tracking-[0.12em] text-muted-foreground">{w.status}</span>
+                </div>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">{w.title}</h3>
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{w.body}</p>
+                {w.href && w.ctaLabel && (
+                  <Link
+                    href={w.href}
+                    className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors hover:text-primary"
+                  >
+                    {w.ctaLabel} <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                )}
+              </div>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </div>
     </section>
+  );
+}
+
+function FlagshipBlock({ entry }: { entry: typeof SELECTED_WORK[number] }) {
+  const Icon = entry.icon;
+  return (
+    <Reveal variant="fade" className="mt-12">
+      <figure className="pt-surface overflow-hidden rounded-[var(--pt-radius-md)]">
+        <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="border-border p-8 lg:border-r lg:p-10">
+            <div className="flex items-center gap-3">
+              <Icon className="h-5 w-5 text-primary" />
+              <span className="pt-index">FLAGSHIP PRODUCT</span>
+              <span className="rounded-full border border-primary/40 px-2.5 py-0.5 text-[0.7rem] font-medium tracking-wide text-primary">
+                {entry.status}
+              </span>
+            </div>
+            <h3 className="mt-5 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{entry.title}</h3>
+            <p className="mt-3 max-w-md text-base text-muted-foreground">{entry.body}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {entry.href && entry.ctaLabel && (
+                <Link href={entry.href} className="pt-btn pt-btn-primary">
+                  {entry.ctaLabel} <ExternalLink className="h-4 w-4" />
+                </Link>
+              )}
+              <Link href="/portfolio" className="pt-btn pt-btn-ghost">
+                All selected work
+              </Link>
+            </div>
+          </div>
+          <div className="bg-secondary/20 p-8 lg:p-10">
+            <div className="flex items-center justify-between">
+              <span className="pt-index">PROJECT TYPE</span>
+              <span className="text-xs text-muted-foreground">Verified</span>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-foreground">{entry.kind}</p>
+            <p className="mt-6 border-t border-border pt-4 text-xs leading-relaxed text-muted-foreground">
+              No verified product screenshot is published here. The AcquisitionOS product page
+              carries the full 12-stage lifecycle and the private-beta access path; no conceptual
+              illustration is presented as a live product screenshot.
+            </p>
+          </div>
+        </div>
+      </figure>
+    </Reveal>
   );
 }

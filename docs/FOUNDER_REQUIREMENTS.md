@@ -446,7 +446,7 @@ not begin it in this task.
 
 ---
 
-## 19. Implementation status tracker (Prompt 05A + 05B + 05C)
+## 19. Implementation status tracker (Prompt 05A + 05B + 05C + 05D)
 
 This section is the live implementation status, appended **in addition to** the
 existing requirements above — it does not replace or weaken any prior
@@ -475,7 +475,7 @@ requirement. Status labels:
 | Services catalogue + detailed compositions (Prompt 05B) | DONE — 5 engineering domains + 13 offerings; editorial landing (`/services`) with a distinct composition per domain; dynamic `/services/[slug]` detail pages; CMS (`getPublicServices`) preserved; legacy 4 static service routes preserved |
 | AcquisitionOS / product-page visual transformation (Prompt 05C) | DONE — `/our-product/acquisitionos` redesigned onto the 05A editorial system: positioning + the 6-problem framing, a premium interactive 12-stage `LifecycleWorkflow` (connected node track, click-to-reveal detail, conceptual-labelled), scoring sample (signals-not-predictions), honest integration directory, trust, roadmap, CTA. 12-stage terminology/order/detail preserved verbatim. Beta URL (`acquisitionosbeta.vercel.app`) behind CTAs only — verified 0 visible-text URL occurrences; 0 `.net` refs; Private Beta labelled throughout; canonical = `paragonel.vercel.app/...` |
 | Runtime stability (Prompt 05C P0) | DONE — failure cause re-confirmed as workspace/container recycle (no OOM/heap/EADDRINUSE/crash signature in `logs/dev-server.log`; workspace was destroyed between batches and re-cloned to start 05C). Supervisor already meets the 10 requirements (one authoritative server, stale cleanup, bounded backoff, `wait $dev_pid` no false-crash loop, health-check, honest container-destruction caveat). Added `scripts/resume-dev.sh` (one-command recycle recovery) + RUNTIME.md 05C confirmation |
-| About / company story / Selected Work / case studies | PENDING — Prompt 05D |
+| About / company story / Selected Work / case studies (Prompt 05D) | DONE — `/about` redesigned onto the editorial system: company introduction, why Paragonel exists, 5 engineering-philosophy principles, founder (verified facts only — Prabhat Kumar, Founder & CEO, BE CS, prior: Netcore Cloud; NO fabricated quote/years/awards/journey), 5 engineering disciplines (narrative + link to /services; 13-offering catalogue framed as scope not 13 engagements), 3-step engagement process (CTA → /contact). `/portfolio` is now a real Selected Work page (was a 307→/our-product redirect) with a page h1. New single source of truth `src/lib/selected-work.ts` drives the homepage work index (`home/products.tsx`), `/portfolio`, and `/testimonials` — no duplicate arrays. Fabricated `portfolio-section.tsx` (TechCorp/EduFuture/SkillUp/Remote Team + 40% metric + placeholder case-study buttons) DELETED; `basePortfolio` wrong images + SystemFoundry external link + CodeGuard 404 marketplace URL removed. Verified: 4 projects only (AcquisitionOS=Private Beta, CodeGuard AI=Published, SystemFoundry=Internal, Maa Arogyam=Delivered); 0 fabricated names on any public route; 0 `.net`; 0 visible-text beta URL; no overflow@375; tsc 0; clean build 0 |
 | Editorial blog redesign | PENDING — Prompt 05E |
 | Remaining responsive / motion / accessibility polish | PENDING — Prompt 05F |
 | Vercel deployment recovery | BLOCKED — exact Vercel build error is still unknown (logs access-restricted); local clean build passes |
@@ -505,7 +505,7 @@ the relevant content remains marked for clarification rather than invented.
 - **Prompt 05C — AcquisitionOS + product pages:** ✅ DONE (see row above). premium product storytelling,
   real product visuals, product workflows, honest private-beta status, clear
   product CTA, preserve the 12-stage lifecycle.
-- **Prompt 05D — About / company story / Selected Work:** company identity,
+- **Prompt 05D — About / company story / Selected Work:** ✅ DONE (see row above). company identity,
   founder/company story, actual engineering work, verified case studies, trust
   evidence, engagement process. No fabricated testimonials or customer outcomes.
 - **Prompt 05E — Blog redesign:** editorial layout, stronger typography,

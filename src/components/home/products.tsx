@@ -5,35 +5,23 @@ import { useRef, useState } from 'react';
 import { motion, useScroll, useTransform, useMotionValueEvent, useReducedMotion } from 'framer-motion';
 import { ArrowUpRight, ExternalLink } from 'lucide-react';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
+import { OTHER_WORK, type WorkStatusTone } from '@/lib/selected-work';
 
 const PIPELINE = [
   'Discover', 'Research', 'Find Gaps', 'Opportunity Report', 'Score',
   'Personalize', 'Outreach', 'Reply', 'Meeting', 'Pipeline', 'Proposal', 'Close',
 ];
 
-const OTHER_WORK = [
-  {
-    name: 'CodeGuard AI',
-    type: 'Commercial — VS Code extension',
-    body: 'Identifies AWS infrastructure cost risks in Terraform directly inside the editor, before they reach production.',
-    href: '/our-product',
-    cta: 'View product',
-  },
-  {
-    name: 'SystemFoundry',
-    type: 'Internal tool',
-    body: 'An infrastructure architecture simulator. Clearly an internal tool, not a commercial product — used to pressure-test system designs.',
-    href: '/our-product',
-    cta: 'View product',
-  },
-  {
-    name: 'Maa Arogyam',
-    type: 'Engagement',
-    body: 'A website engagement build — not a health-data platform. Delivered as a client engagement under Paragonel’s engineering process.',
-    href: '/our-product',
-    cta: 'View product',
-  },
-];
+// OTHER_WORK is imported from src/lib/selected-work.ts — the single source of
+// truth shared with /portfolio and /testimonials (Prompt 05D §5). No duplicate
+// project array here.
+
+const TONE_DOT: Record<WorkStatusTone, string> = {
+  beta: 'bg-primary',
+  live: 'bg-emerald-500',
+  internal: 'bg-zinc-400',
+  client: 'bg-violet-500',
+};
 
 export function HomeProducts() {
   const reduce = useReducedMotion();
@@ -95,7 +83,6 @@ export function HomeProducts() {
                     Explore the product
                   </Link>
                 </div>
-                <p className="mt-5 text-xs text-muted-foreground">Beta URL: acquisitionosbeta.vercel.app</p>
               </div>
 
               {/* Pipeline — single track that fills on scroll + nodes light up */}
@@ -138,20 +125,36 @@ export function HomeProducts() {
           </div>
         </Reveal>
 
-        {/* Other work — compact labeled index */}
+        {/* Other work — compact labeled index (shared verified data) */}
         <RevealGroup stagger={0.08} className="mt-10 grid gap-6 md:grid-cols-3">
-          {OTHER_WORK.map((w) => (
-            <RevealItem key={w.name}>
-              <Link href={w.href} className="group block h-full border-t border-border pt-6">
-                <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{w.type}</span>
-                <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">{w.name}</h3>
+          {OTHER_WORK.map((w) => {
+            const inner = (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${TONE_DOT[w.statusTone]}`} />
+                  <span className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{w.kind}</span>
+                </div>
+                <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">{w.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{w.body}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
-                  {w.cta} <ArrowUpRight className="h-4 w-4" />
-                </span>
-              </Link>
-            </RevealItem>
-          ))}
+                {w.href && w.ctaLabel && (
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                    {w.ctaLabel} <ArrowUpRight className="h-4 w-4" />
+                  </span>
+                )}
+              </>
+            );
+            return (
+              <RevealItem key={w.slug}>
+                {w.href ? (
+                  <Link href={w.href} className="group block h-full border-t border-border pt-6">
+                    {inner}
+                  </Link>
+                ) : (
+                  <div className="group block h-full border-t border-border pt-6">{inner}</div>
+                )}
+              </RevealItem>
+            );
+          })}
         </RevealGroup>
       </div>
     </section>
