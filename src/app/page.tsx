@@ -4,6 +4,7 @@ import { HeroEcosystem } from '@/components/sections/hero-ecosystem';
 import { TechMarquee } from '@/components/sections/tech-marquee';
 import { EngineeringProcess } from '@/components/sections/engineering-process';
 import { ServicesSection } from '@/components/sections/services-section';
+import { SelectedWorkSection } from '@/components/sections/selected-work-section';
 import { AcquisitionOSFeature } from '@/components/sections/acquisitionos-feature';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -15,11 +16,15 @@ import { StatsBar } from '@/components/sections/stats-bar';
 import { TargetClients } from '@/components/sections/target-clients';
 import { TechStackSection, CompactTechShowcase } from '@/components/sections/tech-stack-section';
 import { basePortfolio, blogPosts } from '@/lib/data';
+import { stripMarkdown } from '@/lib/markdown-utils';
+import { getPublicServices } from '@/lib/public-data';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 
-// Dynamically import sections for performance
+// Dynamically import below-the-fold AI/news sections for performance.
+// TestimonialsSection removed — replaced by the factual SelectedWorkSection
+// (no fabricated quotes; see src/components/sections/selected-work-section.tsx).
 const AiContent = dynamic(() =>
   import('@/components/sections/ai-content').then(mod => mod.AiContent),
   {
@@ -34,14 +39,10 @@ const TechNewsSection = dynamic(() =>
   }
 );
 
-const TestimonialsSection = dynamic(() =>
-  import('@/components/sections/testimonials-section').then(mod => mod.TestimonialsSection),
-  {
-    loading: () => <div className="container mx-auto px-4 md:px-6 section-padding"><Skeleton className="h-32 w-full" /></div>,
-  }
-);
-
-export default function HomePage() {
+export default async function HomePage() {
+  // Server-side fetch of active services (Admin SDK) — no client SDK on the
+  // homepage for services, no broken Firestore read, SSR with data.
+  const services = await getPublicServices();
   return (
     <>
       {/* 1. Cinematic hero + infinite tech marquee */}
@@ -87,7 +88,7 @@ export default function HomePage() {
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       {/* 3. Core Services */}
-      <ServicesSection />
+      <ServicesSection services={services} />
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       {/* 4. AcquisitionOS flagship feature */}
@@ -125,7 +126,7 @@ export default function HomePage() {
                     <CardContent className="p-6 flex flex-col flex-grow">
                       <Badge variant="outline" className="mb-3 text-[10px] uppercase font-black tracking-widest w-fit">{project.category}</Badge>
                       <CardTitle className="text-xl font-black mb-3">{project.name}</CardTitle>
-                      <p className="text-sm text-zinc-500 line-clamp-3 mb-4 flex-grow">{project.description}</p>
+                      <p className="text-sm text-zinc-500 line-clamp-3 mb-4 flex-grow">{stripMarkdown(project.description)}</p>
                       <Button asChild variant="link" className="p-0 text-primary h-auto font-bold self-start">
                         <Link href={isFlagship ? '/our-product/acquisitionos' : '/our-product'}>
                           {isFlagship ? 'Explore product' : 'View product'} <ArrowRight className="ml-1 h-4 w-4" />
@@ -147,8 +148,8 @@ export default function HomePage() {
       </section>
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
-      {/* 7. Testimonials */}
-      <TestimonialsSection />
+      {/* 7. Selected work (factual case study — replaces fabricated testimonials) */}
+      <SelectedWorkSection />
       <Separator className="my-0 container mx-auto max-w-7xl" />
 
       {/* 8. Founder spotlight */}

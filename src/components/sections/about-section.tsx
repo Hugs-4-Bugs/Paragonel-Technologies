@@ -164,12 +164,12 @@ export function AboutSection() {
           <div className="max-w-4xl mx-auto space-y-12">
             {[
               {
-                year: "2024",
+                year: "Founding",
                 title: "Founded",
                 description: "Paragonel Technologies founded. CodeGuard AI — real-time cloud cost intelligence for developers — published on the VS Code Marketplace."
               },
               {
-                year: "2024–25",
+                year: "Building",
                 title: "Building the portfolio",
                 description: "AcquisitionOS and SystemFoundry built. AcquisitionOS enters private beta, with real-user feedback driving product refinement and workflow validation."
               },

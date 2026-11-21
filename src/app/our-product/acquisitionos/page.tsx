@@ -17,10 +17,10 @@ export const metadata: Metadata = {
   title: 'AcquisitionOS — AI-Native Client Acquisition Platform (Private Beta) | Paragonel',
   description:
     'AcquisitionOS is Paragonel\'s AI-native client acquisition operating system, currently in private beta. It unifies prospect discovery, research, opportunity reporting, scoring, outreach, pipeline, and proposals into one connected workflow.',
-  alternates: { canonical: 'https://acquisitionos.net' },
+  alternates: { canonical: '/our-product/acquisitionos' },
 };
 
-const PRODUCT_DOMAIN = 'https://acquisitionos.net';
+const PRODUCT_DOMAIN = 'https://acquisitionosbeta.vercel.app/';
 
 const lifecycle = [
   { n: '01', name: 'Discover', icon: Search,
@@ -405,7 +405,7 @@ export default function AcquisitionOSPage() {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Plans are displayed at <Link href={PRODUCT_DOMAIN} target="_blank" rel="noopener noreferrer" className="text-primary font-bold underline">acquisitionos.net</Link>.
+              Plans are displayed on the <Link href={PRODUCT_DOMAIN} target="_blank" rel="noopener noreferrer" className="text-primary font-bold underline">AcquisitionOS private beta site</Link>.
               Checkout is not yet verified, so plans are shown as plans, not a live purchase flow.
             </p>
           </ScrollFadeIn>

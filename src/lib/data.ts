@@ -64,7 +64,7 @@ export const basePortfolio = [
     description: 'AcquisitionOS is Paragonel\u2019s flagship AI-native client acquisition platform, built to take businesses from prospect discovery to qualified pipeline. **The Problem:** Sales teams spend significant time manually researching companies, identifying opportunities, finding business gaps, personalizing outreach, and managing follow-ups across disconnected tools. **The Solution:** A connected acquisition workflow covering prospect discovery, multi-source company research, signal interpretation, opportunity and gap detection, AI-generated opportunity reports, lead scoring, personalized outreach, reply and conversation analysis, meeting workflows, pipeline management, proposal generation, and closing. **Status:** AcquisitionOS is currently in private beta, where real-user feedback is driving product refinement and workflow validation as we prepare for broader adoption.',
     status: 'Private Beta',
     techs: ['Spring Boot', 'Next.js', 'Python', 'Vector DB', 'AWS'],
-    link: 'https://acquisitionos.net',
+    link: 'https://acquisitionosbeta.vercel.app/',
     createdAt: new Date('2024-01-01').toISOString()
   },
   {
@@ -88,18 +88,6 @@ export const basePortfolio = [
     techs: ['VS Code API', 'TypeScript', 'Node.js', 'LLM'],
     link: 'https://marketplace.visualstudio.com/items?itemName=Paragonel.codeguard-ai',
     createdAt: new Date('2024-01-10').toISOString()
-  }
-];
-
-export const baseTestimonials = [
-  {
-    id: 'base-t-4',
-    name: 'Dhiraj Singh',
-    role: 'Founder',
-    company: 'Maa Arogyam',
-    content: 'They transformed our vision into a professional and modern website that represents Maa Arogyam exactly the way we wanted. The website has helped us present our services more clearly and build greater trust with our customers.',
-    rating: 5,
-    avatarUrl: ''
   }
 ];
 
