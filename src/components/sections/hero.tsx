@@ -11,18 +11,18 @@ export function Hero() {
       <div className="absolute inset-0 bg-black/40 dark:bg-black/60"></div>
       <div className="relative z-10 container px-4 md:px-6 text-center">
         <ScrollFadeIn>
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary-foreground mb-6">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-white mb-6">
             <Sparkles className="h-3.5 w-3.5" /> AI-Native Product Engineering
           </span>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-primary-foreground mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-white mb-6">
             Paragonel <span className="text-primary">Technologies</span>
           </h1>
         </ScrollFadeIn>
         <ScrollFadeIn delay="200ms">
-          <p className="text-xl sm:text-2xl md:text-3xl font-medium text-primary-foreground tracking-normal mb-4">
+          <p className="text-xl sm:text-2xl md:text-3xl font-medium text-white tracking-normal mb-4">
             Shaping the Future
           </p>
-          <p className="max-w-3xl mx-auto text-base sm:text-lg md:text-lg text-primary-foreground/80 mb-10 leading-relaxed">
+          <p className="max-w-3xl mx-auto text-base sm:text-lg md:text-lg text-white/80 mb-10 leading-relaxed">
             Paragonel is an AI-native product-engineering company. We build our own software — including AcquisitionOS,
             an AI-native client acquisition platform now in private beta — and deliver the cloud, DevOps, AI, and
             product-engineering services that stand it up. Precision engineering for real business pain, not feature
@@ -43,7 +43,7 @@ export function Hero() {
             asChild
             variant="outline"
             size="lg"
-            className="rounded-full px-8 py-6 text-lg border-primary-foreground/80 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto bg-white/80 dark:bg-transparent dark:border-primary-foreground/80 text-slate-900 dark:text-primary-foreground"
+            className="rounded-full px-8 py-6 text-lg border-white/80 bg-white/10 text-white hover:bg-white/20 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
           >
             <Link href="/services">
               Explore Our Services

@@ -89,6 +89,14 @@ body {
   }
 }
 
+/* DESIGN-SYSTEM RULE — always-dark surfaces use always-light text.
+   `.animated-gradient-background` is a deep-navy gradient in BOTH light and
+   dark themes, so any text sitting directly on it MUST use a constant light
+   color (e.g. `text-white`, `text-white/80`), NOT the adaptive
+   `text-foreground`/`text-primary-foreground` tokens. `--primary-foreground`
+   is the label color for a `bg-primary` (bright-blue) button: it is LIGHT in
+   light mode but DARK (222 47% 8%) in dark mode — so using it on this always-
+   dark gradient produces invisible dark-on-dark text in dark mode. */
 .animated-gradient-background {
   /* Restrained navy gradient with a single electric-blue accent stop —
      was blue→purple→blue→purple (excessively saturated). */

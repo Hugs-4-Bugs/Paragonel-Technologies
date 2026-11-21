@@ -112,11 +112,11 @@ export default function AcquisitionOSPage() {
             <Badge className="mb-6 bg-primary text-primary-foreground border-none tracking-widest text-xs font-black uppercase px-4 py-1.5">
               AcquisitionOS · Private Beta
             </Badge>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-primary-foreground mb-6">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-white mb-6">
               The AI-native client acquisition operating system
             </h1>
-            <p className="text-xl md:text-2xl text-primary-foreground/90 font-medium mb-4">From Prospect to Pipeline.</p>
-            <p className="max-w-3xl mx-auto text-base md:text-lg text-primary-foreground/80 leading-relaxed mb-10">
+            <p className="text-xl md:text-2xl text-white/90 font-medium mb-4">From Prospect to Pipeline.</p>
+            <p className="max-w-3xl mx-auto text-base md:text-lg text-white/80 leading-relaxed mb-10">
               AcquisitionOS replaces the fragmented stack most outbound teams stitch together — a prospect finder, an
               enricher, a sequencer, a reply tracker, a CRM, a spreadsheet, and a proposal tool — with one connected
               workflow that runs from the first prospect signal to a closed proposal. It is currently in private beta.
@@ -128,7 +128,7 @@ export default function AcquisitionOSPage() {
                 Request private-beta access <ExternalLink className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-full px-8 h-14 text-base font-bold border-primary-foreground/80 text-primary-foreground hover:bg-primary-foreground/10">
+            <Button asChild size="lg" variant="outline" className="rounded-full px-8 h-14 text-base font-bold border-white/80 text-white hover:bg-white/10">
               <Link href="/contact">Talk to the team</Link>
             </Button>
           </ScrollFadeIn>

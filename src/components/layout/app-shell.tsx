@@ -41,7 +41,7 @@ export function AppShell({
             <CookieConsentManager>
               <ThemeProvider
                 attribute="class"
-                defaultTheme="dark"
+                defaultTheme="light"
                 enableSystem
                 disableTransitionOnChange
               >

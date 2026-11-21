@@ -17,9 +17,9 @@
  * only reads the `JWT_SECRET` env var (already used by middleware/auth/me).
  */
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
+import { verifySession } from '@/lib/auth/sessions';
 
 export type AdminUser = { email: string; role?: string };
 
@@ -35,44 +35,23 @@ export function getJwtSecret(): Uint8Array | null {
 }
 
 /**
- * Re-verify the admin JWT from the `qf_admin_token` cookie on the incoming
- * Request. Returns `{ok, user}` on success or a ready 401/500 NextResponse.
+ * Verify the admin session for an `/api/admin/**` data route.
  *
- * IMPORTANT: middleware page-gating is NOT sufficient for data access — every
- * mutation/read route MUST call this. A request that reaches `/api/admin/**`
- * without a valid cookie is rejected here regardless of any client state.
+ * Delegates to `verifySession` (src/lib/auth/sessions.ts), which re-reads the
+ * `sessions/{sid}` doc + the `admins/{email}` doc on every call and rejects
+ * revoked / suspended / stale-tokenVersion sessions. This means the existing
+ * CMS routes (jobs/blog/services/leads/…) automatically inherit session
+ * revocation, account suspension, and (via the permission argument) RBAC.
+ *
+ * Returns `{ok, user:{email, role}}` on success or a ready 401/403/500
+ * NextResponse on failure — preserving the original contract so existing
+ * callers need no changes. The `role` here is the authoritative role read from
+ * the account doc, not the JWT claim.
  */
 export async function verifyAdmin(request: Request): Promise<VerifyResult> {
-  const secret = getJwtSecret();
-  if (!secret) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: 'Server auth misconfigured (JWT_SECRET)' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  const cookieString = request.headers.get('cookie') || '';
-  const token = cookieString
-    .split('; ')
-    .find((row) => row.startsWith('qf_admin_token='))
-    ?.split('=')[1];
-
-  if (!token) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  }
-
-  try {
-    const { payload } = await jwtVerify(token, secret);
-    return {
-      ok: true,
-      user: { email: payload.email as string, role: payload.role as string | undefined },
-    };
-  } catch {
-    return { ok: false, response: NextResponse.json({ error: 'Invalid session' }, { status: 401 }) };
-  }
+  const r = await verifySession(request, undefined, 'admin');
+  if (!r.ok) return { ok: false, response: r.response };
+  return { ok: true, user: { email: r.user.email, role: r.user.role } };
 }
 
 /**

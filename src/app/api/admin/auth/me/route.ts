@@ -1,38 +1,24 @@
+/**
+ * GET /api/admin/auth/me — current admin session info (Part B/F).
+ *
+ * Uses verifySession (server-side revocation + suspension + tokenVersion
+ * checks). Returns the admin's email, role, and server-derived permissions.
+ */
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
+import { verifySession } from '@/lib/auth/sessions';
 
-// JWT secret MUST come from env (>= 32 chars). No insecure fallback.
-// If missing/weak, verification is impossible → fail closed (401).
-function getJwtSecret(): Uint8Array {
-  const raw = process.env.JWT_SECRET;
-  if (!raw || raw.length < 32) {
-    throw new Error('JWT_SECRET is not configured or is too weak (min 32 characters).');
-  }
-  return new TextEncoder().encode(raw);
-}
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
-  try {
-    // Get token from cookie
-    const cookieString = request.headers.get('cookie') || '';
-    const token = cookieString
-      .split('; ')
-      .find(row => row.startsWith('qf_admin_token='))
-      ?.split('=')[1];
-
-    if (!token) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, getJwtSecret());
-
-    return NextResponse.json({
-      user: {
-        email: payload.email,
-        role: payload.role
-      }
-    });
-  } catch (error) {
-    return NextResponse.json({ message: 'Invalid session' }, { status: 401 });
-  }
+  const v = await verifySession(request, undefined, 'admin');
+  if (!v.ok) return v.response;
+  return NextResponse.json({
+    user: {
+      email: v.user.email,
+      tier: v.user.tier,
+      role: v.user.role,
+      permissions: v.user.permissions,
+    },
+  });
 }

@@ -1,67 +1,85 @@
+/**
+ * POST /api/admin/auth/login — admin login STEP 1 (Part B/D).
+ *
+ * Replaces the old password-only login. Verifies the admin's email + password
+ * against the `admins/{email}` Firestore doc (created by bootstrap or
+ * invitation), checks `status === 'active'`, and — on success — issues a
+ * short-lived step-1 token + an SMTP OTP (purpose 'admin_login') to the admin's
+ * email. The caller then completes step 2 at /api/admin/auth/otp/verify.
+ *
+ * Password alone is NOT sufficient for admin access (Part B requirement).
+ * Uniform "Invalid credentials" for any failure (no enumeration). Rate-limited.
+ *
+ * NOTE: the legacy env-based single-admin (ADMIN_EMAIL/ADMIN_PASSWORD_HASH) is
+ * superseded by the `admins/` collection. Bootstrap creates the first admin.
+ */
 import { NextResponse } from 'next/server';
-import { SignJWT } from 'jose';
-import bcrypt from 'bcryptjs';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { verifyPassword } from '@/lib/auth/password';
+import { issueOtp } from '@/lib/auth/otp';
+import { deliverOtp } from '@/lib/auth/email';
+import { issueAdminStep1Token } from '@/lib/auth/admin-step1';
+import { POLICIES, checkBoth, recordFailure, clearFailures } from '@/lib/auth/rate-limit';
+import { logSecurityEvent } from '@/lib/auth/security-events';
+import { getClientIp, jsonError } from '@/lib/auth/route-helpers';
 
-// Fail-closed helpers. Insecure code-level default credentials have been REMOVED.
-// Admin login now REQUIRES environment configuration:
-//   JWT_SECRET            (>= 32 chars, strong random)
-//   ADMIN_EMAIL           (admin login email)
-//   ADMIN_PASSWORD_HASH   (bcrypt hash of the admin password — NOT plaintext)
-// If any are missing or weak, login is refused (503 / 500) — never falls back.
-function getJwtSecret(): Uint8Array {
-  const raw = process.env.JWT_SECRET;
-  if (!raw || raw.length < 32) {
-    throw new Error('JWT_SECRET is not configured or is too weak (min 32 characters).');
-  }
-  return new TextEncoder().encode(raw);
-}
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
-  try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+  const ip = getClientIp(request);
+  let body: { email?: string; password?: string };
+  try { body = await request.json(); } catch { return jsonError(400, 'Invalid request body.'); }
+  const email = (body.email ?? '').toLowerCase().trim();
+  const password = body.password ?? '';
+  if (!EMAIL_RE.test(email) || !password) return jsonError(401, 'Invalid credentials.');
 
-    // Fail closed: never allow login without configured credentials.
-    if (!adminEmail || !adminPasswordHash) {
-      return NextResponse.json(
-        { message: 'Authentication service unavailable' },
-        { status: 503 }
-      );
-    }
-
-    const { email, password } = await request.json();
-
-    if (email !== adminEmail) {
-      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, adminPasswordHash);
-    if (!isPasswordValid) {
-      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
-    }
-
-    const token = await new SignJWT({ email, role: 'admin' })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('8h')
-      .sign(getJwtSecret());
-
-    const response = NextResponse.json({ success: true });
-
-    // Determine if we are in a secure environment
-    const isSecure = request.url.startsWith('https');
-
-    response.cookies.set('qf_admin_token', token, {
-      httpOnly: true,
-      secure: isSecure, // Only true if the request is https
-      sameSite: 'lax', // 'lax' is more reliable than 'strict' across different tab/origin scenarios in dev
-      maxAge: 8 * 60 * 60, // 8 hours
-      path: '/',
-    });
-
-    return response;
-  } catch (error) {
-    console.error('Login API Error:', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+  const rl = await checkBoth('adminLogin', POLICIES.login, email, ip);
+  if (!rl.ok) {
+    await logSecurityEvent({ type: 'rate_limited', email, ip, detail: 'admin login' });
+    return jsonError(429, 'Too many attempts. Try again later.', { retryAfter: rl.retryAfter });
   }
+
+  const db = getAdminDb();
+  if (!db) return jsonError(503, 'Service unavailable.');
+
+  const snap = await db.collection('admins').doc(email).get();
+  const data = snap.exists ? snap.data() as { passwordHash?: string; status?: string; role?: string } : null;
+  const ok = data?.passwordHash ? await verifyPassword(password, data.passwordHash) : false;
+
+  if (!ok || !data || data.status !== 'active') {
+    await recordFailure(`adminLogin:email:${email}`, POLICIES.login, { email, ip, event: 'admin_login' });
+    await recordFailure(`adminLogin:ip:${ip ?? 'unknown'}`, POLICIES.login, { email, ip, event: 'admin_login' });
+    await logSecurityEvent({ type: 'login_failed', email, ip, detail: 'admin' });
+    return jsonError(401, 'Invalid credentials.');
+  }
+
+  clearFailures('adminLogin', email, ip);
+
+  // Issue the step-1 token + the admin OTP.
+  const step1Token = issueAdminStep1Token(email);
+  if (!step1Token) return jsonError(500, 'Server auth misconfigured (OTP_SECRET).');
+
+  const issued = await issueOtp({ email, purpose: 'admin_login', ip });
+  if (!issued.ok || !issued.code || !issued.otpRequestId) {
+    return jsonError(429, 'Too many code requests. Wait a moment and try again.', { retryAfter: issued.retryAfter ?? 60 });
+  }
+  const sent = await deliverOtp(email, issued.code, 'admin_login');
+
+  await logSecurityEvent({ type: 'login_success', email, ip, detail: 'admin step1' });
+
+  return NextResponse.json({
+    step: 1,
+    step1Token,
+    otpRequestId: issued.otpRequestId,
+    message: 'Password accepted. Enter the verification code sent to your email.',
+    emailDelivered: sent.sent,
+    emailDeliveryNote: !sent.sent
+      ? (sent.devLogged
+        ? 'SMTP not configured — code printed to the server console (dev only).'
+        : 'SMTP not configured — delivery cannot be verified until credentials are supplied.')
+      : undefined,
+  });
 }

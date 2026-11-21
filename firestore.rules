@@ -114,12 +114,29 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // User profiles. Simulated end-user auth (localStorage) — no Firebase Auth
-    // to gate by uid yet. TODO: restrict to request.auth.uid == userId once
-    // Firebase Auth is adopted (separate workstream). Left open intentionally
-    // so candidate signup/profile still works.
-    match /users/{userId} {
-      allow read, write: if true;
-    }
+// User accounts (real SMTP-OTP auth, Phase 5). LOCKED — all access is via the
+// Admin SDK through /api/auth/** and /api/admin/users. No client reads/writes.
+match /users/{userId} {
+  allow read, write: if false;
+}
+
+// Auth subsystem collections (Phase 5 SMTP-OTP + RBAC). All Admin-SDK only.
+//   * otpRequests  — bcrypt-hashed OTP codes (never plaintext), single-use.
+//   * sessions     — session revocation records ({sid} -> revokedAt?).
+//   * securityEvents — append-only security/admin audit log.
+//   * bootstrap    — one-time Super Admin bootstrap sentinel.
+// No client may read or write any of these.
+match /otpRequests/{otpId} {
+  allow read, write: if false;
+}
+match /sessions/{sessionId} {
+  allow read, write: if false;
+}
+match /securityEvents/{eventId} {
+  allow read, write: if false;
+}
+match /bootstrap/{stateId} {
+  allow read, write: if false;
+}
   }
 }
