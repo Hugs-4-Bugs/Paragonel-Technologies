@@ -17,13 +17,16 @@
 import { NextResponse } from 'next/server';
 import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdminPermission, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
 import { dummyJobs, blogPosts, baseServices } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  const auth = await verifyAdmin(request);
+  // Dev-only seed mutates CMS collections (jobs/blogPosts/services) — require
+  // cms.create (editor+) so a viewer-role admin cannot trigger a re-seed even
+  // in dev/staging. The NODE_ENV=production 403 below is the primary guard.
+  const auth = await verifyAdminPermission(request, 'cms.create');
   if (!auth.ok) return auth.response;
 
   if (process.env.NODE_ENV === 'production') {

@@ -13,9 +13,14 @@
  *   SLICE 2 (CMS content lockdown — this slice):
  *     3. Anonymous client WRITE (create/update) on `jobs` and `blogPosts` is
  *        DENIED. Admin CRUD must go through /api/admin/jobs|blog (Admin SDK).
- *     4. Anonymous client reads on PUBLIC collections still WORK for the public
- *        subset only: jobs (active+not-deleted), blogPosts (published+not-deleted).
- *        Inactive jobs, draft posts, soft-deleted records are NOT readable.
+ *     4. Anonymous client reads on jobs/blogPosts are DENIED ENTIRELY (the rules
+ *        are `allow read, write: if false`). Public reads go through the server
+ *        (Admin SDK via src/lib/public-data.ts, filtering isActive/status +
+ *        deletedAt). The previous `allow read: if resource.data.isActive` rule
+ *        was broken in production (resource.data undefined for list) — replaced
+ *        by deny-all + server-side reads. Updated 05N: the two stale
+ *        `expectAllowedRead` assertions (active jobs / published blogPosts) are
+ *        now `expectDeniedRead` to match the intentional deny-all rules.
  *     5. The `blogPosts/{post}/revisions` subcollection is DENIED to clients.
  *     6. The Firebase Admin SDK can still read/write every collection
  *        (server-side /api/admin/** paths keep working — Admin bypasses rules).
@@ -163,11 +168,12 @@ async function main() {
   await expectDeniedUpdate('jobs', 'active', 'jobs update');
   await expectDeniedUpdate('blogPosts', 'pub', 'blogPosts update');
 
-  // --- SLICE 2: public reads work ONLY for the public subset. ---
-  await expectAllowedRead('jobs', 'active', 'jobs (active) read');
+  // --- SLICE 2: ALL client reads on jobs/blogPosts are DENIED (public reads
+  //     go through the server via Admin SDK; the rules are deny-all). ---
+  await expectDeniedRead('jobs', 'active', 'jobs (active) read');
   await expectDeniedRead('jobs', 'inactive', 'jobs (inactive) read');
   await expectDeniedRead('jobs', 'softdeleted', 'jobs (soft-deleted) read');
-  await expectAllowedRead('blogPosts', 'pub', 'blogPosts (published) read');
+  await expectDeniedRead('blogPosts', 'pub', 'blogPosts (published) read');
   await expectDeniedRead('blogPosts', 'draft', 'blogPosts (draft) read');
   await expectDeniedRead('blogPosts', 'softdeleted', 'blogPosts (soft-deleted published) read');
 

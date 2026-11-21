@@ -13,12 +13,15 @@
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, logActivityServer, serializeDoc, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdmin, verifyAdminPermission, logActivityServer, serializeDoc, serviceUnavailable } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  const auth = await verifyAdmin(request);
+  // Audit logs may contain admin emails + sensitive action records — restrict
+  // to security.audit.read (super_admin only per RBAC). A viewer/editor/admin
+  // reading all audit entries is a PII + audit-access gap.
+  const auth = await verifyAdminPermission(request, 'security.audit.read');
   if (!auth.ok) return auth.response;
 
   const db = getAdminDb();

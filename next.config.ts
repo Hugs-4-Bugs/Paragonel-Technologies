@@ -47,9 +47,52 @@ const nextConfig: NextConfig = {
   // layout is a client component (cannot export `metadata`), so the header is
   // the reliable mechanism. Actual authorization is still enforced server-side
   // on every /api/admin/** route via verifyAdmin/verifyAdminPermission.
+  //
+  // Security headers (Prompt 05N §5): applied to ALL routes via the `/:path*`
+  // base entry. HSTS, nosniff, Referrer-Policy, Permissions-Policy + X-Frame-
+  // Options are unambiguous hardening with no breakage. The CSP is conservative:
+  //   - script-src allows 'unsafe-inline' because Next.js emits inline hydration
+  //     scripts + GA4 uses an inline init (the app is not nonce-instrumented).
+  //     A nonce-based CSP removing 'unsafe-inline' is the documented follow-up
+  //     for full XSS protection; the CSP here still adds value via connect-src
+  //     (blocks exfiltration to attacker domains even on XSS), frame-ancestors
+  //     (clickjacking), base-uri, form-action, and object-src.
+  //   - 'unsafe-eval' is included ONLY in dev (Next.js dev/HMR needs it);
+  //     production builds do not require eval.
+  //   - connect-src whitelists the Firebase client SDK endpoints
+  //     (identitytoolkit / securetoken / firestore / storage) + GA4. Firebase
+  //     realtime uses wss://<project>.firebaseio.com.
+  //   - img-src allows any https image (next/image remotePatterns + Firebase
+  //     storage URLs); images are not an XSS vector.
   async headers() {
     const noindex = { key: 'X-Robots-Tag', value: 'noindex, nofollow' };
+    const isDev = process.env.NODE_ENV !== 'production';
+    const csp = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "style-src 'self' 'unsafe-inline'",
+      isDev
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com"
+        : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
+      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://www.google-analytics.com https://*.google-analytics.com",
+      "worker-src 'self' blob:",
+      "manifest-src 'self'",
+    ].join('; ');
+    const securityHeaders = [
+      { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'Content-Security-Policy', value: csp },
+    ];
     return [
+      { source: '/:path*', headers: securityHeaders },
       { source: '/admin/:path*', headers: [noindex] },
       { source: '/auth/:path*', headers: [noindex] },
       { source: '/profile/:path*', headers: [noindex] },

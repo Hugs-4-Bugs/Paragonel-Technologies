@@ -199,16 +199,16 @@ export function ChatSection() {
             <CardTitle className="text-sm sm:text-base font-black">ParagonelAI</CardTitle>
             <div className="flex items-center gap-1.5">
               <div className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-[9px] sm:text-[10px] font-bold opacity-70 uppercase">Online</span>
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase">Online</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={clearChat} className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
-            <Trash2 className="h-4 w-4" />
+          <Button variant="ghost" size="icon" onClick={clearChat} aria-label="Clear chat conversation" className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
-            <X className="h-4 w-4" />
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} aria-label="Close chat" className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
+            <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </CardHeader>
@@ -277,13 +277,14 @@ export function ChatSection() {
             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} 
             className="flex-grow h-11 sm:h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-none focus-visible:ring-1 text-sm sm:text-base px-4" 
           />
-          <Button 
-            onClick={handleSendMessage} 
-            size="icon" 
+          <Button
+            onClick={handleSendMessage}
+            size="icon"
             disabled={!inputValue.trim() || isLoading}
+            aria-label="Send message"
             className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-primary text-white shadow-lg hover:scale-105 active:scale-95 transition-transform shrink-0"
           >
-            <Send className="h-5 w-5" />
+            <Send className="h-5 w-5" aria-hidden="true" />
           </Button>
         </div>
       </CardFooter>

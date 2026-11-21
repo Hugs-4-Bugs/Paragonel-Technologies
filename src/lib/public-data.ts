@@ -153,7 +153,7 @@ export async function getPublishedTestimonials(limit = 50): Promise<any[]> {
       .get();
     const items = snap.docs
       .map((d) => serializeDoc(d))
-      .filter((t) => !t.deletedAt && t.permissionDisplayFeedback === true);
+      .filter((t) => !t.deletedAt && t.permissionDisplayFeedback === true && Boolean(t.approvedQuote?.trim() || t.originalQuote?.trim()));
     items.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
     return items.slice(0, limit);
   } catch (err) {
