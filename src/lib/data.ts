@@ -60,6 +60,7 @@ export const baseServices = [
 export const basePortfolio = [
   {
     id: 'p-1',
+    slug: 'acquisitionos',
     name: 'AcquisitionOS: AI-Native Client Acquisition Platform',
     category: 'Sales Technology',
     // No verified product screenshot exists — image intentionally omitted
@@ -76,6 +77,7 @@ export const basePortfolio = [
   },
   {
     id: 'p-2',
+    slug: 'systemfoundry',
     name: 'SystemFoundry: Infrastructure Simulator',
     category: 'Cloud Engineering',
     imageUrl: '',
@@ -88,6 +90,7 @@ export const basePortfolio = [
   },
   {
     id: 'p-3',
+    slug: 'codeguard-ai',
     name: 'CodeGuard AI: Cost Intelligence',
     category: 'Developer Tools',
     imageUrl: '',

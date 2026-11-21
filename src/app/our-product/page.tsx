@@ -1,19 +1,33 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Boxes, ExternalLink, ArrowRight } from 'lucide-react';
+import { Boxes, ArrowRight, Rocket, Server, Code2 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { basePortfolio } from '@/lib/data';
 import { stripMarkdown } from '@/lib/markdown-utils';
+import { TechnologyEcosystem } from '@/components/sections/technology-ecosystem';
 
 export const metadata: Metadata = {
   title: 'Our Product | Paragonel',
   description:
     'Paragonel products: AcquisitionOS (AI-native client acquisition platform, private beta), SystemFoundry (infrastructure simulator), and CodeGuard AI (VS Code cost intelligence).',
   alternates: { canonical: '/our-product' },
+  openGraph: {
+    title: 'Our Product | Paragonel',
+    description:
+      'AcquisitionOS (private beta), SystemFoundry (internal infrastructure simulator), and CodeGuard AI (VS Code cost-intelligence extension).',
+    url: '/our-product',
+  },
+};
+
+/** Product-specific header icon (no fake screenshot — branded mark per product). */
+const PRODUCT_ICON: Record<string, LucideIcon> = {
+  acquisitionos: Rocket,
+  systemfoundry: Server,
+  'codeguard-ai': Code2,
 };
 
 export default function OurProductPage() {
@@ -21,75 +35,54 @@ export default function OurProductPage() {
     <div className="bg-background min-h-screen">
       <section className="section-padding">
         <div className="container mx-auto px-4 md:px-6">
-          <ScrollFadeIn className="text-center mb-20">
-            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-primary/10">
-              <Boxes className="h-10 w-10 text-primary neon-icon" />
+          <ScrollFadeIn className="text-center mb-16">
+            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary/10">
+              <Boxes className="h-8 w-8 text-primary neon-icon" />
             </div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-5">
               Our <span className="text-primary">Product</span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed">
               Paragonel builds its own products. Shipping software we run ourselves is how we validate the engineering we
               deliver as services. Our flagship is AcquisitionOS, an AI-native client acquisition platform currently in
               private beta.
             </p>
           </ScrollFadeIn>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {basePortfolio.map((project, index) => {
-              const isFlagship = project.id === 'p-1';
+              const Icon = PRODUCT_ICON[project.slug] ?? Boxes;
               return (
-                <ScrollFadeIn key={project.id} delay={`${index * 100}ms`}>
-                  <Card className="h-full flex flex-col overflow-hidden border-zinc-200 dark:border-zinc-800 shadow-xl hover:shadow-2xl transition-all duration-500 rounded-[2.5rem] bg-card group">
+                <ScrollFadeIn key={project.id} delay={`${index * 100}ms`} className="h-full">
+                  <Card className="h-full flex flex-col overflow-hidden border border-border shadow-md hover:shadow-lg transition-all duration-300 rounded-2xl bg-card group">
                     <CardHeader className="p-0">
-                      <div className="relative h-60 w-full overflow-hidden">
-                        {project.imageUrl ? (
-                          <Image
-                            src={project.imageUrl}
-                            alt={project.name}
-                            fill
-                            className="object-cover group-hover:scale-110 transition-transform duration-700"
-                            unoptimized
-                          />
-                        ) : null}
-                        <div className="absolute top-6 right-6">
-                          <Badge className="bg-primary text-white shadow-xl rounded-full px-4 py-1 font-bold border-none">
+                      {/* Compact branded header — no fake screenshot (Prompt 05K §5.1).
+                          Product icon on a subtle primary band + status badge. */}
+                      <div className="relative h-28 w-full bg-gradient-to-br from-primary/10 via-primary/5 to-transparent flex items-center justify-center overflow-hidden">
+                        <Icon className="h-10 w-10 text-primary/80 neon-icon" aria-hidden="true" />
+                        <div className="absolute top-3 right-3">
+                          <Badge className="bg-primary text-white shadow rounded-full px-3 py-0.5 text-xs font-semibold border-none">
                             {project.status}
                           </Badge>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="flex-grow p-8 flex flex-col">
-                      <Badge variant="outline" className="mb-4 text-primary border-primary/30 font-black rounded-full uppercase tracking-widest text-[10px] px-3 w-fit">
+                    <CardContent className="flex-grow p-6 flex flex-col">
+                      <Badge variant="outline" className="mb-3 text-primary border-primary/30 font-semibold rounded-full uppercase tracking-wider text-[10px] px-2.5 w-fit">
                         {project.category}
                       </Badge>
-                      <CardTitle className="text-2xl font-black mb-4 group-hover:text-primary transition-colors tracking-tight">
+                      <CardTitle className="text-xl font-bold mb-3 group-hover:text-primary transition-colors tracking-tight">
                         {project.name}
                       </CardTitle>
-                      <CardDescription className="text-base text-zinc-500 font-medium leading-relaxed mb-8 line-clamp-4">
+                      <CardDescription className="text-sm text-muted-foreground leading-relaxed mb-5 line-clamp-3">
                         {stripMarkdown(project.description)}
                       </CardDescription>
-                      <div className="flex flex-wrap gap-2 mb-6">
-                        {project.techs?.map((tech) => (
-                          <span key={tech} className="text-[10px] uppercase font-black tracking-widest text-zinc-400 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 px-3 py-1.5 rounded-full">
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
                       <div className="mt-auto">
-                        {isFlagship ? (
-                          <Button asChild className="w-full h-12 rounded-2xl font-bold transition-all">
-                            <Link href="/our-product/acquisitionos">
-                              Explore AcquisitionOS <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                          </Button>
-                        ) : project.link && project.link !== '#' ? (
-                          <Button asChild variant="outline" className="w-full h-12 rounded-2xl font-bold hover:bg-primary hover:text-white transition-all border-2">
-                            <Link href={project.link} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="mr-2 h-4 w-4" /> Visit Project
-                            </Link>
-                          </Button>
-                        ) : null}
+                        <Button asChild className="w-full h-11 rounded-xl font-semibold transition-all">
+                          <Link href={`/our-product/${project.slug}`} aria-label={`Explore ${project.name}`}>
+                            Explore <ArrowRight className="ml-2 h-4 w-4" />
+                          </Link>
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -99,6 +92,8 @@ export default function OurProductPage() {
           </div>
         </div>
       </section>
+
+      <TechnologyEcosystem />
     </div>
   );
 }

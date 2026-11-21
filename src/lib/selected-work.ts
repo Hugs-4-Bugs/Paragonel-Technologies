@@ -1,34 +1,42 @@
 /**
  * selected-work.ts — the SINGLE source of truth for Paragonel's verified
- * public project inventory (Prompt 05D §4/§5).
+ * public project inventory (Prompt 05D §4/§5, extended in 05K §2.3).
  *
- * Exactly four entries, each verified against docs/FOUNDER_REQUIREMENTS.md §4
- * and docs/COMPANY_CONTEXT.md. No fabricated projects (TechCorp / EduFuture /
- * SkillUp / Remote Team Collaboration Suite are REMOVED). DietMended and
- * Primoreon are excluded. Quantum AI is NOT merged into Paragonel.
+ * Six entries — three proprietary products + three founder-confirmed direct
+ * client engagements (Prompt 05K §1.1):
+ *   - AcquisitionOS : Private Beta   (flagship product, NOT GA)
+ *   - CodeGuard AI  : Published      (VS Code Marketplace; URL omitted — the
+ *                     previously-cached URL did not resolve when re-checked)
+ *   - SystemFoundry : Internal       (internal tool, NOT a commercial product)
+ *   - Maa Arogyam   : Delivered      (client website engagement — no metric)
+ *   - Primorian     : Delivered      (founder-confirmed end-to-end website
+ *                     delivery; exact public brand spelling — "Primorian" /
+ *                     "Primorian Life" — to be finalised with the founder)
+ *   - DietMended    : Client engagement (founder-confirmed direct engagement;
+ *                     exact spelling/capitalisation to be finalised with the
+ *                     founder; specific deliverable NOT published without
+ *                     founder-supplied scope)
+ *
+ * No fabricated projects (TechCorp / EduFuture / SkillUp / Remote Team
+ * Collaboration Suite are REMOVED). Primoreon is excluded. Quantum AI is NOT
+ * merged into Paragonel. DietMended + Primorian are INCLUDED per the founder's
+ * explicit 05K confirmation of direct client relationships — direct offline
+ * engagements do not necessarily produce email records (05K §1.1).
  *
  * This module is imported by:
  *   - src/components/sections/selected-work-section.tsx  (homepage / Selected
  *     Work surface, /portfolio, /testimonials)
  *   - src/components/home/products.tsx                   (homepage work index)
  *
- * Both surfaces therefore render the SAME verified data + status labels — no
- * duplicate, conflicting arrays. Adding/changing a project here updates every
- * public surface at once.
+ * Both surfaces render the SAME verified data + status labels — no duplicate,
+ * conflicting arrays. Adding/changing a project here updates every public
+ * surface at once.
  *
- * Status labels are honest:
- *   - AcquisitionOS : Private Beta  (NOT GA / production-ready)
- *   - CodeGuard AI  : Published     (VS Code Marketplace — listing live; the
- *                     exact Marketplace URL is NOT used publicly because the
- *                     previously-cached URL did not resolve when re-checked;
- *                     per §4 "do not invent a link" — link omitted)
- *   - SystemFoundry : Internal      (internal tool, NOT a commercial
- *                     deployment — no external link)
- *   - Maa Arogyam   : Delivered     (client website engagement — NOT a medical
- *                     / health-data / clinical product; no outcome metric)
+ * Status labels are honest: no outcome metric, testimonial, or endorsement is
+ * claimed without a measured/approved source.
  */
 import type { LucideIcon } from 'lucide-react';
-import { Rocket, Code2, Server, FolderGit2 } from 'lucide-react';
+import { Rocket, Code2, Server, FolderGit2, Globe } from 'lucide-react';
 
 export type WorkStatusTone = 'beta' | 'live' | 'internal' | 'client';
 
@@ -76,6 +84,8 @@ export const SELECTED_WORK: WorkEntry[] = [
     statusTone: 'live',
     body:
       'A VS Code extension that identifies potentially expensive AWS infrastructure choices in Terraform and provides cost-intelligence guidance to developers, inside the editor. Published on the VS Code Marketplace. Listed factually as a shipped developer tool; adoption, downloads, revenue, or customer outcomes are not claimed without evidence.',
+    href: '/our-product/codeguard-ai',
+    ctaLabel: 'Explore CodeGuard AI',
   },
   {
     slug: 'systemfoundry',
@@ -86,6 +96,8 @@ export const SELECTED_WORK: WorkEntry[] = [
     statusTone: 'internal',
     body:
       'An internal cloud architecture and infrastructure simulation tool Paragonel uses for its own engineering scenarios — scenario modelling for platform and reliability decisions. Honestly labelled as an internal tool, not a commercial product or customer deployment.',
+    href: '/our-product/systemfoundry',
+    ctaLabel: 'Explore SystemFoundry',
   },
   {
     slug: 'maa-arogyam',
@@ -96,6 +108,30 @@ export const SELECTED_WORK: WorkEntry[] = [
     statusTone: 'client',
     body:
       'Paragonel built the Maa Arogyam website — a professional, modern web presence for the organization. Described only as a website engagement. No outcome metric, testimonial, or endorsement is claimed without evidence.',
+    href: '/contact',
+    ctaLabel: 'Start a conversation',
+  },
+  {
+    slug: 'primorian',
+    icon: Globe,
+    title: 'Primorian',
+    kind: 'Client engagement · Website build',
+    status: 'Delivered',
+    statusTone: 'client',
+    body:
+      'Paragonel delivered the Primorian website end-to-end — a direct client engagement confirmed by the founder. The brand is also referenced as "Primorian Life"; the exact public brand spelling is being finalised with the founder. Described only as an end-to-end website delivery. No outcome metric, testimonial, or endorsement is claimed without a measured or approved source.',
+    href: '/contact',
+    ctaLabel: 'Start a conversation',
+  },
+  {
+    slug: 'dietmended',
+    icon: FolderGit2,
+    title: 'DietMended',
+    kind: 'Client engagement · Direct project',
+    status: 'Client engagement',
+    statusTone: 'client',
+    body:
+      'DietMended is a direct client engagement confirmed by the founder (exact spelling and capitalisation being finalised). The specific scope and deliverables are not published here without founder-supplied detail. No outcome metric, testimonial, or endorsement is claimed without an approved source.',
     href: '/contact',
     ctaLabel: 'Start a conversation',
   },

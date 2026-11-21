@@ -8,6 +8,8 @@ import { HomeBlog } from '@/components/home/blog';
 import { HomeApproach } from '@/components/home/approach';
 import { HomeEngagement } from '@/components/home/engagement';
 import { HomeConversion } from '@/components/home/conversion';
+import { getPublishedTestimonials } from '@/lib/public-data';
+import { TestimonialsMarquee } from '@/components/sections/testimonials-marquee';
 
 /**
  * Paragonel homepage (Prompt 05A — reference-led visual transformation).
@@ -29,7 +31,14 @@ const TICKER = [
   'Experience & Interface',
 ];
 
-export default function HomePage() {
+// Revalidate so a newly published testimonial appears on the homepage within
+// 60s (the admin mutation also purges '/' via revalidatePublicContent).
+export const revalidate = 60;
+
+export default async function HomePage() {
+  // Published testimonials only (drafts/pending never leak). Empty until the
+  // founder publishes real, approved client feedback — never fabricated.
+  const testimonials = await getPublishedTestimonials();
   return (
     <>
       <HomeHero />
@@ -54,6 +63,13 @@ export default function HomePage() {
       <HomeWhyParagonel />
       <HomeCapabilities />
       <HomeProducts />
+      {testimonials.length > 0 ? (
+        <TestimonialsMarquee
+          testimonials={testimonials}
+          heading="What clients say"
+          subheading="Genuine feedback from organisations Paragonel has worked with directly."
+        />
+      ) : null}
       <HomePositioning />
       <HomeBlog />
       <div className="pt-shell"><div className="pt-hair" /></div>

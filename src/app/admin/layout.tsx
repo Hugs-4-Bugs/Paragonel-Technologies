@@ -19,7 +19,8 @@ import {
   History,
   PanelLeftClose,
   PanelLeft,
-  FileUser
+  FileUser,
+  MessageSquareQuote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,6 +35,7 @@ const sidebarItems = [
   { href: '/admin/leads', label: 'Leads', icon: Mail },
   { href: '/admin/blog', label: 'Blog', icon: BookOpen },
   { href: '/admin/services', label: 'Services', icon: Layers },
+  { href: '/admin/testimonials', label: 'Testimonials', icon: MessageSquareQuote },
   { href: '/admin/newsletter', label: 'Newsletter', icon: Users },
   { href: '/admin/activity', label: 'Audit Logs', icon: History },
 ];

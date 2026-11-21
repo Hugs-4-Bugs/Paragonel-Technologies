@@ -131,6 +131,34 @@ export async function getPublicJobById(id: string): Promise<any | null> {
   }
 }
 
+/**
+ * Published testimonials (founder-confirmed client feedback, Prompt 05K §2).
+ * Renders publicly ONLY when status==='published' && permissionDisplayFeedback
+ * && !deletedAt && a non-empty quote exists. Drafts/pending never leak. The
+ * static fallback is an EMPTY array — NO fabricated testimonials are ever
+ * served. Uses a single equality filter (status) to avoid composite-index
+ * requirements; deletedAt + permission are filtered in memory.
+ */
+export async function getPublishedTestimonials(limit = 50): Promise<any[]> {
+  const db = getAdminDb();
+  if (!db) return [];
+  try {
+    const snap = await db
+      .collection('testimonials')
+      .where('status', '==', 'published')
+      .limit(100)
+      .get();
+    const items = snap.docs
+      .map((d) => serializeDoc(d as any))
+      .filter((t) => !t.deletedAt && t.permissionDisplayFeedback === true);
+    items.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+    return items.slice(0, limit);
+  } catch (err) {
+    console.error('[public-data] getPublishedTestimonials failed:', err instanceof Error ? err.message : err);
+    return [];
+  }
+}
+
 /** Public blog posts: published, non-deleted, newest first. */
 export async function getPublishedPosts(limit = 50): Promise<any[]> {
   const db = getAdminDb();

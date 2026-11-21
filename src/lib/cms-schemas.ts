@@ -77,6 +77,89 @@ export const leadPatchSchema = z.object({
 });
 export type LeadPatchValues = z.infer<typeof leadPatchSchema>;
 
+/* -------------------------------------------------------------------------- */
+/* Testimonials — founder-confirmed client feedback (Prompt 05K §2/§11.1)      */
+/* -------------------------------------------------------------------------- */
+/* Original feedback is OPTIONAL at create time so a draft can be created with
+ * just the company name while the founder awaits the client's real feedback.
+ * A testimonial renders publicly ONLY when status==='published' AND
+ * permissionDisplayFeedback===true AND there is a non-empty quote. No feedback
+ * is ever fabricated — the founder supplies the real client wording. Company
+ * name + designation are individually permission-gated so a company-attributed
+ * quote can be credible without disclosing an individual's identity. */
+
+const TESTIMONIAL_STATUSES = ['draft', 'pending', 'published'] as const;
+
+export const testimonialSchema = z.object({
+  companyName: z.string().min(2, 'Company name is required'),
+  originalQuote: z.string().max(2000).optional(),
+  approvedQuote: z.string().max(2000).optional(),
+  clientName: z.string().max(120).optional(),
+  designation: z.string().max(120).optional(),
+  logoUrl: z.string().max(500).optional(),
+  projectRef: z.string().max(120).optional(),
+  permissionDisplayFeedback: z.boolean().default(false),
+  permissionDisplayName: z.boolean().default(false),
+  permissionDisplayLogo: z.boolean().default(false),
+  status: z.enum(TESTIMONIAL_STATUSES).default('draft'),
+  displayOrder: z.coerce.number().int().min(0).default(0),
+});
+export type TestimonialFormValues = z.infer<typeof testimonialSchema>;
+
+/** The quote shown publicly: approved version if present, else the original. */
+export function publicQuote(t: { approvedQuote?: string; originalQuote?: string }): string {
+  const approved = (t.approvedQuote ?? '').trim();
+  const original = (t.originalQuote ?? '').trim();
+  return approved || original;
+}
+
+export function buildTestimonialCreatePayload(values: TestimonialFormValues): Record<string, unknown> {
+  const now = Timestamp.now();
+  return {
+    companyName: values.companyName,
+    originalQuote: values.originalQuote ?? '',
+    approvedQuote: values.approvedQuote ?? '',
+    clientName: values.clientName ?? '',
+    designation: values.designation ?? '',
+    logoUrl: values.logoUrl ?? '',
+    projectRef: values.projectRef ?? '',
+    permissionDisplayFeedback: values.permissionDisplayFeedback,
+    permissionDisplayName: values.permissionDisplayName,
+    permissionDisplayLogo: values.permissionDisplayLogo,
+    status: values.status,
+    displayOrder: values.displayOrder,
+    isActive: values.status === 'published' && values.permissionDisplayFeedback,
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+  };
+}
+
+export function buildTestimonialUpdatePayload(values: TestimonialFormValues): Record<string, unknown> {
+  return {
+    companyName: values.companyName,
+    originalQuote: values.originalQuote ?? '',
+    approvedQuote: values.approvedQuote ?? '',
+    clientName: values.clientName ?? '',
+    designation: values.designation ?? '',
+    logoUrl: values.logoUrl ?? '',
+    projectRef: values.projectRef ?? '',
+    permissionDisplayFeedback: values.permissionDisplayFeedback,
+    permissionDisplayName: values.permissionDisplayName,
+    permissionDisplayLogo: values.permissionDisplayLogo,
+    status: values.status,
+    displayOrder: values.displayOrder,
+    isActive: values.status === 'published' && values.permissionDisplayFeedback,
+    updatedAt: Timestamp.now(),
+  };
+}
+
+export function buildTestimonialStatusPayload(status: TestimonialFormValues['status']): Record<string, unknown> {
+  // isActive is re-derived from the new status; permissionDisplayFeedback is
+  // read from the existing doc in the route before this is merged.
+  return { status, updatedAt: Timestamp.now() };
+}
+
 /** Split a comma-list skills string into a trimmed, de-duplicated array. */
 function splitSkills(raw: string): string[] {
   return raw
