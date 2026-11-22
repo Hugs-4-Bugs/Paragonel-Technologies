@@ -1,692 +1,235 @@
+'use client';
+/**
+ * /auth/signup — multi-step email-first registration (Prompt 05Q §2, §11).
+ *
+ * Step 1: name + email + CAPTCHA + Terms/Privacy acknowledgement → /api/auth/register/init
+ * Step 2: OTP verification → /api/auth/otp/verify (+ resend → /api/auth/otp/request)
+ * Step 3: password + confirm → /api/auth/register/complete
+ * Step 4: success → redirect to /candidate/profile
+ *
+ * The password fields are NOT visible before successful OTP verification (Step 2).
+ * Progress is shown so the candidate understands which stage they are in.
+ * Preserves a ?redirect= target (for the apply flow) through to the final redirect.
+ */
+import { useState, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { CaptchaWidget } from '@/components/auth/captcha-widget';
+import { safeRedirect } from '@/lib/safe-redirect';
+import { Eye, EyeOff, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 
-// "use client";
-
-// import Link from "next/link";
-// import { useForm } from "react-hook-form";
-// import { zodResolver } from "@hookform/resolvers/zod";
-// import * as z from "zod";
-// import { Button } from "@/components/ui/button";
-// import {
-//   Form,
-//   FormControl,
-//   FormDescription,
-//   FormField,
-//   FormItem,
-//   FormLabel,
-//   FormMessage,
-// } from "@/components/ui/form";
-// import { Input } from "@/components/ui/input";
-// import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-// import { UserPlus, Eye, EyeOff, MailCheck, ShieldCheck, Loader2 } from "lucide-react";
-// import { useState } from "react";
-// import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
-// import { useToast } from "@/hooks/use-toast";
-// import { useAuth } from "@/contexts/auth-context";
-// import { useRouter } from 'next/navigation';
-
-// const signupSchema = z.object({
-//   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
-//   email: z.string().email({ message: "Please enter a valid email address." }),
-//   password: z.string()
-//     .min(8, { message: "Password must be at least 8 characters." })
-//     .regex(/(?=.*[A-Z])/, { message: "Password must contain at least one uppercase letter." })
-//     .regex(/(?=.*\d)/, { message: "Password must contain at least one digit." })
-//     .regex(/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/, { message: "Password must contain at least one special character." }),
-//   confirmPassword: z.string(),
-//   otp: z.string().optional(),
-// }).refine((data) => data.password === data.confirmPassword, {
-//   message: "Passwords don't match",
-//   path: ["confirmPassword"],
-// });
-
-// type SignupFormValues = z.infer<typeof signupSchema>;
-
-// const SIMULATED_OTP = "123456";
-
-// export default function SignupPage() {
-//   const [showPassword, setShowPassword] = useState(false);
-//   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-//   const [otpSent, setOtpSent] = useState(false);
-//   const [otpVerified, setOtpVerified] = useState(false);
-//   const [isSendingOtp, setIsSendingOtp] = useState(false);
-//   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-//   const [emailForOtp, setEmailForOtp] = useState("");
-
-//   const { toast } = useToast();
-//   const { signup } = useAuth();
-//   const router = useRouter();
-
-//   const form = useForm<SignupFormValues>({
-//     resolver: zodResolver(signupSchema),
-//     defaultValues: {
-//       fullName: "",
-//       email: "",
-//       password: "",
-//       confirmPassword: "",
-//       otp: "",
-//     },
-//   });
-
-//   const handleSendOtp = async () => {
-//     const emailValue = form.getValues("email");
-//     const emailState = form.getFieldState("email");
-
-//     if (!emailValue || emailState.invalid) {
-//       form.setError("email", { type: "manual", message: "Please enter a valid email to send OTP." });
-//       toast({ title: "Email Required", description: "Please enter a valid email address first.", variant: "destructive" });
-//       return;
-//     }
-
-//     setIsSendingOtp(true);
-//     setEmailForOtp(emailValue);
-//     console.log("SIMULATION: Sending OTP to", emailValue);
-//     await new Promise(resolve => setTimeout(resolve, 1500));
-//     setOtpSent(true);
-//     setIsSendingOtp(false);
-//     toast({
-//       title: "OTP Sent (Simulated)",
-//       description: `An OTP has been sent to ${emailValue}. (Simulated OTP: ${SIMULATED_OTP})`,
-//     });
-//   };
-
-//   const handleVerifyOtp = async () => {
-//     const otpValue = form.getValues("otp");
-//     if (!otpValue || otpValue.length !== 6) {
-//         form.setError("otp", { type: "manual", message: "Please enter a valid 6-digit OTP."});
-//         toast({ title: "Invalid OTP", description: "Please enter a valid 6-digit OTP.", variant: "destructive" });
-//         return;
-//     }
-//     setIsVerifyingOtp(true);
-//     console.log("SIMULATION: Verifying OTP", otpValue, "for email", emailForOtp);
-//     await new Promise(resolve => setTimeout(resolve, 1000));
-
-//     if (otpValue === SIMULATED_OTP) {
-//       setOtpVerified(true);
-//       setOtpSent(false); // Hide OTP input section
-//       setIsVerifyingOtp(false);
-//       toast({
-//         title: "OTP Verified Successfully!",
-//         description: "Your email has been verified. You can now complete the signup.",
-//         variant: "default",
-//       });
-//     } else {
-//       setOtpVerified(false);
-//       setIsVerifyingOtp(false);
-//       form.setError("otp", { type: "manual", message: "Invalid OTP. Please try again or resend."});
-//       toast({
-//         title: "OTP Verification Failed",
-//         description: "The OTP you entered is incorrect. Please try again.",
-//         variant: "destructive",
-//       });
-//     }
-//   };
-
-//   async function onSubmit(values: SignupFormValues) {
-//     if (!otpVerified) {
-//       toast({
-//         title: "Email Verification Required",
-//         description: "Please verify your email address with OTP before signing up.",
-//         variant: "destructive",
-//       });
-//       return;
-//     }
-//     setIsSubmitting(true);
-//     // Pass fullName, email, and password to the signup function in AuthContext
-//     signup(values.fullName, values.email, values.password); 
-    
-//     // Redirection and success/failure toasts are handled by AuthContext
-//     // No need to call router.push here directly if AuthContext handles it.
-//     setIsSubmitting(false);
-//   }
-
-//   const watchEmail = form.watch("email");
-
-//   return (
-//     <div className="section-padding bg-background flex items-center justify-center min-h-[calc(100vh-10rem)]">
-//       <ScrollFadeIn className="w-full max-w-md">
-//         <Card className="shadow-xl">
-//           <CardHeader className="text-center">
-//             <UserPlus className="mx-auto h-12 w-12 text-primary mb-4 neon-icon" />
-//             <CardTitle className="text-3xl">Create Account</CardTitle>
-//             <CardDescription>Join Paragonel to unlock exclusive features.</CardDescription>
-//           </CardHeader>
-//           <CardContent>
-//             <Form {...form}>
-//               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-//                 <FormField
-//                   control={form.control}
-//                   name="fullName"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Full Name</FormLabel>
-//                       <FormControl>
-//                         <Input placeholder="Prabhat Kumar" {...field} />
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <FormField
-//                   control={form.control}
-//                   name="email"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Email Address</FormLabel>
-//                       <div className="flex items-center space-x-2">
-//                         <FormControl>
-//                           <Input 
-//                             type="email" 
-//                             placeholder="your.email@example.com" 
-//                             {...field} 
-//                             disabled={otpSent || otpVerified || isSendingOtp || isSubmitting}
-//                           />
-//                         </FormControl>
-//                         {!otpSent && !otpVerified && (
-//                           <Button
-//                             type="button"
-//                             variant="outline"
-//                             onClick={handleSendOtp}
-//                             disabled={isSendingOtp || !watchEmail || form.getFieldState("email").invalid || isSubmitting}
-//                             className="flex-shrink-0"
-//                           >
-//                             {isSendingOtp ? (
-//                               <Loader2 className="h-4 w-4 animate-spin" />
-//                             ) : (
-//                               <MailCheck className="h-4 w-4" />
-//                             )}
-//                             <span className="ml-2 hidden sm:inline">Send OTP</span>
-//                           </Button>
-//                         )}
-//                          {otpVerified && (
-//                             <ShieldCheck className="h-5 w-5 text-green-500 flex-shrink-0" title="Email Verified" />
-//                         )}
-//                       </div>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-
-//                 {otpSent && !otpVerified && (
-//                   <FormField
-//                     control={form.control}
-//                     name="otp"
-//                     render={({ field }) => (
-//                       <FormItem>
-//                         <FormLabel>Enter OTP sent to {emailForOtp}</FormLabel>
-//                         <div className="flex items-center space-x-2">
-//                           <FormControl>
-//                             <Input placeholder="6-digit OTP" {...field} maxLength={6} disabled={isVerifyingOtp || isSubmitting}/>
-//                           </FormControl>
-//                           <Button
-//                             type="button"
-//                             onClick={handleVerifyOtp}
-//                             disabled={isVerifyingOtp || !field.value || field.value.length !== 6 || isSubmitting}
-//                             className="flex-shrink-0"
-//                           >
-//                             {isVerifyingOtp ? (
-//                               <Loader2 className="h-4 w-4 animate-spin" />
-//                             ) : (
-//                                <ShieldCheck className="h-4 w-4" />
-//                             )}
-//                              <span className="ml-2 hidden sm:inline">Verify OTP</span>
-//                           </Button>
-//                         </div>
-//                         <FormDescription>
-//                           Didn't receive OTP?{" "}
-//                           <Button 
-//                             type="button" 
-//                             variant="link" 
-//                             className="p-0 h-auto text-xs" 
-//                             onClick={handleSendOtp} 
-//                             disabled={isSendingOtp || isSubmitting}
-//                           >
-//                             {isSendingOtp ? "Resending..." : "Resend OTP"}
-//                           </Button>
-//                         </FormDescription>
-//                         <FormMessage />
-//                       </FormItem>
-//                     )}
-//                   />
-//                 )}
-
-//                 <FormField
-//                   control={form.control}
-//                   name="password"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Password</FormLabel>
-//                       <FormControl>
-//                         <div className="relative">
-//                           <Input type={showPassword ? "text" : "password"} placeholder="********" {...field} disabled={isSubmitting}/>
-//                           <Button
-//                             type="button"
-//                             variant="ghost"
-//                             size="icon"
-//                             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-//                             onClick={() => setShowPassword(!showPassword)}
-//                              disabled={isSubmitting}
-//                           >
-//                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-//                           </Button>
-//                         </div>
-//                       </FormControl>
-//                       <FormDescription>
-//                         Must be 8+ characters, with uppercase, digit, & special character.
-//                       </FormDescription>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <FormField
-//                   control={form.control}
-//                   name="confirmPassword"
-//                   render={({ field }) => (
-//                     <FormItem>
-//                       <FormLabel>Confirm Password</FormLabel>
-//                       <FormControl>
-//                          <div className="relative">
-//                           <Input type={showConfirmPassword ? "text" : "password"} placeholder="********" {...field} disabled={isSubmitting} />
-//                           <Button
-//                             type="button"
-//                             variant="ghost"
-//                             size="icon"
-//                             className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-//                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-//                             disabled={isSubmitting}
-//                           >
-//                             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-//                           </Button>
-//                         </div>
-//                       </FormControl>
-//                       <FormMessage />
-//                     </FormItem>
-//                   )}
-//                 />
-//                 <Button 
-//                   type="submit" 
-//                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-//                   disabled={!otpVerified || isSendingOtp || isVerifyingOtp || isSubmitting}
-//                 >
-//                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (otpVerified ? "Sign Up" : "Verify Email to Sign Up")}
-//                 </Button>
-//               </form>
-//             </Form>
-//           </CardContent>
-//           <CardFooter className="text-center text-sm">
-//             <p className="text-muted-foreground w-full">
-//               Already have an account?{" "}
-//               <Button variant="link" asChild className="p-0 text-primary">
-//                 <Link href="/auth/login">Log In</Link>
-//               </Button>
-//             </p>
-//           </CardFooter>
-//         </Card>
-//       </ScrollFadeIn>
-//     </div>
-//   );
-// }
-
-
-
-
-
-
-
-"use client";
-
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserPlus, Eye, EyeOff, MailCheck, ShieldCheck, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/auth-context";
-import { useRouter } from 'next/navigation';
-
-const signupSchema = z.object({
-  fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string()
-    .min(8, { message: "Password must be at least 8 characters." })
-    .regex(/(?=.*[A-Z])/, { message: "Password must contain at least one uppercase letter." })
-    .regex(/(?=.*\d)/, { message: "Password must contain at least one digit." })
-    .regex(/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/, { message: "Password must contain at least one special character." }),
-  confirmPassword: z.string(),
-  otp: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type SignupFormValues = z.infer<typeof signupSchema>;
-
-const SIMULATED_OTP = "123456";
+const STEPS = ['Details', 'Verify email', 'Set password', 'Done'] as const;
 
 export default function SignupPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailForOtp, setEmailForOtp] = useState("");
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
+      <SignupInner />
+    </Suspense>
+  );
+}
 
-  const { toast } = useToast();
-  const { signup } = useAuth();
+function SignupInner() {
   const router = useRouter();
+  const params = useSearchParams();
+  const redirect = safeRedirect(params.get('redirect'), '/candidate/profile');
 
-  const form = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      fullName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      otp: "",
-    },
-  });
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [note, setNote] = useState('');
 
-  const handleSendOtp = async () => {
-    const emailValue = form.getValues("email");
-    const emailState = form.getFieldState("email");
+  // Step 1 state.
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [ack, setAck] = useState(false);
 
-    if (!emailValue || emailState.invalid) {
-      form.setError("email", { type: "manual", message: "Please enter a valid email to send OTP." });
-      toast({ title: "Email Required", description: "Please enter a valid email address first.", variant: "destructive" });
-      return;
-    }
+  // Step 2 state.
+  const [otpRequestId, setOtpRequestId] = useState('');
+  const [code, setCode] = useState('');
+  const [verificationToken, setVerificationToken] = useState('');
 
-    setIsSendingOtp(true);
-    setEmailForOtp(emailValue);
-    console.log("SIMULATION: Sending OTP to", emailValue);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setOtpSent(true);
-    setIsSendingOtp(false);
-    toast({
-      title: "OTP Sent (Simulated)",
-      description: `An OTP has been sent to ${emailValue}. (Simulated OTP: ${SIMULATED_OTP})`,
-    });
-  };
+  // Step 3 state.
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [showPw, setShowPw] = useState(false);
 
-  const handleVerifyOtp = async () => {
-    const otpValue = form.getValues("otp");
-    if (!otpValue || otpValue.length !== 6) {
-        form.setError("otp", { type: "manual", message: "Please enter a valid 6-digit OTP."});
-        toast({ title: "Invalid OTP", description: "Please enter a valid 6-digit OTP.", variant: "destructive" });
-        return;
-    }
-    setIsVerifyingOtp(true);
-    console.log("SIMULATION: Verifying OTP", otpValue, "for email", emailForOtp);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    if (otpValue === SIMULATED_OTP) {
-      setOtpVerified(true);
-      setOtpSent(false); // Hide OTP input section
-      setIsVerifyingOtp(false);
-      toast({
-        title: "OTP Verified Successfully!",
-        description: "Your email has been verified. You can now complete the signup.",
-        variant: "default",
+  const submitDetails = useCallback(async () => {
+    setError(''); setBusy(true);
+    try {
+      const res = await fetch('/api/auth/register/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, captchaToken, consentAcknowledged: ack }),
       });
-    } else {
-      setOtpVerified(false);
-      setIsVerifyingOtp(false);
-      form.setError("otp", { type: "manual", message: "Invalid OTP. Please try again or resend."});
-      toast({
-        title: "OTP Verification Failed",
-        description: "The OTP you entered is incorrect. Please try again.",
-        variant: "destructive",
-      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Could not start registration.'); return; }
+      setOtpRequestId(data.otpRequestId);
+      setNote(data.emailDeliveryNote || 'A verification code was sent to your email.');
+      setStep(1);
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setBusy(false);
     }
-  };
+  }, [name, email, captchaToken, ack]);
 
-  async function onSubmit(values: SignupFormValues) {
-    if (!otpVerified) {
-      toast({
-        title: "Email Verification Required",
-        description: "Please verify your email address with OTP before signing up.",
-        variant: "destructive",
+  const submitOtp = useCallback(async () => {
+    setError(''); setBusy(true);
+    try {
+      const res = await fetch('/api/auth/otp/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otpRequestId, code }),
       });
-      return;
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Invalid or expired code.'); return; }
+      setVerificationToken(data.verificationToken);
+      setStep(2);
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setBusy(false);
     }
-    setIsSubmitting(true);
-    // Pass fullName, email, and password to the signup function in AuthContext
-    signup(values.fullName, values.email, values.password); 
-    
-    // Redirection and success/failure toasts are handled by AuthContext
-    // No need to call router.push here directly if AuthContext handles it.
-    setIsSubmitting(false);
-  }
+  }, [otpRequestId, code]);
 
-  const watchEmail = form.watch("email");
+  const resendOtp = useCallback(async () => {
+    setError(''); setBusy(true);
+    try {
+      const res = await fetch('/api/auth/otp/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Could not resend.'); return; }
+      setOtpRequestId(data.otpRequestId);
+      setNote('A new code was sent.');
+    } catch {
+      setError('Network error.');
+    } finally {
+      setBusy(false);
+    }
+  }, [email]);
+
+  const submitPassword = useCallback(async () => {
+    setError(''); setBusy(true);
+    try {
+      const res = await fetch('/api/auth/register/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verificationToken, password, confirmPassword: confirm }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Could not complete registration.'); return; }
+      setStep(3);
+      setTimeout(() => router.push(redirect), 1500);
+    } catch {
+      setError('Network error.');
+    } finally {
+      setBusy(false);
+    }
+  }, [verificationToken, password, confirm, router, redirect]);
 
   return (
-    <div className="section-padding bg-background flex items-center justify-center min-h-[calc(100vh-10rem)]">
-      <ScrollFadeIn className="w-full max-w-md">
-        <Card 
-          className="rounded-[2.5rem] bg-background-neumorphic p-4 transform-gpu transition-all duration-700 
-                     shadow-card-3d hover:shadow-2xl hover:scale-[1.03] 
-                     hover:rotate-x-3 hover:rotate-y-5 perspective-1000"
-        >
-          <CardHeader className="text-center mb-2">
-            <UserPlus className="mx-auto h-20 w-20 text-primary mb-2 animate-pulse-light neon-icon" />
-            <CardTitle className="text-3xl font-extrabold tracking-tight drop-shadow-md">Create Account</CardTitle>
-            <CardDescription className="text-muted-foreground mt-1 text-sm">
-              Join Paragonel to unlock exclusive features.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-semibold text-foreground">Full Name</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Prabhat Kumar" 
-                          className="rounded-2xl border-none shadow-soft-inset bg-background focus:ring-4 focus:ring-offset-2 focus:ring-primary focus:shadow-soft-inset-active transition-all duration-300 p-4 text-base"
-                          {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-semibold text-foreground">Email Address</FormLabel>
-                      <div className="flex items-center space-x-2">
-                        <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="your.email@example.com" 
-                            className="rounded-2xl border-none shadow-soft-inset bg-background focus:ring-4 focus:ring-offset-2 focus:ring-primary focus:shadow-soft-inset-active transition-all duration-300 p-4 text-base"
-                            {...field} 
-                            disabled={otpSent || otpVerified || isSendingOtp || isSubmitting}
-                          />
-                        </FormControl>
-                        {!otpSent && !otpVerified && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleSendOtp}
-                            disabled={isSendingOtp || !watchEmail || form.getFieldState("email").invalid || isSubmitting}
-                            className="flex-shrink-0 w-28 h-12 rounded-xl bg-background-light text-primary shadow-soft-out hover:shadow-soft-out-hover hover:scale-[1.02] transition-all duration-300 active:shadow-soft-inset-active"
-                          >
-                            {isSendingOtp ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <MailCheck className="h-4 w-4" />
-                            )}
-                            <span className="ml-2 hidden sm:inline">Send OTP</span>
-                          </Button>
-                        )}
-                         {otpVerified && (
-                            <ShieldCheck className="h-8 w-8 text-green-500 flex-shrink-0" title="Email Verified" />
-                        )}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4 py-8">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl">Create your candidate account</CardTitle>
+          <CardDescription>Paragonel Careers — secure email-first registration.</CardDescription>
+          <div className="flex items-center gap-1.5 mt-3" aria-label="Registration progress">
+            {STEPS.map((label, i) => (
+              <div key={label} className="flex items-center gap-1.5 flex-1">
+                <div className={`h-1.5 flex-1 rounded-full ${i <= step ? 'bg-primary' : 'bg-zinc-200 dark:bg-zinc-800'}`} />
+                <span className={`text-[10px] ${i === step ? 'text-primary font-medium' : 'text-muted-foreground'}`}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+          {note && !error && step === 1 && <p className="text-sm text-muted-foreground">{note}</p>}
 
-                {otpSent && !otpVerified && (
-                  <FormField
-                    control={form.control}
-                    name="otp"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-semibold text-foreground">Enter OTP sent to {emailForOtp}</FormLabel>
-                        <div className="flex items-center space-x-2">
-                          <FormControl>
-                            <Input 
-                              placeholder="6-digit OTP" 
-                              className="rounded-2xl border-none shadow-soft-inset bg-background focus:ring-4 focus:ring-offset-2 focus:ring-primary focus:shadow-soft-inset-active transition-all duration-300 p-4 text-base"
-                              {...field} 
-                              maxLength={6} 
-                              disabled={isVerifyingOtp || isSubmitting}
-                            />
-                          </FormControl>
-                          <Button
-                            type="button"
-                            onClick={handleVerifyOtp}
-                            disabled={isVerifyingOtp || !field.value || field.value.length !== 6 || isSubmitting}
-                            className="flex-shrink-0 w-28 h-12 rounded-xl bg-background-light text-primary shadow-soft-out hover:shadow-soft-out-hover hover:scale-[1.02] transition-all duration-300 active:shadow-soft-inset-active"
-                          >
-                            {isVerifyingOtp ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                               <ShieldCheck className="h-4 w-4" />
-                            )}
-                             <span className="ml-2 hidden sm:inline">Verify OTP</span>
-                          </Button>
-                        </div>
-                        <FormDescription>
-                          Didn't receive OTP?{" "}
-                          <Button 
-                            type="button" 
-                            variant="link" 
-                            className="p-0 h-auto text-xs" 
-                            onClick={handleSendOtp} 
-                            disabled={isSendingOtp || isSubmitting}
-                          >
-                            {isSendingOtp ? "Resending..." : "Resend OTP"}
-                          </Button>
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-semibold text-foreground">Password</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            placeholder="********" 
-                            className="rounded-2xl border-none shadow-soft-inset bg-background focus:ring-4 focus:ring-offset-2 focus:ring-primary focus:shadow-soft-inset-active transition-all duration-300 p-4 text-base"
-                            {...field} 
-                            disabled={isSubmitting}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                            disabled={isSubmitting}
-                          >
-                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormDescription className="text-muted-foreground">
-                        Must be 8+ characters, with uppercase, digit, & special character.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-semibold text-foreground">Confirm Password</FormLabel>
-                      <FormControl>
-                         <div className="relative">
-                          <Input 
-                            type={showConfirmPassword ? "text" : "password"} 
-                            placeholder="********" 
-                            className="rounded-2xl border-none shadow-soft-inset bg-background focus:ring-4 focus:ring-offset-2 focus:ring-primary focus:shadow-soft-inset-active transition-all duration-300 p-4 text-base"
-                            {...field} 
-                            disabled={isSubmitting} 
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:bg-transparent"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            disabled={isSubmitting}
-                          >
-                            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button 
-                  type="submit" 
-                  className="w-full h-14 rounded-2xl bg-primary text-primary-foreground text-lg font-bold 
-                             shadow-soft-out hover:shadow-soft-out-hover transform transition-all duration-300 
-                             hover:scale-[1.02] hover:bg-primary/95 active:shadow-soft-inset-active"
-                  disabled={!otpVerified || isSendingOtp || isVerifyingOtp || isSubmitting}
-                >
-                  {isSubmitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : (otpVerified ? "Sign Up" : "Verify Email to Sign Up")}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="text-center text-sm">
-            <p className="text-muted-foreground w-full">
-              Already have an account?{" "}
-              <Button variant="link" asChild className="p-0 text-primary hover:text-primary/70">
-                <Link href="/auth/login">Log In</Link>
+          {step === 0 && (
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Full name</Label>
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={200} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email address</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" maxLength={254} />
+                <p className="text-xs text-muted-foreground">You will receive a verification code at this address.</p>
+              </div>
+              <CaptchaWidget onVerify={setCaptchaToken} />
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-0.5" />
+                <span>I agree to the <Link href="/terms" className="text-primary underline" target="_blank">Terms</Link> + <Link href="/privacy-policy" className="text-primary underline" target="_blank">Privacy Policy</Link>.</span>
+              </label>
+              <Button onClick={submitDetails} disabled={busy || !name || !email || !captchaToken || !ack} className="w-full">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Send verification code'}
               </Button>
-            </p>
-          </CardFooter>
-        </Card>
-      </ScrollFadeIn>
+              <p className="text-xs text-center text-muted-foreground">
+                Already have an account? <Link href="/auth/login" className="text-primary underline">Log in</Link>
+              </p>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div className="space-y-3">
+              <p className="text-sm">Enter the 6-digit code sent to <strong>{email}</strong>.</p>
+              <div className="space-y-1.5">
+                <Label htmlFor="code">Verification code</Label>
+                <Input id="code" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" className="text-center tracking-widest text-lg" maxLength={6} />
+              </div>
+              <Button onClick={submitOtp} disabled={busy || code.length !== 6} className="w-full">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify code'}
+              </Button>
+              <Button onClick={resendOtp} disabled={busy} variant="ghost" className="w-full text-sm">
+                Resend code
+              </Button>
+              <Button onClick={() => setStep(0)} variant="link" className="w-full text-xs text-muted-foreground">
+                <ArrowLeft className="h-3 w-3 mr-1" /> Back to details
+              </Button>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Email verified. Set a password to complete your account.</p>
+              <div className="space-y-1.5">
+                <Label htmlFor="pw">Password</Label>
+                <div className="relative">
+                  <Input id="pw" type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" maxLength={128} />
+                  <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" aria-label={showPw ? 'Hide password' : 'Show password'}>
+                    {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">8–128 chars, with at least one letter + one number.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirm">Confirm password</Label>
+                <Input id="confirm" type={showPw ? 'text' : 'password'} value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" maxLength={128} />
+              </div>
+              <Button onClick={submitPassword} disabled={busy || !password || password !== confirm} className="w-full">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create account'}
+              </Button>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="text-center space-y-3 py-6">
+              <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto" />
+              <p className="text-lg font-medium">Account created!</p>
+              <p className="text-sm text-muted-foreground">Redirecting to your profile…</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -27,8 +27,6 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Save, Briefcase } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
@@ -43,6 +41,10 @@ const jobSchema = z.object({
   experienceRequired: z.string().min(1, 'Experience is required'),
   salaryRange: z.string().optional(),
   skills: z.string().min(2, 'Skills are required'),
+  // 05R: optional matching fields (must be present so an edit does not wipe them).
+  preferredSkills: z.string().optional().or(z.literal('')),
+  seniority: z.string().optional().or(z.literal('')),
+  educationRequired: z.string().optional().or(z.literal('')),
   description: z.string().min(50, 'Full job description is required'),
   deadline: z.string().optional(),
   status: z.string().default('Active'),
@@ -64,26 +66,32 @@ export default function EditJobPage() {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const docRef = doc(db, 'jobs', id as string);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+        // Phase 4 IU-0 slice 2: load via JWT-verified server route (Admin SDK),
+        // since drafts/archived jobs are no longer readable by the client SDK.
+        const res = await fetch(`/api/admin/jobs/${id}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        const j = data.job;
+        if (j) {
           form.reset({
-            jobId: data.jobId,
-            title: data.title,
-            department: data.department,
-            location: data.location,
-            employmentType: data.employmentType,
-            workArrangement: data.workArrangement || 'Remote',
-            experienceRequired: data.experienceRequired,
-            salaryRange: data.salaryRange || '',
-            skills: data.skills.join(', '),
-            description: data.description,
-            deadline: data.deadline || '',
-            status: data.status || (data.isActive ? 'Active' : 'Draft'),
+            jobId: j.jobId,
+            title: j.title,
+            department: j.department,
+            location: j.location,
+            employmentType: j.employmentType,
+            workArrangement: j.workArrangement || 'Remote',
+            experienceRequired: j.experienceRequired,
+            salaryRange: j.salaryRange || '',
+            skills: Array.isArray(j.skills) ? j.skills.join(', ') : '',
+            preferredSkills: Array.isArray(j.preferredSkills) ? j.preferredSkills.join(', ') : (j.preferredSkills || ''),
+            seniority: j.seniority || '',
+            educationRequired: j.educationRequired || '',
+            description: j.description,
+            deadline: j.deadline || '',
+            status: j.status || (j.isActive ? 'Active' : 'Draft'),
           });
         }
-      } catch (error) {
+      } catch {
         toast({ title: 'Error', description: 'Failed to load job details.', variant: 'destructive' });
       } finally {
         setIsFetching(false);
@@ -95,16 +103,19 @@ export default function EditJobPage() {
   async function onSubmit(values: JobFormValues) {
     setIsLoading(true);
     try {
-      await updateDoc(doc(db, 'jobs', id as string), {
-        ...values,
-        isActive: values.status === 'Active',
-        skills: values.skills.split(',').map(s => s.trim()).filter(Boolean),
-        updatedAt: new Date().toISOString(),
+      const res = await fetch(`/api/admin/jobs/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.issues?.join('; ') || data?.error || 'Update failed.');
+      }
       toast({ title: 'Success', description: 'Job details updated successfully.' });
       router.push('/admin/jobs');
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to update job.', variant: 'destructive' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error?.message || 'Failed to update job.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -209,6 +220,38 @@ export default function EditJobPage() {
                   <FormLabel>Required Skills</FormLabel>
                   <FormControl><Input {...field} className="h-11" /></FormControl>
                   <FormDescription>Comma-separated list of skills.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={form.control} name="seniority" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target seniority (optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Not specified" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Not specified</SelectItem>
+                        {['Junior', 'Mid', 'Senior', 'Lead', 'Principal'].map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="educationRequired" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Education requirement (optional)</FormLabel>
+                    <FormControl><Input placeholder="B.Tech in CS or equivalent" {...field} className="h-11" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="preferredSkills" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preferred skills (optional)</FormLabel>
+                  <FormControl><Input placeholder="GraphQL, AWS, Figma (comma separated)" {...field} className="h-11" /></FormControl>
+                  <FormDescription>Nice-to-have; weighed lower than required skills in matching.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )} />

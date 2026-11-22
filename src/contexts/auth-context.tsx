@@ -16,7 +16,7 @@ interface RegisteredUser extends User {
 }
 
 // Initializing database with some test accounts including admin
-let simulatedUserDatabase: RegisteredUser[] = [
+const simulatedUserDatabase: RegisteredUser[] = [
   {
     uid: 'admin-testing-uid',
     email: 'admin@paragonel.com',

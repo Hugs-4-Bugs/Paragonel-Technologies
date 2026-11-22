@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// Firebase Storage rules (Phase 1B).
+// The browser no longer uploads to Storage — resumes are received by the
+// /api/job-applications route and uploaded server-side via the Firebase Admin
+// SDK, which bypasses these rules. All public client access is therefore denied.
+// (Resume viewing from the admin CRM will require a server-issued signed URL,
+//  a future enhancement; it is intentionally not exposed publicly here.)
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

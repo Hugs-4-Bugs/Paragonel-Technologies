@@ -24,5 +24,4 @@ try {
   console.error("Error initializing Firebase:", e);
 }
 
-// @ts-ignore
 export { app, db, storage };

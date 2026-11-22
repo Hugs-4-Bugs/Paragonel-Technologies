@@ -52,7 +52,7 @@ export function CareersSection() { // Renamed from JobListings
     <section id="careers-section" className="section-padding bg-secondary/30 dark:bg-secondary/10">
       <div className="container px-4 md:px-6">
         <ScrollFadeIn className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Join Our <span className="text-primary">Quantum Leap</span></h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Join <span className="text-primary">Paragonel</span></h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             We are always looking for talented individuals to join our mission.
             Explore exciting opportunities and grow with us.

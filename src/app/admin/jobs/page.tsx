@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { 
   Plus, 
@@ -31,8 +31,6 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, doc, deleteDoc, updateDoc, query, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,36 +40,50 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 export default function AdminJobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('All');
-  const firestore = useFirestore();
   const { toast } = useToast();
+  const [jobs, setJobs] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const jobsQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'jobs'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+  // Phase 4 IU-0 slice 2: jobs are locked to public writes, so the admin list
+  // fetches server-side via /api/admin/jobs (Admin SDK) instead of useCollection.
+  const loadJobs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/jobs', { cache: 'no-store' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setJobs(data.jobs);
+    } catch {
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const { data: jobs, loading } = useCollection(jobsQuery);
+  useEffect(() => { loadJobs(); }, [loadJobs]);
 
   const handleToggleActive = async (id: string, currentIsActive: boolean) => {
-    if (!firestore) return;
     try {
-      await updateDoc(doc(firestore, 'jobs', id), { 
-        isActive: !currentIsActive,
-        status: !currentIsActive ? 'Active' : 'Draft',
-        updatedAt: new Date().toISOString()
+      const res = await fetch(`/api/admin/jobs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentIsActive }),
       });
+      if (!res.ok) throw new Error();
       toast({ title: 'Status Updated', description: `Job is now ${!currentIsActive ? 'Active' : 'Archived'}.` });
-    } catch (e) {
+      loadJobs();
+    } catch {
       toast({ title: 'Error', description: 'Failed to update job status.', variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!firestore || !confirm('Are you sure you want to permanently delete this job opening? This action cannot be undone.')) return;
+    if (!confirm('Are you sure you want to permanently delete this job opening? This action cannot be undone.')) return;
     try {
-      await deleteDoc(doc(firestore, 'jobs', id));
+      const res = await fetch(`/api/admin/jobs/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
       toast({ title: 'Success', description: 'Job deleted permanently.' });
-    } catch (e) {
+      loadJobs();
+    } catch {
       toast({ title: 'Error', description: 'Failed to delete job.', variant: 'destructive' });
     }
   };

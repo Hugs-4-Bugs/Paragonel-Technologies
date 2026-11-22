@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useCookieConsent } from "@/hooks/use-cookie-consent.tsx";
+import { useCookieConsent } from "@/hooks/use-cookie-consent";
 import { Cookie, Settings, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 

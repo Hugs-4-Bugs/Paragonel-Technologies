@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Shield } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Brain, Cloud, GitBranch, Boxes, ArrowRight, Code2, BarChart3, Layers } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,13 +21,22 @@ import { useAuth } from "@/contexts/auth-context";
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
+  { href: "/services", label: "Services", mega: true },
+  { href: "/our-product", label: "Our Product" },
   { href: "/about", label: "About" },
-  { href: "/services", label: "Services" },
-  { href: "/portfolio", label: "Portfolio" },
+];
+
+// Services mega-menu — mirrors the five engineering domains on /services
+// (Prompt 05B). Anchor links jump to the domain sections on the landing page.
+const servicesMega = [
+  { href: "/services#product-engineering", label: "Product Engineering", icon: Boxes, desc: "SaaS, custom business software, API & systems integration." },
+  { href: "/services#ai-and-intelligent-systems", label: "AI & Intelligent Systems", icon: Brain, desc: "Agents, copilots, RAG, workflow automation — tied to a real outcome." },
+  { href: "/services#cloud-infrastructure-platform", label: "Cloud, Infrastructure & Platform", icon: Cloud, desc: "Architecture, migration, DevOps/CI-CD, reliability." },
+  { href: "/services#data-engineering-analytics", label: "Data Engineering & Analytics", icon: BarChart3, desc: "Pipelines, warehouse, analytics, BI — one source of truth." },
+  { href: "/services#experience-interface", label: "Experience & Interface", icon: Layers, desc: "UI/UX, design systems, frontend engineering, accessibility." },
 ];
 
 const moreNavLinks = [
-  { href: "/team", label: "Team" },
   { href: "/careers", label: "Careers" },
   { href: "/blog", label: "Blog" },
   { href: "/testimonials", label: "Testimonials" },
@@ -49,17 +58,38 @@ const authNavLinksBase: NavLink[] = [
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isAuthenticated, user, logout, isLoading } = useAuth(); 
+  // Services mega-menu: state-driven (not hover-only) so it works on touch +
+  // keyboard, closes on Escape / outside-click / route change, and uses
+  // display:none when closed (so the panel does NOT contribute to scrollWidth
+  // — fixes the 768px tablet overflow from the old `invisible w-[560px]` panel).
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const servicesRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated, user, logout, isLoading } = useAuth();
+
+  // Escape closes the mega-menu; outside-click closes it.
+  useEffect(() => {
+    if (!servicesOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setServicesOpen(false);
+    };
+    const onPointer = (e: MouseEvent) => {
+      if (servicesRef.current && !servicesRef.current.contains(e.target as Node)) {
+        setServicesOpen(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onPointer);
+    };
+  }, [servicesOpen]);
 
   const getMobileNavLinks = (): NavLink[] => {
     if (isLoading) return []; 
     
-    let links: NavLink[] = [...mainNavLinks, ...moreNavLinks];
+    const links: NavLink[] = [...mainNavLinks, ...moreNavLinks];
     if (isAuthenticated && user) {
-      // Check if user is the admin
-      if (user.email === 'admin@paragonel.com') {
-        links.push({ href: "/admin", label: "Admin CMS", icon: Shield });
-      }
       links.push({ href: "/profile", label: "My Profile", icon: UserCircle });
       links.push({ href: "#", label: "Logout", icon: LogOut, action: () => { logout(); setIsMobileMenuOpen(false); } });
     } else {
@@ -77,9 +107,9 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65">
       <div className="container mx-auto flex h-20 max-w-screen-2xl items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center space-x-2 mb-0 -ml-6">
+        <Link href="/" className="flex items-center">
           <div className="relative h-20 w-[200px] md:h-24 md:w-[220px]">
             <Image
               src="/images/logo3.png"
@@ -87,7 +117,6 @@ export function Navbar() {
               width={2172}
               height={724}
               className="h-full w-full object-contain dark:hidden"
-              data-ai-hint="company logo abstract"
               priority
             />
             <Image
@@ -96,18 +125,69 @@ export function Navbar() {
               width={2172}
               height={724}
               className="hidden h-full w-full object-contain dark:block"
-              data-ai-hint="company logo abstract"
               priority
             />
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
-          {mainNavLinks.map((link) => (
-            <Button variant="link" asChild key={link.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3">
-              <Link href={link.href}>{link.label}</Link>
-            </Button>
-          ))}
+        <nav className="hidden lg:flex items-center space-x-1 lg:space-x-2">
+          {mainNavLinks.map((link) =>
+            link.mega ? (
+              <div key={link.href} className="relative" ref={servicesRef}>
+                <button
+                  type="button"
+                  onClick={() => setServicesOpen((v) => !v)}
+                  aria-expanded={servicesOpen}
+                  aria-haspopup="true"
+                  className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3 py-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
+                >
+                  {link.label}
+                  <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${servicesOpen ? "rotate-180" : ""}`} />
+                </button>
+                {/* Mega-menu panel — display:none when closed (no scrollWidth
+                    contribution → no 768px overflow). Width bounded to the
+                    viewport so it never overflows when open. */}
+                {servicesOpen && (
+                  <div
+                    className="absolute left-0 top-full z-50 pt-2"
+                    style={{ width: "min(560px, calc(100vw - 1.5rem))" }}
+                  >
+                    <div className="rounded-[var(--pt-radius-md)] border border-border bg-background/95 p-4 shadow-2xl backdrop-blur">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {servicesMega.map((s) => (
+                          <Link
+                            key={s.href}
+                            href={s.href}
+                            onClick={() => setServicesOpen(false)}
+                            className="group/item flex items-start gap-3 rounded-[var(--pt-radius-sm)] p-3 transition-colors hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                              <s.icon className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold tracking-tight text-foreground">{s.label}</div>
+                              <div className="text-xs text-muted-foreground">{s.desc}</div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                      <Link
+                        href="/services"
+                        onClick={() => setServicesOpen(false)}
+                        className="mt-3 flex items-center justify-center gap-1 rounded-[var(--pt-radius-sm)] bg-primary/10 py-2 text-xs font-bold text-primary transition-colors hover:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        View All Services <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button variant="link" asChild key={link.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary px-2 lg:px-3">
+                <Link href={link.href}>{link.label}</Link>
+              </Button>
+            )
+          )}
           {moreNavLinks.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -149,14 +229,7 @@ export function Navbar() {
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {user.email === 'admin@paragonel.com' && (
-                      <DropdownMenuItem asChild>
-                         <Link href="/admin" className="cursor-pointer font-bold text-primary">
-                           <Shield className="mr-2 h-4 w-4" />
-                           Admin Panel
-                         </Link>
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                        <Link href="/profile" className="cursor-pointer">
                          <Settings2 className="mr-2 h-4 w-4" />
@@ -191,7 +264,7 @@ export function Navbar() {
           </div>
         </nav>
 
-        <div className="md:hidden flex items-center">
+        <div className="lg:hidden flex items-center">
           <ThemeToggleButton />
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>

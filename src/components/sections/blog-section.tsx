@@ -34,7 +34,7 @@ export function BlogSection() {
                 <Link href={`/blog/${post.slug}`} aria-label={`Read more about ${post.title}`}>
                   <CardHeader className="p-0">
                     <Image
-                      src={post.imageUrl}
+                      src={post.imageUrl || post.thumbnailUrl || '/images/ai-abstract.png'}
                       alt={post.title}
                       width={600}
                       height={300}

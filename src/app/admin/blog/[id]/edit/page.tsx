@@ -7,21 +7,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Save, BookOpen, ImageIcon } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
@@ -54,23 +45,26 @@ export default function EditBlogPage() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const docRef = doc(db, 'blogPosts', id as string);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+        // Phase 4 IU-0 slice 2: load via JWT-verified server route (Admin SDK),
+        // since draft posts are no longer readable by the client SDK.
+        const res = await fetch(`/api/admin/blog/${id}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        const p = data.post;
+        if (p) {
           form.reset({
-            title: data.title,
-            slug: data.slug,
-            category: data.category,
-            author: data.author,
-            thumbnailUrl: data.thumbnailUrl || '',
-            excerpt: data.excerpt,
-            body: data.body,
-            tags: data.tags ? data.tags.join(', ') : '',
-            status: data.status,
+            title: p.title,
+            slug: p.slug,
+            category: p.category,
+            author: p.author,
+            thumbnailUrl: p.thumbnailUrl || '',
+            excerpt: p.excerpt,
+            body: p.body,
+            tags: Array.isArray(p.tags) ? p.tags.join(', ') : '',
+            status: p.status,
           });
         }
-      } catch (error) {
+      } catch {
         toast({ title: 'Error', description: 'Failed to load article.', variant: 'destructive' });
       } finally {
         setIsFetching(false);
@@ -82,15 +76,19 @@ export default function EditBlogPage() {
   async function onSubmit(values: BlogFormValues) {
     setIsLoading(true);
     try {
-      await updateDoc(doc(db, 'blogPosts', id as string), {
-        ...values,
-        tags: values.tags ? values.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-        updatedAt: new Date().toISOString(),
+      const res = await fetch(`/api/admin/blog/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.issues?.join('; ') || data?.error || 'Update failed.');
+      }
       toast({ title: 'Success', description: 'Article updated successfully.' });
       router.push('/admin/blog');
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to update article.', variant: 'destructive' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error?.message || 'Failed to update article.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

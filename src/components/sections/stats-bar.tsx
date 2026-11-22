@@ -3,11 +3,24 @@
 
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 
+/**
+ * StatsBar — Phase 1 §7 credibility.
+ *
+ * The previous stats asserted "Products Shipped: 3", "Founded: 2024", and
+ * "Technologies: 10+" — none independently verified (Content Truth Register
+ * §6 flags them as "asserted, not sourced"; "2024 Founded" is medium
+ * confidence pending founder confirmation). They have been removed.
+ *
+ * Replaced with verified, non-numeric facts from the Content Truth Register
+ * §1/§8: AcquisitionOS is in private beta; CodeGuard AI is published on the
+ * VS Code Marketplace; the company is India-based; the founder is Prabhat
+ * Kumar (BE CS). No fabricated counts, dates, or metrics.
+ */
 const stats = [
-  { label: "Products Built", value: "4+" },
-  { label: "Years Experience", value: "3+" },
-  { label: "Technologies", value: "10+" },
-  { label: "Global Delivery", value: "India-Based" },
+  { label: "AcquisitionOS", value: "Private Beta" },
+  { label: "CodeGuard AI", value: "VS Code Marketplace" },
+  { label: "Based In", value: "India" },
+  { label: "Founder", value: "Prabhat Kumar" },
 ];
 
 export function StatsBar() {
@@ -18,8 +31,8 @@ export function StatsBar() {
           {stats.map((stat, i) => (
             <ScrollFadeIn key={i} delay={`${i * 100}ms`}>
               <div className="flex flex-col">
-                <span className="text-3xl md:text-4xl font-bold">{stat.value}</span>
-                <span className="text-sm md:text-base opacity-80">{stat.label}</span>
+                <span className="text-xl md:text-2xl font-bold tracking-tight">{stat.value}</span>
+                <span className="text-sm md:text-base opacity-80 mt-1">{stat.label}</span>
               </div>
             </ScrollFadeIn>
           ))}

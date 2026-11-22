@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { 
-  Briefcase, 
-  BookOpen, 
-  UserPlus, 
-  PlusCircle, 
-  Database, 
+import {
+  Briefcase,
+  BookOpen,
+  UserPlus,
+  PlusCircle,
   Loader2,
   Activity,
   Mail,
@@ -16,22 +15,36 @@ import {
   ChevronRight,
   RefreshCcw
 } from 'lucide-react';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, limit, orderBy, addDoc, serverTimestamp, writeBatch, doc } from 'firebase/firestore';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { dummyJobs, blogPosts, basePortfolio, baseTestimonials, baseServices } from '@/lib/data';
 import { formatDistanceToNow } from 'date-fns';
+
+type Stats = {
+  jobs: number;
+  blogs: number;
+  leads: number;
+  subscribers: number;
+};
+
+type RecentApp = {
+  id: string;
+  candidateName?: string;
+  jobTitle?: string;
+  matchScore?: number;
+  appliedAt?: { seconds: number };
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = useState(false);
-  const firestore = useFirestore();
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [recentApps, setRecentApps] = useState<RecentApp[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/admin/auth/me').then(res => {
@@ -39,54 +52,62 @@ export default function AdminDashboard() {
     });
   }, [router]);
 
-  const jobsQuery = useMemo(() => firestore ? query(collection(firestore, 'jobs'), where('deletedAt', '==', null)) : null, [firestore]);
-  const postsQuery = useMemo(() => firestore ? query(collection(firestore, 'blogPosts'), where('deletedAt', '==', null)) : null, [firestore]);
-  const recentAppsQuery = useMemo(() => firestore ? query(collection(firestore, 'jobApplications'), orderBy('appliedAt', 'desc'), limit(6)) : null, [firestore]);
-  const leadsQuery = useMemo(() => firestore ? query(collection(firestore, 'leads'), where('deletedAt', '==', null)) : null, [firestore]);
-  const subsQuery = useMemo(() => firestore ? collection(firestore, 'newsletterSubscribers') : null, [firestore]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/stats', { cache: 'no-store' });
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (!cancelled) {
+          setStats(data.stats as Stats);
+          setRecentApps((data.recentApplications as RecentApp[]) || []);
+        }
+      } catch {
+        if (!cancelled) {
+          // Non-fatal: dashboard renders with zeroes; CRM data is now locked
+          // behind server auth, so a failure here must not crash the page.
+          setStats({ jobs: 0, blogs: 0, leads: 0, subscribers: 0 });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-  const { data: allJobs, loading: jobsLoading } = useCollection(jobsQuery);
-  const { data: allPosts, loading: postsLoading } = useCollection(postsQuery);
-  const { data: recentApps, loading: appsLoading } = useCollection(recentAppsQuery);
-  const { data: leads, loading: leadsLoading } = useCollection(leadsQuery);
-  const { data: subs, loading: subsLoading } = useCollection(subsQuery);
-
-  const stats = [
-    { label: 'Total Jobs', value: allJobs?.length || 0, icon: Briefcase, color: 'text-blue-600', loading: jobsLoading },
-    { label: 'Total Blogs', value: allPosts?.length || 0, icon: BookOpen, color: 'text-green-600', loading: postsLoading },
-    { label: 'Total Leads', value: leads?.length || 0, icon: Mail, color: 'text-purple-600', loading: leadsLoading },
-    { label: 'Subscribers', value: subs?.length || 0, icon: UsersIcon, color: 'text-orange-600', loading: subsLoading },
+  const statsCards = [
+    { label: 'Total Jobs', value: stats?.jobs ?? 0, icon: Briefcase, color: 'text-blue-600' },
+    { label: 'Total Blogs', value: stats?.blogs ?? 0, icon: BookOpen, color: 'text-green-600' },
+    { label: 'Total Leads', value: stats?.leads ?? 0, icon: Mail, color: 'text-purple-600' },
+    { label: 'Subscribers', value: stats?.subscribers ?? 0, icon: UsersIcon, color: 'text-orange-600' },
   ];
 
   const handleSeedDatabase = async () => {
-    if (!firestore || isSeeding) return;
-    if (!confirm("This will populate your production database with the high-quality foundation data. Proceed?")) return;
-    
+    // Phase 4 IU-0 slice 2: seeding now runs server-side via /api/admin/seed
+    // (Admin SDK batch), because jobs/blogPosts writes are locked to public
+    // clients. The route re-checks NODE_ENV and refuses in production.
+    if (process.env.NODE_ENV === 'production') {
+      toast({
+        title: 'Seeding disabled in production',
+        description: 'Use the admin CMS to manage content.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (isSeeding) return;
+    if (!confirm("This will populate your local database with foundation data. Proceed?")) return;
+
     setIsSeeding(true);
     try {
-      const batch = writeBatch(firestore);
-
-      // Seed Jobs
-      dummyJobs.forEach(job => {
-        const jobRef = doc(collection(firestore, 'jobs'), job.id);
-        batch.set(jobRef, { ...job, deletedAt: null, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      const res = await fetch('/api/admin/seed', { method: 'POST' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      toast({
+        title: "Database Seeded",
+        description: `Local data loaded (${data.seeded?.jobs ?? 0} jobs, ${data.seeded?.blogPosts ?? 0} posts, ${data.seeded?.services ?? 0} services).`,
       });
-
-      // Seed Blogs
-      blogPosts.forEach(post => {
-        const postRef = doc(collection(firestore, 'blogPosts'), post.id);
-        batch.set(postRef, { ...post, deletedAt: null, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-      });
-
-      // Seed Services
-      baseServices.forEach(service => {
-        const sRef = doc(collection(firestore, 'services'), service.id);
-        batch.set(sRef, { ...service, createdAt: serverTimestamp() });
-      });
-
-      await batch.commit();
-      toast({ title: "Database Seeded", description: "Production data is now live." });
-    } catch (e) {
+    } catch {
       toast({ title: "Seeding Failed", variant: "destructive" });
     } finally {
       setIsSeeding(false);
@@ -122,7 +143,7 @@ export default function AdminDashboard() {
       </ScrollFadeIn>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
-        {stats.map((stat, i) => (
+        {statsCards.map((stat, i) => (
           <ScrollFadeIn key={stat.label} delay={`${i * 100}ms`}>
             <Card className="shadow-sm border-zinc-200 dark:border-zinc-800 rounded-2xl hover:shadow-md transition-shadow group">
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -134,7 +155,7 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {stat.loading ? <Skeleton className="h-10 w-16 rounded-lg" /> : <div className="text-2xl md:text-3xl font-black tracking-tight">{stat.value}</div>}
+                {loading ? <Skeleton className="h-10 w-16 rounded-lg" /> : <div className="text-2xl md:text-3xl font-black tracking-tight">{stat.value}</div>}
               </CardContent>
             </Card>
           </ScrollFadeIn>
@@ -154,13 +175,13 @@ export default function AdminDashboard() {
               </Button>
             </CardHeader>
             <CardContent className="p-6">
-              {appsLoading ? (
+              {loading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map(n => <Skeleton key={n} className="h-16 w-full rounded-xl" />)}
                 </div>
-              ) : recentApps && recentApps.length > 0 ? (
+              ) : recentApps.length > 0 ? (
                 <div className="space-y-3">
-                  {recentApps.map((app: any) => (
+                  {recentApps.map((app) => (
                     <Link key={app.id} href={`/admin/applications/${app.id}`}>
                       <div className="flex items-center p-4 bg-zinc-50/50 dark:bg-zinc-900/50 rounded-xl border border-zinc-100 dark:border-zinc-800 hover:border-primary/30 transition-colors">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-sm mr-4">

@@ -10,72 +10,76 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 234 63% 15%;
+    /* Light: near-white surfaces, deep neutral-navy ink, electric blue as ACCENT only. */
+    --background: 0 0% 99%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 234 63% 15%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 234 63% 15%;
-    --primary: 207 68% 53%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 94%;
-    --secondary-foreground: 234 63% 20%;
-    --muted: 210 40% 90%;
-    --muted-foreground: 234 40% 45%;
-    --accent: 270 50% 40%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 40% 18%;
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 9% 40%;
+    --accent: 222 47% 11%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 210 20% 85%;
-    --input: 210 20% 85%;
-    --ring: 207 68% 53%;
-    --radius: 0.5rem;
-    
+    --border: 220 14% 89%;
+    --input: 220 14% 89%;
+    --ring: 217 91% 50%;
+    --radius: 0.625rem;
+
     --background-card-neumorphic: 220 13% 95%;
     --shadow-color-dark: 220 13% 80%;
     --shadow-color-light: 0 0% 100%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 50%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 14% 90%;
+    --sidebar-ring: 217 91% 50%;
   }
 
   .dark {
-    --background: 234 63% 30%;
+    /* Dark: deep navy foundation, NEUTRAL dark surfaces (not blue-tinted cards),
+       electric blue as a restrained accent. Previously every surface was
+       blue-tinted (234° at 38–48% L) which read as "excessively blue". */
+    --background: 222 47% 9%;
     --foreground: 210 40% 96%;
-    --card: 234 55% 38%;
+    --card: 222 40% 13%;
     --card-foreground: 210 40% 96%;
-    --popover: 234 50% 35%;
+    --popover: 222 42% 11%;
     --popover-foreground: 210 40% 96%;
-    --primary: 207 68% 53%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 234 50% 42%;
+    --primary: 217 91% 56%;
+    --primary-foreground: 222 47% 8%;
+    --secondary: 222 30% 18%;
     --secondary-foreground: 210 40% 96%;
-    --muted: 234 45% 48%;
-    --muted-foreground: 210 30% 75%;
-    --accent: 270 50% 48%;
-    --accent-foreground: 210 40% 98%;
-    --border: 234 40% 45%;
-    --input: 234 40% 45%;
-    --ring: 207 68% 53%;
+    --muted: 222 25% 16%;
+    --muted-foreground: 220 14% 65%;
+    --accent: 217 91% 56%;
+    --accent-foreground: 222 47% 8%;
+    --border: 222 25% 20%;
+    --input: 222 25% 20%;
+    --ring: 217 91% 56%;
 
-    --background-card-neumorphic: 234 63% 35%;
-    --shadow-color-dark: 234 63% 25%;
-    --shadow-color-light: 234 63% 45%;
-    
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --background-card-neumorphic: 222 40% 14%;
+    --shadow-color-dark: 222 47% 5%;
+    --shadow-color-light: 222 40% 16%;
+
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-primary: 217 91% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 222 30% 16%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 222 25% 18%;
+    --sidebar-ring: 217 91% 56%;
   }
 }
 
@@ -85,10 +89,20 @@ body {
   }
 }
 
+/* DESIGN-SYSTEM RULE — always-dark surfaces use always-light text.
+   `.animated-gradient-background` is a deep-navy gradient in BOTH light and
+   dark themes, so any text sitting directly on it MUST use a constant light
+   color (e.g. `text-white`, `text-white/80`), NOT the adaptive
+   `text-foreground`/`text-primary-foreground` tokens. `--primary-foreground`
+   is the label color for a `bg-primary` (bright-blue) button: it is LIGHT in
+   light mode but DARK (222 47% 8%) in dark mode — so using it on this always-
+   dark gradient produces invisible dark-on-dark text in dark mode. */
 .animated-gradient-background {
-  background: linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)), hsl(207, 68%, 45%), hsl(270, 50%, 35%));
-  background-size: 400% 400%;
-  animation: gradientAnimation 15s ease infinite;
+  /* Restrained navy gradient with a single electric-blue accent stop —
+     was blue→purple→blue→purple (excessively saturated). */
+  background: linear-gradient(-45deg, hsl(222 47% 11%), hsl(222 47% 14%), hsl(217 60% 20%), hsl(222 47% 12%));
+  background-size: 300% 300%;
+  animation: gradientAnimation 18s ease infinite;
 }
 
 @keyframes gradientAnimation {
@@ -233,4 +247,262 @@ h3 { @apply text-2xl md:text-3xl; }
   .animate-marquee-slow {
     animation-duration: 50s;
   }
+}
+
+/* ============================================================= *
+ *  PARAGONEL VISUAL TRANSFORMATION (Prompt 05A)                  *
+ *  Editorial engineering-studio design system.                   *
+ *  Light is the default theme; dark is fully readable.           *
+ *  Avoids: neon glow, glassmorphism blobs, bouncing cards,       *
+ *  blue-purple gradients, identical rounded cards everywhere.     *
+ * ============================================================= */
+
+@layer base {
+  :root {
+    /* Editorial type ramp — tight, confident, not "font-black shouting". */
+    --pt-display: clamp(2.75rem, 6vw, 5.25rem);
+    --pt-h1: clamp(2.25rem, 4.5vw, 3.75rem);
+    --pt-h2: clamp(1.75rem, 3.2vw, 2.75rem);
+    --pt-lead: clamp(1.125rem, 1.6vw, 1.375rem);
+    --pt-eyebrow: 0.75rem;
+
+    /* Restrained corner scale — mixed per section, not one radius everywhere. */
+    --pt-radius-xs: 0.25rem;
+    --pt-radius-sm: 0.5rem;
+    --pt-radius-md: 0.75rem;
+    --pt-radius-pill: 999px;
+
+    /* Editorial spacing rhythm. */
+    --pt-section-y: clamp(5rem, 9vw, 8rem);
+    --pt-gutter: clamp(1.25rem, 4vw, 4rem);
+
+    /* Hairline + accent surfaces. */
+    --pt-hair: hsl(var(--border));
+    --pt-ink-soft: hsl(var(--muted-foreground));
+  }
+
+  /* Premium inertial scroll feel — Lenis drives the actual smoothing; this
+     keeps the native scroll bar unstyled-but-acceptable. */
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Lenis active state (set by SmoothScroll) — disable native smooth-scroll
+     so Lenis owns the wheel. */
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+}
+
+@layer components {
+  /* Editorial section frame. */
+  .pt-section {
+    padding-block: var(--pt-section-y);
+    position: relative;
+  }
+  .pt-shell {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: var(--pt-gutter);
+  }
+  .pt-shell-narrow { max-width: 56rem; }
+  .pt-shell-wide { max-width: 96rem; }
+
+  /* Eyebrow label — small caps, tracked, with a leading index. */
+  .pt-eyebrow {
+    font-size: var(--pt-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--pt-ink-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+  .pt-eyebrow::before {
+    content: "";
+    display: inline-block;
+    width: 1.75rem;
+    height: 1px;
+    background: hsl(var(--primary));
+    opacity: 0.7;
+  }
+
+  /* Section index numeral (AigentX-style 01 / 02 / …). */
+  .pt-index {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: hsl(var(--primary));
+  }
+
+  /* Display + lead typography. */
+  .pt-display {
+    font-size: var(--pt-display);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+  }
+  .pt-h1 {
+    font-size: var(--pt-h1);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.028em;
+  }
+  .pt-h2 {
+    font-size: var(--pt-h2);
+    font-weight: 600;
+    line-height: 1.12;
+    letter-spacing: -0.022em;
+  }
+  .pt-lead {
+    font-size: var(--pt-lead);
+    line-height: 1.6;
+    color: var(--pt-ink-soft);
+    font-weight: 400;
+  }
+
+  /* Hairline divider — the section separator used between editorial blocks. */
+  .pt-hair {
+    height: 1px;
+    width: 100%;
+    background: var(--pt-hair);
+    transform-origin: left;
+  }
+
+  /* Surface treatments — restrained, NOT glassmorphism. */
+  .pt-surface {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+  }
+  .pt-surface-quiet {
+    background: hsl(var(--secondary) / 0.4);
+  }
+
+  /* Accent ink link — used for inline editorial links + "read more" arrows. */
+  .pt-link {
+    color: hsl(var(--foreground));
+    text-decoration: none;
+    border-bottom: 1px solid hsl(var(--border));
+    transition: border-color 0.25s ease, color 0.25s ease;
+  }
+  .pt-link:hover {
+    color: hsl(var(--primary));
+    border-bottom-color: hsl(var(--primary));
+  }
+
+  /* Numbered list row — the editorial "problem → capability" / differentiator
+     rows. Hover reveals an accent rail on the left. */
+  .pt-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    padding-block: clamp(1.75rem, 3vw, 2.75rem);
+    border-top: 1px solid hsl(var(--border));
+    position: relative;
+    transition: padding-left 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .pt-row::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: hsl(var(--primary));
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .pt-row:hover::before { transform: scaleY(1); }
+  .pt-row:hover { padding-left: 1.25rem; }
+  @media (min-width: 768px) {
+    .pt-row { grid-template-columns: 5rem minmax(0, 1fr) minmax(0, 1.4fr); align-items: baseline; }
+  }
+
+  /* Pill button — the primary CTA shape (pill), secondary is hairline. */
+  .pt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--pt-radius-pill);
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+  .pt-btn:hover { transform: translateY(-1px); }
+  .pt-btn:active { transform: translateY(0); }
+  .pt-btn:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+  .pt-btn-primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  .pt-btn-primary:hover { background: hsl(var(--primary) / 0.9); }
+  .pt-btn-ghost {
+    background: transparent;
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+  }
+  .pt-btn-ghost:hover { border-color: hsl(var(--primary)); color: hsl(var(--primary)); }
+
+  /* Marquee row (refined tech ticker) — pauses on hover + reduced-motion. */
+  .pt-marquee {
+    display: flex;
+    width: max-content;
+    animation: pt-marquee 60s linear infinite;
+  }
+  .pt-marquee:hover { animation-play-state: paused; }
+  @keyframes pt-marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* Subtle grain/gradient backdrop for the hero only — single navy→ink,
+     NOT blue-purple. Sits behind hero content. */
+  .pt-hero-backdrop {
+    background:
+      radial-gradient(120% 80% at 50% -10%, hsl(var(--primary) / 0.10), transparent 60%),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
+  }
+
+  /* AcquisitionOS pipeline connector — a horizontal track that fills on scroll
+     (GSAP scrubs scaleX). */
+  .pt-pipeline-track {
+    height: 2px;
+    background: hsl(var(--border));
+    position: relative;
+    transform-origin: left;
+  }
+  .pt-pipeline-node {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: 999px;
+    background: hsl(var(--background));
+    border: 2px solid hsl(var(--border));
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+  }
+  .pt-pipeline-node[data-active="true"] {
+    border-color: hsl(var(--primary));
+    background: hsl(var(--primary));
+  }
+}
+
+/* Reduced-motion: kill every transform/opacity animation + the marquee + the
+   animated gradient. Content is delivered in its final state. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .pt-marquee { animation: none !important; }
+  .animated-gradient-background { animation: none !important; }
+  .scroll-fade-in { opacity: 1 !important; transform: none !important; }
 }

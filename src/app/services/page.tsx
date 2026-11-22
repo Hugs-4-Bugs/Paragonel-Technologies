@@ -1,52 +1,33 @@
-"use client";
+import type { Metadata } from 'next';
+import { getPublicServices } from '@/lib/public-data';
+import { CatalogueLanding } from '@/components/services/catalogue-landing';
 
-import React, { useMemo } from 'react';
-import { ServicesSection } from '@/components/sections/services-section';
-import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Layers } from 'lucide-react';
+// Revalidate every 60s so admin publish/activate/deactivate reflects on the
+// public site without a full rebuild, while keeping SSR speed. (Preserved from
+// Phase 1A — the admin CMS continues to drive the "From the live catalogue"
+// section via getPublicServices.)
+export const revalidate = 60;
 
-export default function ServicesPage() {
-  const firestore = useFirestore();
+export const metadata: Metadata = {
+  title: 'Services — Paragonel',
+  description:
+    'Thirteen capability families engineering AI-native systems end-to-end — product, AI, automation, cloud, data, integration, UX, advisory, security, quality, industry solutions, IoT and emerging tech. Each with an honest delivery status: Deliver Now, Specialist Support, or Research & Emerging.',
+  alternates: { canonical: '/services' },
+};
 
-  const servicesQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(
-      collection(firestore, 'services'), 
-      where('isActive', '==', true), 
-      orderBy('order', 'asc')
-    );
-  }, [firestore]);
-
-  const { data: services, loading } = useCollection(servicesQuery);
+/**
+ * Services landing (Prompt 05B). Replaces the four-category card layout with a
+ * structured five-domain / thirteen-offering catalogue built on the Prompt 05A
+ * editorial design system. Admin-published dynamic services are still fetched
+ * server-side via getPublicServices (no client SDK shipped) and surfaced in a
+ * dedicated section — the CMS integration is preserved.
+ */
+export default async function ServicesPage() {
+  const services = await getPublicServices();
 
   return (
     <div className="bg-background min-h-screen">
-      <section className="section-padding relative overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6">
-          <ScrollFadeIn className="text-center mb-20">
-            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-primary/10">
-              <Layers className="h-10 w-10 text-primary neon-icon" />
-            </div>
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">
-              Our <span className="text-primary">Services</span>
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto font-medium leading-relaxed">
-              Precision engineering and intelligent innovation for the next generation of digital leaders.
-            </p>
-          </ScrollFadeIn>
-
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-80 rounded-[2.5rem]" />)}
-            </div>
-          ) : (
-            <ServicesSection isFullPage />
-          )}
-        </div>
-      </section>
+      <CatalogueLanding dynamicServices={services} />
     </div>
   );
 }

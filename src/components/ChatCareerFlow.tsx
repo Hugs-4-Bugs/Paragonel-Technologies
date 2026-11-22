@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { ChatJobCard } from './ChatJobCard';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2, Info, Brain, Target, ShieldCheck } from 'lucide-react';
@@ -68,7 +69,7 @@ export function ChatCareerFlow({
         </div>
         <div className="flex gap-2">
           <Button onClick={() => onAcceptHelp(true)} size="sm" className="flex-1 bg-primary text-white font-bold h-11 rounded-xl shadow-sm">Upload Resume</Button>
-          <Button onClick={() => onAcceptHelp(false)} size="sm" variant="outline" className="flex-1 h-11 rounded-xl">I'll Apply Later</Button>
+          <Button onClick={() => onAcceptHelp(false)} size="sm" variant="outline" className="flex-1 h-11 rounded-xl">I&apos;ll Apply Later</Button>
         </div>
       </div>
     );
@@ -146,7 +147,7 @@ export function ChatCareerFlow({
             <Info className="h-7 w-7 mx-auto text-zinc-400" />
             <p className="text-xs sm:text-sm font-bold text-zinc-500">No roles match your current profile perfectly (min. 60%).</p>
             <Button variant="link" asChild className="text-xs sm:text-sm p-0 h-auto font-black text-primary">
-               <a href="/careers">Browse All Openings Manually</a>
+               <Link href="/careers">Browse All Openings Manually</Link>
             </Button>
           </div>
         )}
@@ -164,7 +165,7 @@ export function ChatCareerFlow({
           <div className="text-xs sm:text-sm">
             <p className="font-black mb-1">AI-Assisted Submission</p>
             <p className="text-zinc-500 font-medium leading-relaxed">
-              Applying for <span className="text-primary font-bold">{selectedJob?.title}</span>. I'll prefill everything using your profile.
+              Applying for <span className="text-primary font-bold">{selectedJob?.title}</span>. I&apos;ll prefill everything using your profile.
             </p>
           </div>
         </div>

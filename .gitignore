@@ -38,8 +38,16 @@ yarn-error.log*
 next-env.d.ts
 
 .genkit/*
+# secrets / env files — never commit real credentials
 .env*
+!.env.example
 
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# local runtime artifacts (dev server logs, etc.)
+.runtime/logs/
+
+# dev-supervisor runtime logs
+/logs/

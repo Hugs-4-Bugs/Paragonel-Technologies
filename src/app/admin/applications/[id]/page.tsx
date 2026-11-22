@@ -1,50 +1,107 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useDoc, useFirestore } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowLeft, Download, Mail, Phone, Calendar, Briefcase, User, Info, Save, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { logActivity } from '@/lib/audit';
+
+type Application = {
+  id: string;
+  candidateName?: string;
+  candidateEmail?: string;
+  candidatePhone?: string;
+  jobTitle?: string;
+  status?: string;
+  appliedAt?: { seconds: number };
+  appliedVia?: string;
+  internalNotes?: string;
+  skills?: string[];
+  resumeUrl?: string;
+};
 
 export default function ApplicationDetail() {
   const { id } = useParams();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const [notes, setInternalNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-
-  const appRef = useMemo(() => {
-    if (!firestore || !id) return null;
-    return doc(firestore, 'jobApplications', id as string);
-  }, [firestore, id]);
-
-  const { data: app, loading } = useDoc(appRef);
+  const [app, setApp] = useState<Application | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [resumeLoading, setResumeLoading] = useState(false);
 
   useEffect(() => {
-    if (app) setInternalNotes(app.internalNotes || '');
-  }, [app]);
+    let cancelled = false;
+    (async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/admin/applications/${id}`, { cache: 'no-store' });
+        if (!res.ok) {
+          if (!cancelled) setApp(null);
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setApp(data.application as Application);
+          setInternalNotes(data.application?.internalNotes || '');
+        }
+      } catch {
+        if (!cancelled) setApp(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [id]);
 
   const handleSaveNotes = async () => {
-    if (!firestore || !id) return;
+    if (!id) return;
     setIsSaving(true);
     try {
-      await updateDoc(doc(firestore, 'jobApplications', id as string), {
-        internalNotes: notes,
-        updatedAt: serverTimestamp()
+      const res = await fetch(`/api/admin/applications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ internalNotes: notes }),
       });
-      await logActivity('admin', 'Updated internal notes on application', 'JobApplication', id as string);
+      if (!res.ok) throw new Error();
       toast({ title: "Notes Saved", description: "Internal evaluation recorded." });
-    } catch (e) {
+    } catch {
       toast({ title: "Failed to save notes", variant: "destructive" });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Phase 4 IU-0 slice 3: fetch a short-lived signed resume URL from the server
+  // (authorized route). The raw Storage object path is never placed in the DOM;
+  // each click requests a fresh signed URL, so expiry is handled by re-requesting.
+  const handleDownloadResume = async () => {
+    if (!id || resumeLoading) return;
+    setResumeLoading(true);
+    try {
+      const res = await fetch(`/api/admin/applications/${id}/resume`, { cache: 'no-store' });
+      if (res.status === 401) {
+        router.push('/admin/login');
+        return;
+      }
+      if (res.status === 404) {
+        toast({ title: 'No resume', description: 'This application has no resume on file.', variant: 'destructive' });
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || 'Could not generate resume link.');
+      }
+      const data = (await res.json()) as { url: string };
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+    } catch (e) {
+      toast({ title: 'Resume unavailable', description: e instanceof Error ? e.message : 'Please try again.', variant: 'destructive' });
+    } finally {
+      setResumeLoading(false);
     }
   };
 
@@ -89,7 +146,7 @@ export default function ApplicationDetail() {
               <div className="pt-4 border-t">
                 <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-3">Skills Captured</p>
                 <div className="flex flex-wrap gap-2">
-                  {app.skills?.map((s: string) => (
+                  {app.skills?.map((s) => (
                     <Badge key={s} variant="outline" className="bg-zinc-50 dark:bg-zinc-800 text-xs py-1 px-3 border-zinc-200">
                       {s}
                     </Badge>
@@ -108,7 +165,7 @@ export default function ApplicationDetail() {
               <CardDescription>Visible only to Paragonel team.</CardDescription>
             </CardHeader>
             <CardContent className="p-8 space-y-6">
-              <Textarea 
+              <Textarea
                 placeholder="Add interview feedback, technical ratings, or screening notes here..."
                 className="min-h-[200px] border-zinc-200 focus-visible:ring-1 text-sm leading-relaxed"
                 value={notes}
@@ -135,14 +192,21 @@ export default function ApplicationDetail() {
                   <Download className="h-5 w-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold truncate">Candidate_Resume.pdf</p>
-                  <p className="text-[10px] text-zinc-500">Secure Download Available</p>
+                  <p className="text-xs font-bold truncate">Candidate Resume</p>
+                  <p className="text-[10px] text-zinc-500">Secure signed link · 5-min access</p>
                 </div>
               </div>
-              <Button asChild className="w-full bg-white text-zinc-900 hover:bg-zinc-200 font-black h-12">
-                <a href={app.resumeUrl} target="_blank" rel="noopener noreferrer">
-                  Download Resume
-                </a>
+              <Button
+                onClick={handleDownloadResume}
+                disabled={resumeLoading || !app.resumeUrl}
+                className="w-full bg-white text-zinc-900 hover:bg-zinc-200 font-black h-12"
+              >
+                {resumeLoading ? (
+                  <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                ) : (
+                  <Download className="h-5 w-5 mr-2" />
+                )}
+                {app.resumeUrl ? 'Download Resume' : 'No Resume on File'}
               </Button>
             </CardContent>
           </Card>

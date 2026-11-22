@@ -42,7 +42,14 @@ export function ScrollFadeIn({
       observer.observe(elementRef.current);
     }
 
+    // Fallback: reveal after a short delay even if the observer never fires
+    // (e.g. full-page screenshot capture, no-JS crawl after hydration, or an
+    // element that stays below the fold). This guarantees content is never
+    // permanently hidden, while still animating for users who scroll into view.
+    const fallback = window.setTimeout(() => setIsVisible(true), 1200);
+
     return () => {
+      window.clearTimeout(fallback);
       if (elementRef.current) {
         observer.unobserve(elementRef.current);
       }

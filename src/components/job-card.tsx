@@ -1,6 +1,7 @@
 
 "use client";
 
+import Link from 'next/link';
 import type { Job } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,8 +12,8 @@ import React from 'react';
 
 interface JobCardProps {
   job: Job;
-  onApplyNowClick: (job: Job) => void;
-  onViewDetailsClick: (job: Job) => void;
+  onApplyNowClick?: (job: Job) => void;
+  onViewDetailsClick?: (job: Job) => void;
 }
 
 export function JobCard({ job, onApplyNowClick, onViewDetailsClick }: JobCardProps) {
@@ -24,7 +25,7 @@ export function JobCard({ job, onApplyNowClick, onViewDetailsClick }: JobCardPro
     if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
       return;
     }
-    onViewDetailsClick(job);
+    onViewDetailsClick?.(job);
   };
   
   const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -33,7 +34,7 @@ export function JobCard({ job, onApplyNowClick, onViewDetailsClick }: JobCardPro
       if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
         return;
       }
-      onViewDetailsClick(job);
+      onViewDetailsClick?.(job);
     }
   };
 
@@ -103,7 +104,7 @@ export function JobCard({ job, onApplyNowClick, onViewDetailsClick }: JobCardPro
           className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 py-2 shadow-md hover:shadow-lg transition-shadow"
           onClick={(e) => {
             e.stopPropagation(); // Prevent card click from firing
-            onApplyNowClick(job);
+            onApplyNowClick?.(job);
           }}
           onKeyDown={(e) => {
              if (e.key === 'Enter' || e.key === ' ') {
@@ -114,9 +115,14 @@ export function JobCard({ job, onApplyNowClick, onViewDetailsClick }: JobCardPro
           Apply Now
         </Button>
       </CardFooter>
-       <div className="p-2 text-xs text-primary/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            Click card to view full details <ChevronRight className="w-3 h-3 ml-1" />
-        </div>
+       <Link
+         href={`/careers/${job.id}`}
+         className="p-2 text-xs text-primary/70 flex items-center justify-center hover:text-primary transition-colors"
+         onClick={(e) => e.stopPropagation()}
+         aria-label={`View full details page for ${job.title}`}
+       >
+         View full details <ChevronRight className="w-3 h-3 ml-1" />
+       </Link>
     </Card>
   );
 }

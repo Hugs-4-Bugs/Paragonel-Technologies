@@ -6,8 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Mail, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function NewsletterSubscription() {
   const { toast } = useToast();
@@ -18,19 +16,29 @@ export function NewsletterSubscription() {
     e.preventDefault();
     if (!email) return;
     setIsSubscribing(true);
-    
+
+    // Phase 1B: subscriptions go through the server-side /api/newsletter route
+    // (validation, rate limiting, duplicate check, Firebase Admin SDK write).
     try {
-      if (db) {
-        await addDoc(collection(db, 'newsletterSubscribers'), {
-          email,
-          source: 'Website Footer',
-          subscribedAt: serverTimestamp(),
-        });
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const payload = await res.json().catch(() => ({}));
+
+      if (res.status === 201) {
+        toast({ title: "Subscribed!", description: "Thank you for joining our community." });
+        setEmail('');
+      } else if (res.status === 409) {
+        toast({ title: "Already subscribed", description: payload.error || "You're already on the list." });
+      } else if (res.status === 429) {
+        toast({ title: "Too many attempts", description: "Please wait a moment and try again.", variant: "destructive" });
+      } else {
+        toast({ title: "Subscription Error", description: payload.error || "Please check your email and try again.", variant: "destructive" });
       }
-      toast({ title: "Subscribed!", description: "Thank you for joining our community." });
-      setEmail('');
-    } catch (e) {
-      toast({ title: "Subscription Error", variant: "destructive" });
+    } catch {
+      toast({ title: "Network Error", description: "Could not reach the server. Please try again.", variant: "destructive" });
     } finally {
       setIsSubscribing(false);
     }

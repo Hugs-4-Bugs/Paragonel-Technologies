@@ -97,7 +97,7 @@ export async function generateJobMatchEmail(
             emailSubject: output?.subject || `Job Opportunity: ${job.title}`,
             emailBody: output?.body || `Hello ${userProfile.fullName}, we found a role for you!`,
         };
-    } catch (error) {
+    } catch {
         return { shouldNotify: false };
     }
   }

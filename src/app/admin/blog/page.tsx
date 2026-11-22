@@ -1,20 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { 
-  Plus, 
-  Search, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
-  CheckCircle2, 
-  Clock, 
-  FileText,
-  Eye,
-  BookOpen,
-  Image as ImageIcon
-} from 'lucide-react';
+import { Plus, Search, MoreVertical, Edit, Trash2, CheckCircle2, Clock, Eye, BookOpen, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -33,8 +21,6 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, doc, deleteDoc, updateDoc, query, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,37 +29,51 @@ import { Card } from '@/components/ui/card';
 
 export default function AdminBlogPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const firestore = useFirestore();
   const { toast } = useToast();
+  const [posts, setPosts] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const postsQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'blogPosts'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+  // Phase 4 IU-0 slice 2: blogPosts are locked to public writes, so the admin
+  // list fetches server-side via /api/admin/blog (Admin SDK).
+  const loadPosts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/blog', { cache: 'no-store' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setPosts(data.posts);
+    } catch {
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const { data: posts, loading } = useCollection(postsQuery);
+  useEffect(() => { loadPosts(); }, [loadPosts]);
 
   const handleTogglePublished = async (id: string, currentStatus: string) => {
-    if (!firestore) return;
+    const newStatus: 'Draft' | 'Published' = currentStatus === 'Published' ? 'Draft' : 'Published';
     try {
-      const newStatus = currentStatus === 'Published' ? 'Draft' : 'Published';
-      await updateDoc(doc(firestore, 'blogPosts', id), { 
-        status: newStatus,
-        publishedAt: newStatus === 'Published' ? new Date().toISOString() : null,
-        updatedAt: new Date().toISOString()
+      const res = await fetch(`/api/admin/blog/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
       });
+      if (!res.ok) throw new Error();
       toast({ title: 'Status Updated', description: `Article is now ${newStatus}.` });
-    } catch (e) {
+      loadPosts();
+    } catch {
       toast({ title: 'Error', description: 'Failed to update article status.', variant: 'destructive' });
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!firestore || !confirm('Are you sure you want to permanently delete this article?')) return;
+    if (!confirm('Are you sure you want to permanently delete this article?')) return;
     try {
-      await deleteDoc(doc(firestore, 'blogPosts', id));
+      const res = await fetch(`/api/admin/blog/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
       toast({ title: 'Success', description: 'Article deleted permanently.' });
-    } catch (e) {
+      loadPosts();
+    } catch {
       toast({ title: 'Error', description: 'Failed to delete article.', variant: 'destructive' });
     }
   };
@@ -159,7 +159,7 @@ export default function AdminBlogPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-zinc-500 text-xs">
-                      {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'N/A'}
+                      {post.createdAt?.seconds ? new Date(post.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -209,7 +209,7 @@ export default function AdminBlogPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-sm truncate">{post.title}</h3>
-                    <p className="text-xs text-zinc-500">{post.category} • {post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'N/A'}</p>
+                    <p className="text-xs text-zinc-500">{post.category} • {post.createdAt?.seconds ? new Date(post.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</p>
                   </div>
                </div>
                <div className="flex gap-2">

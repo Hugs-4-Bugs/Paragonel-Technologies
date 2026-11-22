@@ -34,9 +34,12 @@ export function useAuth() {
 }
 
 export interface FirebaseProviderProps {
-  firebaseApp: FirebaseApp;
-  firestore: Firestore;
-  auth: Auth;
+  // Nullable: `initializeFirebase()` returns nulls when the public Firebase
+  // env vars are not configured, so the build/runtime never throws on a missing
+  // client config. Consumers null-check via the hooks.
+  firebaseApp: FirebaseApp | null;
+  firestore: Firestore | null;
+  auth: Auth | null;
   children: React.ReactNode;
 }
 

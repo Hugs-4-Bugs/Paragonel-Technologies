@@ -27,7 +27,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Save, Briefcase } from 'lucide-react';
 import { useFirestore } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
@@ -44,6 +43,11 @@ const jobSchema = z.object({
   experienceRequired: z.string().min(1, 'Experience range is required'),
   salaryRange: z.string().optional(),
   skills: z.string().min(2, 'At least one skill is required'),
+  // 05R: optional matching fields. Absent = the matcher treats the dimension as
+  // N/A (no penalty, no reward) — never invents requirements.
+  preferredSkills: z.string().optional().or(z.literal('')),
+  seniority: z.string().optional().or(z.literal('')),
+  educationRequired: z.string().optional().or(z.literal('')),
   description: z.string().min(50, 'Full job description is required'),
   deadline: z.string().optional(),
   status: z.string().default('Active'),
@@ -73,6 +77,9 @@ export default function NewJobPage() {
       experienceRequired: '',
       salaryRange: '',
       skills: '',
+      preferredSkills: '',
+      seniority: '',
+      educationRequired: '',
       description: '',
       deadline: '',
       status: 'Active',
@@ -109,7 +116,7 @@ export default function NewJobPage() {
         } else {
           localStorage.removeItem(AUTOSAVE_KEY);
         }
-      } catch (e) {
+      } catch {
         localStorage.removeItem(AUTOSAVE_KEY);
       }
     }
@@ -133,36 +140,35 @@ export default function NewJobPage() {
   }, [form.watch]);
 
   async function onSubmit(values: JobFormValues) {
-    if (isLoading || !firestore) return;
+    if (isLoading) return;
     setIsLoading(true);
-    
-    try {
-      const jobData = {
-        ...values,
-        isActive: values.status === 'Active',
-        skills: values.skills.split(',').map(s => s.trim()).filter(Boolean),
-        postedDate: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        deletedAt: null,
-        isDraft: false,
-      };
 
-      await addDoc(collection(firestore, 'jobs'), jobData);
-      
+    try {
+      // Phase 4 IU-0 slice 2: create via JWT-verified server route (Admin SDK).
+      // The server re-validates and writes; the client no longer touches Firestore.
+      const res = await fetch('/api/admin/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.issues?.join('; ') || data?.error || 'The server rejected the request.');
+      }
+
       // Clear draft
       localStorage.removeItem(AUTOSAVE_KEY);
       localStorage.removeItem('current_draft_id_job');
-      
+
       setIsDirty(false);
       toast({ title: 'Job Posted', description: 'The role is now visible on the Careers page.' });
       router.push('/admin/jobs');
     } catch (error: any) {
       console.error("Post Job Error:", error);
-      toast({ 
-        title: 'Posting Failed', 
-        description: error.message || 'Check your database permissions.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Posting Failed',
+        description: error.message || 'Check your database permissions.',
+        variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
@@ -332,6 +338,62 @@ export default function NewJobPage() {
                       <Input placeholder="React, TypeScript, Next.js (comma separated)" {...field} className="h-11" />
                     </FormControl>
                     <FormDescription>Comma-separated list of required technologies.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="seniority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target seniority (optional)</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Not specified" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Not specified</SelectItem>
+                          {['Junior', 'Mid', 'Senior', 'Lead', 'Principal'].map((s) => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>Used by the job-match engine when set.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="educationRequired"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Education requirement (optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="B.Tech in CS or equivalent" {...field} className="h-11" />
+                      </FormControl>
+                      <FormDescription>Free text; matched against candidate qualifications.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="preferredSkills"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preferred skills (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="GraphQL, AWS, Figma (comma separated)" {...field} className="h-11" />
+                    </FormControl>
+                    <FormDescription>Nice-to-have skills, weighed lower than required skills in matching.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

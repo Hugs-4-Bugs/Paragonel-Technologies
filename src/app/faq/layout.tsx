@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'FAQ | Paragonel',
   description: 'Find answers to common questions about Paragonel pricing, services, and engineering process.',
+  alternates: { canonical: '/faq' },
 };
 
 export default function FaqLayout({ children }: { children: React.ReactNode }) {

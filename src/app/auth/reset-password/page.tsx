@@ -1,146 +1,67 @@
-
 "use client";
 
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { KeyRound, Eye, EyeOff, ArrowLeft } from "lucide-react";
-import { useState } from "react";
-import { ScrollFadeIn } from "@/components/ui/scroll-fade-in";
-// import { useSearchParams } from 'next/navigation'; // To get token in a real app
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, KeyRound } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-const resetPasswordSchema = z.object({
-  newPassword: z.string().min(8, { message: "Password must be at least 8 characters." }),
-  confirmNewPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmNewPassword, {
-  message: "Passwords don't match",
-  path: ["confirmNewPassword"],
-});
+function ResetInner() {
+  const params = useSearchParams();
+  const token = params.get('token') ?? '';
+  const [newPassword, setNewPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
 
-type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
-
-export default function ResetPasswordPage() {
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
-  // const searchParams = useSearchParams(); // In a real app, you'd get the token
-  // const token = searchParams.get('token');
-
-  const form = useForm<ResetPasswordFormValues>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      newPassword: "",
-      confirmNewPassword: "",
-    },
-  });
-
-  function onSubmit(values: ResetPasswordFormValues) {
-    console.log("Reset password form submitted:", values/*, "Token:", token*/);
-    // Here you would typically call your backend API to reset the password using the token
-    alert("Password reset successful (simulated)! Check console for data.");
-    form.reset();
-    // Potentially redirect user: router.push('/auth/login');
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirm) { toast({ title: 'Passwords differ', variant: 'destructive' }); return; }
+    if (newPassword.length < 8) { toast({ title: 'Password too short', description: 'Min 8 chars, letter + number.', variant: 'destructive' }); return; }
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verificationToken: token, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: 'Password reset', description: 'You can now log in.' });
+        router.push('/auth/login');
+      } else {
+        toast({ title: 'Reset failed', description: data.message ?? 'Try again.', variant: 'destructive' });
+      }
+    } finally { setLoading(false); }
   }
 
   return (
-    <div className="section-padding bg-background flex items-center justify-center min-h-[calc(100vh-10rem)]">
-      <ScrollFadeIn className="w-full max-w-md">
-        <Card className="shadow-xl">
-          <CardHeader className="text-center">
-            <KeyRound className="mx-auto h-12 w-12 text-primary mb-4 neon-icon" />
-            <CardTitle className="text-3xl">Reset Your Password</CardTitle>
-            <CardDescription>
-              Enter a new password for your account.
-              {/* {token ? "Enter a new password." : "Invalid or expired reset link."} */}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* {!token && (
-              <div className="text-center text-destructive">
-                <p>This password reset link is invalid or has expired.</p>
-                <Button variant="link" asChild className="mt-4">
-                  <Link href="/auth/forgot-password">Request a new link</Link>
-                </Button>
-              </div>
-            )} */}
-            {/* {token && ( */}
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>New Password</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input type={showNewPassword ? "text" : "password"} placeholder="********" {...field} />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                              onClick={() => setShowNewPassword(!showNewPassword)}
-                            >
-                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="confirmNewPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm New Password</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input type={showConfirmNewPassword ? "text" : "password"} placeholder="********" {...field} />
-                             <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                              onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                            >
-                              {showConfirmNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Reset Password
-                  </Button>
-                </form>
-              </Form>
-            {/* )} */}
-             <div className="mt-6 text-center">
-                <Button variant="link" asChild className="p-0 text-primary mx-auto">
-                    <Link href="/auth/login">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Log In
-                    </Link>
-                </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </ScrollFadeIn>
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
+      <Card className="max-w-md w-full shadow-lg">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <KeyRound className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle>Set a new password</CardTitle>
+          <CardDescription>Your email was verified. Set your new password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-2"><Label htmlFor="np">New password</Label><Input id="np" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required placeholder="min 8 chars, letter + number" /></div>
+            <div className="space-y-2"><Label htmlFor="cp">Confirm password</Label><Input id="cp" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required /></div>
+            <Button type="submit" className="w-full" disabled={loading || !token}>{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resetting…</> : 'Reset password'}</Button>
+          </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground"><Link href="/auth/login" className="underline">Back to login</Link></p>
+        </CardContent>
+      </Card>
     </div>
   );
+}
+
+export default function ResetPasswordPage() {
+  return <Suspense fallback={null}><ResetInner /></Suspense>;
 }

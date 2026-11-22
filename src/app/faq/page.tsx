@@ -37,13 +37,27 @@ const faqItems = [
   },
   {
     q: "Can I see your previous products?",
-    a: "Yes. AcquisitionOS and SystemFoundry are live and used by clients today. CodeGuard AI is available on the VS Code Marketplace. You can explore these and other projects on our Portfolio page."
+    a: "Yes. AcquisitionOS — our AI-native client acquisition platform — is currently in private beta; you can explore it and request access at the AcquisitionOS private beta site. SystemFoundry is an internal infrastructure simulator we use for our own cloud engineering work. CodeGuard AI, a VS Code extension for real-time cloud cost intelligence, is published on the VS Code Marketplace. You can read about all three on our Our Product page."
   },
   {
     q: "Who will I be working with?",
     a: "You will work directly with our engineering team and founders. We eliminate account managers and middlemen to ensure that the technical vision is never lost in translation. Direct engineer-to-client communication is our standard."
   }
 ];
+
+// JSON-LD FAQPage structured data (Prompt 05I §5.5). The FAQ content is already
+// structured as Q/A pairs above — emit it as FAQPage schema for rich-result
+// eligibility. Injected via a script tag (this is a client component, so it
+// cannot export `metadata`).
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
 
 export default function FaqPage() {
   return (
@@ -74,6 +88,10 @@ export default function FaqPage() {
           </Accordion>
         </ScrollFadeIn>
       </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
     </section>
   );
 }

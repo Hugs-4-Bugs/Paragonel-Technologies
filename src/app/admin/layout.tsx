@@ -3,25 +3,26 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Briefcase, 
-  BookOpen, 
-  LogOut, 
-  Menu, 
+import {
+  LayoutDashboard,
+  Briefcase,
+  BookOpen,
+  LogOut,
+  Menu,
   X,
   ChevronRight,
   ShieldCheck,
   Layers,
-  Globe,
-  MessageSquare,
-  PanelLeftClose,
-  PanelLeft,
   Users,
   Search,
   Mail,
   History,
-  FileUser
+  PanelLeftClose,
+  PanelLeft,
+  FileUser,
+  MessageSquareQuote,
+  FolderGit2,
+  Network
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -36,8 +37,9 @@ const sidebarItems = [
   { href: '/admin/leads', label: 'Leads', icon: Mail },
   { href: '/admin/blog', label: 'Blog', icon: BookOpen },
   { href: '/admin/services', label: 'Services', icon: Layers },
-  { href: '/admin/portfolio', label: 'Portfolio', icon: Globe },
-  { href: '/admin/testimonials', label: 'Testimonials', icon: MessageSquare },
+  { href: '/admin/testimonials', label: 'Testimonials', icon: MessageSquareQuote },
+  { href: '/admin/client-projects', label: 'Client Projects', icon: FolderGit2 },
+  { href: '/admin/tech-ecosystem', label: 'Tech Ecosystem', icon: Network },
   { href: '/admin/newsletter', label: 'Newsletter', icon: Users },
   { href: '/admin/activity', label: 'Audit Logs', icon: History },
 ];
@@ -58,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       toast({ title: 'Logged Out', description: 'Session ended successfully.' });
       router.push('/admin/login');
       router.refresh();
-    } catch (error) {
+    } catch {
       toast({ title: 'Error', description: 'Failed to logout.', variant: 'destructive' });
     }
   };
