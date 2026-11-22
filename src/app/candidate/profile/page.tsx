@@ -13,8 +13,11 @@
  *     before saving (clearly marked "parsed, unconfirmed"). The candidate edits
  *     + saves → the values become user-confirmed.
  *   - Resume download (short-lived signed URL) + delete.
- *   - 05R-ready preference fields (jobAlertPreference, matchingThreshold) —
- *     defined but not acted on in 05Q (no matching/alert engine here).
+ *   - Job matching preferences (jobAlertPreference, matchingThreshold,
+ *     preferred roles/locations/employment type/work mode). 05R wires these to
+ *     the explainable matching engine + automated job-match email alerts. The
+ *     threshold is clamped to 25-100 (default 80); alerts are opt-in and
+ *     separate from marketing emails.
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -475,9 +478,14 @@ export default function CandidateProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Preferences (05R-ready) */}
+        {/* Preferences (05R) */}
         <Card>
-          <CardHeader><CardTitle className="text-lg">Preferences</CardTitle><CardDescription>Used for job matching (coming in 05R).</CardDescription></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-lg">Job matching preferences</CardTitle>
+            <CardDescription>
+              Used to match you with new openings. Job alerts are based on how well a role fits your saved profile and are separate from marketing emails.
+            </CardDescription>
+          </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1.5"><Label htmlFor="roles">Preferred roles (comma-separated)</Label><Input id="roles" value={rolesText} onChange={(e) => setRolesText(e.target.value)} maxLength={500} /></div>
             <div className="space-y-1.5"><Label htmlFor="plocs">Preferred locations (comma-separated)</Label><Input id="plocs" value={preferredLocationsText} onChange={(e) => setPreferredLocationsText(e.target.value)} maxLength={500} /></div>
@@ -493,11 +501,39 @@ export default function CandidateProfilePage() {
                 <option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="on-site">On-site</option><option value="any">Any</option>
               </select>
             </div>
-            <div className="space-y-1.5"><Label htmlFor="mt">Matching threshold % (05R)</Label><Input id="mt" type="number" value={profile.matchingThreshold ?? ''} onChange={(e) => update('matchingThreshold', Number(e.target.value) || 0)} min={0} max={100} placeholder="e.g. 80" /></div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={profile.jobAlertPreference === true} onChange={(e) => update('jobAlertPreference', e.target.checked)} />
-              <span>Send me job alerts when matching roles open (05R)</span>
-            </label>
+            <div className="space-y-1.5">
+              <Label htmlFor="mt">Matching threshold (%)</Label>
+              <Input
+                id="mt"
+                type="number"
+                value={profile.matchingThreshold ?? ''}
+                onChange={(e) => {
+                  if (e.target.value === '') { update('matchingThreshold', 80); return; }
+                  const n = Math.floor(Number(e.target.value) || 80);
+                  update('matchingThreshold', Math.max(25, Math.min(100, n)));
+                }}
+                min={25}
+                max={100}
+                placeholder="80"
+                aria-describedby="mt-help"
+              />
+              <p id="mt-help" className="text-xs text-muted-foreground">Minimum 25%, maximum 100%. Default is 80% — we only email you when a role matches at or above this score.</p>
+            </div>
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 space-y-2">
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={profile.jobAlertPreference === true}
+                  onChange={(e) => update('jobAlertPreference', e.target.checked)}
+                  aria-describedby="alert-help"
+                />
+                <span>Send me job alerts when a matching role is published</span>
+              </label>
+              <p id="alert-help" className="text-xs text-muted-foreground ml-6">
+                We will email your verified account address when a genuinely published role matches your profile at or above your threshold. This is opt-in and separate from marketing emails. Every alert includes a one-click unsubscribe link.
+              </p>
+            </div>
           </CardContent>
         </Card>
 

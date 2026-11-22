@@ -43,6 +43,11 @@ const jobSchema = z.object({
   experienceRequired: z.string().min(1, 'Experience range is required'),
   salaryRange: z.string().optional(),
   skills: z.string().min(2, 'At least one skill is required'),
+  // 05R: optional matching fields. Absent = the matcher treats the dimension as
+  // N/A (no penalty, no reward) — never invents requirements.
+  preferredSkills: z.string().optional().or(z.literal('')),
+  seniority: z.string().optional().or(z.literal('')),
+  educationRequired: z.string().optional().or(z.literal('')),
   description: z.string().min(50, 'Full job description is required'),
   deadline: z.string().optional(),
   status: z.string().default('Active'),
@@ -72,6 +77,9 @@ export default function NewJobPage() {
       experienceRequired: '',
       salaryRange: '',
       skills: '',
+      preferredSkills: '',
+      seniority: '',
+      educationRequired: '',
       description: '',
       deadline: '',
       status: 'Active',
@@ -330,6 +338,62 @@ export default function NewJobPage() {
                       <Input placeholder="React, TypeScript, Next.js (comma separated)" {...field} className="h-11" />
                     </FormControl>
                     <FormDescription>Comma-separated list of required technologies.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="seniority"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target seniority (optional)</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <FormControl>
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Not specified" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Not specified</SelectItem>
+                          {['Junior', 'Mid', 'Senior', 'Lead', 'Principal'].map((s) => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>Used by the job-match engine when set.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="educationRequired"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Education requirement (optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="B.Tech in CS or equivalent" {...field} className="h-11" />
+                      </FormControl>
+                      <FormDescription>Free text; matched against candidate qualifications.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="preferredSkills"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preferred skills (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="GraphQL, AWS, Figma (comma separated)" {...field} className="h-11" />
+                    </FormControl>
+                    <FormDescription>Nice-to-have skills, weighed lower than required skills in matching.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

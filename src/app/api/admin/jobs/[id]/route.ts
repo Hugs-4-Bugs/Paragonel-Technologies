@@ -18,6 +18,8 @@ import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifyAdmin, verifyAdminPermission, revalidatePublicContent, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
 import { jobFormSchema, buildJobUpdatePayload, buildJobTogglePayload } from '@/lib/cms-schemas';
+import { computeJobVersion, shouldEnqueueOnUpdate, shouldEnqueueOnToggle } from '@/lib/job-alerts/trigger';
+import { enqueueAndProcessJobEvent } from '@/lib/job-alerts/runtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,9 +78,29 @@ export async function PUT(
     if (!snap.exists) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
-    await ref.update(buildJobUpdatePayload(parsed.data));
+    const prev = (snap.data() || {}) as Record<string, unknown>;
+    // 05R §7: bump the job version ONLY on a material change or a publish
+    // transition. An unrelated edit (salary/deadline/description-only) keeps the
+    // same version -> same event id -> no re-notify (idempotent).
+    const newVersion = computeJobVersion(
+      typeof prev.version === 'number' ? prev.version : 1,
+      prev,
+      parsed.data as unknown as Record<string, unknown>
+    );
+    const trigger = shouldEnqueueOnUpdate(prev, parsed.data as unknown as Record<string, unknown>);
+    await ref.update({ ...buildJobUpdatePayload(parsed.data), version: newVersion });
     await logActivityServer(auth.user, 'update', 'Job', id);
     revalidatePublicContent('jobs');
+    // 05R §7: enqueue + bounded-drain only on a publish transition or material
+    // change. Non-fatal: a drain failure must not turn a successful edit into a
+    // 500; the event stays pending and is re-processed by the drain endpoint.
+    if (trigger) {
+      try {
+        await enqueueAndProcessJobEvent(db, { jobId: id, jobVersion: newVersion, trigger });
+      } catch (err2) {
+        console.error('[admin/jobs/[id]] 05R update drain failed (non-fatal):', err2 instanceof Error ? err2.message : err2);
+      }
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin/jobs/[id]] put failed:', err instanceof Error ? err.message : err);
@@ -119,9 +141,24 @@ export async function PATCH(
     if (!snap.exists) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
+    const prev = (snap.data() || {}) as Record<string, unknown>;
+    const prevIsActive = prev.isActive === true;
     await ref.update(buildJobTogglePayload(isActive));
     await logActivityServer(auth.user, isActive ? 'activate' : 'archive', 'Job', id);
     revalidatePublicContent('jobs');
+    // 05R §7: enqueue + bounded-drain ONLY on a Draft->Active transition.
+    // Archiving (Active->Draft) never notifies. Re-activating the SAME version
+    // is idempotent: the event for that version is already 'processed', so no
+    // duplicate alerts are sent. Non-fatal on drain failure.
+    const trigger = shouldEnqueueOnToggle(prevIsActive, isActive);
+    if (trigger) {
+      const version = typeof prev.version === 'number' ? prev.version : 1;
+      try {
+        await enqueueAndProcessJobEvent(db, { jobId: id, jobVersion: version, trigger });
+      } catch (err2) {
+        console.error('[admin/jobs/[id]] 05R toggle drain failed (non-fatal):', err2 instanceof Error ? err2.message : err2);
+      }
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin/jobs/[id]] patch failed:', err instanceof Error ? err.message : err);

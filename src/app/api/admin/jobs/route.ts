@@ -19,6 +19,7 @@ import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifyAdmin, verifyAdminPermission, revalidatePublicContent, serializeDoc, logActivityServer, serviceUnavailable } from '@/lib/admin-auth';
 import { jobFormSchema, buildJobCreatePayload } from '@/lib/cms-schemas';
+import { enqueueAndProcessJobEvent } from '@/lib/job-alerts/runtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,17 @@ export async function POST(request: Request) {
     const ref = await db.collection('jobs').add(payload);
     await logActivityServer(auth.user, 'create', 'Job', ref.id);
     revalidatePublicContent('jobs');
+    // 05R §7: a genuinely published job (status Active) triggers candidate
+    // matching. Enqueue + bounded-drain the match event. Non-fatal: a drain
+    // failure must not turn a successful create into a 500; the event stays
+    // pending and is re-processed (idempotently) by the drain endpoint.
+    if (parsed.data.status === 'Active') {
+      try {
+        await enqueueAndProcessJobEvent(db, { jobId: ref.id, jobVersion: 1, trigger: 'create' });
+      } catch (err) {
+        console.error('[admin/jobs] 05R create drain failed (non-fatal):', err instanceof Error ? err.message : err);
+      }
+    }
     return NextResponse.json({ id: ref.id }, { status: 201 });
   } catch (err) {
     console.error('[admin/jobs] create failed:', err instanceof Error ? err.message : err);

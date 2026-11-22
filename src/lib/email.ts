@@ -217,3 +217,125 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+/* -------------------------------------------------------------------------- */
+/* Job-match alert (Prompt 05R §8)                                             */
+/* -------------------------------------------------------------------------- */
+/*
+ * Sent to a candidate's verified account email when a genuinely published job
+ * scores at or above their threshold AND they have opted in. The content uses
+ * ONLY the candidate's own match result + the real published job fields — never
+ * another candidate's information, never a resume, never internal scoring detail
+ * beyond the percentage + the human-readable reasons already in the MatchResult.
+ *
+ * Delivery honesty: sendJobMatchAlert returns the EmailResult from sendSingle,
+ * which is 'sent' ONLY when the transport accepted the message (a real provider
+ * messageId is captured). It is 'skipped' when no transport is configured and
+ * 'failed' on a transport error. Callers MUST NOT treat 'skipped'/'failed' as
+ * 'sent' (Prompt 05R §8: "Never send a notification if the email provider reports
+ * failure and claim it succeeded").
+ */
+import type { MatchResult, JobForMatching } from '@/lib/matching/match-engine';
+
+export interface JobMatchAlertInput {
+  to: string;
+  job: JobForMatching;
+  match: MatchResult;
+  threshold: number;
+  /** Login-gated manage-preferences page (the candidate's own profile). */
+  manageUrl: string;
+  /** Signed one-click unsubscribe URL (bound to this candidate only). */
+  unsubscribeUrl: string;
+}
+
+/** Subject line for the job-match alert (Prompt 05R §8 suggested subject). */
+export const JOB_MATCH_ALERT_SUBJECT = 'A new Paragonel opportunity may match your profile';
+
+/** Build the branded HTML body for a job-match alert. Exported for tests. */
+export function buildJobMatchAlertHtml(input: JobMatchAlertInput): string {
+  const { job, match, threshold, manageUrl, unsubscribeUrl } = input;
+  const jobUrl = `${process.env.APP_BASE_URL || ''}/careers/${encodeURIComponent(job.id)}`;
+  const matchedSkills = match.matchedRequiredSkills;
+  const missingSkills = match.missingRequiredSkills;
+  const whyBits: string[] = [];
+  if (matchedSkills.length) {
+    whyBits.push(`Your profile matches ${matchedSkills.length} required skill${matchedSkills.length > 1 ? 's' : ''}: ${matchedSkills.map(escapeHtml).join(', ')}.`);
+  }
+  for (const ev of match.otherEvidence.slice(0, 3)) whyBits.push(escapeHtml(ev));
+  const whyHtml = whyBits.length
+    ? `<ul style="margin:8px 0 0;padding-left:20px;font-size:13px;color:#3f3f46;">${whyBits.map((b) => `<li>${b}</li>`).join('')}</ul>`
+    : '';
+  const gapsHtml = missingSkills.length
+    ? `<p style="margin-top:16px;padding:14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;font-size:12px;color:#9a3412;">
+        <strong>Heads up — gaps:</strong> this role also lists skills you have not added to your profile
+        (${missingSkills.map(escapeHtml).join(', ')}). Adding them could improve future matches, but you may still
+        apply if you meet the core requirements.
+      </p>`
+    : '';
+  const meta = [
+    job.department ? `Department: ${job.department}` : '',
+    job.location ? `Location: ${job.location}` : '',
+    job.employmentType ? `Type: ${job.employmentType}` : '',
+    job.workArrangement ? `Work mode: ${job.workArrangement}` : '',
+  ].filter(Boolean).join(' &middot; ');
+
+  const body = `
+    <p>A new role at Paragonel Technologies may fit your saved candidate profile.</p>
+    <p style="font-size:16px;color:#0f172a;font-weight:700;margin:4px 0 2px;">${escapeHtml(job.title)}</p>
+    <p style="margin:0 0 12px;font-size:12px;color:#71717a;">${meta}</p>
+    <p style="margin-top:12px;padding:14px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;font-size:14px;color:#065f46;">
+      <strong>Profile match: ${match.overallScore}%</strong>
+      &nbsp;<span style="font-size:12px;color:#047857;">(your alert threshold: ${threshold}%)</span>
+    </p>
+    <p style="font-size:13px;color:#3f3f46;margin-top:12px;"><strong>Why we thought of you</strong></p>
+    ${whyHtml}
+    ${gapsHtml}
+    <p style="margin-top:20px;">
+      <a href="${escapeHtml(jobUrl)}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:14px;">View role &amp; apply</a>
+    </p>
+    <p style="margin-top:24px;font-size:12px;color:#71717a;">
+      These alerts are based on how well new roles match your saved profile — they are separate from marketing emails.
+      <br/>
+      <a href="${escapeHtml(manageUrl)}" style="color:#71717a;">Manage your preferences</a>
+      &nbsp;&middot;&nbsp;
+      <a href="${escapeHtml(unsubscribeUrl)}" style="color:#71717a;">Turn off job alerts</a>
+    </p>`;
+  return brandedHtml('A new opportunity may match your profile', body);
+}
+
+/** Plain-text fallback for the job-match alert. */
+export function buildJobMatchAlertText(input: JobMatchAlertInput): string {
+  const { job, match, threshold } = input;
+  const jobUrl = `${process.env.APP_BASE_URL || ''}/careers/${encodeURIComponent(job.id)}`;
+  const lines = [
+    `A new Paragonel opportunity may match your profile`,
+    ``,
+    `${job.title}`,
+    [job.department, job.location, job.employmentType, job.workArrangement].filter(Boolean).join(' | '),
+    ``,
+    `Profile match: ${match.overallScore}% (your threshold: ${threshold}%)`,
+    ``,
+    `Why we thought of you:`,
+    ...match.otherEvidence.slice(0, 3),
+    ...(match.matchedRequiredSkills.length ? [`Matched skills: ${match.matchedRequiredSkills.join(', ')}`] : []),
+    ...(match.missingRequiredSkills.length ? [`Also lists (gaps): ${match.missingRequiredSkills.join(', ')}`] : []),
+    ``,
+    `View role & apply: ${jobUrl}`,
+    ``,
+    `These alerts match your saved profile and are separate from marketing emails.`,
+    `Manage preferences: ${input.manageUrl}`,
+    `Turn off job alerts: ${input.unsubscribeUrl}`,
+  ];
+  return lines.join('\n');
+}
+
+/**
+ * Send a job-match alert email to a candidate's verified address. Returns the
+ * honest EmailResult (sent/skipped/failed) — callers record it on the
+ * jobAlertsSent doc and never claim success on a non-'sent' status.
+ */
+export async function sendJobMatchAlert(input: JobMatchAlertInput): Promise<EmailResult> {
+  const html = buildJobMatchAlertHtml(input);
+  const text = buildJobMatchAlertText(input);
+  return sendSingle(input.to, JOB_MATCH_ALERT_SUBJECT, html, text);
+}

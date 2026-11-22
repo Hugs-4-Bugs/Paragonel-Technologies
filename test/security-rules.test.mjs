@@ -149,7 +149,11 @@ async function main() {
   // Revision under a published post (must be denied to clients).
   await adminDb.doc('blogPosts/pub/revisions/r1').set({ body: 'v1', timestamp: new Date() });
 
-  console.log('\n=== Phase 4 IU-0 slice 1 + slice 2 — firestore.rules regression ===\n');
+  // 05R: job-matching + alert collections (candidate-scoped + internal scoring).
+  await adminDb.doc('jobAlertsSent/jas1').set({ candidateEmail: 'a@x', jobId: 'active', jobVersion: 1, status: 'sent', score: 86 });
+  await adminDb.doc('jobMatchEvents/ev1').set({ jobId: 'active', jobVersion: 1, status: 'pending', trigger: 'create' });
+
+  console.log('\n=== Phase 4 IU-0 slice 1 + slice 2 + 05R — firestore.rules regression ===\n');
 
   // --- SLICE 1: locked PII collections — anonymous read MUST be denied. ---
   await expectDeniedRead('leads', 'l1', 'leads');
@@ -186,6 +190,16 @@ async function main() {
     check('blogPosts revisions create DENIED', /permission|insufficient/i.test(e?.message || ''));
   }
 
+  // --- 05R: jobAlertsSent + jobMatchEvents are DENIED to clients (Admin SDK only).
+  //     These hold candidate-scoped + internal scoring data; a candidate must
+  //     never read another candidate's outcome via the client SDK. ---
+  await expectDeniedRead('jobAlertsSent', 'jas1', 'jobAlertsSent read');
+  await expectDeniedCreate('jobAlertsSent', 'jobAlertsSent create');
+  await expectDeniedUpdate('jobAlertsSent', 'jas1', 'jobAlertsSent update');
+  await expectDeniedRead('jobMatchEvents', 'ev1', 'jobMatchEvents read');
+  await expectDeniedCreate('jobMatchEvents', 'jobMatchEvents create');
+  await expectDeniedUpdate('jobMatchEvents', 'ev1', 'jobMatchEvents update');
+
   // --- SLICE 1 + 2: Admin SDK still operates every collection (server routes). ---
   await expectAdminOk('admin write leads', () => adminDb.doc('leads/l1').update({ status: 'Contacted' }));
   await expectAdminOk('admin write jobApplications', () => adminDb.doc('jobApplications/a1').update({ status: 'Reviewing' }));
@@ -194,6 +208,8 @@ async function main() {
   await expectAdminOk('admin write jobs', () => adminDb.doc('jobs/active').update({ title: 'T2' }));
   await expectAdminOk('admin write blogPosts', () => adminDb.doc('blogPosts/pub').update({ title: 'P2' }));
   await expectAdminOk('admin write blogPosts revisions', () => adminDb.doc('blogPosts/pub/revisions/r1').set({ body: 'v2' }));
+  await expectAdminOk('admin write jobAlertsSent (05R)', () => adminDb.doc('jobAlertsSent/jas1').update({ status: 'failed' }));
+  await expectAdminOk('admin write jobMatchEvents (05R)', () => adminDb.doc('jobMatchEvents/ev1').update({ status: 'processed' }));
 
   console.log(results.join('\n'));
   console.log(`\n${pass} passed, ${fail} failed`);

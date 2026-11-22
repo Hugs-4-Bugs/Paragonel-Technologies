@@ -41,6 +41,10 @@ const jobSchema = z.object({
   experienceRequired: z.string().min(1, 'Experience is required'),
   salaryRange: z.string().optional(),
   skills: z.string().min(2, 'Skills are required'),
+  // 05R: optional matching fields (must be present so an edit does not wipe them).
+  preferredSkills: z.string().optional().or(z.literal('')),
+  seniority: z.string().optional().or(z.literal('')),
+  educationRequired: z.string().optional().or(z.literal('')),
   description: z.string().min(50, 'Full job description is required'),
   deadline: z.string().optional(),
   status: z.string().default('Active'),
@@ -79,6 +83,9 @@ export default function EditJobPage() {
             experienceRequired: j.experienceRequired,
             salaryRange: j.salaryRange || '',
             skills: Array.isArray(j.skills) ? j.skills.join(', ') : '',
+            preferredSkills: Array.isArray(j.preferredSkills) ? j.preferredSkills.join(', ') : (j.preferredSkills || ''),
+            seniority: j.seniority || '',
+            educationRequired: j.educationRequired || '',
             description: j.description,
             deadline: j.deadline || '',
             status: j.status || (j.isActive ? 'Active' : 'Draft'),
@@ -213,6 +220,38 @@ export default function EditJobPage() {
                   <FormLabel>Required Skills</FormLabel>
                   <FormControl><Input {...field} className="h-11" /></FormControl>
                   <FormDescription>Comma-separated list of skills.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={form.control} name="seniority" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target seniority (optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Not specified" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Not specified</SelectItem>
+                        {['Junior', 'Mid', 'Senior', 'Lead', 'Principal'].map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="educationRequired" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Education requirement (optional)</FormLabel>
+                    <FormControl><Input placeholder="B.Tech in CS or equivalent" {...field} className="h-11" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="preferredSkills" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preferred skills (optional)</FormLabel>
+                  <FormControl><Input placeholder="GraphQL, AWS, Figma (comma separated)" {...field} className="h-11" /></FormControl>
+                  <FormDescription>Nice-to-have; weighed lower than required skills in matching.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )} />

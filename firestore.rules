@@ -104,6 +104,23 @@ service cloud.firestore {
       allow read, write: if false; // use /api/candidate/profile (Admin SDK, role-checked)
     }
 
+    // 05R job-matching + alert collections — fully denied to clients (Admin SDK only).
+    //   * jobMatchEvents  — durable, idempotent trigger events (one per job+version).
+    //     Enqueued by /api/admin/jobs (POST/PUT/PATCH), drained by
+    //     /api/admin/jobs/process-match-events + /api/admin/jobs/backfill-alerts.
+    //   * jobAlertsSent   — one notification-outcome doc per (candidate,job,version).
+    //     Used for duplicate suppression + safe retries. Holds only the candidate's
+    //     OWN outcome (score, threshold, status) — never another candidate's data.
+    // Both collections contain candidate-scoped + internal scoring data and must
+    // never be client-readable. Candidate-facing preference changes go through
+    // /api/candidate/profile (candidates) + /api/candidate/profile/preferences.
+    match /jobMatchEvents/{eventId} {
+      allow read, write: if false; // Admin SDK only (/api/admin/jobs/**)
+    }
+    match /jobAlertsSent/{dedupKey} {
+      allow read, write: if false; // Admin SDK only (/api/admin/jobs/** + /api/candidate/profile/preferences)
+    }
+
     // Registration challenges (Prompt 05Q §2). Short-lived records binding a name +
     // consent to an email during the email-first registration flow. Server-only
     // (via /api/auth/register/init + /complete). Never client-readable.

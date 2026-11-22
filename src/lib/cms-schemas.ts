@@ -20,8 +20,17 @@ import { Timestamp } from 'firebase-admin/firestore';
 const JOB_DEPARTMENTS = ['Engineering', 'Design', 'Marketing', 'Operations', 'HR', 'Sales'];
 const JOB_TYPES = ['Full Time', 'Part Time', 'Contract', 'Internship'];
 const JOB_ARRANGEMENTS = ['Remote', 'Onsite', 'Hybrid'];
+/** Optional seniority bands a job may target (05R matching; absent = N/A). */
+const JOB_SENIORITY = ['Junior', 'Mid', 'Senior', 'Lead', 'Principal'];
 
-/** Shared job form schema (create + edit). Matches the client `jobSchema`. */
+/**
+ * Shared job form schema (create + edit). Matches the client `jobSchema`.
+ *
+ * 05R adds OPTIONAL matching fields (preferredSkills, seniority,
+ * educationRequired). They are optional so legacy jobs + the existing admin
+ * form continue to validate; the matching engine treats absent fields as
+ * "not applicable" (weight redistributed) rather than inventing requirements.
+ */
 export const jobFormSchema = z.object({
   jobId: z.string().min(3, 'Job ID is required (e.g. ABC123)'),
   title: z.string().min(2, 'Job title is required'),
@@ -32,6 +41,13 @@ export const jobFormSchema = z.object({
   experienceRequired: z.string().min(1, 'Experience range is required'),
   salaryRange: z.string().optional(),
   skills: z.string().min(2, 'At least one skill is required'),
+  // 05R: optional preferred skills (comma-list -> string[]). Distinct from the
+  // required `skills` list so the matcher can weigh them lower + avoid double-
+  // counting a skill that appears in both.
+  preferredSkills: z.string().max(500).optional().or(z.literal('')),
+  // 05R: optional seniority band + education requirement. Absent = N/A.
+  seniority: z.enum(JOB_SENIORITY as [string, ...string[]]).optional().or(z.literal('')),
+  educationRequired: z.string().max(300).optional().or(z.literal('')),
   description: z.string().min(50, 'Full job description is required'),
   deadline: z.string().optional(),
   status: z.string().default('Active'),
@@ -320,7 +336,9 @@ function splitSkills(raw: string): string[] {
 /**
  * Build the Firestore document for a NEW job. Adds server timestamps and the
  * lifecycle fields the public careers page + admin list depend on
- * (isActive, deletedAt, postedDate).
+ * (isActive, deletedAt, postedDate). `version` starts at 1; it is bumped by the
+ * admin route on a material change or a publish transition (05R §7) so the
+ * match-trigger event id is stable per published version.
  */
 export function buildJobCreatePayload(values: JobFormValues): Record<string, unknown> {
   const now = Timestamp.now();
@@ -334,6 +352,9 @@ export function buildJobCreatePayload(values: JobFormValues): Record<string, unk
     experienceRequired: values.experienceRequired,
     salaryRange: values.salaryRange ?? '',
     skills: splitSkills(values.skills),
+    preferredSkills: splitSkills(values.preferredSkills ?? ''),
+    seniority: values.seniority || '',
+    educationRequired: values.educationRequired || '',
     description: values.description,
     deadline: values.deadline ?? '',
     status: values.status,
@@ -343,12 +364,15 @@ export function buildJobCreatePayload(values: JobFormValues): Record<string, unk
     updatedAt: now,
     deletedAt: null,
     isDraft: false,
+    version: 1,
   };
 }
 
 /**
  * Build the update patch for an existing job. Re-derives isActive from status
  * and refreshes skills + updatedAt. Does NOT touch createdAt / deletedAt.
+ * `version` is NOT set here — the admin route computes it from the previous doc
+ * (bumping only on a material change / publish transition) and merges it.
  */
 export function buildJobUpdatePayload(values: JobFormValues): Record<string, unknown> {
   return {
@@ -361,6 +385,9 @@ export function buildJobUpdatePayload(values: JobFormValues): Record<string, unk
     experienceRequired: values.experienceRequired,
     salaryRange: values.salaryRange ?? '',
     skills: splitSkills(values.skills),
+    preferredSkills: splitSkills(values.preferredSkills ?? ''),
+    seniority: values.seniority || '',
+    educationRequired: values.educationRequired || '',
     description: values.description,
     deadline: values.deadline ?? '',
     status: values.status,

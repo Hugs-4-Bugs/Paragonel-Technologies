@@ -110,6 +110,10 @@ const RATE_WINDOWS: Record<string, { max: number; windowMs: number }> = {
   jobApplication: { max: 5, windowMs: 10 * 60 * 1000 },
   chat: { max: 15, windowMs: 10 * 60 * 1000 }, // 15 Paragonel AI messages / 10 min / client
   lead: { max: 3, windowMs: 10 * 60 * 1000 }, // 3 AI lead submissions / 10 min / client (stricter — PII write)
+  // 05R: one-click unsubscribe endpoint. Token-gated (HMAC-signed, bound to one
+  // email) so abuse is limited to disabling alerts for the token's own account;
+  // rate-limited to block brute-force / enumeration of tokens.
+  jobAlertUnsub: { max: 10, windowMs: 10 * 60 * 1000 },
 };
 
 const buckets = new Map<string, Bucket>();
