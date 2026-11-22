@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { GEMINI_MODEL_REF } from '@/ai/models';
 
 const FormatApplicationEmailInputSchema = z.object({
   fullName: z.string(),
@@ -69,7 +70,7 @@ export async function formatApplicationEmail(
 
 const prompt = ai.definePrompt({
   name: 'formatDetailedApplicationEmailPrompt',
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: GEMINI_MODEL_REF,
   input: {schema: FormatApplicationEmailInputSchema},
   output: {schema: FormatApplicationEmailOutputSchema},
   prompt: `

@@ -6,6 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { GEMINI_MODEL_REF } from '@/ai/models';
 
 const FetchTechNewsInputSchema = z.object({
   domains: z
@@ -38,7 +39,7 @@ export async function fetchTechNews(
 
 const prompt = ai.definePrompt({
   name: 'fetchTechNewsPrompt',
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: GEMINI_MODEL_REF,
   input: { schema: FetchTechNewsInputSchema },
   output: { schema: FetchTechNewsOutputSchema },
   prompt: `You are a tech news curator for Paragonel, an IT company specializing in AI, Cloud, DevOps, and SaaS.

@@ -7,6 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import knowledge from '@/data/company-knowledge.json';
+import { GEMINI_MODEL_REF } from '@/ai/models';
 
 const CompanyQnaInputSchema = z.object({
   question: z.string().describe('The user question.'),
@@ -22,7 +23,7 @@ export type CompanyQnaOutput = z.infer<typeof CompanyQnaOutputSchema>;
 
 const qnaPrompt = ai.definePrompt({
   name: 'companyQnaPromptV2',
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: GEMINI_MODEL_REF,
   input: { schema: CompanyQnaInputSchema },
   output: { schema: CompanyQnaOutputSchema },
   prompt: `

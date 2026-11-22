@@ -6,6 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { GEMINI_MODEL_REF } from '@/ai/models';
 
 const AnalyzeResumeInputSchema = z.object({
   resumeDataUri: z.string().optional().describe('Base64 data URI of the resume file.'),
@@ -55,7 +56,7 @@ export type AnalyzeResumeOutput = z.infer<typeof AnalyzeResumeOutputSchema>;
 
 const prompt = ai.definePrompt({
   name: 'analyzeResumePromptV2',
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: GEMINI_MODEL_REF,
   input: { schema: AnalyzeResumeInputSchema },
   output: { schema: AnalyzeResumeOutputSchema },
   prompt: `

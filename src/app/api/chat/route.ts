@@ -35,6 +35,7 @@ import { getClientId, checkRateLimit } from '@/lib/submission-security';
 import { getKnowledgeBase, retrieve } from '@/lib/ai/knowledge-retrieval';
 import { paragonelAIFlow } from '@/ai/flows/paragonel-ai-flow';
 import { ENQUIRY_CATEGORIES } from '@/lib/ai/lead-qualification';
+import { isProviderFailure } from '@/ai/models';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -132,19 +133,33 @@ export async function POST(request: Request) {
       qualificationState,
     });
 
-    return NextResponse.json({
-      answer: result.answer,
-      citations: result.citations,
-      needsClarification: result.needsClarification,
-      intent: result.intent,
-      enquiryCategory: result.enquiryCategory,
-      capturedFields: result.capturedFields,
-      readyForReview: result.readyForReview,
-      sessionId,
-    });
+    // Honest HTTP status: a provider failure (missing/invalid key, unsupported
+    // model, quota, timeout) is a retryable 503 — the UI shows the message +
+    // a Retry button. An honest "I don't have verified info" answer (model
+    // returned intent=fallback for an unknown Paragonel fact) is a 200 — a
+    // legitimate answer, not an error. Never disguise provider failure as a
+    // successful AI answer.
+    const isFailure = isProviderFailure(result.fallbackReason);
+    return NextResponse.json(
+      {
+        answer: result.answer,
+        citations: result.citations,
+        needsClarification: result.needsClarification,
+        intent: result.intent,
+        enquiryCategory: result.enquiryCategory,
+        capturedFields: result.capturedFields,
+        readyForReview: result.readyForReview,
+        fallbackReason: result.fallbackReason,
+        retryable: isFailure,
+        sessionId,
+      },
+      { status: isFailure ? 503 : 200 },
+    );
   } catch (err) {
-    // The flow has its own fallback, but guard the route too (never expose internals).
-    console.error('[chat] flow failed:', err instanceof Error ? err.message : 'unknown');
+    // Unexpected route-level error (never expose internals/stack/credentials).
+    // Non-sensitive signal only; the flow's own classification handles the
+    // common provider failures above.
+    console.error('[chat] route error:', err instanceof Error ? err.message : 'unknown');
     return NextResponse.json(
       {
         answer: "I'm having trouble responding right now. Please try again in a moment, or reach the Paragonel team via the Contact page.",
@@ -152,9 +167,11 @@ export async function POST(request: Request) {
         needsClarification: false,
         intent: 'fallback',
         enquiryCategory: null,
+        fallbackReason: 'provider_error',
+        retryable: true,
         sessionId,
       },
-      { status: 200 }, // 200 with a fallback answer — the UI shows the message, not an error.
+      { status: 503 },
     );
   }
 }

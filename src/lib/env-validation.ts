@@ -60,8 +60,10 @@ const VAR_SPECS: VarSpec[] = [
   { name: 'APP_BASE_URL', category: 'Email', requirement: 'optional', secret: false, note: 'Public base URL used in email body links.' },
 
   // --- AI ---
-  { name: 'GEMINI_API_KEY', category: 'AI', requirement: 'optional', secret: true, minLen: 10, note: 'Google AI / Gemini key for chatbot + resume parsing. If empty, chatbot returns fallback + resume parse is skipped.' },
+  { name: 'GEMINI_API_KEY', category: 'AI', requirement: 'optional', secret: true, minLen: 10, note: 'Google AI / Gemini key for chatbot + resume parsing. If empty, chatbot returns honest fallback (503) + resume parse is skipped.' },
   { name: 'GOOGLE_API_KEY', category: 'AI', requirement: 'optional', secret: true, minLen: 10, note: 'Alternative to GEMINI_API_KEY (Genkit accepts either).' },
+  { name: 'GEMINI_MODEL', category: 'AI', requirement: 'optional', secret: false, note: 'Gemini model id (without provider prefix). Defaults to gemini-flash-latest. Pin to gemini-2.0-flash if your key lacks the latest.' },
+  { name: 'GEMINI_REQUEST_TIMEOUT_MS', category: 'AI', requirement: 'optional', secret: false, note: 'Bounded model-request timeout in ms (default 25000). Prevents perpetual loading.' },
 
   // --- CAPTCHA (prod) ---
   { name: 'TURNSTILE_SECRET_KEY', category: 'CAPTCHA', requirement: 'prod', secret: true, note: 'Cloudflare Turnstile server secret. Without it, prod registration/login fail-closed.' },

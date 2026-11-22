@@ -6,6 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { GEMINI_MODEL_REF } from '@/ai/models';
 
 const RecommendRelatedContentInputSchema = z.object({
   jobTitles: z
@@ -33,7 +34,7 @@ export async function recommendRelatedContent(
 
 const prompt = ai.definePrompt({
   name: 'recommendRelatedContentPrompt',
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: GEMINI_MODEL_REF,
   input: { schema: RecommendRelatedContentInputSchema },
   output: { schema: RecommendRelatedContentOutputSchema },
   prompt: `You are a content curator for Paragonel, an innovative IT company specializing in AI, Cloud, DevOps, and SaaS.
