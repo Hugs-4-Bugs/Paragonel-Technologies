@@ -40,10 +40,15 @@ const VAR_SPECS: VarSpec[] = [
   { name: 'OTP_SECRET', category: 'Security', requirement: 'always', secret: true, minLen: 32, note: 'OTP/HMAC token signing key (≥32 chars). Without it, OTP auth returns 500.' },
   { name: 'SUPERADMIN_BOOTSTRAP_EMAIL', category: 'Security', requirement: 'always', secret: false, note: 'The founder email that may bootstrap the first super_admin.' },
 
-  // --- Firebase Admin (prod) ---
-  { name: 'FIREBASE_ADMIN_PROJECT_ID', category: 'Firebase', requirement: 'prod', secret: false, note: 'Firebase project id. Required for prod Firestore/Storage writes (emulator OK without).' },
-  { name: 'FIREBASE_ADMIN_CLIENT_EMAIL', category: 'Firebase', requirement: 'prod', secret: false, note: 'Service-account client email. Required for prod Admin SDK.' },
-  { name: 'FIREBASE_ADMIN_PRIVATE_KEY', category: 'Firebase', requirement: 'prod', secret: true, note: 'Service-account private key (escaped \\n). Required for prod Admin SDK + signed URLs.' },
+  // --- Supabase (primary backend) ---
+  { name: 'NEXT_PUBLIC_SUPABASE_URL', category: 'Supabase', requirement: 'prod', secret: false, note: 'Supabase project URL (browser + server). Required once routes are cut over to Supabase.' },
+  { name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', category: 'Supabase', requirement: 'prod', secret: false, note: 'Supabase anon/publishable key (public, RLS-enforced).' },
+  { name: 'SUPABASE_SERVICE_ROLE_KEY', category: 'Supabase', requirement: 'prod', secret: true, note: 'Supabase service-role key (server only, bypasses RLS). NEVER in NEXT_PUBLIC_*.' },
+
+  // --- Firebase Admin (RETAINED during cutover — remove after route migration) ---
+  { name: 'FIREBASE_ADMIN_PROJECT_ID', category: 'Firebase (cutover)', requirement: 'prod', secret: false, note: 'Firebase project id. RETAINED — the 50 Firebase routes are still active until the Supabase cutover.' },
+  { name: 'FIREBASE_ADMIN_CLIENT_EMAIL', category: 'Firebase (cutover)', requirement: 'prod', secret: false, note: 'Service-account client email. RETAINED during cutover.' },
+  { name: 'FIREBASE_ADMIN_PRIVATE_KEY', category: 'Firebase (cutover)', requirement: 'prod', secret: true, note: 'Service-account private key (escaped \\n). RETAINED during cutover.' },
 
   // --- Email / SMTP ---
   { name: 'SMTP_HOST', category: 'Email', requirement: 'optional', secret: false, note: 'SMTP host. If unset, dev falls back to Mailpit; prod skips sending (honest).' },
@@ -62,13 +67,13 @@ const VAR_SPECS: VarSpec[] = [
   { name: 'TURNSTILE_SECRET_KEY', category: 'CAPTCHA', requirement: 'prod', secret: true, note: 'Cloudflare Turnstile server secret. Without it, prod registration/login fail-closed.' },
   { name: 'NEXT_PUBLIC_TURNSTILE_SITE_KEY', category: 'CAPTCHA', requirement: 'prod', secret: false, note: 'Cloudflare Turnstile site key (public). Renders the challenge widget.' },
 
-  // --- Firebase client (public) ---
-  { name: 'NEXT_PUBLIC_FIREBASE_API_KEY', category: 'Firebase Client', requirement: 'always', secret: false, note: 'Public Firebase API key (client SDK).' },
-  { name: 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN', category: 'Firebase Client', requirement: 'always', secret: false, note: 'Firebase auth domain.' },
-  { name: 'NEXT_PUBLIC_FIREBASE_PROJECT_ID', category: 'Firebase Client', requirement: 'always', secret: false, note: 'Firebase project id (client).' },
-  { name: 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET', category: 'Firebase Client', requirement: 'always', secret: false, note: 'Firebase Storage bucket.' },
-  { name: 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID', category: 'Firebase Client', requirement: 'always', secret: false, note: 'Firebase messaging sender id.' },
-  { name: 'NEXT_PUBLIC_FIREBASE_APP_ID', category: 'Firebase Client', requirement: 'always', secret: false, note: 'Firebase app id.' },
+  // --- Firebase client (RETAINED during cutover — public) ---
+  { name: 'NEXT_PUBLIC_FIREBASE_API_KEY', category: 'Firebase Client (cutover)', requirement: 'always', secret: false, note: 'Public Firebase API key. RETAINED until route cutover.' },
+  { name: 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN', category: 'Firebase Client (cutover)', requirement: 'always', secret: false, note: 'Firebase auth domain. RETAINED during cutover.' },
+  { name: 'NEXT_PUBLIC_FIREBASE_PROJECT_ID', category: 'Firebase Client (cutover)', requirement: 'always', secret: false, note: 'Firebase project id (client). RETAINED during cutover.' },
+  { name: 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET', category: 'Firebase Client (cutover)', requirement: 'always', secret: false, note: 'Firebase Storage bucket. RETAINED during cutover.' },
+  { name: 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID', category: 'Firebase Client (cutover)', requirement: 'always', secret: false, note: 'Firebase messaging sender id. RETAINED during cutover.' },
+  { name: 'NEXT_PUBLIC_FIREBASE_APP_ID', category: 'Firebase Client (cutover)', requirement: 'always', secret: false, note: 'Firebase app id. RETAINED during cutover.' },
 
   // --- Dev-only ---
   { name: 'FIRESTORE_EMULATOR_HOST', category: 'Dev', requirement: 'dev', secret: false, note: 'Points the Admin SDK at the local emulator (e.g. localhost:8080).' },
