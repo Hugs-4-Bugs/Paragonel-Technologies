@@ -361,4 +361,110 @@ describe('processJobMatchEvent — 05S §6 concurrency + pagination', () => {
     expect(r.alertsSkipped).toBe(1);
     expect(calls.length).toBe(0); // never re-sent
   });
+
+  it('cumulative STORED stats stay correct across multiple partial drains (regression)', async () => {
+    const db = makeStore();
+    // 5 matching candidates, send-cap 2 -> 3 drains (2 + 2 + 1).
+    await seedMatchable(db, 5);
+    const calls: string[] = [];
+    const sender: AlertSender = async (input) => { calls.push(input.to); return { status: 'sent', messageId: 'm' }; };
+    const opts = { candidateBatchSize: 2, maxAlertsPerRun: 2 };
+    const r1 = await processJobMatchEvent(db, eventId('job1', 1), sender, opts);
+    const r2 = await processJobMatchEvent(db, eventId('job1', 1), sender, opts);
+    const r3 = await processJobMatchEvent(db, eventId('job1', 1), sender, opts);
+    // Per-call returns: 2, 2, 1.
+    expect([r1.alertsSent, r2.alertsSent, r3.alertsSent]).toEqual([2, 2, 1]);
+    expect(r3.status).toBe('processed');
+    // STORED cumulative stats must be 5/5 (the 05S bug stored per-call deltas,
+    // so after run 2 the stored totals collapsed to 2 instead of 4).
+    const ev = (await db.collection('jobMatchEvents').doc(eventId('job1', 1)).get()).data() as { stats?: { candidatesEvaluated?: number; alertsSent?: number } } | undefined;
+    expect(Number(ev?.stats?.candidatesEvaluated)).toBe(5);
+    expect(Number(ev?.stats?.alertsSent)).toBe(5);
+    // No duplicate sends.
+    expect(calls.length).toBe(5);
+    expect(new Set(calls).size).toBe(5);
+  });
+
+  it('a candidate mid-send (status sending) is NEVER re-sent — no duplicate under crash', async () => {
+    const db = makeStore();
+    await seedMatchable(db, 1);
+    const email = 'a@example.com';
+    // Simulate a worker that claimed the send slot then crashed: doc stuck 'sending'.
+    await db.collection(JOB_ALERTS_SENT_COLLECTION).doc(dedupKey(email, 'job1', 1)).set({
+      candidateEmail: email, jobId: 'job1', jobVersion: 1, status: 'sending',
+      claimedAt: Timestamp.fromMillis(Date.now() - 10 * 60 * 1000), // stale
+      attemptCount: 1, dedupKey: dedupKey(email, 'job1', 1), createdAt: Timestamp.now(),
+    });
+    const calls: string[] = [];
+    const sender: AlertSender = async (input) => { calls.push(input.to); return { status: 'sent', messageId: 'm' }; };
+    const r = await processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 });
+    // The candidate is skipped (in-flight), never re-sent — at-most-once, no duplicate.
+    expect(r.alertsSent).toBe(0);
+    expect(r.alertsSkipped).toBe(1);
+    expect(calls.length).toBe(0);
+  });
+
+  it('safe retry: a previously-FAILED send is retried and succeeds on the next drain', async () => {
+    const db = makeStore();
+    await seedMatchable(db, 1);
+    const email = 'a@example.com';
+    let attempt = 0;
+    const sender: AlertSender = async (input) => {
+      attempt++;
+      if (attempt === 1) return { status: 'failed', detail: 'transient smtp timeout' };
+      return { status: 'sent', messageId: 'm-' + input.to };
+    };
+    // First drain: send fails -> jobAlertsSent 'failed', event 'failed' (sent===0, failed>0).
+    const r1 = await processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 });
+    expect(r1.alertsSent).toBe(0);
+    expect(r1.alertsFailed).toBe(1);
+    expect(r1.status).toBe('failed');
+    // Admin re-arms the event for retry.
+    await db.collection('jobMatchEvents').doc(eventId('job1', 1)).update({ status: 'pending', lastCandidateId: null });
+    // Second drain: re-claims the 'failed' jobAlertsSent doc, retries, succeeds.
+    const r2 = await processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 });
+    expect(r2.alertsSent).toBe(1);
+    expect(r2.status).toBe('processed');
+    const rec = (await db.collection(JOB_ALERTS_SENT_COLLECTION).doc(dedupKey(email, 'job1', 1)).get()).data() as { status?: string; attemptCount?: number } | undefined;
+    expect(String(rec?.status)).toBe('sent');
+    expect(Number(rec?.attemptCount)).toBeGreaterThanOrEqual(2);
+  });
+
+  it('concurrent workers on the same multi-candidate event: every candidate sent exactly once', async () => {
+    const db = makeStore();
+    await seedMatchable(db, 4);
+    const calls: string[] = [];
+    const sender: AlertSender = async (input) => {
+      calls.push(input.to);
+      await new Promise((r) => setTimeout(r, 5));
+      return { status: 'sent', messageId: 'm' };
+    };
+    // Two concurrent drains of the same event.
+    await Promise.all([
+      processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 }),
+      processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 }),
+    ]);
+    // 4 candidates, each sent exactly once (no duplicates) despite concurrency.
+    expect(calls.length).toBe(4);
+    expect(new Set(calls).size).toBe(4);
+  });
+
+  it('crash-recovery: a worker that claimed the event but never finalized is recovered + completed', async () => {
+    const db = makeStore();
+    await seedMatchable(db, 2);
+    // Simulate a crash: event stuck 'processing' with a stale claimedAt.
+    await db.collection('jobMatchEvents').doc(eventId('job1', 1)).update({
+      status: 'processing', claimedAt: Timestamp.fromMillis(Date.now() - 10 * 60 * 1000),
+    });
+    // recoverStuckEvents re-arms it.
+    const recovered = await recoverStuckEvents(db, 5 * 60 * 1000);
+    expect(recovered).toBe(1);
+    // A normal drain now processes it fully.
+    const calls: string[] = [];
+    const sender: AlertSender = async (input) => { calls.push(input.to); return { status: 'sent', messageId: 'm' }; };
+    const r = await processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 });
+    expect(r.status).toBe('processed');
+    expect(r.alertsSent).toBe(2);
+    expect(calls.length).toBe(2);
+  });
 });

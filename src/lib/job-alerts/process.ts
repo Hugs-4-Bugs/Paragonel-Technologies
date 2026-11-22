@@ -349,7 +349,9 @@ export async function processJobMatchEvent(
     try {
       batchSnap = await q.get();
     } catch (err) {
-      await setEventStatus(db, eventDocId, { status: 'failed', claimedAt: null, lastError: redactReason(err), stats: { candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed } });
+      // Persist the cursor + CUMULATIVE stats so a retry resumes from where this
+      // run left off (no re-evaluation of already-processed candidates).
+      await setEventStatus(db, eventDocId, { status: 'failed', claimedAt: null, lastError: redactReason(err), lastCandidateId: cursor, stats: cum() });
       return { eventId: eventDocId, status: 'failed', candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed, reason: redactReason(err) };
     }
     if (batchSnap.size === 0) { allDone = true; break; }
@@ -422,11 +424,13 @@ export async function processJobMatchEvent(
     return { eventId: eventDocId, status, candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed };
   }
   // Partial: send cap hit before all candidates evaluated. Stay pending + cursor.
+  // Store CUMULATIVE stats (startStats + this run's deltas) so the event's totals
+  // stay correct across multiple partial drains; the RETURN is per-call deltas.
   await setEventStatus(db, eventDocId, {
     status: 'pending',
     claimedAt: null,
     lastCandidateId: cursor,
-    stats: { candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed },
+    stats: cum(),
   });
   return { eventId: eventDocId, status: 'pending', partial: true, candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed };
 }
