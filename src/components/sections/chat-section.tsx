@@ -13,6 +13,15 @@ import { ChatCareerFlow } from '@/components/ChatCareerFlow';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
+import {
+  ENQUIRY_CATEGORY_LABELS,
+  COMPANY_LINKEDIN_URL,
+  routeForCategory,
+  hasMinimumForSubmission,
+  isLeadCategory,
+  type EnquiryCategory,
+  type CapturedLeadFields,
+} from '@/lib/ai/lead-qualification';
 
 /** Suggested example questions (Prompt 05O §9). */
 const SUGGESTED_QUESTIONS = [
@@ -21,6 +30,22 @@ const SUGGESTED_QUESTIONS = [
   'What services do you offer?',
   'Are you hiring?',
   'How do I contact Paragonel?',
+];
+
+/** Editable fields shown in the lead review step. */
+const REVIEW_FIELDS: { key: keyof CapturedLeadFields; label: string; required?: boolean; type?: string }[] = [
+  { key: 'name', label: 'Name', required: true },
+  { key: 'email', label: 'Work email', required: true, type: 'email' },
+  { key: 'company', label: 'Company / organization' },
+  { key: 'role', label: 'Role / designation' },
+  { key: 'businessProblem', label: 'Your enquiry', required: true, type: 'textarea' },
+  { key: 'requiredService', label: 'Required service / solution' },
+  { key: 'projectDescription', label: 'Project description', type: 'textarea' },
+  { key: 'scope', label: 'Expected scope / deliverables' },
+  { key: 'budget', label: 'Budget range (optional)' },
+  { key: 'timeline', label: 'Timeline (optional)' },
+  { key: 'preferredContact', label: 'Preferred contact method' },
+  { key: 'additionalInfo', label: 'Additional information', type: 'textarea' },
 ];
 
 export function ChatSection() {
@@ -37,7 +62,11 @@ export function ChatSection() {
     candidateProfile, setCandidateProfile,
     selectedJob, setSelectedJob,
     matchedJobs, setMatchedJobs,
-    clearChat
+    clearChat,
+    qualification, startEnquiry, updateCaptured, setQualificationStage,
+    editCapturedField, consentAcknowledged, setConsent,
+    marketingConsent, setMarketingConsent,
+    leadStatus, leadId, leadNotification, setLeadStatus, cancelEnquiry,
   } = useChatState();
 
   // Detect screen size for mobile mode
@@ -118,7 +147,13 @@ export function ChatSection() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userText, sessionId, history }),
+        body: JSON.stringify({
+          message: userText,
+          sessionId,
+          history,
+          // Send the current qualification state so the model has context for follow-ups.
+          qualificationState: qualification.active ? qualification : undefined,
+        }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -127,6 +162,20 @@ export function ChatSection() {
         citations: Array.isArray(data.citations) ? data.citations : [],
         status: 'ok',
       });
+
+      // Handle lead-qualification intent (Prompt 05P).
+      if (data.intent === 'enquiry' && data.enquiryCategory) {
+        const cat = data.enquiryCategory as EnquiryCategory;
+        // Career enquiries → direct to /careers, NO qualification (05Q–05R scope).
+        if (cat === 'career' || cat === 'general') {
+          // Not a lead — answer normally (already shown above).
+        } else if (isLeadCategory(cat)) {
+          // Start or continue the enquiry flow.
+          if (!qualification.active) startEnquiry(cat);
+          if (data.capturedFields) updateCaptured(data.capturedFields);
+          if (data.readyForReview) setQualificationStage('reviewing');
+        }
+      }
     } catch {
       updateMessage(loadingId, {
         content: "I'm having trouble responding right now. Please try again, or reach the Paragonel team via the [Contact](/contact) page.",
@@ -134,6 +183,60 @@ export function ChatSection() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /** Submit the captured lead to /api/lead (Prompt 05P Phase 5–6). */
+  const handleLeadSubmit = async () => {
+    if (!consentAcknowledged || !hasMinimumForSubmission(qualification.captured)) return;
+    if (leadStatus === 'submitting') return;
+    setLeadStatus('submitting');
+    try {
+      const cat = qualification.category ?? 'new_business';
+      const c = qualification.captured;
+      const res = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: c.name || '',
+          email: c.email || '',
+          company: c.company || '',
+          role: c.role || '',
+          enquiryCategory: cat,
+          businessProblem: c.businessProblem || '',
+          requiredService: c.requiredService || '',
+          projectDescription: c.projectDescription || '',
+          scope: c.scope || '',
+          budget: c.budget || '',
+          timeline: c.timeline || '',
+          preferredContact: c.preferredContact || '',
+          additionalInfo: c.additionalInfo || '',
+          consentAcknowledged,
+          marketingConsent,
+          website: '', // honeypot (must be empty)
+        }),
+      });
+      if (!res.ok) {
+        let errMsg = 'Submission failed. Please try again or use the Contact page.';
+        try { const j = await res.json(); if (j?.error) errMsg = j.error; } catch { /* ignore */ }
+        throw new Error(errMsg);
+      }
+      const data = await res.json();
+      setLeadStatus('success', { id: data.id, notification: data.notification });
+      const route = routeForCategory(cat);
+      addMessage(
+        'ai',
+        `Thank you, ${c.name?.split(' ')[0] || ''}. Your enquiry has been received securely (reference: ${data.id}).${
+          data.notification === 'sent'
+            ? ' Our team has been notified by email.'
+            : data.notification === 'skipped'
+            ? ' (Email notifications are not configured in this environment — the team will see your enquiry in the CRM.)'
+            : ' (There was an issue sending the email notification, but your enquiry is safely stored. The team will see it in the CRM.)'
+        } You can also reach us via the [${route.label}](${route.path}) page or our [LinkedIn company page](${COMPANY_LINKEDIN_URL}). We do not guarantee a specific response time.`,
+      );
+    } catch (err) {
+      setLeadStatus('error');
+      addMessage('ai', `${err instanceof Error ? err.message : 'Submission failed.'} You can also reach the Paragonel team via the [Contact](/contact) page.`);
     }
   };
 
@@ -305,7 +408,7 @@ export function ChatSection() {
               </div>
             ))}
             {/* Suggested example questions — only when the chat has just the greeting (no user messages yet). */}
-            {messages.length === 1 && messages[0]?.role === 'ai' && !isLoading && careerStep === 'idle' && (
+            {messages.length === 1 && messages[0]?.role === 'ai' && !isLoading && careerStep === 'idle' && !qualification.active && (
               <div className="flex flex-wrap gap-2 pt-1" aria-label="Suggested questions">
                 {SUGGESTED_QUESTIONS.map((q) => (
                   <button
@@ -316,6 +419,142 @@ export function ChatSection() {
                     {q}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* ---- Enquiry flow (Prompt 05P Phase 7) ---- */}
+            {/* Mode indicator: shown when an enquiry flow is active (collecting). */}
+            {qualification.active && qualification.stage === 'collecting' && leadStatus !== 'success' && (
+              <div className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-primary/5 border border-primary/20 text-xs sm:text-sm" aria-label="Enquiry mode active">
+                <span className="text-primary font-medium flex items-center gap-1.5">
+                  <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                  Enquiry mode{qualification.category ? `: ${ENQUIRY_CATEGORY_LABELS[qualification.category]}` : ''}
+                </span>
+                <button
+                  onClick={cancelEnquiry}
+                  className="text-muted-foreground hover:text-foreground underline shrink-0"
+                  aria-label="Cancel enquiry and return to normal chat"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* Review step: editable fields + consent + submit/cancel. */}
+            {qualification.stage === 'reviewing' && leadStatus !== 'success' && leadStatus !== 'submitting' && (
+              <div className="w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 p-3 sm:p-4 space-y-3 bg-zinc-50 dark:bg-zinc-900/50" aria-label="Review and submit your enquiry">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">Review your enquiry</p>
+                  <button onClick={cancelEnquiry} className="text-xs text-muted-foreground hover:text-foreground underline" aria-label="Cancel enquiry submission">Cancel</button>
+                </div>
+                {qualification.category && (
+                  <p className="text-xs text-muted-foreground">Category: {ENQUIRY_CATEGORY_LABELS[qualification.category]}</p>
+                )}
+                <div className="space-y-2">
+                  {REVIEW_FIELDS.map((f) => (
+                    <div key={f.key} className="space-y-1">
+                      <label htmlFor={`lead-${f.key}`} className="text-xs font-medium text-foreground">
+                        {f.label}{f.required ? <span className="text-destructive"> *</span> : null}
+                      </label>
+                      {f.type === 'textarea' ? (
+                        <textarea
+                          id={`lead-${f.key}`}
+                          value={(qualification.captured[f.key] as string) || ''}
+                          onChange={(e) => editCapturedField(f.key, e.target.value)}
+                          rows={2}
+                          className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-background px-3 py-1.5 text-xs sm:text-sm focus-visible:ring-1 focus-visible:ring-primary resize-y"
+                          aria-required={f.required}
+                        />
+                      ) : (
+                        <input
+                          id={`lead-${f.key}`}
+                          type={f.type || 'text'}
+                          value={(qualification.captured[f.key] as string) || ''}
+                          onChange={(e) => editCapturedField(f.key, e.target.value)}
+                          className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-background px-3 py-1.5 text-xs sm:text-sm focus-visible:ring-1 focus-visible:ring-primary"
+                          aria-required={f.required}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {/* Consent: explicit acknowledgement (required) + separate marketing consent (optional). */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="flex items-start gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={consentAcknowledged}
+                      onChange={(e) => setConsent(e.target.checked)}
+                      className="mt-0.5"
+                      aria-required
+                    />
+                    <span>I acknowledge that Paragonel will use this information to respond to and manage my enquiry, per the <Link href="/privacy" className="underline text-primary" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.</span>
+                  </label>
+                  <label className="flex items-start gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={marketingConsent}
+                      onChange={(e) => setMarketingConsent(e.target.checked)}
+                      className="mt-0.5"
+                    />
+                    <span>Optional: I would also like to receive occasional product/company updates. (Separate from this enquiry — you can unsubscribe anytime.)</span>
+                  </label>
+                </div>
+                <p className="text-[10px] text-muted-foreground">Submitting an enquiry does not guarantee a proposal, meeting, project acceptance, or specific response time.</p>
+                <div className="flex gap-2 pt-1">
+                  <Button
+                    onClick={handleLeadSubmit}
+                    disabled={!consentAcknowledged || !hasMinimumForSubmission(qualification.captured)}
+                    className="flex-1 h-9 text-xs sm:text-sm rounded-lg"
+                    aria-label="Submit enquiry"
+                  >
+                    Submit enquiry
+                  </Button>
+                  <Button
+                    onClick={() => setQualificationStage('collecting')}
+                    variant="outline"
+                    className="h-9 text-xs sm:text-sm rounded-lg"
+                    aria-label="Continue conversation to add more detail"
+                  >
+                    Continue chat
+                  </Button>
+                </div>
+                {leadStatus === 'error' && (
+                  <p className="text-xs text-destructive" role="alert">Submission failed. Please try again or use the Contact page.</p>
+                )}
+              </div>
+            )}
+
+            {/* Submitting state. */}
+            {leadStatus === 'submitting' && (
+              <div className="w-full flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground" aria-label="Submitting your enquiry">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Submitting your enquiry…
+              </div>
+            )}
+
+            {/* Success state: honest confirmation + human-handoff options. */}
+            {leadStatus === 'success' && (
+              <div className="w-full rounded-2xl border border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-3 sm:p-4 space-y-2" aria-label="Enquiry submitted successfully">
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">Enquiry received ✓</p>
+                {leadId && <p className="text-xs text-muted-foreground">Reference: {leadId}</p>}
+                <p className="text-xs text-muted-foreground">
+                  {leadNotification === 'sent'
+                    ? 'Our team has been notified by email.'
+                    : leadNotification === 'skipped'
+                    ? 'Email notifications are not configured in this environment, but your enquiry is safely stored.'
+                    : 'There was an email notification issue, but your enquiry is safely stored.'}
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Link href={routeForCategory(qualification.category ?? 'new_business').path} className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20" aria-label="Contact page">
+                    {routeForCategory(qualification.category ?? 'new_business').label}
+                  </Link>
+                  <a href={COMPANY_LINKEDIN_URL} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-primary hover:text-primary" aria-label="Paragonel LinkedIn company page (opens in a new tab)">
+                    LinkedIn
+                  </a>
+                  <button onClick={cancelEnquiry} className="text-xs px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-primary" aria-label="Start a new conversation">
+                    New question
+                  </button>
+                </div>
               </div>
             )}
             {careerStep !== 'idle' && (

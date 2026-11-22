@@ -28,7 +28,7 @@
 import knowledge from '@/data/company-knowledge.json';
 import {
   getPublicServices,
-  getPublicJobs,
+  getVerifiedJobs,
   getPublishedPosts,
   getPublishedClientProjects,
   getPublishedTestimonials,
@@ -157,15 +157,17 @@ async function buildKnowledgeBase(): Promise<KnowledgeEntry[]> {
     }
   } catch { /* Firebase unreachable — static services still loaded */ }
 
-  // --- Jobs (live CMS) ---
+  // --- Jobs (verified CMS only — NO dummyJobs fallback, Prompt 05P §3.3) ---
   try {
-    const jobs = await getPublicJobs();
+    const jobs = await getVerifiedJobs();
     for (const j of jobs) {
+      // Never invent a location when the job has none (§3.3).
+      const loc = j.location && String(j.location).trim() ? String(j.location).trim() : '';
       entries.push({
         id: `job-${j.id ?? j.title}`,
         title: truncate(j.title || 'Open Role', 120),
         content: truncate(
-          `${j.title || ''} at ${j.location || 'Bangalore'}. ${(j.description || '').slice(0, 400)}${j.skills ? ` Skills: ${(Array.isArray(j.skills) ? j.skills : [j.skills]).join(', ')}.` : ''}${j.experienceRequired ? ` Experience: ${j.experienceRequired}.` : ''}${j.jobType ? ` Type: ${j.jobType}.` : ''}`,
+          `${j.title || 'Open Role'}${loc ? ` at ${loc}` : ''}. ${(j.description || '').slice(0, 400)}${j.skills ? ` Skills: ${(Array.isArray(j.skills) ? j.skills : [j.skills]).join(', ')}.` : ''}${j.experienceRequired ? ` Experience: ${j.experienceRequired}.` : ''}${j.jobType ? ` Type: ${j.jobType}.` : ''}`,
           600,
         ),
         category: 'careers',
@@ -192,15 +194,19 @@ async function buildKnowledgeBase(): Promise<KnowledgeEntry[]> {
     }
   } catch { /* Firebase unreachable — no posts loaded */ }
 
-  // --- Client projects / portfolio (live CMS, permission-gated) ---
+  // --- Client projects / portfolio (live CMS, strict identity gating, Prompt 05P §3.2) ---
+  // If permissionDisplayName is not explicitly TRUE, EXCLUDE the project entirely.
+  // Hiding only companyName is insufficient — projectTitle/description/websiteUrl
+  // can reveal the client indirectly. Only projects with explicit name-display
+  // permission are indexed; the rest are dropped (the AI cannot leak them).
   try {
     const projects = await getPublishedClientProjects();
     for (const p of projects) {
-      const showCompany = p.permissionDisplayName !== false;
+      if (p.permissionDisplayName !== true) continue; // strict: exclude unless explicitly authorized
       entries.push({
-        id: `project-${p.id ?? p.title}`,
-        title: truncate(showCompany && p.companyName ? p.companyName : (p.title || 'Client Engagement'), 120),
-        content: truncate(`${p.title || ''}. ${(p.description || '').slice(0, 400)}${p.websiteUrl ? ` Website: ${p.websiteUrl}.` : ''}`, 600),
+        id: `project-${p.id ?? p.projectTitle}`,
+        title: truncate(p.companyName || p.projectTitle || 'Client Engagement', 120),
+        content: truncate(`${p.projectTitle || ''}. ${(p.description || '').slice(0, 400)}`, 600),
         category: 'portfolio',
         canonicalPath: '/our-product',
         sourceType: 'cms-portfolio',
@@ -209,16 +215,19 @@ async function buildKnowledgeBase(): Promise<KnowledgeEntry[]> {
     }
   } catch { /* Firebase unreachable — no projects loaded */ }
 
-  // --- Testimonials (live CMS, permission-gated, non-empty quote) ---
+  // --- Testimonials (live CMS, strict name gating, Prompt 05P §3.2) ---
+  // The quote is already approved (permissionDisplayFeedback===true, enforced by
+  // the fetcher). The client/company NAME is shown ONLY when permissionDisplayName
+  // is explicitly true — otherwise the quote is included anonymously.
   try {
     const testimonials = await getPublishedTestimonials();
     for (const t of testimonials) {
       const quote = (t.approvedQuote?.trim() || t.originalQuote?.trim() || '').trim();
-      const showCompany = t.permissionDisplayName !== false;
+      const showName = t.permissionDisplayName === true; // strict
       entries.push({
-        id: `testimonial-${t.id ?? t.companyName}`,
-        title: truncate(showCompany && t.companyName ? t.companyName : 'Client Feedback', 120),
-        content: truncate(`"${quote}"${showCompany && t.clientName ? ` — ${t.clientName}${t.designation ? `, ${t.designation}` : ''}` : ''}`, 600),
+        id: `testimonial-${t.id ?? (showName ? t.companyName : 'anon')}`,
+        title: truncate(showName && t.companyName ? t.companyName : 'Client Feedback', 120),
+        content: truncate(`"${quote}"${showName && t.clientName ? ` — ${t.clientName}${t.designation ? `, ${t.designation}` : ''}` : ''}`, 600),
         category: 'portfolio',
         canonicalPath: '/',
         sourceType: 'cms-testimonials',

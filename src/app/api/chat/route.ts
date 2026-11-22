@@ -32,11 +32,34 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { randomHex } from '@/lib/auth/crypto-utils';
 import { getClientId, checkRateLimit } from '@/lib/submission-security';
-import { getKnowledgeBase, retrieve, sanitizeUntrusted } from '@/lib/ai/knowledge-retrieval';
+import { getKnowledgeBase, retrieve } from '@/lib/ai/knowledge-retrieval';
 import { paragonelAIFlow } from '@/ai/flows/paragonel-ai-flow';
+import { ENQUIRY_CATEGORIES } from '@/lib/ai/lead-qualification';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+const CapturedFieldsSchema = z.object({
+  name: z.string().max(100).optional(),
+  email: z.string().max(254).optional(),
+  company: z.string().max(100).optional(),
+  role: z.string().max(100).optional(),
+  businessProblem: z.string().max(2000).optional(),
+  requiredService: z.string().max(500).optional(),
+  projectDescription: z.string().max(2000).optional(),
+  scope: z.string().max(1000).optional(),
+  budget: z.string().max(200).optional(),
+  timeline: z.string().max(200).optional(),
+  preferredContact: z.string().max(100).optional(),
+  additionalInfo: z.string().max(2000).optional(),
+});
+
+const QualificationStateSchema = z.object({
+  active: z.boolean(),
+  category: z.enum(ENQUIRY_CATEGORIES).nullable(),
+  captured: CapturedFieldsSchema.default({}),
+  stage: z.enum(['collecting', 'reviewing', 'submitted', 'cancelled']),
+});
 
 const chatSchema = z.object({
   message: z.string().trim().min(1, 'Message is required').max(2000, 'Message too long (max 2000 characters)'),
@@ -53,6 +76,7 @@ const chatSchema = z.object({
     )
     .max(8, 'Too many history turns')
     .optional(),
+  qualificationState: QualificationStateSchema.optional(),
 });
 
 export async function POST(request: Request) {
@@ -71,7 +95,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const { message, history } = parsed.data;
+  const { message, history, qualificationState } = parsed.data;
   const sessionId = parsed.data.sessionId || randomHex(16);
 
   // 2. Rate limit (per client; in-memory, process-local — see §10 limitation note).
@@ -105,12 +129,17 @@ export async function POST(request: Request) {
         category: r.entry.category,
         canonicalPath: r.entry.canonicalPath,
       })),
+      qualificationState,
     });
 
     return NextResponse.json({
       answer: result.answer,
       citations: result.citations,
       needsClarification: result.needsClarification,
+      intent: result.intent,
+      enquiryCategory: result.enquiryCategory,
+      capturedFields: result.capturedFields,
+      readyForReview: result.readyForReview,
       sessionId,
     });
   } catch (err) {
@@ -121,6 +150,8 @@ export async function POST(request: Request) {
         answer: "I'm having trouble responding right now. Please try again in a moment, or reach the Paragonel team via the Contact page.",
         citations: [{ title: 'Contact Paragonel', path: '/contact' }],
         needsClarification: false,
+        intent: 'fallback',
+        enquiryCategory: null,
         sessionId,
       },
       { status: 200 }, // 200 with a fallback answer — the UI shows the message, not an error.

@@ -109,6 +109,7 @@ const RATE_WINDOWS: Record<string, { max: number; windowMs: number }> = {
   newsletter: { max: 10, windowMs: 10 * 60 * 1000 },
   jobApplication: { max: 5, windowMs: 10 * 60 * 1000 },
   chat: { max: 15, windowMs: 10 * 60 * 1000 }, // 15 Paragonel AI messages / 10 min / client
+  lead: { max: 3, windowMs: 10 * 60 * 1000 }, // 3 AI lead submissions / 10 min / client (stricter — PII write)
 };
 
 const buckets = new Map<string, Bucket>();

@@ -111,6 +111,34 @@ export async function getPublicJobs(limit = 50): Promise<any[]> {
 }
 
 /**
+ * Verified public jobs for AI use (Prompt 05P §3.3).
+ *
+ * DIFFERENCE from getPublicJobs: this NEVER falls back to dummyJobs. When the
+ * Admin SDK is unavailable or the query fails, it returns an EMPTY array — so
+ * Paragonel AI never represents sample/demo jobs as current vacancies. The AI
+ * then honestly says current openings could not be verified.
+ *
+ * Only genuine, active, non-deleted CMS job records are returned.
+ */
+export async function getVerifiedJobs(limit = 50): Promise<any[]> {
+  const db = getAdminDb();
+  if (!db) return []; // NO dummyJobs fallback — AI must not present samples as live
+  try {
+    const snap = await db
+      .collection('jobs')
+      .where('isActive', '==', true)
+      .where('deletedAt', '==', null)
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get();
+    return snap.docs.map((d) => serializeDoc(d));
+  } catch (err) {
+    console.error('[public-data] getVerifiedJobs failed:', err instanceof Error ? err.message : err);
+    return []; // NO fallback — AI says openings could not be verified
+  }
+}
+
+/**
  * Single public job by Firestore id (for /careers/[id]). Returns null if the
  * doc is missing, inactive, or soft-deleted — so draft/closed/archived jobs
  * can never be rendered publicly (the route calls notFound() on null). Falls

@@ -68,7 +68,7 @@ describe('Paragonel AI grounding + safety', () => {
 
     it('includes prompt-injection defense', () => {
       expect(SYSTEM_PROMPT).toMatch(/UNTRUSTED DATA/i);
-      expect(SYSTEM_PROMPT).toMatch(/ignore.*instructions.*embedded/i);
+      expect(SYSTEM_PROMPT).toMatch(/never obey any instruction/i);
       expect(SYSTEM_PROMPT).toMatch(/read-only knowledge assistant/i);
       expect(SYSTEM_PROMPT).toMatch(/cannot execute tools|write to databases|privileged/i);
     });

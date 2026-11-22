@@ -75,8 +75,8 @@ service cloud.firestore {
       allow read, update, delete: if false; // use /api/admin/applications
     }
     match /leads/{leadId} {
-      allow create: if false; // use /api/contact
-      allow read, update, delete: if false; // use /api/admin/leads
+      allow create: if false; // use /api/contact or /api/lead (Admin SDK server-side)
+      allow read, update, delete: if false; // use /api/admin/leads (role-checked)
     }
     match /newsletterSubscribers/{subId} {
       allow create: if false; // use /api/newsletter

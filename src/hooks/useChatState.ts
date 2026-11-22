@@ -1,4 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import {
+  INITIAL_QUALIFICATION_STATE,
+  mergeCaptured,
+  type EnquiryCategory,
+  type CapturedLeadFields,
+  type QualificationStage,
+  type QualificationState,
+} from '@/lib/ai/lead-qualification';
 
 export type MessageRole = 'user' | 'ai';
 
@@ -17,6 +25,8 @@ export interface ChatMessage {
   /** Flag for the loading/error state of a specific AI message (Prompt 05O). */
   status?: 'loading' | 'error' | 'ok';
 }
+
+export type LeadSubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 export type CareerFlowStep =
   | 'idle'
@@ -53,6 +63,15 @@ export interface ChatState {
   selectedJob: any | null;
   jobListings: any[];
   matchedJobs: any[];
+  /** Lead-qualification state (Prompt 05P). */
+  qualification: QualificationState;
+  /** Consent for the lead review/submit step (Phase 4). */
+  consentAcknowledged: boolean;
+  marketingConsent: boolean;
+  /** Lead submission status (Phase 5/6). */
+  leadStatus: LeadSubmissionStatus;
+  leadId: string | null;
+  leadNotification: 'sent' | 'skipped' | 'failed' | null;
 }
 
 const SESSION_KEY = 'qfai_chat_session_id_v3';
@@ -78,6 +97,12 @@ export function useChatState() {
     selectedJob: null,
     jobListings: [],
     matchedJobs: [],
+    qualification: { ...INITIAL_QUALIFICATION_STATE },
+    consentAcknowledged: false,
+    marketingConsent: false,
+    leadStatus: 'idle',
+    leadId: null,
+    leadNotification: null,
   });
 
   useEffect(() => {
@@ -139,6 +164,88 @@ export function useChatState() {
     setState((prev) => ({ ...prev, careerStep: step }));
   }, []);
 
+  /* -------- Lead qualification (Prompt 05P Phase 3–7) -------- */
+
+  /** Activate an enquiry flow with a classified category (or update it). */
+  const startEnquiry = useCallback((category: EnquiryCategory) => {
+    setState((prev) => ({
+      ...prev,
+      qualification: {
+        active: true,
+        category,
+        captured: prev.qualification.captured, // keep already-captured fields
+        stage: 'collecting',
+      },
+    }));
+  }, []);
+
+  /** Merge newly-captured fields into the qualification state. */
+  const updateCaptured = useCallback((fields: Partial<CapturedLeadFields>) => {
+    setState((prev) => ({
+      ...prev,
+      qualification: {
+        ...prev.qualification,
+        captured: mergeCaptured(prev.qualification.captured, fields),
+      },
+    }));
+  }, []);
+
+  /** Set the qualification stage (collecting → reviewing → submitted/cancelled). */
+  const setQualificationStage = useCallback((stage: QualificationStage) => {
+    setState((prev) => ({
+      ...prev,
+      qualification: { ...prev.qualification, stage, active: stage === 'collecting' || stage === 'reviewing' },
+    }));
+  }, []);
+
+  /** Edit a captured field directly (from the review-step form). */
+  const editCapturedField = useCallback((key: keyof CapturedLeadFields, value: string) => {
+    setState((prev) => ({
+      ...prev,
+      qualification: {
+        ...prev.qualification,
+        captured: { ...prev.qualification.captured, [key]: value },
+      },
+    }));
+  }, []);
+
+  const setConsent = useCallback((acknowledged: boolean) => {
+    setState((prev) => ({ ...prev, consentAcknowledged: acknowledged }));
+  }, []);
+
+  const setMarketingConsent = useCallback((consent: boolean) => {
+    setState((prev) => ({ ...prev, marketingConsent: consent }));
+  }, []);
+
+  const setLeadStatus = useCallback(
+    (status: LeadSubmissionStatus, opts?: { id?: string; notification?: 'sent' | 'skipped' | 'failed' }) => {
+      setState((prev) => ({
+        ...prev,
+        leadStatus: status,
+        leadId: opts?.id ?? prev.leadId,
+        leadNotification: opts?.notification ?? prev.leadNotification,
+        qualification:
+          status === 'success'
+            ? { ...prev.qualification, stage: 'submitted', active: false }
+            : prev.qualification,
+      }));
+    },
+    [],
+  );
+
+  /** Cancel the enquiry flow + return to ordinary Q&A. Does NOT discard the chat history. */
+  const cancelEnquiry = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      qualification: { ...INITIAL_QUALIFICATION_STATE },
+      consentAcknowledged: false,
+      marketingConsent: false,
+      leadStatus: 'idle',
+      leadId: null,
+      leadNotification: null,
+    }));
+  }, []);
+
   const setCandidateProfile = useCallback((profile: CandidateProfile | null) => {
     setState((prev) => ({ ...prev, candidateProfile: profile }));
   }, []);
@@ -166,6 +273,12 @@ export function useChatState() {
       selectedJob: null,
       jobListings: [],
       matchedJobs: [],
+      qualification: { ...INITIAL_QUALIFICATION_STATE },
+      consentAcknowledged: false,
+      marketingConsent: false,
+      leadStatus: 'idle',
+      leadId: null,
+      leadNotification: null,
     });
   }, []);
 
@@ -179,5 +292,14 @@ export function useChatState() {
     setJobListings,
     setMatchedJobs,
     clearChat,
+    // Lead qualification (Prompt 05P).
+    startEnquiry,
+    updateCaptured,
+    setQualificationStage,
+    editCapturedField,
+    setConsent,
+    setMarketingConsent,
+    setLeadStatus,
+    cancelEnquiry,
   };
 }
