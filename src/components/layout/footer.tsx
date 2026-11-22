@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { NewsletterSubscription } from '@/components/sections/newsletter-subscription';
-import { Linkedin, Twitter, Github, Settings, MapPin, Mail, Phone, ArrowRight } from 'lucide-react';
+import { Linkedin, Github, Settings, MapPin, Mail, Phone, ArrowRight } from 'lucide-react';
+import { XIcon } from '@/components/brand/x-icon';
 import { useCookieConsent } from "@/hooks/use-cookie-consent";
 import { Button } from "@/components/ui/button";
 
@@ -179,8 +180,8 @@ export function Footer() {
             <Link href="https://www.linkedin.com/in/prabhat-kumar-6963661a4/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-all hover:scale-110 hover:text-primary" aria-label="LinkedIn">
               <Linkedin className="h-5 w-5" />
             </Link>
-            <Link href="https://x.com/kattyPrabhat" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-all hover:scale-110 hover:text-primary" aria-label="X (Twitter)">
-              <Twitter className="h-5 w-5" />
+            <Link href="https://x.com/PrabhatKumarHQ" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-all hover:scale-110 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md" aria-label="Parabhat Kumar on X (opens in a new tab)">
+              <XIcon className="h-5 w-5" />
             </Link>
             <Link href="https://github.com/Hugs-4-Bugs" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-all hover:scale-110 hover:text-primary" aria-label="GitHub">
               <Github className="h-5 w-5" />

@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Linkedin, Github, Instagram, Globe, UserCircle, Brain } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { XIcon } from '@/components/brand/x-icon';
 
 interface TeamMember {
   id: string;
@@ -35,9 +36,10 @@ const teamMembers: TeamMember[] = [
     title: 'Founder & CEO',
     imageUrl: '/images/Prabhat.png',
     aiHint: 'Prabhat Kumar Founder CEO Paragonel',
-    bio: 'Prabhat Kumar is the Founder & CEO of Paragonel Technologies Pvt. Ltd. He holds a Bachelor of Engineering in Computer Science and is a specialist Java backend developer, with expertise in architecting high-performance systems using Spring Boot and cloud-native infrastructure (AWS/GCP).\n\nBefore founding Paragonel, Prabhat spent significant years as an engineer at Netcore Cloud, working on backend systems operating at massive scale — handling millions of real-time events. That background in high-concurrency engineering is the foundation of Paragonel\u2019s "Precision Engineering" philosophy: small, named, verifiable systems built to behave exactly as specified.\n\nToday, Prabhat leads Paragonel as the architect behind its product portfolio — including AcquisitionOS, an AI-native client acquisition platform now in private beta — while overseeing the engineering services the company delivers.',
+    bio: 'Prabhat Kumar is the Founder & CEO of Paragonel Technologies Pvt. Ltd. He holds a Bachelor of Engineering in Computer Science, with a foundation in Java backend engineering — Spring Boot, REST APIs, SQL and application architecture — and works across Next.js, React, TypeScript, cloud infrastructure, Docker, CI/CD and AI-enabled application workflows.\n\nParagonel\u2019s engineering philosophy — small, named, verifiable systems built to behave exactly as specified — is the stance behind every product and engagement.\n\nToday, Prabhat leads Paragonel as the architect behind its product portfolio — including AcquisitionOS, an AI-native client acquisition platform now in private beta — while overseeing the engineering services the company delivers.',
     socials: {
       linkedin: 'https://www.linkedin.com/in/prabhat-kumar-6963661a4/',
+      twitter: 'https://x.com/PrabhatKumarHQ',
       github: 'https://github.com/Hugs-4-Bugs',
       globe: 'https://www.prabhat.online/'
     },
@@ -97,6 +99,11 @@ export function TeamSection() {
                     <Linkedin className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
                   </Link>
                 )}
+                {member.socials?.twitter && (
+                  <Link href={member.socials.twitter} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} aria-label={`${member.name} on X (opens in a new tab)`}>
+                    <XIcon className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                  </Link>
+                )}
                 {member.socials?.instagram && (
                   <Link href={member.socials.instagram} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
                     <Instagram className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
@@ -146,6 +153,13 @@ export function TeamSection() {
                     <Button variant="outline" asChild size="lg" className="rounded-full font-bold border-2">
                       <Link href={selectedMember.socials.linkedin} target="_blank" rel="noopener noreferrer">
                         <Linkedin className="mr-2 h-5 w-5 text-[#0077B5]" /> LinkedIn
+                      </Link>
+                    </Button>
+                  )}
+                  {selectedMember.socials?.twitter && (
+                    <Button variant="outline" asChild size="lg" className="rounded-full font-bold border-2">
+                      <Link href={selectedMember.socials.twitter} target="_blank" rel="noopener noreferrer">
+                        <XIcon className="mr-2 h-5 w-5" /> X
                       </Link>
                     </Button>
                   )}

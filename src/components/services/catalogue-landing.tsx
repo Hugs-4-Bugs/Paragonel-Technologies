@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
@@ -28,7 +29,7 @@ import {
  * preserved in a dedicated section so the admin CMS continues to surface
  * published services alongside the structured catalogue.
  */
-export function CatalogueLanding({ dynamicServices = [] }: { dynamicServices?: { slug?: string; title?: string; description?: string }[] }) {
+export function CatalogueLanding({ dynamicServices = [], ecosystemSlot }: { dynamicServices?: { slug?: string; title?: string; description?: string }[]; ecosystemSlot?: ReactNode }) {
   return (
     <>
       {/* Hero */}
@@ -172,6 +173,13 @@ export function CatalogueLanding({ dynamicServices = [] }: { dynamicServices?: {
           </div>
         </section>
       )}
+
+      {/* Technology & integration ecosystem (server-rendered slot from the
+          page). Placed after the catalogue + before the engagement CTA so the
+          flow reads: what we deliver → what we build with / can connect → how
+          to engage. Distinct from /our-product's product-level integration
+          status — this is company-level capability. */}
+      {ecosystemSlot}
 
       {/* Closing CTA */}
       <section className="pt-section">

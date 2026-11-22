@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getPublicServices } from '@/lib/public-data';
 import { CatalogueLanding } from '@/components/services/catalogue-landing';
+import { IntegrationEcosystemSection } from '@/components/sections/integration-ecosystem-section';
 
 // Revalidate every 60s so admin publish/activate/deactivate reflects on the
 // public site without a full rebuild, while keeping SSR speed. (Preserved from
@@ -27,7 +28,10 @@ export default async function ServicesPage() {
 
   return (
     <div className="bg-background min-h-screen">
-      <CatalogueLanding dynamicServices={services} />
+      <CatalogueLanding
+        dynamicServices={services}
+        ecosystemSlot={<IntegrationEcosystemSection />}
+      />
     </div>
   );
 }
