@@ -27,9 +27,14 @@ import { verifyAdmin, serviceUnavailable } from '@/lib/admin-auth';
 export const dynamic = 'force-dynamic';
 
 const SIGNED_URL_TTL_MS = 5 * 60 * 1000; // 5 minutes
-// Strict resume object path: resumes/<safe-name>. Rejects "..", leading "/",
-// "gs://", query strings, and anything outside the resumes/ prefix.
-const RESUME_PATH_RE = /^resumes\/[A-Za-z0-9._-]{1,200}$/;
+// Strict resume object path. The actual stored path (set by
+// /api/candidate/resume) is `candidates/{email}/resumes/{ts}_{safeName}` —
+// NOT the legacy `resumes/<name>` this route previously assumed (which read
+// the wrong field `resumeUrl` and matched the wrong pattern, always 404).
+// This regex validates the real structure: an email-scoped candidate folder,
+// a resumes/ prefix, and a sanitized filename. It rejects "..", leading "/",
+// "gs://", query strings, and paths outside the candidates/.../resumes/ tree.
+const RESUME_PATH_RE = /^candidates\/[A-Za-z0-9._@+-]{1,254}\/resumes\/[A-Za-z0-9._ -]{1,200}$/;
 
 export async function GET(
   request: Request,
@@ -60,8 +65,12 @@ export async function GET(
   }
 
   // 2. Resolve the resume object path FROM THE RECORD (never from the request).
+  // The job-application transaction stores the resume under `resumeStoragePath`
+  // (the candidate's private Storage path from /api/candidate/resume), NOT
+  // `resumeUrl`. The previous `data?.resumeUrl` read always returned undefined
+  // → every admin resume download returned 404 "No resume on file".
   const data = snap.data();
-  const resumePath = data?.resumeUrl;
+  const resumePath = data?.resumeStoragePath;
   if (!resumePath || typeof resumePath !== 'string' || resumePath.trim() === '') {
     return NextResponse.json(
       { error: 'No resume on file for this application.' },

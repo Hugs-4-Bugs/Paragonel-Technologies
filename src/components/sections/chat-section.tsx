@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +11,6 @@ import { cn } from '@/lib/utils';
 import { useChatState } from '@/hooks/useChatState';
 import { ChatCareerFlow } from '@/components/ChatCareerFlow';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import {
   ENQUIRY_CATEGORY_LABELS,
   COMPANY_LINKEDIN_URL,
@@ -22,6 +20,18 @@ import {
   type EnquiryCategory,
   type CapturedLeadFields,
 } from '@/lib/ai/lead-qualification';
+
+/**
+ * NOTE (Phase 6.3): the career-assistant flow previously read `jobs` and wrote
+ * `jobApplications` via the CLIENT Firestore SDK. Both collections are
+ * client-denied by firestore.rules, so the read returned 0 jobs and the write
+ * silently failed — and the write also bypassed /api/job-applications' auth,
+ * validation, atomic duplicate check, and confirmation email. The flow now
+ * matches via the secure server route /api/chat/career-assist (which uses the
+ * REAL match engine) and submits via /api/job-applications (authenticated,
+ * transactional, sends the branded confirmation email). No client Firestore
+ * imports remain in this component.
+ */
 
 /** Suggested example questions (Prompt 05O §9). */
 const SUGGESTED_QUESTIONS = [
@@ -99,34 +109,12 @@ export function ChatSection() {
     }
   }, [messages, careerStep, isLoading]);
 
-  const calculateMatchScore = useCallback((job: any, profile: any) => {
-    if (!profile) return { score: 0, reason: "" };
-    let score = 0;
-    const reasons: string[] = [];
-
-    const jobSkills = (job.skills || []).map((s: string) => s.toLowerCase());
-    const userSkills = (profile.skills || []).map((s: string) => s.toLowerCase());
-    const matchedSkills = jobSkills.filter((s: string) => userSkills.includes(s));
-    
-    score += (matchedSkills.length / Math.max(1, jobSkills.length)) * 40;
-    if (matchedSkills.length > 0) reasons.push(`${matchedSkills.length} skills match`);
-
-    const jobExp = parseInt(job.experienceRequired) || 0;
-    if (profile.experienceYears >= jobExp) {
-      score += 25;
-      reasons.push("Experience requirement met");
-    }
-
-    if (profile.domain?.toLowerCase().includes(job.department?.toLowerCase() || "")) {
-      score += 20;
-      reasons.push(`${profile.domain} domain expert`);
-    }
-    
-    return { 
-      score: Math.min(100, Math.round(score)), 
-      reason: reasons.slice(0, 3).join(', ') + '.' 
-    };
-  }, []);
+  // The stub `calculateMatchScore` matcher that previously lived here was
+  // removed in Phase 6.3. It diverged from the real match engine (max 85,
+  // threshold 60, skills/experience/domain only) and produced recommendations
+  // inconsistent with the job-alerts pipeline. Matching is now performed
+  // server-side by /api/chat/career-assist using the real `scoreJobCandidate`
+  // engine + the configurable threshold (default 80).
 
   const handleSendMessage = async (overrideText?: string) => {
     const userText = (overrideText ?? inputValue).trim();
@@ -284,37 +272,84 @@ export function ChatSection() {
 
     setIsLoading(true);
     try {
-      const jobsSnap = await getDocs(query(collection(db, 'jobs'), where('isActive', '==', true), where('deletedAt', '==', null)));
-      const allJobs = jobsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      const matches = allJobs.map(job => {
-        const { score, reason } = calculateMatchScore(job, candidateProfile);
-        return { ...job, matchScore: score, matchReason: reason };
-      })
-      .filter(j => j.matchScore >= 60)
-      .sort((a, b) => b.matchScore - a.matchScore);
-
+      // Secure server-side match via /api/chat/career-assist (the REAL
+      // match engine, configurable threshold, published jobs only). The
+      // previous client-SDK read of `jobs` was denied by firestore.rules
+      // (returned 0 jobs) and the stub matcher diverged from the engine.
+      const res = await fetch('/api/chat/career-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profile: candidateProfile,
+          website: '', // honeypot
+        }),
+      });
+      if (!res.ok) {
+        addMessage('ai', "I couldn't verify current openings right now. You can browse all roles on the [Careers](/careers) page.");
+        updateCareerStep('matching_jobs');
+        return;
+      }
+      const data = (await res.json()) as {
+        matches?: Array<{ id: string; title: string; score: number; reasons?: string[]; [k: string]: unknown }>;
+        threshold?: number;
+      };
+      const matches = (data.matches || []).map((j) => ({
+        ...j,
+        matchScore: j.score,
+        matchReason: Array.isArray(j.reasons) ? j.reasons.join(' ') : '',
+      }));
       setMatchedJobs(matches);
       updateCareerStep('matching_jobs');
-      addMessage('ai', matches.length > 0 
-        ? `Found ${matches.length} roles matching your profile!` 
-        : "I couldn't find a direct match (>60%), but you can still apply manually.");
+      addMessage(
+        'ai',
+        matches.length > 0
+          ? `Found ${matches.length} role${matches.length > 1 ? 's' : ''} matching your profile at or above ${data.threshold}%. Tap a role to review + apply.`
+          : "I couldn't find a match at the current threshold, but you can still browse all roles on the [Careers](/careers) page.",
+      );
     } catch {
-      addMessage('ai', "Failed to sync live roles.");
+      addMessage('ai', "Failed to sync live roles. You can browse all roles on the [Careers](/careers) page.");
+      updateCareerStep('matching_jobs');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const renderContent = (content: any) => {
+  /**
+   * Render a chat message body with minimal, safe inline Markdown:
+   *   **bold**, *italic*, `code`, and [text](url) links.
+   *
+   * This fixes the reported defect where the greeting rendered literal
+   * `**Paragonel AI**` asterisks (the previous renderer only parsed links).
+   * It also handles Markdown that the model may emit in answers. Only inline
+   * formatting is supported — block constructs (headings, lists, code blocks)
+   * are intentionally NOT rendered, and arbitrary HTML is never injected.
+   * Links are rendered via next/link; URLs are passed through as-is (the
+   * server already sanitizes citations + body links in paragonel-ai-flow).
+   */
+  const renderContent = (content: string | React.ReactNode) => {
     if (typeof content !== 'string') return content;
-    const parts = content.split(/(\[.*?\]\(.*?\))/g);
+    // Split on any inline token; the capture group keeps the tokens in the
+    // resulting array so each part is either a token or plain text. Bold must
+    // be matched before italic so `**x**` is not parsed as two `*x*`.
+    const tokenRe = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
+    const parts = content.split(tokenRe);
     return (
       <div className="whitespace-pre-wrap">
         {parts.map((part, i) => {
-          const match = part.match(/\[(.*?)\]\((.*?)\)/);
-          if (match) return <Link key={i} href={match[2]} className="text-primary font-bold hover:underline mx-0.5">{match[1]}</Link>;
-          return part;
+          if (!part) return null;
+          let m = part.match(/^\*\*(.+)\*\*$/);
+          if (m) return <strong key={i} className="font-bold">{m[1]}</strong>;
+          m = part.match(/^\*(.+)\*$/);
+          if (m) return <em key={i}>{m[1]}</em>;
+          m = part.match(/^`(.+)`$/);
+          if (m) return (
+            <code key={i} className="px-1 py-0.5 rounded bg-zinc-200 dark:bg-zinc-700 text-[0.85em] font-mono">{m[1]}</code>
+          );
+          m = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+          if (m) return (
+            <Link key={i} href={m[2]} className="text-primary font-bold hover:underline mx-0.5">{m[1]}</Link>
+          );
+          return <React.Fragment key={i}>{part}</React.Fragment>;
         })}
       </div>
     );
@@ -572,20 +607,65 @@ export function ChatSection() {
                     if (!approved) return updateCareerStep('matching_jobs');
                     setIsLoading(true);
                     try {
-                      await addDoc(collection(db, 'jobApplications'), {
-                        jobId: selectedJob.id,
-                        jobTitle: selectedJob.title,
-                        candidateName: candidateProfile?.name,
-                        candidateEmail: candidateProfile?.email,
-                        matchScore: selectedJob.matchScore,
-                        appliedAt: serverTimestamp(),
-                        appliedVia: 'ai_agent',
-                        status: 'New'
+                      // Submit through the SECURE application API (auth, Zod
+                      // validation, atomic duplicate transaction, profile-minimum
+                      // check, branded confirmation email). The previous
+                      // client-SDK addDoc to `jobApplications` was denied by
+                      // firestore.rules + bypassed all of those guarantees.
+                      const res = await fetch('/api/job-applications', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          jobId: selectedJob.id,
+                          confirmSubmission: true,
+                          website: '', // honeypot
+                        }),
                       });
+                      if (res.status === 401) {
+                        // Not logged in — guide to registration/login first.
+                        addMessage(
+                          'ai',
+                          "To submit an application, you'll need a candidate account. Please [sign in](/auth/login?redirect=/careers) or [create a free account](/auth/signup) first — then upload your resume from your profile so it is attached to your application.",
+                        );
+                        updateCareerStep('idle');
+                        return;
+                      }
+                      if (res.status === 422) {
+                        const j = await res.json().catch(() => ({}));
+                        addMessage(
+                          'ai',
+                          `Before applying, please complete your candidate profile — ${typeof j.error === 'string' ? j.error : 'it is missing required information (name, phone or location, and at least one skill).'} You can finish it on the [profile page](/candidate/profile), then come back to apply.`,
+                        );
+                        updateCareerStep('idle');
+                        return;
+                      }
+                      if (res.status === 409) {
+                        addMessage('ai', "You've already applied for this role. You can track its status on the [profile page](/candidate/profile).");
+                        updateCareerStep('idle');
+                        return;
+                      }
+                      if (!res.ok) {
+                        addMessage('ai', "I had trouble submitting your application. Please try applying directly on the [Careers](/careers) page.");
+                        updateCareerStep('matching_jobs');
+                        return;
+                      }
+                      const data = await res.json();
                       updateCareerStep('submitted');
-                      addMessage('ai', "Success! Your application has been received. Our team will review your profile shortly.");
-                    } catch { addMessage('ai', "I had trouble saving your application. Please try applying manually on the Careers page."); }
-                    finally { setIsLoading(false); }
+                      const ref = typeof data.reference === 'string' && data.reference ? data.reference : '—';
+                      const note =
+                        data.notification === 'sent' ? ' A confirmation email is on its way to your inbox.'
+                        : data.notification === 'skipped' ? ' (Email notifications are not configured in this environment, but your application is safely stored.)'
+                        : ' (There was an email issue, but your application is safely stored.)';
+                      addMessage(
+                        'ai',
+                        `Success! Your application has been received (reference: ${ref}).${note} Our team will review your profile shortly — you can track the status on the [profile page](/candidate/profile).`,
+                      );
+                    } catch {
+                      addMessage('ai', "I had trouble submitting your application. Please try applying directly on the [Careers](/careers) page.");
+                      updateCareerStep('matching_jobs');
+                    } finally {
+                      setIsLoading(false);
+                    }
                   }}
                 />
               </div>
