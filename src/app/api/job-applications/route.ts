@@ -1,168 +1,179 @@
 /**
- * POST /api/job-applications — secure server-side job application (Phase 1B).
+ * POST /api/job-applications — authenticated job application (Prompt 05Q §9).
  *
- * Accepts multipart/form-data: application fields + an optional resume file.
- * Flow: parse -> validate -> honeypot -> rate limit -> duplicate check ->
- *       resume upload (Admin Storage) -> Firestore write.
+ * HARD BUSINESS RULE: a visitor MUST have an authenticated candidate account to
+ * apply for any job. This route requires a user session (verifySession tier:'user').
+ * Unauthenticated requests are rejected with 401 — a disabled Apply button is NOT
+ * the only enforcement.
  *
- * The browser no longer uploads to Storage or writes to Firestore directly.
- * Field set matches the existing admin /admin/applications CRM
- * (applicationId, candidateName, candidateEmail, candidatePhone, jobId,
- *  jobTitle, resumeUrl, status, appliedAt, appliedVia, deletedAt, skills).
+ * Flow:
+ *   1. Require candidate session → email (the authenticated candidate).
+ *   2. Validate body (jobId + optional job-specific fields).
+ *   3. Verify the job is genuinely published, active, NOT deleted (server-side).
+ *   4. Read the candidate profile → verify it meets the minimum application info.
+ *   5. Duplicate check (candidateEmail + jobId, not soft-deleted).
+ *   6. Associate the application with the authenticated candidate ID + verified
+ *      email (never a client-supplied email/userId).
+ *   7. The resume is the candidate's profile resume (uploaded via
+ *      /api/candidate/resume) — referenced by its private Storage path.
  *
- * No email is sent by default (the AI email-formatting flow only formats text;
- * sending notifications is out of Phase 1B scope unless a requirement is given).
- *
- * Status codes: 201 created, 400 invalid, 409 duplicate, 429 rate-limited,
- *               503 admin SDK not configured.
+ * Status codes: 201 created, 400 invalid, 401 unauthenticated, 404 job not found,
+ *               409 duplicate, 422 profile incomplete, 429 rate-limited, 503 unavailable.
  */
 import { NextResponse } from 'next/server';
-import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
-import {
-  jobApplicationSchema,
-  getClientId,
-  checkRateLimit,
-} from '@/lib/submission-security';
+import { getAdminDb } from '@/lib/firebase-admin';
+import { z } from 'zod';
+import { verifySession } from '@/lib/auth/sessions';
+import { checkRateLimit, getClientId } from '@/lib/submission-security';
+import { meetsApplicationMinimum } from '@/lib/auth/candidate-profile';
+import { logSecurityEvent } from '@/lib/auth/security-events';
+import { getClientIp, jsonError } from '@/lib/auth/route-helpers';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-const MAX_RESUME_BYTES = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_RESUME_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/plain',
-];
+const applySchema = z.object({
+  jobId: z.string().trim().min(1, 'Job ID is required').max(100),
+  coverLetter: z.string().trim().max(5000).optional().or(z.literal('')),
+  expectedSalary: z.string().trim().max(100).optional().or(z.literal('')),
+  noticePeriod: z.string().trim().max(100).optional().or(z.literal('')),
+  preferredJobLocation: z.string().trim().max(200).optional().or(z.literal('')),
+  // Explicit confirmation the candidate reviewed the application details.
+  confirmSubmission: z.boolean().refine((v) => v === true, 'Please confirm the application details to submit.'),
+  // Honeypot (kept for defense-in-depth even though auth is required).
+  website: z.string().max(0).optional().or(z.literal('')),
+});
 
 export async function POST(request: Request) {
-  let formData: FormData;
+  const ip = getClientIp(request);
+  // 1. Require candidate session.
+  const v = await verifySession(request, undefined, 'user');
+  if (!v.ok) {
+    // 401 — the UI redirects to /auth/login?redirect=/careers/{jobId}.
+    return NextResponse.json(
+      { error: 'Authentication required. Please sign in or create a candidate account to apply.', requiresAuth: true },
+      { status: 401 },
+    );
+  }
+  const email = v.user.email;
+
+  let body: unknown;
   try {
-    formData = await request.formData();
+    body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Expected multipart/form-data' }, { status: 400 });
+    return jsonError(400, 'Invalid request body.');
   }
 
   // Honeypot.
-  const hp = formData.get('website');
-  if (typeof hp === 'string' && hp.trim() !== '') {
+  if (typeof body === 'object' && body && 'website' in body && (body as { website?: string }).website) {
     return NextResponse.json({ success: true }, { status: 201 });
   }
 
-  // Pull fields, preserving original strings (the form sends arrays as comma-lists).
-  const raw: Record<string, string> = {};
-  for (const key of [
-    'jobId', 'jobTitle', 'fullName', 'email', 'phone', 'primarySkills',
-    'coverLetter', 'linkedinProfile', 'portfolioWebsite', 'expectedSalary',
-    'noticePeriod', 'preferredJobLocation',
-  ]) {
-    const v = formData.get(key);
-    raw[key] = typeof v === 'string' ? v : '';
-  }
-
-  const parsed = jobApplicationSchema.safeParse(raw);
+  const parsed = applySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Validation failed', issues: parsed.error.issues.map((i) => i.message) },
-      { status: 400 }
+      { status: 400 },
     );
   }
   const data = parsed.data;
 
+  // 2. Rate limit.
   const clientId = getClientId(request);
   const rl = checkRateLimit('jobApplication', clientId);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Too many applications. Please try again shortly.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } },
     );
   }
 
   const db = getAdminDb();
-  if (!db) {
-    return NextResponse.json({ error: 'Application service unavailable.' }, { status: 503 });
+  if (!db) return jsonError(503, 'Application service unavailable.');
+
+  // 3. Verify the job is genuinely published, active, NOT deleted.
+  let jobSnap;
+  try {
+    jobSnap = await db.collection('jobs').doc(data.jobId).get();
+  } catch {
+    return jsonError(503, 'Could not verify the job.');
+  }
+  if (!jobSnap.exists) return jsonError(404, 'Job not found.');
+  const job = jobSnap.data() as { isActive?: boolean; deletedAt?: unknown; title?: string };
+  if (!job.isActive || job.deletedAt) {
+    return jsonError(404, 'This role is no longer accepting applications.');
   }
 
-  // Duplicate check: same email applying to same job, not soft-deleted.
+  // 4. Read the candidate profile → verify minimum application info.
+  const profileSnap = await db.collection('candidates').doc(email).get();
+  if (!profileSnap.exists) {
+    return NextResponse.json(
+      { error: 'Please complete your candidate profile before applying.', incomplete: true, redirect: '/candidate/profile' },
+      { status: 422 },
+    );
+  }
+  const profile = profileSnap.data() as {
+    fullName?: string; phone?: string; skills?: string[]; resumeStoragePath?: string;
+  };
+  if (!meetsApplicationMinimum(profile)) {
+    return NextResponse.json(
+      { error: 'Your profile is missing required information (name, phone or location, and at least one skill/headline/designation). Please complete it before applying.', incomplete: true, redirect: '/candidate/profile' },
+      { status: 422 },
+    );
+  }
+
+  // 5. Duplicate check (authenticated email + jobId).
   try {
     const existing = await db
       .collection('jobApplications')
-      .where('candidateEmail', '==', data.email)
+      .where('candidateEmail', '==', email)
       .where('jobId', '==', data.jobId)
       .limit(1)
       .get();
     if (!existing.empty) {
       const d = existing.docs[0].data();
       if (d && d.deletedAt == null) {
-        return NextResponse.json(
-          { error: 'You have already applied for this role.' },
-          { status: 409 }
-        );
+        return jsonError(409, 'You have already applied for this role.');
       }
     }
   } catch (err) {
     console.error('[job-app] dup-check failed:', err instanceof Error ? err.message : err);
-    return NextResponse.json({ error: 'Could not verify application.' }, { status: 500 });
+    return jsonError(500, 'Could not verify application.');
   }
 
-  // Resume upload via Admin Storage (emulator when STORAGE_EMULATOR_HOST set).
-  let resumeUrl = '';
-  const resume = formData.get('resume');
-  if (resume && typeof resume !== 'string') {
-    const file = resume as File;
-    if (file.size > MAX_RESUME_BYTES) {
-      return NextResponse.json({ error: 'Resume too large (max 5 MB).' }, { status: 400 });
-    }
-    if (file.type && !ALLOWED_RESUME_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: 'Unsupported resume file type.' }, { status: 400 });
-    }
-    const storage = getAdminBucket();
-    if (!storage) {
-      return NextResponse.json(
-        { error: 'Resume storage unavailable.' },
-        { status: 503 }
-      );
-    }
-    try {
-      const buf = Buffer.from(await file.arrayBuffer());
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
-      const objectPath = `resumes/${Date.now()}_${safeName}`;
-      const storageFile = storage.bucket().file(objectPath);
-      await storageFile.save(buf, {
-        metadata: { contentType: file.type || 'application/octet-stream' },
-      });
-      // Store the storage path. Production would issue a signed URL; for local
-      // emulator preview, the path is sufficient for the CRM to reference it.
-      resumeUrl = objectPath;
-    } catch (err) {
-      console.error('[job-app] resume upload failed:', err instanceof Error ? err.message : err);
-      return NextResponse.json({ error: 'Could not store resume.' }, { status: 500 });
-    }
-  }
-
+  // 6. Create the application — associated with the authenticated candidate ID +
+  //    verified email (never client-supplied). Resume is the candidate's profile
+  //    resume (private Storage path).
   try {
     await db.collection('jobApplications').add({
       applicationId: 'APP_' + Math.random().toString(36).slice(2, 11),
-      candidateName: data.fullName,
-      candidateEmail: data.email,
-      candidatePhone: data.phone,
+      candidateId: email, // authenticated candidate
+      candidateName: profile.fullName,
+      candidateEmail: email, // verified account email
+      candidatePhone: profile.phone || '',
       jobId: data.jobId,
-      jobTitle: data.jobTitle,
-      resumeUrl,
-      skills: data.primarySkills.split(',').map((s) => s.trim()).filter(Boolean),
+      jobTitle: job.title || '',
+      resumeStoragePath: profile.resumeStoragePath || '',
+      skills: Array.isArray(profile.skills) ? profile.skills : [],
       coverLetter: data.coverLetter || '',
+      expectedSalary: data.expectedSalary || '',
+      noticePeriod: data.noticePeriod || '',
+      preferredJobLocation: data.preferredJobLocation || '',
       status: 'New',
       appliedAt: new Date(),
-      appliedVia: 'form',
+      appliedVia: 'candidate_account',
       deletedAt: null,
     });
   } catch (err) {
     console.error('[job-app] store failed:', err instanceof Error ? err.message : err);
-    return NextResponse.json({ error: 'Could not store application.' }, { status: 500 });
+    return jsonError(500, 'Could not store application.');
   }
 
-  return NextResponse.json({ success: true }, { status: 201 });
+  await logSecurityEvent({ type: 'register', email, ip, detail: `job_application:${data.jobId}` });
+
+  return NextResponse.json({ success: true, message: 'Application submitted.' }, { status: 201 });
 }
 
 export async function GET() {
-  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+  return NextResponse.json({ error: 'Method not allowed.' }, { status: 405 });
 }

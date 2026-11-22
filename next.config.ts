@@ -76,10 +76,12 @@ const nextConfig: NextConfig = {
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       "style-src 'self' 'unsafe-inline'",
+      // Cloudflare Turnstile (CAPTCHA, Prompt 05Q §3) — script + iframe + fetch.
+      "frame-src 'self' https://challenges.cloudflare.com",
       isDev
-        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com"
-        : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
-      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://www.google-analytics.com https://*.google-analytics.com",
+        ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://challenges.cloudflare.com"
+        : "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://challenges.cloudflare.com",
+      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://www.google-analytics.com https://*.google-analytics.com https://challenges.cloudflare.com",
       "worker-src 'self' blob:",
       "manifest-src 'self'",
     ].join('; ');

@@ -1,40 +1,66 @@
-"use client";
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+'use client';
+/**
+ * /auth/login — candidate login (Prompt 05Q §5, §11).
+ *
+ * Email + password + CAPTCHA + required Terms/Privacy acknowledgement only.
+ * No name, resume, profile, or job-preference fields (§5).
+ *
+ * Preserves a ?redirect= target (for the apply flow: /auth/login?redirect=/careers/{id})
+ * and returns there after a successful login.
+ */
+import { useState, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, LogIn } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { CaptchaWidget } from '@/components/auth/captcha-widget';
+import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
 
 export default function UserLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
+      <LoginInner />
+    </Suspense>
+  );
+}
+
+function LoginInner() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const redirect = params.get('redirect') || '/';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  const router = useRouter();
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [ack, setAck] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
-  async function submit(e: React.FormEvent) {
+  const submit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError(''); setBusy(true);
     try {
       const res = await fetch('/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, captchaToken, consentAcknowledged: ack }),
       });
       const data = await res.json();
       if (res.ok) {
-        toast({ title: 'Logged in', description: 'Welcome back.' });
-        router.push('/');
+        router.push(redirect);
         router.refresh();
       } else {
-        toast({ title: 'Login failed', description: data.message ?? 'Invalid email or password.', variant: 'destructive' });
+        setError(data.error || 'Invalid email or password.');
       }
-    } finally { setLoading(false); }
-  }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  }, [email, password, captchaToken, ack, router, redirect]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
@@ -44,16 +70,35 @@ export default function UserLoginPage() {
             <LogIn className="h-6 w-6 text-primary" />
           </div>
           <CardTitle>Log in</CardTitle>
-          <CardDescription>Log in to your Paragonel account.</CardDescription>
+          <CardDescription>Log in to your Paragonel candidate account.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
-            <div className="space-y-2"><Label htmlFor="pw">Password</Label><Input id="pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
-            <Button type="submit" className="w-full" disabled={loading}>{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in…</> : 'Log in'}</Button>
+            {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pw">Password</Label>
+              <div className="relative">
+                <Input id="pw" type={showPw ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
+                <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground" aria-label={showPw ? 'Hide password' : 'Show password'}>
+                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+            <CaptchaWidget onVerify={setCaptchaToken} />
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-0.5" required />
+              <span>I acknowledge the <Link href="/terms" className="text-primary underline" target="_blank">Terms</Link> + <Link href="/privacy-policy" className="text-primary underline" target="_blank">Privacy Policy</Link>.</span>
+            </label>
+            <Button type="submit" className="w-full" disabled={busy || !email || !password || !captchaToken || !ack}>
+              {busy ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in…</> : 'Log in'}
+            </Button>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link href="/auth/signup" className="underline">Create account</Link> · <Link href="/auth/forgot-password" className="underline">Forgot password?</Link>
+            <Link href={`/auth/signup${redirect !== '/' ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="underline">Create account</Link> · <Link href="/auth/forgot-password" className="underline">Forgot password?</Link>
           </p>
         </CardContent>
       </Card>

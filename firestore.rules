@@ -95,6 +95,22 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Candidate accounts (Prompt 05Q). Auth lives in `users/{email}` (server-only
+    // via /api/auth/**). The career PROFILE lives in `candidates/{email}` (server-only
+    // via /api/candidate/profile — ownership enforced in the route by matching the
+    // session email to the doc id). A candidate can NEVER read another candidate's
+    // profile via the client SDK — all reads go through the server.
+    match /candidates/{candidateId} {
+      allow read, write: if false; // use /api/candidate/profile (Admin SDK, role-checked)
+    }
+
+    // Registration challenges (Prompt 05Q §2). Short-lived records binding a name +
+    // consent to an email during the email-first registration flow. Server-only
+    // (via /api/auth/register/init + /complete). Never client-readable.
+    match /registrationChallenges/{email} {
+      allow read, write: if false; // use /api/auth/register/init + /complete (Admin SDK)
+    }
+
     // Public services catalogue. READ + WRITE fully denied to clients. Public
     // reads go through the server (src/lib/public-data.ts -> getPublicServices,
     // filtering isActive && !deletedAt server-side). The previous
