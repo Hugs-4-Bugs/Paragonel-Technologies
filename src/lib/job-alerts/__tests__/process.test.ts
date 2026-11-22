@@ -1,18 +1,23 @@
 /**
  * process.test.ts — bounded, idempotent job-match event processing
- * (Prompt 05R §8, §12 "Notifications").
+ * (Prompt 05R §8, §12 "Notifications"; 05S §6 concurrency/pagination).
  *
  * Covers: provider success, provider failure (never claimed as sent), below-
  * threshold skip, duplicate suppression (event-level + jobAlertsSent-level),
  * inactive/deleted job -> cancelled, bounded batches, opted-out candidate ->
  * no alert, retry-after-failure.
  *
- * Uses the in-memory fake-firestore (no emulator) + an injected mock sender.
+ * 05S additions: concurrent same-event processing (atomic claim), stuck-
+ * processing recovery, candidate pagination across drain calls (beyond the
+ * first batch), atomic dedup under concurrent workers (no duplicate send).
+ *
+ * Uses the in-memory fake-firestore (no emulator; serialized transactions) +
+ * an injected mock sender.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Timestamp } from 'firebase-admin/firestore';
 import { FakeFirestore } from '@/lib/auth/__tests__/fake-firestore';
-import { processJobMatchEvent, type JobAlertDataStore, type AlertSender } from '../process';
+import { processJobMatchEvent, recoverStuckEvents, type JobAlertDataStore, type AlertSender } from '../process';
 import { eventId, dedupKey, JOB_ALERTS_SENT_COLLECTION } from '../dedup';
 
 function makeStore(): JobAlertDataStore {
@@ -225,5 +230,135 @@ describe('processJobMatchEvent (Prompt 05R §8)', () => {
     rec = await sentRecord(db, 'jane@example.com', 'job1');
     expect(rec?.status).toBe('sent');
     expect(Number(rec?.attemptCount)).toBeGreaterThan(attemptsAfterFail);
+  });
+});
+
+describe('processJobMatchEvent — 05S §6 concurrency + pagination', () => {
+  async function seedMatchable(db: JobAlertDataStore, nCandidates: number): Promise<void> {
+    await db.collection('jobs').doc('job1').set({
+      isActive: true, deletedAt: null, jobId: 'job1', title: 'Dev', department: 'Engineering',
+      location: 'Remote', employmentType: 'Full Time', workArrangement: 'Remote',
+      experienceRequired: '2 years', skills: ['React'], version: 1,
+    });
+    await db.collection('jobMatchEvents').doc(eventId('job1', 1)).set({
+      jobId: 'job1', jobVersion: 1, trigger: 'create', status: 'pending', attempts: 0,
+      stats: { candidatesEvaluated: 0, alertsSent: 0, alertsSkipped: 0, alertsFailed: 0 },
+      createdAt: Timestamp.now(),
+    });
+    const letters = ['a', 'b', 'c', 'd', 'e'];
+    for (let i = 0; i < nCandidates; i++) {
+      const email = `${letters[i]}@example.com`;
+      await db.collection('candidates').doc(email).set({
+        email, jobAlertPreference: true, matchingThreshold: 80,
+        skills: ['React'], totalExperienceYears: 3,
+        preferredEmploymentType: 'full-time', workModePreference: 'remote', currentLocation: 'Anywhere',
+      });
+    }
+  }
+
+  it('concurrent same-event: only ONE worker sends (atomic claim)', async () => {
+    const db = makeStore();
+    await seedMatchable(db, 1);
+    const calls: { to: string }[] = [];
+    const sender: AlertSender = async (input) => {
+      calls.push({ to: input.to });
+      // simulate a little async work so the two calls actually overlap
+      await new Promise((r) => setTimeout(r, 5));
+      return { status: 'sent', messageId: 'm' };
+    };
+    // Two concurrent drains of the SAME event.
+    const [r1, r2] = await Promise.all([
+      processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 }),
+      processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 }),
+    ]);
+    // Exactly one worker claimed + sent; the other saw 'processing' and skipped.
+    expect(calls.length).toBe(1);
+    const sending = [r1, r2].find((o) => o.status === 'processed' || o.status === 'pending');
+    const inflight = [r1, r2].find((o) => o.status === 'processing');
+    expect(sending).toBeTruthy();
+    expect(inflight).toBeTruthy();
+  });
+
+  it('candidate pagination across drain calls (beyond the first batch)', async () => {
+    const db = makeStore();
+    // 3 matching candidates, batch 2, send-cap 2 per call -> first call sends 2
+    // (partial, pending, cursor), second call resumes + sends the 3rd.
+    await seedMatchable(db, 3);
+    const calls: string[] = [];
+    const sender: AlertSender = async (input) => { calls.push(input.to); return { status: 'sent', messageId: 'm' }; };
+
+    const r1 = await processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 2, maxAlertsPerRun: 2 });
+    expect(r1.alertsSent).toBe(2);
+    expect(r1.partial).toBe(true);
+    expect(r1.status).toBe('pending');
+
+    const r2 = await processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 2, maxAlertsPerRun: 2 });
+    expect(r2.alertsSent).toBe(1);
+    expect(r2.status).toBe('processed');
+
+    // All 3 distinct candidates were sent exactly once (no duplicates).
+    expect(calls.length).toBe(3);
+    expect(new Set(calls).size).toBe(3);
+  });
+
+  it('a single drain with a large send cap evaluates ALL candidates (internal pagination)', async () => {
+    const db = makeStore();
+    await seedMatchable(db, 3);
+    const calls: string[] = [];
+    const sender: AlertSender = async (input) => { calls.push(input.to); return { status: 'sent', messageId: 'm' }; };
+    // batch 2 but send-cap 10 -> the single call pages through both batches.
+    const r = await processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 2, maxAlertsPerRun: 10 });
+    expect(r.status).toBe('processed');
+    expect(r.alertsSent).toBe(3);
+    expect(calls.length).toBe(3);
+  });
+
+  it('recoverStuckEvents re-arms an event stuck in processing past the timeout', async () => {
+    const db = makeStore();
+    await seedMatchable(db, 1);
+    // Simulate a worker that claimed then crashed: status 'processing' with an old claimedAt.
+    const stale = Timestamp.fromMillis(Date.now() - 10 * 60 * 1000); // 10 min ago
+    await db.collection('jobMatchEvents').doc(eventId('job1', 1)).update({
+      status: 'processing', claimedAt: stale,
+    });
+    const recovered = await recoverStuckEvents(db, 5 * 60 * 1000);
+    expect(recovered).toBe(1);
+    const ev = (await db.collection('jobMatchEvents').doc(eventId('job1', 1)).get()).data();
+    expect(String(ev?.status)).toBe('pending');
+
+    // Now a normal drain processes it.
+    const calls: string[] = [];
+    const sender: AlertSender = async (input) => { calls.push(input.to); return { status: 'sent', messageId: 'm' }; };
+    const r = await processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 });
+    expect(r.status).toBe('processed');
+    expect(calls.length).toBe(1);
+  });
+
+  it('recoverStuckEvents leaves a recently-claimed event alone', async () => {
+    const db = makeStore();
+    await seedMatchable(db, 1);
+    const fresh = Timestamp.fromMillis(Date.now() - 1000); // 1s ago
+    await db.collection('jobMatchEvents').doc(eventId('job1', 1)).update({ status: 'processing', claimedAt: fresh });
+    const recovered = await recoverStuckEvents(db, 5 * 60 * 1000);
+    expect(recovered).toBe(0);
+    const ev = (await db.collection('jobMatchEvents').doc(eventId('job1', 1)).get()).data();
+    expect(String(ev?.status)).toBe('processing');
+  });
+
+  it('atomic dedup: a candidate already delivered is never re-sent, even mid-batch', async () => {
+    const db = makeStore();
+    await seedMatchable(db, 1);
+    // Pre-seed a 'sent' outcome for the candidate.
+    const email = 'a@example.com';
+    await db.collection(JOB_ALERTS_SENT_COLLECTION).doc(dedupKey(email, 'job1', 1)).set({
+      candidateEmail: email, jobId: 'job1', jobVersion: 1, status: 'sent',
+      attemptCount: 1, dedupKey: dedupKey(email, 'job1', 1), createdAt: Timestamp.now(),
+    });
+    const calls: string[] = [];
+    const sender: AlertSender = async (input) => { calls.push(input.to); return { status: 'sent', messageId: 'm' }; };
+    const r = await processJobMatchEvent(db, eventId('job1', 1), sender, { candidateBatchSize: 10, maxAlertsPerRun: 10 });
+    expect(r.alertsSent).toBe(0);
+    expect(r.alertsSkipped).toBe(1);
+    expect(calls.length).toBe(0); // never re-sent
   });
 });

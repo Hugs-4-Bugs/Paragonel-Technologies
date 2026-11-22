@@ -1,32 +1,28 @@
 /**
  * process.ts — bounded, idempotent processing of job-match events
- * (Prompt 05R §7, §8, §10).
+ * (Prompt 05R §7, §8, §10; 05S §6 concurrency/pagination hardening).
  *
- * Pipeline (per event):
- *   1. Load the event. If missing / 'processed' / 'cancelled' -> no-op (idempotent).
- *   2. Mark 'processing'.
- *   3. Load the job. If missing / !isActive / deletedAt -> mark event 'cancelled'
- *      (never notify for deleted/inactive/draft jobs).
- *   4. Query OPTED-IN candidates (`jobAlertPreference == true`) in a bounded batch.
- *   5. For each candidate:
- *        - dedupKey(candidateEmail, jobId, version). If a 'sent' record already
- *          exists -> skip (no duplicate successful delivery).
- *        - Resolve threshold (clamped 25-100, default 80) + re-confirm opt-in.
- *        - scoreJobCandidate(job, profile); meetsThreshold(result, threshold).
- *        - Below threshold / no required skills -> record 'skipped', no email.
- *        - Passes -> sendJobMatchAlert(...). On status 'sent' -> record 'sent' +
- *          deliveredAt. On 'failed'/'skipped' -> record 'failed' with redacted
- *          reason. NEVER claim success when the provider did not accept the msg.
- *      Stop after maxAlertsPerRun sends (bounded).
- *   6. Update event stats + status 'processed'.
+ * 05S hardening (defects fixed vs the 05R version):
+ *   - ATOMIC CLAIM: the event is claimed via a Firestore transaction
+ *     (status pending/failed/stuck -> processing + claimedAt). Two concurrent
+ *     workers cannot both process the same event.
+ *   - PAGINATION: opted-in candidates are paged with startAfter(cursor) across
+ *     bounded drain calls. Candidates beyond the first batch ARE evaluated
+ *     (the 05R version only processed the first `candidateBatchSize` and marked
+ *     the event processed — a real defect). The cursor (lastCandidateId) +
+ *     cumulative stats are stored on the event so the next drain resumes.
+ *   - STUCK RECOVERY: recoverStuckEvents() resets events stuck in 'processing'
+ *     longer than stuckTimeoutMs back to 'pending', so a crashed worker cannot
+ *     strand an event forever.
+ *   - ATOMIC DEDUP: before sending, a transaction claims the jobAlertsSent doc
+ *     (-> 'sending'); a concurrent worker that already delivered/in-flight is
+ *     skipped. So even under concurrent workers, a candidate never receives a
+ *     duplicate successful delivery.
  *
  * Email sending is INJECTED (sendAlert) so unit tests can mock provider
  * success/failure without a real SMTP server. The store is a structural subset
- * of the Admin Firestore SDK (works with the in-memory fake-firestore).
- *
- * Backfill (Prompt 05R §10): `backfillCandidate` evaluates ONE opted-in
- * candidate against currently-published jobs, bounded + deduped, OFF by default
- * (admin must trigger it explicitly). Never re-sends an already-delivered alert.
+ * of the Admin Firestore SDK (works with the in-memory fake-firestore, whose
+ * runTransaction is serialized so concurrency tests are meaningful).
  */
 import { Timestamp } from 'firebase-admin/firestore';
 import type { CandidateProfile } from '@/lib/auth/candidate-profile';
@@ -38,24 +34,40 @@ import {
   dedupKey,
   redactReason,
 } from './dedup';
-import { getJobMatchEvent, type JobMatchStore } from './trigger';
+import { type JobMatchStore } from './trigger';
 import { eventId } from './dedup';
 import { unsubscribeUrl } from './unsubscribe';
 
-/** A store with query support (where/limit/get) — the Admin SDK + fake satisfy this. */
+/** Chainable query subset used by the processor (where/orderBy/limit/startAfter/get). */
+export interface QueryChain {
+  where(field: string, op: string, value: unknown): QueryChain;
+  orderBy(field: string, dir?: 'asc' | 'desc'): QueryChain;
+  limit(n: number): QueryChain;
+  startAfter(cursor: { id: string } | string): QueryChain;
+  get(): Promise<QuerySnap>;
+}
+/** Transaction subset (real Admin SDK + serialized fake both satisfy this). */
+export interface TxLike {
+  get(ref: unknown): Promise<{ exists: boolean; id: string; data: () => Record<string, unknown> | undefined } | QuerySnap>;
+  set(ref: unknown, data: Record<string, unknown>, opts?: { merge?: boolean }): void;
+  update(ref: unknown, data: Record<string, unknown>): void;
+}
+
+/** A store with query + transaction support — the Admin SDK + fake satisfy this. */
 export interface JobAlertDataStore extends JobMatchStore {
-  collection(name: string): JobMatchStore['collection'] extends (n: string) => infer R
-    ? R & {
-        where(field: string, op: string, value: unknown): {
-          limit(n: number): { get(): Promise<QuerySnap> };
-          get(): Promise<QuerySnap>;
-          orderBy(field: string, dir?: 'asc' | 'desc'): { limit(n: number): { get(): Promise<QuerySnap> }; get(): Promise<QuerySnap> };
-        };
-        orderBy(field: string, dir?: 'asc' | 'desc'): { limit(n: number): { get(): Promise<QuerySnap> }; get(): Promise<QuerySnap> };
-        limit(n: number): { get(): Promise<QuerySnap> };
-        get(): Promise<QuerySnap>;
-      }
-    : never;
+  collection(name: string): {
+    doc(id: string): {
+      get(): Promise<{ exists: boolean; id: string; data: () => Record<string, unknown> | undefined }>;
+      set(data: Record<string, unknown>, opts?: { merge?: boolean }): Promise<void>;
+      update(patch: Record<string, unknown>): Promise<void>;
+    };
+    where(field: string, op: string, value: unknown): QueryChain;
+    orderBy(field: string, dir?: 'asc' | 'desc'): QueryChain;
+    limit(n: number): QueryChain;
+    startAfter(cursor: { id: string } | string): QueryChain;
+    get(): Promise<QuerySnap>;
+  };
+  runTransaction<T>(cb: (tx: TxLike) => Promise<T>): Promise<T>;
 }
 export interface QuerySnap {
   empty: boolean;
@@ -80,12 +92,15 @@ export interface ProcessOptions {
   maxAlertsPerRun?: number;
   maxEventsPerRun?: number;
   appBaseUrl?: string;
+  /** Max time an event may stay 'processing' before recoverStuckEvents re-arms it. */
+  stuckTimeoutMs?: number;
 }
 
 const DEFAULTS = {
   candidateBatchSize: 50,
   maxAlertsPerRun: 20,
   maxEventsPerRun: 5,
+  stuckTimeoutMs: 5 * 60 * 1000, // 5 minutes
 };
 
 export interface ProcessOutcome {
@@ -96,6 +111,7 @@ export interface ProcessOutcome {
   alertsSkipped: number;
   alertsFailed: number;
   cancelled?: boolean;
+  partial?: boolean;
   reason?: string;
 }
 
@@ -127,7 +143,7 @@ async function loadPublishedJob(
   return { id: snap.id, ...data };
 }
 
-/** Record (or update) a jobAlertsSent outcome doc. Idempotent on the dedup key. */
+/** Record (or update) a jobAlertsSent outcome doc (non-send path: skipped/failed). */
 async function recordAlertOutcome(
   db: JobAlertDataStore,
   key: string,
@@ -146,15 +162,100 @@ async function recordAlertOutcome(
   }
 }
 
-/** True if a 'sent' record already exists for this key (duplicate-suppression). */
-async function alreadyDelivered(db: JobAlertDataStore, key: string): Promise<boolean> {
-  const snap = await db.collection(JOB_ALERTS_SENT_COLLECTION).doc(key).get();
-  if (!snap.exists) return false;
-  return String((snap.data() as { status?: unknown })?.status || '') === 'sent';
+/**
+ * Atomically claim an event for processing via a transaction. Returns
+ * {claimed:true, event} if this caller acquired the claim (status was pending,
+ * failed, or stuck-processing); {claimed:false, event} otherwise (already
+ * processed/cancelled, or actively processing + not stale).
+ */
+async function claimEvent(
+  db: JobAlertDataStore,
+  eventDocId: string,
+  stuckTimeoutMs: number
+): Promise<{ claimed: boolean; event: Record<string, unknown> | null }> {
+  return db.runTransaction(async (tx) => {
+    const ref = db.collection(JOB_MATCH_EVENTS_COLLECTION).doc(eventDocId);
+    const snap = (await tx.get(ref)) as { exists: boolean; data: () => Record<string, unknown> | undefined };
+    if (!snap.exists) return { claimed: false, event: null };
+    const data = (snap.data() || {}) as Record<string, unknown>;
+    const status = String(data.status || 'pending');
+    if (status === 'processed' || status === 'cancelled') {
+      return { claimed: false, event: data };
+    }
+    if (status === 'processing') {
+      const claimedMs = toMillis(data.claimedAt);
+      if (claimedMs && Date.now() - claimedMs < stuckTimeoutMs) {
+        return { claimed: false, event: data };
+      }
+      // stale -> fall through to reclaim
+    }
+    const attempts = Number(data.attempts || 0) + 1;
+    const now = Timestamp.now();
+    tx.update(ref, { status: 'processing', claimedAt: now, attempts, lastError: null });
+    return { claimed: true, event: { ...data, status: 'processing', claimedAt: now, attempts } };
+  });
+}
+
+/** Coerce a stored timestamp (Admin Timestamp / number / Date) to epoch ms. */
+function toMillis(v: unknown): number {
+  if (!v) return 0;
+  if (typeof v === 'object' && v !== null && 'toMillis' in v) {
+    return (v as { toMillis: () => number }).toMillis();
+  }
+  if (typeof v === 'number') return v;
+  if (v instanceof Date) return v.getTime();
+  return 0;
 }
 
 /**
- * Drain a single match event. Idempotent + bounded.
+ * Reset events stuck in 'processing' longer than stuckTimeoutMs back to
+ * 'pending' so a crashed worker cannot strand an event. Returns the count
+ * recovered. Called by processPendingJobMatchEvents before draining.
+ */
+export async function recoverStuckEvents(
+  db: JobAlertDataStore,
+  stuckTimeoutMs: number = DEFAULTS.stuckTimeoutMs
+): Promise<number> {
+  let snap: QuerySnap;
+  try {
+    snap = await db.collection(JOB_MATCH_EVENTS_COLLECTION).where('status', '==', 'processing').limit(50).get();
+  } catch {
+    return 0;
+  }
+  const cutoff = Date.now() - stuckTimeoutMs;
+  let recovered = 0;
+  for (const doc of snap.docs) {
+    const data = (doc.data() || {}) as Record<string, unknown>;
+    const claimedAtRaw = data.claimedAt;
+    const claimedMs =
+      claimedAtRaw && typeof claimedAtRaw === 'object' && 'toMillis' in claimedAtRaw
+        ? (claimedAtRaw as { toMillis: () => number }).toMillis()
+        : typeof claimedAtRaw === 'number'
+          ? claimedAtRaw
+          : 0;
+    if (claimedMs && claimedMs < cutoff) {
+      try {
+        await db.collection(JOB_MATCH_EVENTS_COLLECTION).doc(doc.id).update({
+          status: 'pending',
+          claimedAt: null,
+          lastError: 'recovered from stuck processing (timeout)',
+        });
+        recovered++;
+      } catch {
+        /* best-effort */
+      }
+    }
+  }
+  return recovered;
+}
+
+/**
+ * Drain a single match event. Idempotent + bounded + paginated.
+ *
+ * Processes opted-in candidates in batches (startAfter cursor) until either all
+ * candidates are evaluated (-> 'processed') or the per-run send cap is hit
+ * (-> 'pending' with lastCandidateId + cumulative stats, resumed by the next
+ * drain). Atomic claim + atomic dedup make concurrent workers safe.
  */
 export async function processJobMatchEvent(
   db: JobAlertDataStore,
@@ -164,38 +265,45 @@ export async function processJobMatchEvent(
 ): Promise<ProcessOutcome> {
   const candidateBatchSize = opts.candidateBatchSize ?? DEFAULTS.candidateBatchSize;
   const maxAlertsPerRun = opts.maxAlertsPerRun ?? DEFAULTS.maxAlertsPerRun;
+  const stuckTimeoutMs = opts.stuckTimeoutMs ?? DEFAULTS.stuckTimeoutMs;
   const baseUrl = opts.appBaseUrl || process.env.APP_BASE_URL || 'http://localhost:3000';
 
-  const event = await getJobMatchEvent(db, eventDocId);
-  if (!event) {
-    return { eventId: eventDocId, status: 'missing', candidatesEvaluated: 0, alertsSent: 0, alertsSkipped: 0, alertsFailed: 0 };
+  const ZERO: ProcessOutcome = { eventId: eventDocId, status: 'missing', candidatesEvaluated: 0, alertsSent: 0, alertsSkipped: 0, alertsFailed: 0 };
+
+  // Atomic claim.
+  let claim: { claimed: boolean; event: Record<string, unknown> | null };
+  try {
+    claim = await claimEvent(db, eventDocId, stuckTimeoutMs);
+  } catch (err) {
+    return { ...ZERO, status: 'failed', reason: redactReason(err) };
   }
-  if (event.status === 'processed' || event.status === 'cancelled') {
-    return {
-      eventId: eventDocId,
-      status: event.status,
-      candidatesEvaluated: event.stats.candidatesEvaluated,
-      alertsSent: event.stats.alertsSent,
-      alertsSkipped: event.stats.alertsSkipped,
-      alertsFailed: event.stats.alertsFailed,
-    };
+  if (!claim.event) return ZERO;
+  const event = claim.event as Record<string, unknown>;
+  const evStatus = String(event.status || 'pending');
+  if (!claim.claimed) {
+    // Already processed/cancelled, or actively processing (not stale).
+    if (evStatus === 'processed' || evStatus === 'cancelled') {
+      const s = (event.stats || {}) as Record<string, number>;
+      return { eventId: eventDocId, status: evStatus, candidatesEvaluated: s.candidatesEvaluated || 0, alertsSent: s.alertsSent || 0, alertsSkipped: s.alertsSkipped || 0, alertsFailed: s.alertsFailed || 0, cancelled: evStatus === 'cancelled' };
+    }
+    return { ...ZERO, status: 'processing', reason: 'event already in flight by another worker' };
   }
 
-  // Mark processing.
-  await setEventStatus(db, eventDocId, { status: 'processing', attempts: (event.attempts || 0) + 1 });
+  const jobId = String(event.jobId || '');
+  const jobVersion = Math.max(1, Math.floor(Number(event.jobVersion) || 1));
 
   // Load + verify the job is still published.
-  const job = await loadPublishedJob(db, event.jobId);
+  const job = await loadPublishedJob(db, jobId);
   if (!job) {
     await setEventStatus(db, eventDocId, {
       status: 'cancelled',
       processedAt: Timestamp.now(),
+      claimedAt: null,
       lastError: 'job missing, inactive, or deleted at processing time',
     });
-    return { eventId: eventDocId, status: 'cancelled', candidatesEvaluated: 0, alertsSent: 0, alertsSkipped: 0, alertsFailed: 0, cancelled: true, reason: 'job no longer published' };
+    return { ...ZERO, status: 'cancelled', cancelled: true, reason: 'job no longer published' };
   }
 
-  const jobVersion = Math.max(1, Math.floor(Number(event.jobVersion) || 1));
   const jobForMatching: JobForMatching = {
     id: job.id,
     jobId: String(job.jobId || job.id),
@@ -212,137 +320,165 @@ export async function processJobMatchEvent(
     description: job.description ? String(job.description) : undefined,
   };
 
-  // Query opted-in candidates in a bounded batch.
-  let candidateSnap: QuerySnap;
-  try {
-    candidateSnap = await db
-      .collection('candidates')
-      .where('jobAlertPreference', '==', true)
-      .limit(candidateBatchSize)
-      .get();
-  } catch (err) {
-    await setEventStatus(db, eventDocId, {
-      status: 'failed',
-      lastError: redactReason(err),
-    });
-    return { eventId: eventDocId, status: 'failed', candidatesEvaluated: 0, alertsSent: 0, alertsSkipped: 0, alertsFailed: 0, reason: redactReason(err) };
-  }
-
+  // Resume from the stored cursor. Per-call deltas are returned to the caller;
+  // cumulative (startStats + deltas) is stored on the event so its stats reflect
+  // the total across all drain calls (pagination).
+  const startStats = (event.stats || {}) as Record<string, number>;
+  let cursor = typeof event.lastCandidateId === 'string' && event.lastCandidateId ? event.lastCandidateId : null;
   let evaluated = 0;
   let sent = 0;
   let skipped = 0;
   let failed = 0;
-
-  for (const doc of candidateSnap.docs) {
-    if (sent >= maxAlertsPerRun) break; // bounded sends per run
-    const profile = doc.data() as CandidateProfile | undefined;
-    if (!profile) continue;
-    // Re-confirm opt-in server-side (never trust a stale query alone).
-    if (!resolveJobAlertPreference(profile.jobAlertPreference)) continue;
-    const email = (profile.email || doc.id || '').toString().trim().toLowerCase();
-    if (!email) continue;
-    evaluated++;
-
-    const key = dedupKey(email, job.id, jobVersion);
-    // Duplicate suppression: a successfully delivered alert is never re-sent.
-    if (await alreadyDelivered(db, key)) {
-      skipped++;
-      continue;
-    }
-
-    const threshold = resolveMatchingThreshold(profile.matchingThreshold);
-    const result = scoreJobCandidate(jobForMatching, profile as unknown as Parameters<typeof scoreJobCandidate>[1]);
-    const decision = meetsThreshold(result, threshold);
-
-    if (!decision.pass) {
-      // Below threshold or no required skills -> record 'skipped', no email.
-      await recordAlertOutcome(db, key, {
-        candidateEmail: email,
-        jobId: job.id,
-        jobVersion,
-        score: result.overallScore,
-        threshold,
-        eligible: false,
-        status: 'skipped',
-        reason: decision.reason,
-      });
-      skipped++;
-      continue;
-    }
-
-    // Passes threshold -> send the alert.
-    const manageUrl = `${baseUrl}/candidate/profile`;
-    const unsubUrl = unsubscribeUrl(email, baseUrl) || `${baseUrl}/candidate/profile`;
-    let outcome: { status: 'sent' | 'skipped' | 'failed'; detail?: string; messageId?: string };
-    try {
-      outcome = await sendAlert({ to: email, job: jobForMatching, match: result, threshold, manageUrl, unsubscribeUrl: unsubUrl });
-    } catch (err) {
-      outcome = { status: 'failed', detail: redactReason(err) };
-    }
-
-    if (outcome.status === 'sent') {
-      await recordAlertOutcome(db, key, {
-        candidateEmail: email,
-        jobId: job.id,
-        jobVersion,
-        score: result.overallScore,
-        threshold,
-        eligible: true,
-        status: 'sent',
-        deliveredAt: Timestamp.now(),
-        messageId: outcome.messageId || null,
-      });
-      sent++;
-    } else {
-      // Provider did not accept -> record failed, redacted reason. Never claim success.
-      await recordAlertOutcome(db, key, {
-        candidateEmail: email,
-        jobId: job.id,
-        jobVersion,
-        score: result.overallScore,
-        threshold,
-        eligible: true,
-        status: 'failed',
-        failureReason: redactReason(outcome.detail || 'send-failed'),
-      });
-      failed++;
-    }
-  }
-
-  const status = failed > 0 && sent === 0 ? 'failed' : 'processed';
-  await setEventStatus(db, eventDocId, {
-    status,
-    processedAt: Timestamp.now(),
-    stats: { candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed },
+  let allDone = false;
+  const cum = () => ({
+    candidatesEvaluated: Number(startStats.candidatesEvaluated || 0) + evaluated,
+    alertsSent: Number(startStats.alertsSent || 0) + sent,
+    alertsSkipped: Number(startStats.alertsSkipped || 0) + skipped,
+    alertsFailed: Number(startStats.alertsFailed || 0) + failed,
   });
 
-  return {
-    eventId: eventDocId,
-    status,
-    candidatesEvaluated: evaluated,
-    alertsSent: sent,
-    alertsSkipped: skipped,
-    alertsFailed: failed,
-  };
+  outer: while (true) {
+    if (sent >= maxAlertsPerRun) break; // send cap -> partial
+    let q: QueryChain = db
+      .collection('candidates')
+      .where('jobAlertPreference', '==', true)
+      .orderBy('__name__')
+      .limit(candidateBatchSize);
+    if (cursor) q = q.startAfter(cursor);
+    let batchSnap: QuerySnap;
+    try {
+      batchSnap = await q.get();
+    } catch (err) {
+      await setEventStatus(db, eventDocId, { status: 'failed', claimedAt: null, lastError: redactReason(err), stats: { candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed } });
+      return { eventId: eventDocId, status: 'failed', candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed, reason: redactReason(err) };
+    }
+    if (batchSnap.size === 0) { allDone = true; break; }
+
+    for (const doc of batchSnap.docs) {
+      if (sent >= maxAlertsPerRun) break outer; // send cap -> partial (cursor stays at last evaluated)
+      const profile = doc.data() as CandidateProfile | undefined;
+      if (!profile) { cursor = doc.id; continue; }
+      if (!resolveJobAlertPreference(profile.jobAlertPreference)) { cursor = doc.id; continue; }
+      const email = (profile.email || doc.id || '').toString().trim().toLowerCase();
+      if (!email) { cursor = doc.id; continue; }
+      evaluated++;
+      cursor = doc.id; // advance cursor past this evaluated candidate
+
+      const key = dedupKey(email, job.id, jobVersion);
+      const threshold = resolveMatchingThreshold(profile.matchingThreshold);
+      const result = scoreJobCandidate(jobForMatching, profile as unknown as Parameters<typeof scoreJobCandidate>[1]);
+
+      if (!meetsThreshold(result, threshold).pass) {
+        await recordAlertOutcome(db, key, {
+          candidateEmail: email, jobId: job.id, jobVersion,
+          score: result.overallScore, threshold, eligible: false,
+          status: 'skipped', reason: meetsThreshold(result, threshold).reason,
+        });
+        skipped++;
+        continue;
+      }
+
+      // Atomic dedup claim: only this worker may send for this (candidate,job,version).
+      const claimSend = await claimSendSlot(db, key, { candidateEmail: email, jobId: job.id, jobVersion, score: result.overallScore, threshold });
+      if (!claimSend.claimed) { skipped++; continue; }
+
+      const manageUrl = `${baseUrl}/candidate/profile`;
+      const unsubUrl = unsubscribeUrl(email, baseUrl) || `${baseUrl}/candidate/profile`;
+      let outcome: { status: 'sent' | 'skipped' | 'failed'; detail?: string; messageId?: string };
+      try {
+        outcome = await sendAlert({ to: email, job: jobForMatching, match: result, threshold, manageUrl, unsubscribeUrl: unsubUrl });
+      } catch (err) {
+        outcome = { status: 'failed', detail: redactReason(err) };
+      }
+      if (outcome.status === 'sent') {
+        await recordAlertOutcome(db, key, {
+          candidateEmail: email, jobId: job.id, jobVersion,
+          score: result.overallScore, threshold, eligible: true,
+          status: 'sent', deliveredAt: Timestamp.now(), messageId: outcome.messageId || null,
+        });
+        sent++;
+      } else {
+        await recordAlertOutcome(db, key, {
+          candidateEmail: email, jobId: job.id, jobVersion,
+          score: result.overallScore, threshold, eligible: true,
+          status: 'failed', failureReason: redactReason(outcome.detail || 'send-failed'),
+        });
+        failed++;
+      }
+    }
+    if (batchSnap.size < candidateBatchSize) { allDone = true; break; }
+  }
+
+  // Finalize: 'processed' if all candidates done, else 'pending' (partial) with cursor.
+  if (allDone) {
+    const status = failed > 0 && sent === 0 ? 'failed' : 'processed';
+    await setEventStatus(db, eventDocId, {
+      status,
+      processedAt: Timestamp.now(),
+      claimedAt: null,
+      lastCandidateId: null,
+      stats: cum(),
+    });
+    return { eventId: eventDocId, status, candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed };
+  }
+  // Partial: send cap hit before all candidates evaluated. Stay pending + cursor.
+  await setEventStatus(db, eventDocId, {
+    status: 'pending',
+    claimedAt: null,
+    lastCandidateId: cursor,
+    stats: { candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed },
+  });
+  return { eventId: eventDocId, status: 'pending', partial: true, candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed };
 }
 
 /**
- * Drain up to `maxEventsPerRun` pending events. Bounded so a single admin call
- * cannot run unbounded work.
+ * Atomically claim the send slot for a (candidate,job,version). Sets the
+ * jobAlertsSent doc to 'sending' only if it is not already 'sent'/'sending'.
+ * Returns {claimed:true} if this caller may send; {claimed:false} if a
+ * concurrent worker already delivered or is in flight.
+ */
+async function claimSendSlot(
+  db: JobAlertDataStore,
+  key: string,
+  meta: { candidateEmail: string; jobId: string; jobVersion: number; score: number; threshold: number }
+): Promise<{ claimed: boolean }> {
+  try {
+    return await db.runTransaction(async (tx) => {
+      const ref = db.collection(JOB_ALERTS_SENT_COLLECTION).doc(key);
+      const snap = (await tx.get(ref)) as { exists: boolean; data: () => Record<string, unknown> | undefined };
+      if (snap.exists) {
+        const data = (snap.data() || {}) as Record<string, unknown>;
+        const st = String(data.status || '');
+        if (st === 'sent' || st === 'sending') return { claimed: false };
+        tx.update(ref, { status: 'sending', claimedAt: Timestamp.now(), candidateEmail: meta.candidateEmail, jobId: meta.jobId, jobVersion: meta.jobVersion, score: meta.score, threshold: meta.threshold });
+        return { claimed: true };
+      }
+      tx.set(ref, { status: 'sending', claimedAt: Timestamp.now(), candidateEmail: meta.candidateEmail, jobId: meta.jobId, jobVersion: meta.jobVersion, score: meta.score, threshold: meta.threshold, dedupKey: key, createdAt: Timestamp.now(), attemptCount: 1 });
+      return { claimed: true };
+    });
+  } catch {
+    // If the transaction fails, fall back to non-claim (recordAlertOutcome still
+    // prevents a duplicate 'sent' via alreadyDelivered semantics upstream). Fail
+    // safe: prefer not to send over double-send.
+    return { claimed: false };
+  }
+}
+
+/**
+ * Drain up to `maxEventsPerRun` pending events. Recovers stuck 'processing'
+ * events first, then drains. Bounded so a single admin call cannot run
+ * unbounded work. Partial (send-cap-hit) events remain pending for the next call.
  */
 export async function processPendingJobMatchEvents(
   db: JobAlertDataStore,
   sendAlert: AlertSender,
   opts: ProcessOptions = {}
 ): Promise<ProcessOutcome[]> {
+  await recoverStuckEvents(db, opts.stuckTimeoutMs ?? DEFAULTS.stuckTimeoutMs);
   const maxEventsPerRun = opts.maxEventsPerRun ?? DEFAULTS.maxEventsPerRun;
   let snap: QuerySnap;
   try {
-    snap = await db
-      .collection(JOB_MATCH_EVENTS_COLLECTION)
-      .where('status', '==', 'pending')
-      .limit(maxEventsPerRun)
-      .get();
+    snap = await db.collection(JOB_MATCH_EVENTS_COLLECTION).where('status', '==', 'pending').limit(maxEventsPerRun).get();
   } catch {
     return [];
   }
@@ -356,8 +492,9 @@ export async function processPendingJobMatchEvents(
 
 /**
  * Bounded backfill for a SINGLE candidate (Prompt 05R §10). Evaluates the
- * candidate against currently-published jobs only. Deduped — never re-sends an
- * already-delivered alert. OFF by default; an admin must trigger it explicitly.
+ * candidate against currently-published jobs only. Deduped via the same atomic
+ * claimSendSlot — never re-sends an already-delivered alert. OFF by default; an
+ * admin must trigger it explicitly.
  */
 export async function backfillCandidate(
   db: JobAlertDataStore,
@@ -384,21 +521,14 @@ export async function backfillCandidate(
   if (!profSnap.exists) return { ...empty, status: 'no-profile', reason: 'candidate profile not found' };
   const profile = profSnap.data() as CandidateProfile | undefined;
   if (!profile) return { ...empty, status: 'no-profile' };
-  // Backfill respects the opt-in: a candidate who has not enabled alerts is NOT
-  // sent historical alerts. They may enable alerts + then an admin runs this.
   if (!resolveJobAlertPreference(profile.jobAlertPreference)) {
     return { ...empty, status: 'opted-out', reason: 'candidate has not opted in to job alerts' };
   }
   const threshold = resolveMatchingThreshold(profile.matchingThreshold);
 
-  // Only currently published jobs (bounded; no historical flood).
   let jobsSnap: QuerySnap;
   try {
-    jobsSnap = await db
-      .collection('jobs')
-      .where('isActive', '==', true)
-      .limit(jobBatch)
-      .get();
+    jobsSnap = await db.collection('jobs').where('isActive', '==', true).limit(jobBatch).get();
   } catch (err) {
     return { ...empty, status: 'failed', reason: redactReason(err) };
   }
@@ -411,13 +541,9 @@ export async function backfillCandidate(
   for (const jdoc of jobsSnap.docs) {
     if (sent >= maxAlertsPerRun) break;
     const jdata = jdoc.data() || {};
-    if (jdata.deletedAt) continue; // safety: skip soft-deleted
+    if (jdata.deletedAt) continue;
     const version = Math.max(1, Math.floor(Number(jdata.version) || 1));
     const key = dedupKey(email, jdoc.id, version);
-    if (await alreadyDelivered(db, key)) {
-      skipped++;
-      continue;
-    }
     evaluated++;
     const jobForMatching: JobForMatching = {
       id: jdoc.id,
@@ -445,6 +571,8 @@ export async function backfillCandidate(
       skipped++;
       continue;
     }
+    const claimSend = await claimSendSlot(db, key, { candidateEmail: email, jobId: jdoc.id, jobVersion: version, score: result.overallScore, threshold });
+    if (!claimSend.claimed) { skipped++; continue; }
     const manageUrl = `${baseUrl}/candidate/profile`;
     const unsubUrl = unsubscribeUrl(email, baseUrl) || `${baseUrl}/candidate/profile`;
     let outcome: { status: 'sent' | 'skipped' | 'failed'; detail?: string; messageId?: string };

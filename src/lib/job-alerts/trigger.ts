@@ -53,6 +53,12 @@ export interface JobMatchEvent {
   createdAt: unknown; // Timestamp
   processedAt?: unknown;
   attempts: number;
+  /** Timestamp the event was claimed for processing (for stuck-recovery, 05S §6). */
+  claimedAt?: unknown;
+  /** Doc id of the last candidate evaluated in the current pass — paginates
+   * opted-in candidates across bounded drain calls (05S §6: "candidate
+   * pagination and processing beyond the first batch"). */
+  lastCandidateId?: string;
   stats: {
     candidatesEvaluated: number;
     alertsSent: number;

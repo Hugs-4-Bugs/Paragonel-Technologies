@@ -123,6 +123,7 @@ export const servicesContent: ServiceContent[] = [
       { title: 'Internal Business Systems', description: 'Tools for your own teams — ops, finance, HR, ops-intelligence — that capture the process instead of forcing the process into a generic tool.' },
       { title: 'Workflow Automation', description: 'Event-driven automation that connects your systems end-to-end, with human checkpoints where judgment is required.' },
       { title: 'Customer Portals', description: 'Self-service portals that let your customers do what they need without a support ticket, securely and with the right data isolation.' },
+      { title: 'Database Engineering', description: 'Schema design, indexing, partitioning, and query performance for transactional and analytical workloads — a data model that stays correct and fast as volume grows, with migrations that do not lock the business.' },
     ],
     diagram: {
       eyebrow: 'Product engineering lifecycle',
@@ -171,6 +172,9 @@ export const servicesContent: ServiceContent[] = [
       { title: 'Infrastructure Management', description: 'Infrastructure as code (Terraform-class), versioned and reviewed — no snowflake servers, no "don\'t touch that box" tribal knowledge.' },
       { title: 'Monitoring & Observability', description: 'Metrics, logs, traces, and alerts that surface regressions before users do, with SLOs that match what your customers actually care about.' },
       { title: 'Scalability Engineering', description: 'Capacity planning, load testing, and architecture for the concurrency curve ahead — event-driven systems, caching, and partitioning where the load demands it.' },
+      { title: 'Distributed Systems Engineering', description: 'Architecture for distributed systems — service boundaries, data consistency, failure isolation, and the operational patterns (retry, backpressure, circuit-breaking) that keep a multi-service system honest under load.' },
+      { title: 'Microservices Architecture', description: 'Decomposition into right-sized services with clear contracts, API boundaries, and independent deployability — designed against your actual team and domain boundaries, not a generic microservices template.' },
+      { title: 'Event Streaming', description: 'Event-streaming backbones (Kafka-class brokers, event schemas, replay) that decouple producers from consumers and make the system\u2019s real-time flow observable and durable.' },
     ],
     diagram: {
       eyebrow: 'Cloud / DevOps pipeline',

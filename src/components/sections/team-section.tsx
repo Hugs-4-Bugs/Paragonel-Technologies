@@ -72,12 +72,11 @@ export function TeamSection() {
                   {member.imageUrl ? (
                       <Image
                         src={member.imageUrl}
-                        alt={member.name}
+                        alt={`${member.name}, ${member.title}, Paragonel Technologies`}
                         width={140}
                         height={140}
                         className="rounded-full border-4 border-primary/30 group-hover:border-primary/70 object-cover transition-all h-[140px] w-[140px]"
                         data-ai-hint={member.aiHint}
-                        unoptimized
                       />
                   ) : (
                       <div className="w-[140px] h-[140px] bg-muted rounded-full flex items-center justify-center border-4 border-primary/30 group-hover:border-primary/70 transition-all">
@@ -122,12 +121,11 @@ export function TeamSection() {
                 <div className="relative mb-6 sm:mb-0">
                   <Image
                     src={selectedMember.imageUrl}
-                    alt={selectedMember.name}
+                    alt={`${selectedMember.name}, ${selectedMember.title}, Paragonel Technologies`}
                     width={160}
                     height={160}
                     className="rounded-full border-4 border-primary object-cover shadow-xl h-[160px] w-[160px]"
                     data-ai-hint={selectedMember.aiHint}
-                    unoptimized
                   />
                   {selectedMember.icon && <selectedMember.icon className="absolute bottom-2 right-2 h-10 w-10 p-2 bg-primary text-primary-foreground rounded-full shadow-md border-2 border-background neon-icon" />}
                 </div>

@@ -147,9 +147,9 @@ export function AboutSection() {
                     src="/images/Prabhat.png"
                     alt="Prabhat Kumar, Founder & CEO, Paragonel Technologies"
                     fill
+                    priority
                     sizes="(max-width: 1024px) 100vw, 480px"
                     className="object-cover"
-                    unoptimized
                   />
                 </div>
                 <figcaption className="px-5 py-4 text-xs text-muted-foreground">

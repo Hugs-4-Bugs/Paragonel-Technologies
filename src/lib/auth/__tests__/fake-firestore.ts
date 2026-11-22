@@ -42,10 +42,16 @@ class FakeQuery {
   private filters: { field: string; op: string; value: unknown }[] = [];
   private orders: { field: string; dir: 'asc' | 'desc' }[] = [];
   private lim: number | null = null;
+  private startAfterCursor: { id: string } | null = null;
   constructor(private col: FakeCollection) {}
   where(field: string, op: string, value: unknown) { this.filters.push({ field, op, value }); return this; }
   orderBy(field: string, dir: 'asc' | 'desc' = 'asc') { this.orders.push({ field, dir }); return this; }
   limit(n: number) { this.lim = n; return this; }
+  /** Resume after a previous doc snapshot ({id}). Used for candidate pagination. */
+  startAfter(cursor: { id: string } | string) {
+    this.startAfterCursor = typeof cursor === 'string' ? { id: cursor } : cursor;
+    return this;
+  }
   async get() {
     let rows: { id: string; data: Doc }[] = [];
     for (const [id, data] of this.col.docs) {
@@ -57,12 +63,22 @@ class FakeQuery {
       }
       if (ok) rows.push({ id, data });
     }
+    // startAfter: skip rows up to + including the cursor id (lexicographic > cursor).
+    if (this.startAfterCursor) {
+      const cid = this.startAfterCursor.id;
+      rows = rows.filter((r) => r.id > cid);
+    }
     for (const o of this.orders) {
-      const t = (a: { data: Doc }) => {
+      const t = (a: { id: string; data: Doc }) => {
+        if (o.field === '__name__') return a.id;
         const v = a.data[o.field];
         return v instanceof Timestamp ? v.toMillis() : (v as number) ?? 0;
       };
-      rows.sort((a, b) => (o.dir === 'asc' ? t(a) - t(b) : t(b) - t(a)));
+      rows.sort((a, b) => (o.dir === 'asc' ? (t(a) > t(b) ? 1 : t(a) < t(b) ? -1 : 0) : (t(b) > t(a) ? 1 : t(b) < t(a) ? -1 : 0)));
+    }
+    // If orderBy('__name__') is present, also enforce cursor ordering by id.
+    if (this.orders.some((o) => o.field === '__name__') && !this.startAfterCursor) {
+      rows.sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0));
     }
     if (this.lim != null) rows = rows.slice(0, this.lim);
     const docs = rows.map((r) => ({ id: r.id, data: () => r.data, exists: true, ref: new FakeDocRef(this.col, r.id) }));
@@ -84,6 +100,8 @@ class FakeCollection {
   }
   orderBy(field: string, dir: 'asc' | 'desc' = 'asc') { return new FakeQuery(this).orderBy(field, dir); }
   limit(n: number) { return new FakeQuery(this).limit(n); }
+  /** Convenience: startAfter on the collection (chains a new query). */
+  startAfter(cursor: { id: string } | string) { return new FakeQuery(this).startAfter(cursor); }
   async get() {
     const docs = [...this.docs.entries()].map(([id, data]) => ({ id, data: () => data, exists: true, ref: new FakeDocRef(this, id) }));
     return { empty: docs.length === 0, docs, size: docs.length };
@@ -99,18 +117,26 @@ class FakeBatch {
 
 export class FakeFirestore {
   collections = new Map<string, FakeCollection>();
+  /** Serializes concurrent transactions so claim/check-then-set is atomic in tests
+   *  (mirrors Firestore's serialized transaction semantics). */
+  private txChain: Promise<unknown> = Promise.resolve();
   collection(name: string) {
     let c = this.collections.get(name);
     if (!c) { c = new FakeCollection(); this.collections.set(name, c); }
     return c;
   }
   batch() { return new FakeBatch(); }
-  async runTransaction<T>(cb: (tx: { get: (r: FakeDocRef | FakeQuery) => Promise<unknown>; set: (r: FakeDocRef, d: Doc, o?: { merge?: boolean }) => void; update: (r: FakeDocRef, d: Doc) => void }) => Promise<T>): Promise<T> {
-    const tx = {
-      get: async (r: FakeDocRef | FakeQuery) => (r instanceof FakeDocRef ? r.get() : r.get()),
-      set: (r: FakeDocRef, d: Doc, o?: { merge?: boolean }) => { void r.set(d, o); },
-      update: (r: FakeDocRef, d: Doc) => { void r.update(d); },
-    };
-    return cb(tx);
+  runTransaction<T>(cb: (tx: { get: (r: FakeDocRef | FakeQuery) => Promise<unknown>; set: (r: FakeDocRef, d: Doc, o?: { merge?: boolean }) => void; update: (r: FakeDocRef, d: Doc) => void }) => Promise<T>): Promise<T> {
+    const run = this.txChain.then(async () => {
+      const tx = {
+        get: async (r: FakeDocRef | FakeQuery) => (r instanceof FakeDocRef ? r.get() : r.get()),
+        set: (r: FakeDocRef, d: Doc, o?: { merge?: boolean }) => { void r.set(d, o); },
+        update: (r: FakeDocRef, d: Doc) => { void r.update(d); },
+      };
+      return cb(tx);
+    });
+    // Keep the chain sequential regardless of success/failure.
+    this.txChain = run.then(() => undefined, () => undefined);
+    return run as Promise<T>;
   }
 }
