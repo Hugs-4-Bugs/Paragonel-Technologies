@@ -15,7 +15,7 @@ export default defineConfig({
       'src/lib/__tests__/**/*.test.ts',
     ],
     globals: false,
-    setupFiles: [],
+    setupFiles: ['./vitest.setup.ts'],
   },
   resolve: {
     alias: {

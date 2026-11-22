@@ -114,6 +114,9 @@ const RATE_WINDOWS: Record<string, { max: number; windowMs: number }> = {
   // email) so abuse is limited to disabling alerts for the token's own account;
   // rate-limited to block brute-force / enumeration of tokens.
   jobAlertUnsub: { max: 10, windowMs: 10 * 60 * 1000 },
+  // Phase 6.3: chatbot career-assistant match endpoint. Public + read-only
+  // (no PII write), but bounded to prevent job-list scraping / enumeration.
+  chatCareerAssist: { max: 15, windowMs: 10 * 60 * 1000 },
 };
 
 const buckets = new Map<string, Bucket>();

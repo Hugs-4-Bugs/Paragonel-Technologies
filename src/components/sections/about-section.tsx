@@ -2,16 +2,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Linkedin, ArrowUpRight } from 'lucide-react';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
+import { XIcon } from '@/components/brand/x-icon';
 
 /**
- * AboutSection — Paragonel company story (Prompt 05D §3).
+ * AboutSection — Paragonel company story (Prompt 05D §3; founder profile
+ * reworked to a credible 6-part profile: hero, engineering foundation, what he
+ * is building, vision, why AcquisitionOS matters, social profiles).
  *
  * Six sections, on the 05A/05B/05C editorial system:
  *   A. Company introduction
  *   B. Why Paragonel exists (engineering philosophy)
  *   C. Engineering philosophy — five principles
- *   D. Founder — verified facts only (Prabhat Kumar, Founder & CEO, BE CS,
- *      prior: Netcore Cloud). No invented quote, years, awards, certs, or team.
+ *   D. Founder — verified facts only (Prabhat Kumar, Founder & CEO, B.E. CS).
+ *      No years, employment dates, previous-employer row, awards, certs, public
+ *      speaking, or founder milestones are claimed. The prior "Engineer at
+ *      Netcore Cloud" row and the defensive disclaimer were removed.
  *   E. Five engineering disciplines — narrative; links to /services (the
  *      current catalogue). The 13-offering catalogue is engineering scope, NOT
  *      proof of 13 delivered engagements.
@@ -136,9 +141,10 @@ export function AboutSection() {
         </div>
       </section>
 
-      {/* D. Founder — verified facts only */}
+      {/* D. Founder profile — verified facts only (6-part) */}
       <section className="pt-section pt-surface-quiet">
         <div className="pt-shell">
+          {/* D1. Hero — photograph, name, role, introduction, social profiles */}
           <div className="grid gap-12 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16">
             <Reveal>
               <figure className="overflow-hidden rounded-[var(--pt-radius-md)] border border-border bg-secondary/20">
@@ -161,33 +167,102 @@ export function AboutSection() {
               <span className="pt-eyebrow">Founder</span>
               <h2 className="pt-h1 mt-6 text-foreground">Prabhat Kumar.</h2>
               <p className="mt-4 text-base font-medium text-foreground">Founder &amp; CEO, Paragonel Technologies Pvt. Ltd.</p>
+              <p className="mt-6 max-w-xl text-base leading-relaxed text-foreground/90">
+                Prabhat Kumar is the Founder and CEO of Paragonel Technologies, where he leads the
+                company&apos;s direction across software engineering, AI-native products and
+                technology-led solutions. His work is grounded in backend engineering and
+                application architecture — turning complex technical problems into practical,
+                dependable software that businesses can actually run.
+              </p>
               <dl className="mt-6 space-y-px bg-border">
                 <Fact label="Role" value="Founder & CEO" />
                 <Fact label="Education" value="Bachelor of Engineering (B.E.), Computer Science" />
-                <Fact label="Previous background" value="Engineer at Netcore Cloud" />
               </dl>
-              <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                Prabhat leads Paragonel as the architect behind its product portfolio —
-                including AcquisitionOS, an AI-native client acquisition platform currently in
-                private beta — and oversees the engineering services the company delivers. The
-                same stance that refuses to invent a metric on the marketing site refuses to
-                invent a data point in an AcquisitionOS opportunity report: missing information
-                stays missing. Buyers engage with the engineers who build the work, not a layer
-                in between.
-              </p>
-              <p className="mt-4 max-w-xl text-xs leading-relaxed text-muted-foreground">
-                No years of experience, employment dates, awards, certifications, public
-                speaking, or founder milestones are claimed beyond the verified facts above.
-              </p>
-              <div className="mt-7">
+              {/* Founder's personal profiles — LinkedIn + X. Distinct from the
+                  company LinkedIn URL; both open safely in a new tab. */}
+              <div className="mt-7 flex flex-wrap gap-3">
                 <Link
                   href="https://www.linkedin.com/in/prabhat-kumar-6963661a4/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="pt-btn pt-btn-ghost"
+                  aria-label="Prabhat Kumar on LinkedIn (opens in a new tab)"
                 >
                   <Linkedin className="h-4 w-4" /> LinkedIn
                 </Link>
+                <Link
+                  href="https://x.com/PrabhatKumarHQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pt-btn pt-btn-ghost"
+                  aria-label="Prabhat Kumar on X (opens in a new tab)"
+                >
+                  <XIcon className="h-4 w-4" /> X
+                </Link>
+              </div>
+            </Reveal>
+          </div>
+
+          {/* D2–D5. Foundation · what he is building · vision · product direction */}
+          <div className="mt-14 grid gap-10 md:grid-cols-2 lg:gap-14">
+            <Reveal>
+              <div className="border-t border-border pt-6">
+                <h3 className="text-base font-semibold text-foreground">Engineering foundation</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  His engineering foundation is in computer science and Java backend development —
+                  Spring Boot, REST APIs, data modelling with SQL and Hibernate/JPA, application
+                  security and software architecture. Around that core, he works across the modern
+                  product stack: Next.js, React and TypeScript on the front end; cloud
+                  infrastructure, Docker and CI/CD on the platform side; and AI-enabled application
+                  workflows that connect language models to real product work. These are areas he
+                  works in, not a claim of equal depth in each — the spine is backend engineering
+                  and architecture.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal>
+              <div className="border-t border-border pt-6">
+                <h3 className="text-base font-semibold text-foreground">What he is building</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  Paragonel ships its own products alongside its engineering services.{' '}
+                  <Link href="/our-product/acquisitionos" className="font-medium text-foreground underline-offset-4 hover:underline">AcquisitionOS</Link>{' '}
+                  is the flagship — an AI-powered client acquisition operating system, currently
+                  in private beta.{' '}
+                  <Link href="/our-product/systemfoundry" className="font-medium text-foreground underline-offset-4 hover:underline">SystemFoundry</Link>{' '}
+                  is an internal architecture simulator used for Paragonel&apos;s cloud-engineering
+                  work.{' '}
+                  <Link href="/our-product/codeguard-ai" className="font-medium text-foreground underline-offset-4 hover:underline">CodeGuard AI</Link>,
+                  a VS Code extension giving real-time cloud-cost feedback on Terraform and
+                  CloudFormation, is published on the VS Code Marketplace. These are
+                  Paragonel&apos;s own products, distinct from client engagements listed on
+                  Selected Work.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal>
+              <div className="border-t border-border pt-6">
+                <h3 className="text-base font-semibold text-foreground">Vision</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  Paragonel is being built as an engineering-led technology company where strong
+                  software foundations and intelligent automation reinforce each other. The intent
+                  is not to chase every trend, but to build a small set of useful systems well —
+                  products that do specific work, and services that deliver the same engineering
+                  quality to clients. The same engineers who ship Paragonel&apos;s products deliver
+                  its engagements, so the engineering is tested by real operation.
+                </p>
+              </div>
+            </Reveal>
+            <Reveal>
+              <div className="border-t border-border pt-6">
+                <h3 className="text-base font-semibold text-foreground">Why AcquisitionOS matters</h3>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  AcquisitionOS matters to Paragonel because it is where the company&apos;s
+                  engineering, AI and automation work meets a concrete business problem — client
+                  acquisition, end to end. Building it forces the same decisions Paragonel makes
+                  for clients: product architecture, reliable AI behaviour, operable
+                  infrastructure and honest data. The product is the proof that the services are
+                  real, and the services feed back into the product.
+                </p>
               </div>
             </Reveal>
           </div>

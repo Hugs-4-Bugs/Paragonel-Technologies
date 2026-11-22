@@ -14,13 +14,13 @@
     "email": "contact@paragonel.com",
     "website": "https://acquisitionosbeta.vercel.app/",
     "linkedin": "https://www.linkedin.com/company/paragonel.vercel.app/home/?viewAsMember=true",
-    "twitter": "https://x.com/kattyPrabhat",
+    "twitter": "https://x.com/PrabhatKumarHQ",
     "technologies": ["AI/ML", "Next.js", "React", "Node.js", "Firebase", "Spring Boot", "AWS", "GCP", "DevOps", "Kubernetes", "Docker", "Java", "Python"],
     "founder_details": {
       "name": "Prabhat Kumar",
       "title": "Founder & CEO",
-      "background": "Bachelor of Engineering in Computer Science. Specialist Java Backend Developer with experience building massive-scale systems at Netcore Cloud, handling millions of real-time events.",
-      "expertise": ["High-concurrency engineering", "Spring Boot", "Cloud-native architectures", "AI systems", "Full-stack development"]
+      "background": "Bachelor of Engineering in Computer Science. Backend engineer with a foundation in Java, Spring Boot, REST APIs, SQL, Hibernate/JPA, databases, application security and software architecture; works across Next.js, React, TypeScript, cloud infrastructure, Docker, CI/CD and AI-enabled application workflows.",
+      "expertise": ["Backend engineering", "Spring Boot", "Application architecture", "Cloud-native systems", "AI-enabled workflows", "Full-stack development"]
     }
   },
   "pages": [

@@ -1,13 +1,19 @@
 /**
- * POST /api/newsletter — secure server-side newsletter subscription (Phase 1B).
+ * POST /api/newsletter — secure server-side newsletter subscription (Phase 1B + Phase 7).
  *
  * Flow: input validation -> honeypot -> rate limit -> duplicate check against
- *       existing subscribers (Firestore Admin SDK) -> store.
+ *       existing active subscribers (Firestore Admin SDK) -> store -> send a
+ *       branded confirmation email with a one-click unsubscribe link.
  *
- * No email is sent (no established requirement for newsletter confirmation
- * email). The browser never writes to Firestore directly. Field set matches the
- * existing admin /admin/newsletter CRM (email, source, subscribedAt) plus a
- * deletedAt soft-delete flag.
+ * Phase 7 changes: a branded confirmation email is now sent immediately after
+ * the subscription is stored (previously "No email is sent"). The email includes
+ * a signed one-click unsubscribe link bound to the subscriber's address. The
+ * email status (sent/skipped/failed) is recorded on the subscriber document for
+ * diagnosis; a failed email NEVER discards the stored subscription.
+ *
+ * Suppression: the duplicate check refuses a re-subscribe while an ACTIVE
+ * subscription exists (deletedAt == null). The unsubscribe route sets deletedAt,
+ * which any future campaign send MUST filter on (campaign send is not yet built).
  *
  * Status codes: 201 subscribed, 400 invalid, 409 already subscribed,
  *               429 rate-limited, 503 admin SDK not configured.
@@ -19,6 +25,8 @@ import {
   getClientId,
   checkRateLimit,
 } from '@/lib/submission-security';
+import { sendNewsletterConfirmation } from '@/lib/email';
+import { newsletterUnsubscribeUrl } from '@/lib/newsletter/unsubscribe';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,8 +89,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Could not verify subscription.' }, { status: 500 });
   }
 
+  let ref;
   try {
-    await db.collection('newsletterSubscribers').add({
+    ref = await db.collection('newsletterSubscribers').add({
       email: data.email,
       source: 'Website Footer',
       subscribedAt: new Date(),
@@ -93,7 +102,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Could not store subscription.' }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true }, { status: 201 });
+  // Send the branded confirmation email with a one-click unsubscribe link.
+  // Best-effort: a failed email never discards the stored subscription. The
+  // status is recorded on the subscriber doc for diagnosis/retry.
+  const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+  const unsubUrl = newsletterUnsubscribeUrl(data.email, baseUrl);
+  const confirmation = await sendNewsletterConfirmation({
+    to: data.email,
+    unsubscribeUrl: unsubUrl,
+  });
+  try {
+    await ref.update({
+      confirmationEmail: { status: confirmation.status, detail: confirmation.detail || null, at: new Date() },
+    });
+  } catch {
+    // Non-fatal: the subscription is already stored; this is diagnostic only.
+  }
+
+  return NextResponse.json(
+    { success: true, notification: confirmation.status },
+    { status: 201 }
+  );
 }
 
 export async function GET() {

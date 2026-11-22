@@ -41,6 +41,7 @@ next-env.d.ts
 # secrets / env files — never commit real credentials
 .env*
 !.env.example
+!.env.template
 
 # firebase
 firebase-debug.log

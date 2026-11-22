@@ -121,6 +121,22 @@ export async function POST(request: Request) {
   const db = getAdminDb();
   if (!db) return jsonError(503, 'Service unavailable.');
 
+  // Phase 4: read the EXISTING resume path (if any) BEFORE uploading the new
+  // one, so we can delete the previous object afterwards. Previously a new
+  // upload silently replaced `resumeStoragePath` on the profile while the old
+  // Storage object was orphaned indefinitely — accumulating private candidate
+  // documents with no cleanup. The candidate still sees the new resume as
+  // `confirmed:false` parsed data to review (the confirmation-before-overwrite
+  // guarantee for PROFILE fields is unchanged).
+  let previousPath: string | undefined;
+  try {
+    const prevSnap = await db.collection('candidates').doc(email).get();
+    const prev = prevSnap.exists ? (prevSnap.data() as { resumeStoragePath?: string }) : null;
+    previousPath = prev?.resumeStoragePath;
+  } catch {
+    // Non-fatal: if we cannot read the previous path, we simply skip cleanup.
+  }
+
   // Private, candidate-scoped path.
   const safeName = sanitizeFileName(f.name);
   const objectPath = `candidates/${email}/resumes/${Date.now()}_${safeName}`;
@@ -162,6 +178,21 @@ export async function POST(request: Request) {
     },
     { merge: true },
   );
+
+  // Phase 4: delete the PREVIOUS resume object now that the new one is stored +
+  // the profile points at the new path. Best-effort + non-fatal: a failure here
+  // does NOT roll back the successful upload (the candidate has a working
+  // resume). The orphan is logged for later cleanup but never blocks the user.
+  if (previousPath && previousPath !== objectPath) {
+    try {
+      await storage.bucket().file(previousPath).delete();
+    } catch (err) {
+      console.warn(
+        '[candidate/resume] orphan cleanup failed (non-fatal):',
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
 
   return NextResponse.json({
     message: parsed ? 'Resume uploaded + parsed. Review the extracted fields before saving.' : 'Resume uploaded. Parsing could not be completed — you can fill in your profile manually.',

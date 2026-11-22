@@ -21,13 +21,14 @@
  *               409 duplicate, 422 profile incomplete, 429 rate-limited, 503 unavailable.
  */
 import { NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebase-admin';
+import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { verifySession } from '@/lib/auth/sessions';
 import { checkRateLimit, getClientId } from '@/lib/submission-security';
 import { meetsApplicationMinimum } from '@/lib/auth/candidate-profile';
 import { logSecurityEvent } from '@/lib/auth/security-events';
 import { getClientIp, jsonError } from '@/lib/auth/route-helpers';
+import { sendApplicationConfirmation, SAFE_ATTACHMENT_BYTES } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -177,9 +178,57 @@ export async function POST(request: Request) {
     return jsonError(500, 'Could not store application.');
   }
 
+  // 8. Branded application confirmation email (Phase 5.2 / Prompt 05Q §9).
+  //    Best-effort resume attachment: the candidate's own resume is fetched
+  //    from private Storage + attached ONLY if it downloads successfully AND
+  //    its size is within the safe SMTP attachment limit. If the fetch or size
+  //    check fails, the email is still sent with a secure authenticated
+  //    reference (a link to the candidate's own profile). The resume path comes
+  //    from the authenticated application record (never the request body), so
+  //    another candidate's resume can never be attached. A failed email NEVER
+  //    discards the successfully stored application.
+  let resumeBuffer: Buffer | undefined;
+  let resumeFileName: string | undefined;
+  const resumePath = profile.resumeStoragePath || '';
+  if (resumePath) {
+    try {
+      const bucket = getAdminBucket()?.bucket();
+      if (bucket) {
+        const file = bucket.file(resumePath);
+        const [meta] = await file.getMetadata();
+        const sizeBytes = Number(meta.size || 0);
+        if (sizeBytes > 0 && sizeBytes <= SAFE_ATTACHMENT_BYTES) {
+          const [buf] = await file.download();
+          resumeBuffer = buf;
+          resumeFileName = (resumePath.split('/').pop() || 'resume').slice(0, 100);
+        }
+      }
+    } catch {
+      // Non-fatal: send the confirmation without the attachment.
+    }
+  }
+  const confirmation = await sendApplicationConfirmation({
+    to: email,
+    candidateName: profile.fullName || '',
+    jobTitle: job.title || '',
+    applicationId,
+    appliedAt: new Date(),
+    resumeBuffer,
+    resumeFileName,
+  });
+  // Record the honest email status on the application document for diagnosis.
+  try {
+    await appRef.update({ confirmationEmail: { status: confirmation.status, detail: confirmation.detail || null, at: new Date() } });
+  } catch {
+    // Non-fatal: the application is already stored; this is diagnostic only.
+  }
+
   await logSecurityEvent({ type: 'register', email, ip, detail: `job_application:${data.jobId}` });
 
-  return NextResponse.json({ success: true, message: 'Application submitted.' }, { status: 201 });
+  return NextResponse.json(
+    { success: true, message: 'Application submitted.', reference: applicationId, notification: confirmation.status },
+    { status: 201 },
+  );
 }
 
 export async function GET() {

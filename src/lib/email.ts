@@ -339,3 +339,192 @@ export async function sendJobMatchAlert(input: JobMatchAlertInput): Promise<Emai
   const text = buildJobMatchAlertText(input);
   return sendSingle(input.to, JOB_MATCH_ALERT_SUBJECT, html, text);
 }
+
+/* -------------------------------------------------------------------------- */
+/* Application confirmation (Phase 5.2 / Prompt 05Q §9)                        */
+/* -------------------------------------------------------------------------- */
+/*
+ * Sent to the candidate's verified account email immediately after a successful
+ * application submission. Includes the job title, company, application reference
+ * (the APP_ id), and the server-recorded submission time.
+ *
+ * Resume attachment policy (Prompt 05Q §9): the candidate's own resume is
+ * attached ONLY when (a) the resume path resolves from the authenticated
+ * application record (never the request body — another candidate's resume can
+ * never be attached), (b) the file downloads successfully from private Storage,
+ * and (c) its size is within the safe SMTP attachment limit. If any of those
+ * fail, the email is still sent with a secure authenticated reference (a link
+ * to the candidate's own profile where the resume can be viewed) instead of an
+ * attachment. A public, permanent resume URL is NEVER included.
+ *
+ * Delivery honesty: returns the same EmailResult contract (sent/skipped/failed)
+ * so the caller can record the real status on the application document.
+ */
+
+/** Conservative max attachment size — well under common SMTP (~10MB) limits. */
+export const SAFE_ATTACHMENT_BYTES = 3 * 1024 * 1024; // 3 MB
+
+export interface ApplicationConfirmationInput {
+  to: string;
+  candidateName: string;
+  jobTitle: string;
+  companyName?: string;
+  applicationId: string;
+  appliedAt: Date;
+  /** Optional resume attachment (Buffer + filename). Attached only if provided. */
+  resumeBuffer?: Buffer;
+  resumeFileName?: string;
+  /** Candidate's own profile URL (where the resume + application can be viewed). */
+  profileUrl?: string;
+}
+
+export const APPLICATION_CONFIRMATION_SUBJECT = 'Application received — Paragonel';
+
+/** Build the branded HTML body for the application confirmation. Exported for tests. */
+export function buildApplicationConfirmationHtml(input: ApplicationConfirmationInput): string {
+  const company = input.companyName || 'Paragonel Technologies';
+  const baseUrl = process.env.APP_BASE_URL || 'https://paragonel.com';
+  const profileUrl = input.profileUrl || `${baseUrl}/candidate/profile`;
+  const appliedAtStr = input.appliedAt.toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC';
+  const resumeNote = input.resumeBuffer
+    ? `<p style="margin-top:16px;font-size:12px;color:#71717a;">Your resume (${escapeHtml(input.resumeFileName || 'resume')}) is attached to this email for your records.</p>`
+    : `<p style="margin-top:16px;font-size:12px;color:#71717a;">Your resume is saved securely with your application — you can view it any time in your <a href="${escapeHtml(profileUrl)}" style="color:#71717a;">candidate profile</a>.</p>`;
+  const body = `
+    <p>Hi ${escapeHtml(input.candidateName || 'there')},</p>
+    <p>Thank you for applying. We have received your application for the following role:</p>
+    <p style="font-size:16px;color:#0f172a;font-weight:700;margin:4px 0 2px;">${escapeHtml(input.jobTitle)}</p>
+    <p style="margin:0 0 12px;font-size:12px;color:#71717a;">${escapeHtml(company)}</p>
+    <table style="width:100%;font-size:13px;color:#18181b;border-collapse:collapse;margin-top:12px;">
+      <tr><td style="padding:6px 0;width:170px;color:#71717a;">Application reference</td><td><strong>${escapeHtml(input.applicationId)}</strong></td></tr>
+      <tr><td style="padding:6px 0;color:#71717a;">Submitted</td><td>${escapeHtml(appliedAtStr)}</td></tr>
+    </table>
+    ${resumeNote}
+    <p style="margin-top:20px;">
+      <a href="${escapeHtml(profileUrl)}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:14px;">View your application</a>
+    </p>
+    <p style="margin-top:24px;font-size:12px;color:#71717a;">
+      Our team reviews every application. We will contact you only if your profile is shortlisted for this role.
+      You can apply for other roles any time from the <a href="${escapeHtml(baseUrl)}/careers" style="color:#71717a;">Careers page</a>.
+    </p>`;
+  return brandedHtml('We received your application', body);
+}
+
+/** Plain-text fallback for the application confirmation. Exported for tests. */
+export function buildApplicationConfirmationText(input: ApplicationConfirmationInput): string {
+  const company = input.companyName || 'Paragonel Technologies';
+  const baseUrl = process.env.APP_BASE_URL || 'https://paragonel.com';
+  const profileUrl = input.profileUrl || `${baseUrl}/candidate/profile`;
+  const appliedAtStr = input.appliedAt.toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC';
+  return [
+    `Application received — ${company}`,
+    ``,
+    `Hi ${input.candidateName || 'there'},`,
+    ``,
+    `Thank you for applying. We received your application for:`,
+    `${input.jobTitle}`,
+    company,
+    ``,
+    `Application reference: ${input.applicationId}`,
+    `Submitted: ${appliedAtStr}`,
+    ``,
+    input.resumeBuffer
+      ? `Your resume (${input.resumeFileName || 'resume'}) is attached.`
+      : `Your resume is saved securely with your application — view it in your candidate profile: ${profileUrl}`,
+    ``,
+    `View your application: ${profileUrl}`,
+    ``,
+    `Our team reviews every application. We will contact you only if your profile is shortlisted.`,
+  ].join('\n');
+}
+
+/**
+ * Send the application confirmation email. Attaches the candidate's own resume
+ * (Buffer) when provided; otherwise sends a secure-reference email. Returns the
+ * honest EmailResult — callers record it on the application document.
+ */
+export async function sendApplicationConfirmation(input: ApplicationConfirmationInput): Promise<EmailResult> {
+  const html = buildApplicationConfirmationHtml(input);
+  const text = buildApplicationConfirmationText(input);
+  const { transport, mode } = buildTransport();
+  if (!transport) return { status: 'skipped', detail: `transport:${mode}` };
+  const from = senderAddress();
+  if (!from) return { status: 'skipped', detail: 'no-sender-address' };
+  try {
+    const attachments =
+      input.resumeBuffer && input.resumeFileName
+        ? [{
+            filename: input.resumeFileName.slice(0, 100),
+            content: input.resumeBuffer,
+            contentType: 'application/octet-stream',
+          }]
+        : [];
+    const info = await transport.sendMail({ from, to: input.to, subject: APPLICATION_CONFIRMATION_SUBJECT, text, html, attachments });
+    return { status: 'sent', messageId: info.messageId, detail: `via:${mode}` };
+  } catch (err: unknown) {
+    const code = err instanceof Error ? err.message.slice(0, 80) : 'unknown';
+    return { status: 'failed', detail: `send-error:${code}` };
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Newsletter confirmation (Phase 7)                                          */
+/* -------------------------------------------------------------------------- */
+/*
+ * Sent to a subscriber immediately after a successful subscription. Confirms
+ * the subscription, sets expectations (occasional product/company updates),
+ * and includes a one-click unsubscribe link (signed token bound to the
+ * subscriber's email). This is NOT marketing email — it is a transactional
+ * confirmation of the subscription action the user just took, so it is sent
+ * even before any campaign exists.
+ *
+ * The unsubscribe link is generated by the caller (which has the OTP_SECRET)
+ * and passed in; this module stays decoupled from the token-signing logic.
+ */
+
+export interface NewsletterConfirmationInput {
+  to: string;
+  /** Signed one-click unsubscribe URL (bound to this email). Empty if unavailable. */
+  unsubscribeUrl?: string;
+}
+
+export const NEWSLETTER_CONFIRMATION_SUBJECT = 'Welcome to the Paragonel newsletter';
+
+export function buildNewsletterConfirmationHtml(input: NewsletterConfirmationInput): string {
+  const baseUrl = process.env.APP_BASE_URL || 'https://paragonel.com';
+  const unsub = input.unsubscribeUrl || '';
+  const unsubHtml = unsub
+    ? `<p style="margin-top:24px;font-size:12px;color:#71717a;">You can <a href="${escapeHtml(unsub)}" style="color:#71717a;">unsubscribe anytime</a>. These emails are separate from job-match alerts and from any enquiry you may submit.</p>`
+    : `<p style="margin-top:24px;font-size:12px;color:#71717a;">You can unsubscribe anytime by replying to this email. These emails are separate from job-match alerts and from any enquiry you may submit.</p>`;
+  const body = `
+    <p>Hi,</p>
+    <p>You are now subscribed to the Paragonel newsletter. Thank you for your interest — we will send occasional updates about our products, services, and company news.</p>
+    <p style="margin-top:16px;">
+      <a href="${escapeHtml(baseUrl)}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:14px;">Visit paragonel.com</a>
+    </p>
+    ${unsubHtml}`;
+  return brandedHtml('You are subscribed', body);
+}
+
+export function buildNewsletterConfirmationText(input: NewsletterConfirmationInput): string {
+  const baseUrl = process.env.APP_BASE_URL || 'https://paragonel.com';
+  const lines = [
+    `Welcome to the Paragonel newsletter`,
+    ``,
+    `You are now subscribed. We will send occasional updates about our products, services, and company news.`,
+    ``,
+    `Visit ${baseUrl}`,
+    ``,
+    input.unsubscribeUrl
+      ? `Unsubscribe anytime: ${input.unsubscribeUrl}`
+      : `You can unsubscribe anytime by replying to this email.`,
+    ``,
+    `These emails are separate from job-match alerts and from any enquiry you may submit.`,
+  ];
+  return lines.join('\n');
+}
+
+export async function sendNewsletterConfirmation(input: NewsletterConfirmationInput): Promise<EmailResult> {
+  const html = buildNewsletterConfirmationHtml(input);
+  const text = buildNewsletterConfirmationText(input);
+  return sendSingle(input.to, NEWSLETTER_CONFIRMATION_SUBJECT, html, text);
+}
