@@ -4,7 +4,7 @@ import path from 'node:path';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['src/lib/auth/**/*.test.ts', 'src/lib/auth/__tests__/**/*.test.ts'],
+    include: ['src/lib/auth/**/*.test.ts', 'src/lib/auth/__tests__/**/*.test.ts', 'src/lib/ai/__tests__/**/*.test.ts'],
     globals: false,
     setupFiles: [],
   },

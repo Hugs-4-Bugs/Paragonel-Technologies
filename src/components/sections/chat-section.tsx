@@ -10,10 +10,18 @@ import { MessageCircle, Send, X, Loader2, Bot, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useChatState } from '@/hooks/useChatState';
 import { ChatCareerFlow } from '@/components/ChatCareerFlow';
-import { companyQnaFlow } from '@/ai/flows/company-qna-flow';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
+
+/** Suggested example questions (Prompt 05O §9). */
+const SUGGESTED_QUESTIONS = [
+  'What does Paragonel do?',
+  'Tell me about AcquisitionOS',
+  'What services do you offer?',
+  'Are you hiring?',
+  'How do I contact Paragonel?',
+];
 
 export function ChatSection() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,8 +31,9 @@ export function ChatSection() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const {
-    messages, addMessage, 
-    careerStep, updateCareerStep, 
+    messages, addMessage, updateMessage,
+    sessionId,
+    careerStep, updateCareerStep,
     candidateProfile, setCandidateProfile,
     selectedJob, setSelectedJob,
     matchedJobs, setMatchedJobs,
@@ -39,16 +48,20 @@ export function ChatSection() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsOpen(true), 2500);
-    return () => clearTimeout(timer);
-  }, []);
+  // Prompt 05O §9: the chat is click-to-open only (the floating button is the
+  // obvious affordance). The previous 2.5s auto-open was intrusive + caused
+  // the panel buttons to appear in Lighthouse's a11y scan before interaction.
+  // Removed in favor of a non-intrusive default.
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      addMessage('ai', "Hi! I'm ParagonelAI, your career & company companion. I can help you find your next engineering role at Paragonel. How can I help?");
+      addMessage(
+        'ai',
+        "Hi! I'm **Paragonel AI**, your company + product knowledge assistant. I can answer questions about our services, products (AcquisitionOS, SystemFoundry, CodeGuard AI), careers, and Paragonel itself — using only verified, published info. How can I help?",
+      );
     }
-  }, [isOpen, messages.length, addMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -86,23 +99,55 @@ export function ChatSection() {
     };
   }, []);
 
-  const handleSendMessage = async () => {
-    if (inputValue.trim() === '' || isLoading) return;
-    const userText = inputValue;
+  const handleSendMessage = async (overrideText?: string) => {
+    const userText = (overrideText ?? inputValue).trim();
+    if (userText === '' || isLoading) return;
+    if (!overrideText) setInputValue('');
+
+    // Build bounded history BEFORE adding the new user message (last 8 prior turns).
+    const history = messages
+      .filter((m) => typeof m.content === 'string' && m.status !== 'loading' && m.status !== 'error')
+      .slice(-8)
+      .map((m) => ({ role: (m.role === 'ai' ? 'assistant' : 'user') as 'user' | 'assistant', content: m.content as string }));
+
     addMessage('user', userText);
-    setInputValue('');
-    
+    const loadingId = addMessage('ai', '', { status: 'loading' });
     setIsLoading(true);
+
     try {
-      const response = await companyQnaFlow({ question: userText });
-      if (response.intent === 'careers') {
-        updateCareerStep('offering_help');
-      }
-      addMessage('ai', response.answer);
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userText, sessionId, history }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      updateMessage(loadingId, {
+        content: data.answer || "I couldn't generate a response. Please try again.",
+        citations: Array.isArray(data.citations) ? data.citations : [],
+        status: 'ok',
+      });
     } catch {
-      addMessage('ai', "I encountered a sync issue. You can explore [Careers](/careers) manually.");
+      updateMessage(loadingId, {
+        content: "I'm having trouble responding right now. Please try again, or reach the Paragonel team via the [Contact](/contact) page.",
+        status: 'error',
+      });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /** Retry the last failed AI message by re-sending the preceding user question. */
+  const handleRetry = (errorId: string) => {
+    const idx = messages.findIndex((m) => m.id === errorId);
+    if (idx <= 0) return;
+    // Find the user message immediately before the error.
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === 'user' && typeof messages[i].content === 'string') {
+        updateMessage(errorId, { content: '', status: 'loading' });
+        handleSendMessage(messages[i].content as string);
+        return;
+      }
     }
   };
 
@@ -218,17 +263,61 @@ export function ChatSection() {
         <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
           <div className="p-4 sm:p-5 space-y-6 pb-10">
             {messages.map((msg) => (
-              <div key={msg.id} className={cn("flex w-full", msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+              <div key={msg.id} className={cn("flex flex-col w-full", msg.role === 'user' ? 'items-end' : 'items-start')}>
                 <div className={cn(
                   "max-w-[85%] rounded-[1.25rem] sm:rounded-[1.5rem] px-4 py-2 sm:px-5 sm:py-3 text-sm sm:text-base shadow-sm transition-all leading-relaxed",
-                  msg.role === 'user' 
-                    ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                  msg.role === 'user'
+                    ? 'bg-primary text-primary-foreground rounded-tr-none'
                     : 'bg-zinc-100 dark:bg-zinc-900 rounded-tl-none border border-zinc-200 dark:border-zinc-800'
                 )}>
-                  {renderContent(msg.content)}
+                  {msg.status === 'loading' ? (
+                    <div className="flex items-center gap-1 py-1" aria-label="Paragonel AI is typing">
+                      <span className="h-2 w-2 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="h-2 w-2 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="h-2 w-2 rounded-full bg-current opacity-60 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  ) : (
+                    renderContent(msg.content)
+                  )}
+                  {msg.status === 'error' && (
+                    <button
+                      onClick={() => handleRetry(msg.id)}
+                      className="mt-2 text-xs font-semibold text-primary hover:underline"
+                      aria-label="Retry the last message"
+                    >
+                      Retry
+                    </button>
+                  )}
                 </div>
+                {msg.role === 'ai' && msg.status === 'ok' && msg.citations && msg.citations.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-1.5 max-w-[85%]" aria-label="Source links">
+                    {msg.citations.map((c, i) => (
+                      <Link
+                        key={`${msg.id}-cite-${i}`}
+                        href={c.path}
+                        className="inline-flex items-center gap-1 text-[11px] sm:text-xs px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                      >
+                        {c.title}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
+            {/* Suggested example questions — only when the chat has just the greeting (no user messages yet). */}
+            {messages.length === 1 && messages[0]?.role === 'ai' && !isLoading && careerStep === 'idle' && (
+              <div className="flex flex-wrap gap-2 pt-1" aria-label="Suggested questions">
+                {SUGGESTED_QUESTIONS.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => handleSendMessage(q)}
+                    className="text-xs sm:text-sm px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-primary hover:text-primary transition-colors text-foreground"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
             {careerStep !== 'idle' && (
               <div className="w-full">
                 <ChatCareerFlow 
@@ -268,24 +357,31 @@ export function ChatSection() {
       </CardContent>
 
       {/* Sticky Bottom Input Bar */}
-      <CardFooter className="flex-shrink-0 p-3 sm:p-4 border-t bg-background pb-[calc(12px+env(safe-area-inset-bottom))] sm:pb-4 min-h-[56px]">
-        <div className="relative w-full flex items-center gap-2">
-          <Input 
-            placeholder="Type your message..." 
-            value={inputValue} 
-            onChange={(e) => setInputValue(e.target.value)} 
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} 
-            className="flex-grow h-11 sm:h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-none focus-visible:ring-1 text-sm sm:text-base px-4" 
-          />
-          <Button
-            onClick={handleSendMessage}
-            size="icon"
-            disabled={!inputValue.trim() || isLoading}
-            aria-label="Send message"
-            className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-primary text-white shadow-lg hover:scale-105 active:scale-95 transition-transform shrink-0"
-          >
-            <Send className="h-5 w-5" aria-hidden="true" />
-          </Button>
+      <CardFooter className="flex-shrink-0 p-3 sm:p-4 border-t bg-background pb-[calc(12px+env(safe-area-inset-bottom))] sm:pb-4">
+        <div className="relative w-full">
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Ask Paragonel AI…"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              aria-label="Ask Paragonel AI a question"
+              className="flex-grow h-11 sm:h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border-none focus-visible:ring-1 text-sm sm:text-base px-4"
+            />
+            <Button
+              onClick={() => handleSendMessage()}
+              size="icon"
+              disabled={!inputValue.trim() || isLoading}
+              aria-label="Send message"
+              className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-primary text-white shadow-lg hover:scale-105 active:scale-95 transition-transform shrink-0"
+            >
+              <Send className="h-5 w-5" aria-hidden="true" />
+            </Button>
+          </div>
+          <p className="mt-1.5 text-[10px] sm:text-[11px] text-muted-foreground leading-tight">
+            Paragonel AI answers from verified site info. Conversations are not stored server-side.{' '}
+            <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
+          </p>
         </div>
       </CardFooter>
     </Card>
