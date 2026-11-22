@@ -50,7 +50,10 @@ export interface CandidateProfile {
   domain: string;
   seniority: string;
   summary: string;
-  projects?: string[];
+  // Tolerates structured project entries ({name,description,...}) emitted by the
+  // resume parser (analyze-resume-flow). The chat flow never reads this field —
+  // matching uses skills/experienceYears/domain only — so a permissive shape is safe.
+  projects?: unknown[];
   resumeUrl?: string;
   resumeDataUri?: string;
 }

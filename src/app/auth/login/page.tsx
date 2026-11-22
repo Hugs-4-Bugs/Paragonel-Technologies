@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaptchaWidget } from '@/components/auth/captcha-widget';
+import { safeRedirect } from '@/lib/safe-redirect';
 import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
 
 export default function UserLoginPage() {
@@ -29,7 +30,7 @@ export default function UserLoginPage() {
 function LoginInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const redirect = params.get('redirect') || '/';
+  const redirect = safeRedirect(params.get('redirect'), '/');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

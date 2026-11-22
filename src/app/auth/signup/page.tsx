@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaptchaWidget } from '@/components/auth/captcha-widget';
+import { safeRedirect } from '@/lib/safe-redirect';
 import { Eye, EyeOff, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 const STEPS = ['Details', 'Verify email', 'Set password', 'Done'] as const;
@@ -34,7 +35,7 @@ export default function SignupPage() {
 function SignupInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const redirect = params.get('redirect') || '/candidate/profile';
+  const redirect = safeRedirect(params.get('redirect'), '/candidate/profile');
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [busy, setBusy] = useState(false);

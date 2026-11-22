@@ -44,6 +44,9 @@ const applySchema = z.object({
   website: z.string().max(0).optional().or(z.literal('')),
 });
 
+/** Sentinel thrown inside the create-transaction when an active application already exists. */
+class DuplicateApplication extends Error {}
+
 export async function POST(request: Request) {
   const ip = getClientIp(request);
   // 1. Require candidate session.
@@ -122,49 +125,54 @@ export async function POST(request: Request) {
     );
   }
 
-  // 5. Duplicate check (authenticated email + jobId).
+  // 5 + 6. Transactional duplicate-check + create. The duplicate check + the
+  //        insert run inside a single Firestore transaction so two concurrent
+  //        authenticated POSTs from the same candidate cannot both pass an
+  //        empty-result check and both write (the TOCTOU race a non-atomic
+  //        query-then-write would leave). Firestore re-reads + retries the
+  //        transaction on conflict, so the check + insert are atomic. A
+  //        previously soft-deleted application does NOT block a fresh
+  //        re-application (existing product policy).
+  const appRef = db.collection('jobApplications').doc();
+  const applicationId = 'APP_' + Math.random().toString(36).slice(2, 11);
   try {
-    const existing = await db
-      .collection('jobApplications')
-      .where('candidateEmail', '==', email)
-      .where('jobId', '==', data.jobId)
-      .limit(1)
-      .get();
-    if (!existing.empty) {
-      const d = existing.docs[0].data();
-      if (d && d.deletedAt == null) {
-        return jsonError(409, 'You have already applied for this role.');
+    await db.runTransaction(async (tx) => {
+      const dup = await tx.get(
+        db
+          .collection('jobApplications')
+          .where('candidateEmail', '==', email)
+          .where('jobId', '==', data.jobId),
+      );
+      const hasActive = dup.docs.some(
+        (d) => (d.data() as { deletedAt?: unknown }).deletedAt == null,
+      );
+      if (hasActive) {
+        throw new DuplicateApplication();
       }
-    }
-  } catch (err) {
-    console.error('[job-app] dup-check failed:', err instanceof Error ? err.message : err);
-    return jsonError(500, 'Could not verify application.');
-  }
-
-  // 6. Create the application — associated with the authenticated candidate ID +
-  //    verified email (never client-supplied). Resume is the candidate's profile
-  //    resume (private Storage path).
-  try {
-    await db.collection('jobApplications').add({
-      applicationId: 'APP_' + Math.random().toString(36).slice(2, 11),
-      candidateId: email, // authenticated candidate
-      candidateName: profile.fullName,
-      candidateEmail: email, // verified account email
-      candidatePhone: profile.phone || '',
-      jobId: data.jobId,
-      jobTitle: job.title || '',
-      resumeStoragePath: profile.resumeStoragePath || '',
-      skills: Array.isArray(profile.skills) ? profile.skills : [],
-      coverLetter: data.coverLetter || '',
-      expectedSalary: data.expectedSalary || '',
-      noticePeriod: data.noticePeriod || '',
-      preferredJobLocation: data.preferredJobLocation || '',
-      status: 'New',
-      appliedAt: new Date(),
-      appliedVia: 'candidate_account',
-      deletedAt: null,
+      tx.create(appRef, {
+        applicationId,
+        candidateId: email, // authenticated candidate
+        candidateName: profile.fullName,
+        candidateEmail: email, // verified account email
+        candidatePhone: profile.phone || '',
+        jobId: data.jobId,
+        jobTitle: job.title || '',
+        resumeStoragePath: profile.resumeStoragePath || '',
+        skills: Array.isArray(profile.skills) ? profile.skills : [],
+        coverLetter: data.coverLetter || '',
+        expectedSalary: data.expectedSalary || '',
+        noticePeriod: data.noticePeriod || '',
+        preferredJobLocation: data.preferredJobLocation || '',
+        status: 'New',
+        appliedAt: new Date(),
+        appliedVia: 'candidate_account',
+        deletedAt: null,
+      });
     });
   } catch (err) {
+    if (err instanceof DuplicateApplication) {
+      return jsonError(409, 'You have already applied for this role.');
+    }
     console.error('[job-app] store failed:', err instanceof Error ? err.message : err);
     return jsonError(500, 'Could not store application.');
   }

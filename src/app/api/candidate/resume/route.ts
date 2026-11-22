@@ -41,6 +41,22 @@ const ALLOWED_RESUME_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
 const SIGNED_URL_TTL_SECONDS = 5 * 60; // 5 minutes
+const PARSE_TIMEOUT_MS = 30_000; // hard cap on the AI parse call (parser-abuse guard)
+
+/**
+ * Race a promise against a timeout. Protects against pathological resumes
+ * (or a slow/stuck model call) hanging the upload request indefinitely. A
+ * timeout is treated as a parse failure (honest parseError), never a hang.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
 
 /** Magic-byte validation (don't trust the extension/MIME alone). */
 function detectResumeKind(buf: Buffer): 'pdf' | 'doc' | 'docx' | null {
@@ -126,7 +142,7 @@ export async function POST(request: Request) {
   let parsed: Awaited<ReturnType<typeof analyzeResume>> | null = null;
   let parseError: string | undefined;
   try {
-    parsed = await analyzeResume({ resumeDataUri: dataUri });
+    parsed = await withTimeout(analyzeResume({ resumeDataUri: dataUri }), PARSE_TIMEOUT_MS, 'analyzeResume');
   } catch (err) {
     parseError = err instanceof Error ? err.message : 'Resume parsing failed.';
     // Not fatal — the resume is stored; the candidate can still use it.
