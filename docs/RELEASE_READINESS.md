@@ -1,9 +1,13 @@
 # Release Readiness — Paragonel Technologies
 
-Status as of this batch: **the app builds, typechecks, and the test suite passes
-(except the 3 pre-existing emulator-gated integration tests).** This document
-records what was verified, the genuine external blockers, and the known
-follow-ups that are NOT release blockers.
+Status as of Batch 5 (reconciled Batch 6 Task 1): **the app builds, typechecks,
+and the test suite passes (520/523; the 3 failures are pre-existing emulator-
+gated integration tests).** This document records what was verified, the genuine
+external blockers, and the known follow-ups that are NOT release blockers.
+Batch 5 closed the `/candidate` + `/profile` page-gating follow-up (see below),
+added 0006 to the schema validation, + extended PII redaction to runtime logs.
+For the current launch status see `docs/RELEASE_HANDOVER.md` +
+`docs/RELEASE_GATE.md`.
 
 ## Verification performed this batch
 
@@ -12,18 +16,19 @@ follow-ups that are NOT release blockers.
 | Typecheck | `npm run typecheck` (`tsc --noEmit`) | PASS |
 | Lint (changed files) | `npx eslint <files>` | PASS (0 errors; pre-existing unused-import / `catch (error: any)` warnings in untouched files remain) |
 | Unit / integration tests | `npx vitest run` | PASS — see counts below |
-| Schema validation | `node scripts/validate-schema.js` | PASS (24 tables, 73 RLS policies, applies 0001+0002+0005+0007) |
-| Production build | `npm run build` | PASS (115/115 static pages; middleware 38.6 kB; `/faq`, `/careers/[id]`, `/services/[slug]`, AcquisitionOS all compile) |
+| Schema validation | `node scripts/validate-schema.js` | PASS (25 tables, 74 RLS policies, applies 0001+0002+0005+0006+0007) |
+| Production build | `npm run build` | PASS (116/116 static pages; middleware 38.8 kB; `/faq`, `/careers/[id]`, `/services/[slug]`, AcquisitionOS all compile) |
 
 ### Test counts
-- 3 failing tests — **all pre-existing, environment-gated**:
+- **520 / 523** pass. 3 failing tests — **all pre-existing, environment-gated**:
   `src/lib/auth/__tests__/registration-acceptance.test.ts` (Steps A / C / D+E).
   These require `FIRESTORE_EMULATOR_HOST` + a running Firestore emulator
   (unavailable in the sandbox). They are integration-style assertions on
   `getAdminDb()` returning null without the emulator — NOT code regressions.
   Confirmed identical to the Batch-2 baseline.
-- All other tests pass (the +9 canonical-host tests added this batch are
-  included).
+- Batch 5 added: +11 `models.test.ts` (Gemini fail-closed), +9
+  `submission-security.test.ts` (contact dedup), +9 `page-gates.test.ts`
+  (candidate page-gate predicates).
 
 ## Routes verified functional (no website-change regressions)
 
@@ -83,7 +88,7 @@ All real secrets (`JWT_SECRET`, `OTP_SECRET`, `TURNSTILE_SECRET_KEY`,
 
 ## Deployment config (Vercel-compatible)
 
-- `vercel.json`: `{"framework":"nextjs","installCommand":"npm ci"}`.
+- `vercel.json`: `{"framework":"nextjs","installCommand":"npm ci","crons":[{"path":"/api/cron/process-match-events","schedule":"*/10 * * * *"}]}` (the `crons` entry auto-provisions `CRON_SECRET` on the first deploy).
 - `next.config.ts`: `typescript.ignoreBuildErrors: false` (typecheck ON at
   build), `eslint.ignoreDuringBuilds: true` (lint not enforced in the build —
   run `npm run lint` separately).
@@ -159,11 +164,13 @@ See `docs/EXTERNAL_SERVICES_SETUP.md` for the full configuration walkthrough.
 - **In-memory rate limiter** — per-process only; on Vercel serverless, each
   invocation may be a fresh instance. A distributed limiter (Firestore/Upstash)
   is the documented follow-up (`src/lib/api-security.ts` comment).
-- **`/candidate/*` page middleware gating** — candidate pages rely on
-  client-side auth + API-level `verifySession` (data is protected); the page
-  shell may flash briefly before the API rejects. Middleware Edge gating for
-  `/candidate` is a possible follow-up; not a data-protection gap (the API
-  blocks all unauthenticated reads/writes).
+- **`/candidate/*` + `/profile` page middleware gating** — DONE (Batch 5 Task 4).
+  `src/middleware.ts` now gates `/candidate/**` + `/profile` with a user-tier JWT
+  check (`qf_user_token` + `payload.tier === 'user'`), redirecting to
+  `/auth/login?redirect=<path>` when missing/wrong/expired. Closes the page-shell
+  flash gap. Path predicates extracted to the tested `src/lib/auth/page-gates.ts`
+  (+9 tests). Data-route enforcement (revocation, suspension) remains in
+  `verifySession`.
 - **`eslint.ignoreDuringBuilds: true`** — lint is not enforced in the Vercel
   build. Run `npm run lint` in CI separately (the repo has `eslint.config.mjs`).
 

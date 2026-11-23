@@ -7,9 +7,11 @@ no real external credentials. Every result below is **LOCAL** (the vitest suite
 run against the in-memory fakes / PGlite; routes that need the Firebase
 emulator are marked).
 
-**Suite result (local):** 511 passed / 514 — the 3 failures are the pre-existing
+**Suite result (local):** 520 passed / 523 — the 3 failures are the pre-existing
 emulator-gated `registration-acceptance` tests (require `FIRESTORE_EMULATOR_HOST`;
 unchanged across batches, not code regressions). No new failures introduced.
+(The count rose from 511/514 at Task 3 to 520/523 after Task 4 added the +9
+`page-gates.test.ts` candidate page-gate predicate tests.)
 
 | # | Journey | Covering tests | Local result | Env |
 |---|---|---|---|---|

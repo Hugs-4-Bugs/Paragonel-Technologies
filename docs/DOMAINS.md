@@ -26,8 +26,8 @@ domain is handled by its own deployment.
 - **metadataBase fallback:** `https://paragonel.com` (in `src/app/layout.tsx`).
   Override per-environment with `NEXT_PUBLIC_SITE_URL`.
 - **sitemap.xml / robots.txt:** origin from `NEXT_PUBLIC_SITE_URL` (fallback
-  `paragonel.vercel.app` — set `NEXT_PUBLIC_SITE_URL=https://paragonel.com` in
-  production).
+  `paragonel.com` — set `NEXT_PUBLIC_SITE_URL=https://paragonel.com` in
+  production so sitemap/robots URLs resolve to the apex from the first deploy).
 
 ### Manual Vercel configuration (Paragonel)
 1. In the Paragonel Vercel project → **Settings → Domains**, add `paragonel.com`
