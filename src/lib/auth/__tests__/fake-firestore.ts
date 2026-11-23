@@ -91,7 +91,12 @@ class FakeQuery {
 
 class FakeCollection {
   docs = new Map<string, Doc>();
-  doc(id: string) { return new FakeDocRef(this, id); }
+  doc(id?: string) {
+    // No-arg → auto-generate an id (mirrors Admin SDK .doc() used by the
+    // job-applications route to create a new application doc).
+    const realId = id ?? Math.random().toString(36).slice(2) + Date.now().toString(36);
+    return new FakeDocRef(this, realId);
+  }
   add(data: Doc) {
     const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
     this.docs.set(id, { ...data });
@@ -135,6 +140,10 @@ export class FakeFirestore {
         get: async (r: FakeDocRef | FakeQuery) => (r instanceof FakeDocRef ? r.get() : r.get()),
         set: (r: FakeDocRef, d: Doc, o?: { merge?: boolean }) => { void r.set(d, o); },
         update: (r: FakeDocRef, d: Doc) => { void r.update(d); },
+        // tx.create ≈ set on a new doc (Firestore create fails if exists; for
+        // tests the doc is new, so set is equivalent). Used by the job-applications
+        // route's transactional insert.
+        create: (r: FakeDocRef, d: Doc) => { void r.set(d); },
       };
       return cb(tx);
     });
