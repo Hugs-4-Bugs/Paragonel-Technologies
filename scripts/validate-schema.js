@@ -14,8 +14,9 @@ const MIGRATIONS_DIR = path.resolve(__dirname, '..', 'supabase', 'migrations');
 // 0001 (schema) + 0002 (RLS) are PGlite-testable. 0003 (storage) + 0004 (auth
 // triggers) target the Supabase platform schema (storage.buckets / auth.users)
 // which PGlite does not provision — they are reviewed + applied to the real
-// project, not executed here.
-const APPLY = ['0001_initial_schema.sql', '0002_rls_policies.sql', '0005_grants.sql'];
+// project, not executed here. 0007 (newsletter double-opt-in columns) is an
+// additive data-schema migration, so it is PGlite-testable alongside 0001/0002/0005.
+const APPLY = ['0001_initial_schema.sql', '0002_rls_policies.sql', '0005_grants.sql', '0007_newsletter_double_optin.sql'];
 
 async function main() {
   const pg = new PGlite();

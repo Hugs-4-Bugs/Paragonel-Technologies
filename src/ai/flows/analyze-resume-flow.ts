@@ -12,8 +12,8 @@ import {
   hasGeminiKey,
   classifyProviderError,
   reasonLabel,
-  type FallbackReason,
 } from '@/ai/models';
+import { ResumeAnalysisError } from '@/lib/ai/resume-analysis-error';
 
 const AnalyzeResumeInputSchema = z.object({
   resumeDataUri: z.string().optional().describe('Base64 data URI of the resume file.'),
@@ -112,18 +112,6 @@ const prompt = ai.definePrompt({
 });
 
 /**
- * Classified error from resume analysis. `reason` lets the caller surface an
- * honest, specific status (provider unavailable vs. a real parse failure) and
- * decide whether to retry. Never carries credentials or a raw provider stack.
- */
-export class ResumeAnalysisError extends Error {
-  constructor(public reason: FallbackReason, message?: string) {
-    super(message || reason);
-    this.name = 'ResumeAnalysisError';
-  }
-}
-
-/**
  * Analyze a resume via Gemini. Hardened (Batch 2 Task 4):
  *   - `hasGeminiKey()` gate: if no API key is configured, fail CLOSED with
  *     `missing_key` — never call the model + never fabricate an extraction.
@@ -132,8 +120,9 @@ export class ResumeAnalysisError extends Error {
  *     hang the upload until the platform timeout.
  *   - Classified failures: a thrown provider error is mapped via
  *     `classifyProviderError` to a `FallbackReason` + re-thrown as a
- *     `ResumeAnalysisError`, so the route can return an honest
- *     service-unavailable status instead of a generic "parse failed".
+ *     `ResumeAnalysisError` (defined in src/lib/ai/resume-analysis-error.ts, so
+ *     it can be imported by the route + tests), so the route can return an
+ *     honest service-unavailable status instead of a generic "parse failed".
  *   - Null/malformed structured output → `invalid_output` (never fabricate).
  */
 export async function analyzeResume(input: AnalyzeResumeInput): Promise<AnalyzeResumeOutput> {

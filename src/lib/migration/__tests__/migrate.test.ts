@@ -33,6 +33,7 @@ beforeAll(async () => {
   await pg.exec(fs.readFileSync(path.join(MIGRATIONS_DIR, '0001_initial_schema.sql'), 'utf8'));
   await pg.exec(fs.readFileSync(path.join(MIGRATIONS_DIR, '0002_rls_policies.sql'), 'utf8'));
   await pg.exec(fs.readFileSync(path.join(MIGRATIONS_DIR, '0005_grants.sql'), 'utf8'));
+  await pg.exec(fs.readFileSync(path.join(MIGRATIONS_DIR, '0007_newsletter_double_optin.sql'), 'utf8'));
 }, 30000);
 
 afterAll(async () => {

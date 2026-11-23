@@ -380,6 +380,10 @@ export function mapNewsletter(doc: FirestoreDoc): MappedRow[] {
       subscribed_at: toISO(d.subscribedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
       deleted_at: toISO(d.deletedAt),
       unsubscribed_at: toISO(d.unsubscribedAt),
+      // Double opt-in (Task 5): legacy docs without a status default to 'active'
+      // (they were already-confirmed under the previous immediate-active model).
+      status: d.status === 'pending' || d.status === 'active' ? d.status : 'active',
+      confirmed_at: toISO(d.confirmedAt),
       confirmation_email: d.confirmationEmail ?? null,
     },
   }];

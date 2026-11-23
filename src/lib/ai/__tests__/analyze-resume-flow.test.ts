@@ -7,7 +7,8 @@
  * extraction), and that the error carries its `reason` for honest surfacing.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { analyzeResume, ResumeAnalysisError } from '@/ai/flows/analyze-resume-flow';
+import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
+import { ResumeAnalysisError } from '@/lib/ai/resume-analysis-error';
 
 const ORIG_GEMINI = process.env.GEMINI_API_KEY;
 const ORIG_GOOGLE = process.env.GOOGLE_API_KEY;

@@ -485,34 +485,52 @@ export interface NewsletterConfirmationInput {
   to: string;
   /** Signed one-click unsubscribe URL (bound to this email). Empty if unavailable. */
   unsubscribeUrl?: string;
+  /** Signed confirmation URL for double opt-in (bound to this email). When
+   *  present the email is a "confirm your subscription" request; when absent
+   *  it falls back to a plain welcome. Empty if unavailable. */
+  confirmUrl?: string;
 }
 
-export const NEWSLETTER_CONFIRMATION_SUBJECT = 'Welcome to the Paragonel newsletter';
+export const NEWSLETTER_CONFIRMATION_SUBJECT = 'Confirm your Paragonel newsletter subscription';
 
 export function buildNewsletterConfirmationHtml(input: NewsletterConfirmationInput): string {
   const baseUrl = process.env.APP_BASE_URL || 'https://paragonel.com';
   const unsub = input.unsubscribeUrl || '';
+  const confirm = input.confirmUrl || '';
+  const confirmHtml = confirm
+    ? `<p style="margin-top:16px;"><a href="${escapeHtml(confirm)}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:600;">Confirm your subscription</a></p>
+       <p style="margin-top:12px;font-size:13px;color:#52525b;">If you did not subscribe, you can safely ignore this email — no subscription is activated until you click the link above.</p>`
+    : '';
+  const headline = confirm
+    ? 'You are almost subscribed'
+    : 'You are subscribed';
+  const intro = confirm
+    ? 'Click the button below to confirm your subscription to the Paragonel newsletter. We will send occasional updates about our products, services, and company news.'
+    : 'You are now subscribed to the Paragonel newsletter. Thank you for your interest — we will send occasional updates about our products, services, and company news.';
   const unsubHtml = unsub
     ? `<p style="margin-top:24px;font-size:12px;color:#71717a;">You can <a href="${escapeHtml(unsub)}" style="color:#71717a;">unsubscribe anytime</a>. These emails are separate from job-match alerts and from any enquiry you may submit.</p>`
     : `<p style="margin-top:24px;font-size:12px;color:#71717a;">You can unsubscribe anytime by replying to this email. These emails are separate from job-match alerts and from any enquiry you may submit.</p>`;
   const body = `
     <p>Hi,</p>
-    <p>You are now subscribed to the Paragonel newsletter. Thank you for your interest — we will send occasional updates about our products, services, and company news.</p>
+    <p>${escapeHtml(intro)}</p>
+    ${confirmHtml}
     <p style="margin-top:16px;">
-      <a href="${escapeHtml(baseUrl)}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-size:14px;">Visit paragonel.com</a>
+      <a href="${escapeHtml(baseUrl)}" style="color:#0f172a;text-decoration:underline;font-size:14px;">Visit paragonel.com</a>
     </p>
     ${unsubHtml}`;
-  return brandedHtml('You are subscribed', body);
+  return brandedHtml(headline, body);
 }
 
 export function buildNewsletterConfirmationText(input: NewsletterConfirmationInput): string {
   const baseUrl = process.env.APP_BASE_URL || 'https://paragonel.com';
   const lines = [
-    `Welcome to the Paragonel newsletter`,
+    input.confirmUrl ? 'Confirm your Paragonel newsletter subscription' : 'Welcome to the Paragonel newsletter',
     ``,
-    `You are now subscribed. We will send occasional updates about our products, services, and company news.`,
+    input.confirmUrl
+      ? 'Click the link below to confirm your subscription. We will send occasional updates about our products, services, and company news.'
+      : 'You are now subscribed. We will send occasional updates about our products, services, and company news.',
     ``,
-    `Visit ${baseUrl}`,
+    input.confirmUrl ? `Confirm your subscription: ${input.confirmUrl}` : `Visit ${baseUrl}`,
     ``,
     input.unsubscribeUrl
       ? `Unsubscribe anytime: ${input.unsubscribeUrl}`

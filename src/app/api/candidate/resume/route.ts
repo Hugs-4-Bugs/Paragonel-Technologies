@@ -28,7 +28,8 @@ import { NextResponse } from 'next/server';
 import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { verifySession } from '@/lib/auth/sessions';
-import { analyzeResume, ResumeAnalysisError } from '@/ai/flows/analyze-resume-flow';
+import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
+import { ResumeAnalysisError } from '@/lib/ai/resume-analysis-error';
 import { jsonError } from '@/lib/auth/route-helpers';
 import {
   MAX_RESUME_BYTES,

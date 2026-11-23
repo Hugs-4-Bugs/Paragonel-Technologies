@@ -207,7 +207,7 @@ This document provides an overview of the project structure and guidance on wher
 ### 17. AI-Powered Features (Genkit)
 
 *   **Genkit Initialization & Model Choice**:
-    *   `src/ai/genkit.ts`. Model set to `googleai/gemini-1.5-flash-latest`.
+    *   `src/ai/genkit.ts` + `src/ai/models.ts`. Model is centralized in `src/ai/models.ts` as `GEMINI_MODEL_REF` (default `googleai/gemini-flash-latest`, configurable via `GEMINI_MODEL`). The retired `gemini-1.5-flash-latest` id is no longer used.
 *   **Flow Registration for Development Server**:
     *   `src/ai/dev.ts` (imports all flow files).
 *   **Company Q&A Chatbot**:
