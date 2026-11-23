@@ -120,9 +120,34 @@ provide. Until supplied, each integration fails CLOSED with an honest error
    var, OG URLs default to `paragonel.com` (correct for SEO, but the founder
    should confirm the apex is pointed at the deployment).
 7. **Custom domain** (`paragonel.com`) pointed at the Vercel deployment — so the
-   www→apex redirect + canonical URLs are live.
+   www→apex redirect + canonical URLs are live. See `docs/DOMAINS.md` for the
+   full Vercel/DNS manual steps (paragonel.com + acquisitionos.net).
+8. **`CRON_SECRET` + Vercel Cron** — the automated job-match alert drain
+   (`/api/cron/process-match-events`, scheduled every 10 min via `vercel.json`
+   `crons`) verifies `authorization: Bearer <CRON_SECRET>`. Vercel auto-provisions
+   `CRON_SECRET` for projects with a `crons` entry; until it is set, the cron
+   route returns an honest 503 (no-op, no silent bypass). Without the cron, job-
+   match alerts are only sent when an admin manually drains via `/admin/alerts`.
 
 See `docs/EXTERNAL_SERVICES_SETUP.md` for the full configuration walkthrough.
+
+## Batch 4 additions (this batch)
+
+- **Admin alert-status UI** (`/admin/alerts`): a read-only consumer for the
+  existing `/api/admin/jobs/alert-status` API (event counts by status, stuck
+  set, recent redacted failures, alert outcomes) + a "Drain pending events"
+  action that POSTs the existing RBAC-gated `/api/admin/jobs/process-match-events`.
+  Surfaces the job-match alert pipeline state that was previously API-only.
+- **Automated cron drain** (`/api/cron/process-match-events`): Vercel Cron
+  invokes this GET route every 10 min with `Bearer <CRON_SECRET>`; it reuses the
+  same idempotent `drainPendingJobMatchEvents()` the admin route uses. Auth is
+  tested in `src/lib/__tests__/cron-auth.test.ts`.
+- **AcquisitionOS canonical domain** corrected: `acquisitionos.net` is the
+  intended canonical product domain (NOT redirected to the beta Vercel URL). See
+  `docs/DOMAINS.md`. The beta deployment remains directly accessible.
+- **redactReason strengthened**: bare emails + common API-key/token prefixes
+  (sk-, AIza, ghp_, github_pat_, xox, Bearer) are now redacted from failure
+  reasons before they reach stored logs or the admin alert-status summary.
 
 ## Known follow-ups (NOT release blockers)
 
