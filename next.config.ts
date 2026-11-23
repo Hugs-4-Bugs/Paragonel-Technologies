@@ -98,6 +98,7 @@ const nextConfig: NextConfig = {
       { source: '/admin/:path*', headers: [noindex] },
       { source: '/auth/:path*', headers: [noindex] },
       { source: '/profile/:path*', headers: [noindex] },
+      { source: '/candidate/:path*', headers: [noindex] },
     ];
   },
   // Permanent (308) redirects for legacy/renamed service + team URLs so link

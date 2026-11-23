@@ -48,8 +48,16 @@ export function AppShell({
                 disableTransitionOnChange
               >
                 <SmoothScroll />
+                {/* Skip-link for keyboard users — jumps to #main, visually
+                    hidden until focused. The first focusable element on the page. */}
+                <a
+                  href="#main"
+                  className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-foreground focus:shadow-lg focus:outline focus:outline-2 focus:outline-primary"
+                >
+                  Skip to main content
+                </a>
                 {!isAdminPath && <Navbar />}
-                <main className="flex-grow">{children}</main>
+                <main id="main" className="flex-grow">{children}</main>
                 {!isAdminPath && <Footer />}
                 {!isAdminPath && <ChatSection />}
                 <Toaster />

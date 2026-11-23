@@ -14,11 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 // metadataBase resolves relative Open Graph / canonical URLs site-wide.
-// The verified live deployment origin is paragonel.vercel.app (Phase 0 audit).
-// Override per-environment with NEXT_PUBLIC_SITE_URL if a custom domain ships.
+// Canonical site URL. Prefer NEXT_PUBLIC_SITE_URL (set in production); fall
+// back to the apex domain paragonel.com (NOT the Vercel preview host) so OG /
+// canonical URLs resolve to the canonical apex by default — avoids
+// duplicate-indexing of paragonel.vercel.app alongside paragonel.com. The
+// www→apex + acquisitionos.net redirects are enforced in src/middleware.ts.
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-  'https://paragonel.vercel.app';
+  'https://paragonel.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

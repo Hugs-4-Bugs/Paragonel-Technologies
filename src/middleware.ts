@@ -39,9 +39,22 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || '';
 
-  // 0. acquisitionos.net host redirect — preserve the canonical-domain decision.
+  // 0. Canonical-domain redirects.
+  //    a) acquisitionos.net is NOT an approved destination → permanently
+  //       redirect to the only approved AcquisitionOS host (the private-beta
+  //       site). The paragonel site is never served under the .net host.
+  //    b) www.paragonel.com → paragonel.com (apex). Canonical-domain
+  //       consistency: the apex is the canonical host (matches metadataBase +
+  //       sitemap/robots). Only fires if the www host is pointed at the app —
+  //       the Vercel preview host (paragonel.vercel.app) is never redirected, so
+  //       preview access is unaffected.
   if (host === 'acquisitionos.net' || host === 'www.acquisitionos.net') {
     return NextResponse.redirect(ACQUISITIONOS_APPROVED_DOMAIN, 308);
+  }
+  if (host === 'www.paragonel.com') {
+    const apexUrl = new URL(pathname, 'https://paragonel.com');
+    apexUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(apexUrl, 308);
   }
 
   // 1. Admin page gate (/admin/**, except the public auth pages). A user-tier

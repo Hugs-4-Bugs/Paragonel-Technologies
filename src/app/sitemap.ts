@@ -35,6 +35,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/industries`, changeFrequency: 'monthly', priority: 0.8, lastModified },
     { url: `${siteUrl}/our-product`, changeFrequency: 'monthly', priority: 0.9, lastModified },
     { url: `${siteUrl}/our-product/acquisitionos`, changeFrequency: 'weekly', priority: 0.9, lastModified },
+    { url: `${siteUrl}/our-product/systemfoundry`, changeFrequency: 'monthly', priority: 0.6, lastModified },
+    { url: `${siteUrl}/our-product/codeguard-ai`, changeFrequency: 'monthly', priority: 0.6, lastModified },
     { url: `${siteUrl}/about`, changeFrequency: 'monthly', priority: 0.7, lastModified },
     { url: `${siteUrl}/careers`, changeFrequency: 'weekly', priority: 0.7, lastModified },
     { url: `${siteUrl}/blog`, changeFrequency: 'weekly', priority: 0.8, lastModified },
