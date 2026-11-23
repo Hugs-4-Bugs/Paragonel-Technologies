@@ -1,6 +1,31 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+/**
+ * auth-context.tsx — thin client view of the SERVER-VERIFIED session.
+ *
+ * SECURITY MODEL (hardened):
+ *   - The ONLY proof of authentication is a server-verified call to
+ *     `GET /api/auth/me`, which reads the `qf_user_token` / `qf_admin_token`
+ *     httpOnly cookie, validates the JWT against the Firestore `sessions/{sid}`
+ *     revocation doc + the account doc's `tokenVersion`, and returns the
+ *     caller's email/tier/role/permissions. See `src/lib/auth/sessions.ts`.
+ *   - This context NEVER treats `localStorage`, a client flag, or an in-memory
+ *     object as proof of authentication. There is no simulated user database
+ *     and no hardcoded credential. `isAuthenticated` is `true` ONLY when
+ *     `/api/auth/me` returned 200 within the current mount.
+ *   - `login()` / `signup()` redirect to the real server-verified auth pages
+ *     (`/auth/login`, `/auth/signup`) which perform CAPTCHA + consent + OTP +
+ *     bcrypt verification server-side. They do NOT establish a session here.
+ *   - `logout()` POSTs `/api/auth/logout`, which revokes the `sessions/{sid}`
+ *     doc server-side and clears both httpOnly cookies — it does not merely
+ *     clear frontend state.
+ *
+ * This file preserves the `useAuth()` contract (`isAuthenticated`, `user`,
+ * `isLoading`, `login`, `logout`, `signup`) consumed by the navbar, the
+ * careers apply flow, and the legacy `/profile` route (now a redirect to the
+ * server-verified `/candidate/profile`).
+ */
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -9,21 +34,6 @@ interface User {
   email: string;
   fullName?: string;
 }
-
-// Simulate a simple in-memory store for registered users
-interface RegisteredUser extends User {
-  password?: string; 
-}
-
-// Initializing database with some test accounts including admin
-const simulatedUserDatabase: RegisteredUser[] = [
-  {
-    uid: 'admin-testing-uid',
-    email: 'admin@paragonel.com',
-    fullName: 'Paragonel Admin',
-    password: 'admin123'
-  }
-];
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -36,6 +46,35 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Refresh the server-verified session. Returns the user or null. Never throws
+ * — a network/server failure is treated as "not authenticated" so the UI falls
+ * back to the logged-out chrome rather than impersonating a session.
+ */
+async function fetchMe(): Promise<User | null> {
+  try {
+    const res = await fetch('/api/auth/me', {
+      method: 'GET',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      user?: { email?: string; name?: string; fullName?: string; tier?: string };
+    };
+    const email = data?.user?.email;
+    if (!email) return null;
+    return {
+      uid: email,
+      email,
+      fullName: data.user?.name ?? data.user?.fullName,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -43,98 +82,72 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const { toast } = useToast();
 
+  // On mount (and only on mount) — establish the ONE source of truth.
   useEffect(() => {
-    setIsLoading(true);
-    try {
-      const storedAuth = localStorage.getItem('isAuthenticated');
-      const storedUser = localStorage.getItem('user');
-      if (storedAuth === 'true' && storedUser) {
-        const parsedUser: User = JSON.parse(storedUser);
-        if (parsedUser && parsedUser.uid && parsedUser.email) {
-            setIsAuthenticated(true);
-            setUser(parsedUser);
-        } else {
-            localStorage.removeItem('isAuthenticated');
-            localStorage.removeItem('user');
-        }
-      }
-    } catch (error) {
-      console.error("Error reading auth state from localStorage:", error);
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('user');
-    }
-    setIsLoading(false);
+    let cancelled = false;
+    (async () => {
+      const u = await fetchMe();
+      if (cancelled) return;
+      setIsAuthenticated(u !== null);
+      setUser(u);
+      setIsLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const login = (email: string, password?: string, redirectPath: string = '/') => {
-    const foundUser = simulatedUserDatabase.find(
-      (u) => u.email === email && (password ? u.password === password : true)
-    );
+  // Expose a way for consumers (e.g. the navbar after a route-level login) to
+  // re-check the server session without a full reload.
+  const refresh = useCallback(async () => {
+    const u = await fetchMe();
+    setIsAuthenticated(u !== null);
+    setUser(u);
+    return u;
+  }, []);
 
-    if (foundUser) {
-      const loggedInUser: User = { 
-        uid: foundUser.uid, 
-        email: foundUser.email,
-        fullName: foundUser.fullName 
-      };
-      setIsAuthenticated(true);
-      setUser(loggedInUser);
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify(loggedInUser));
-      
-      toast({
-        title: "Login Successful!",
-        description: `Welcome back, ${foundUser.fullName || 'User'}!`,
-      });
-
-      const actionAfterLogin = localStorage.getItem('actionAfterLogin');
-      localStorage.removeItem('actionAfterLogin');
-
-      if (actionAfterLogin === 'applyJobModalOpen') {
-        router.push('/careers');
-      } else if (redirectPath && redirectPath !== '/') {
-        router.push(redirectPath);
-      } else {
-        router.push('/');
-      }
-    } else {
-      toast({
-        title: "Login Failed",
-        description: "Invalid email or password. Please try again or sign up.",
-        variant: "destructive",
-      });
-    }
+  const login = (_email: string, _password?: string, redirectPath: string = '/') => {
+    // Delegate to the server-verified login page (CAPTCHA + consent + bcrypt +
+    // session cookie are all handled there). We do NOT authenticate inline.
+    const target = `/auth/login?redirect=${encodeURIComponent(redirectPath)}`;
+    router.push(target);
   };
 
-  const signup = (fullName: string, email: string, password?: string, redirectPath: string = '/') => {
-    if (simulatedUserDatabase.find((u) => u.email === email)) {
-      toast({
-        title: "Signup Failed",
-        description: "An account with this email already exists. Please log in.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const uid = email.replace(/[^a-zA-Z0-9]/g, "") + Date.now(); 
-    const newUser: RegisteredUser = { uid, email, fullName, password };
-    simulatedUserDatabase.push(newUser);
-    
-    login(email, password, redirectPath); 
-    console.log("SIMULATION: Signup confirmation email sent to:", email);
+  const signup = (fullName: string, email: string, password?: string, redirectPath?: string) => {
+    // Delegate to the server-verified registration page (OTP email verification
+    // is required before any account is created — see /api/auth/register/*).
+    // The args are accepted to preserve the useAuth() contract; the real
+    // OTP-gated registration flow lives at /auth/signup.
+    void fullName;
+    void email;
+    void password;
+    const target =
+      '/auth/signup' + (redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : '');
+    router.push(target);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Revoke the server session + clear the httpOnly cookie. This is the real
+    // invalidation — not a frontend flag flip.
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      });
+    } catch {
+      // Network failure: still clear local state + redirect; the cookie may
+      // remain until it expires, but we never leave the UI showing "logged in".
+    }
     setIsAuthenticated(false);
     setUser(null);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    localStorage.removeItem('actionAfterLogin');
     toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
+      title: 'Logged Out',
+      description: 'You have been successfully logged out.',
     });
     router.push('/');
+    void refresh;
   };
 
   return (
