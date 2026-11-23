@@ -8,6 +8,8 @@ export default defineConfig({
       'src/lib/auth/**/*.test.ts',
       'src/lib/auth/__tests__/**/*.test.ts',
       'src/lib/ai/__tests__/**/*.test.ts',
+      // src/ai/ flows + models (Genkit model config, fail-closed key checks).
+      'src/ai/__tests__/**/*.test.ts',
       // 05R: matching engine + job-alert trigger/processor/dedup/unsubscribe +
       // email content are pure or use the in-memory fake-firestore (no emulator).
       'src/lib/matching/**/*.test.ts',
