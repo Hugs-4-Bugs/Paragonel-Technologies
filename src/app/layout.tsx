@@ -93,8 +93,9 @@ export const viewport: Viewport = { themeColor: '#0f172a' };
 
 // JSON-LD Organization structured data (SEO gap G9 / PART N). Verified facts
 // only — no invented awards, team size, founding-year metrics, or members.
-// `sameAs` is intentionally empty until the founder provides verified social
-// profile URLs (LinkedIn / X / GitHub / Crunchbase) — MANUAL, do not invent.
+// `sameAs` lists the social profiles already configured + in use across the
+// footer, About founder card, and team section (LinkedIn / X / GitHub). No
+// unconfigured profile (e.g. Crunchbase) is invented.
 const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -111,7 +112,11 @@ const organizationJsonLd = {
     name: 'Prabhat Kumar',
     jobTitle: 'Founder & CEO',
   },
-  sameAs: [] as string[],
+  sameAs: [
+    'https://www.linkedin.com/in/prabhat-kumar-6963661a4/',
+    'https://x.com/PrabhatKumarHQ',
+    'https://github.com/Hugs-4-Bugs',
+  ],
 };
 
 // JSON-LD WebSite entity (Prompt 05I §5.5). Site-wide, alongside Organization.
