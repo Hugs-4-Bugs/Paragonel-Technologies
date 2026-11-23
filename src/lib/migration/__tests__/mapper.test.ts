@@ -115,9 +115,13 @@ describe('mapCandidate — embedded doc fans out to normalized tables', () => {
     const under = mapCandidate({ id: 'f@g.com', data: { email: 'f@g.com', matchingThreshold: 10 } });
     expect(under.find((r) => r.table === 'candidate_profiles')!.row.matching_threshold).toBe(25);
   });
-  it('resume row carries the storage path (private reference, never a public URL)', () => {
+  it('resume row carries the remapped storage path (Supabase user-id-scoped, private)', () => {
     const r = rows.find((x) => x.table === 'resumes')!;
-    expect(r.row.storage_path).toBe('candidates/carol@example.com/resumes/123_cv.pdf');
+    // The Firebase email-scoped path is remapped to the Supabase user-id-scoped
+    // convention so the candidate-resumes bucket RLS holds (Task 4).
+    expect(r.row.storage_path).toBe(
+      `candidate-resumes/${uuidV5('user:carol@example.com')}/123_cv.pdf`,
+    );
   });
 });
 

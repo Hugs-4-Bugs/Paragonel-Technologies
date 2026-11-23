@@ -21,6 +21,20 @@ import { createHash } from 'node:crypto';
 const NAMESPACE = '6b1d7f9a-3c2e-4b5a-8d9f-0e1a2b3c4d5e';
 
 /**
+ * Deterministic fallback timestamp for migrated rows whose source Firestore doc
+ * had no timestamp. The target columns are `NOT NULL DEFAULT now()`, so a value
+ * MUST be supplied; using `new Date()` per-row (the previous behaviour) made
+ * every row's created_at/updated_at a different "now" — non-deterministic
+ * across rows AND across runs, which broke reconciliation. The Unix epoch is a
+ * stable, explicit sentinel: every missing-timestamp row gets the SAME value in
+ * every run, so they are identifiable for reconciliation via
+ * `WHERE created_at = '1970-01-01'` and can be backfilled later if the real
+ * timestamp is recovered. This is a documented null/default policy, not a
+ * fabricated "now".
+ */
+export const MIGRATION_FALLBACK_TIMESTAMP = '1970-01-01T00:00:00.000Z';
+
+/**
  * Deterministic UUIDv5 (SHA-1 namespace + name). Same input → same uuid every
  * run → upserts are idempotent. Returns a lowercase uuid string.
  */
@@ -35,6 +49,27 @@ export function uuidV5(name: string): string {
   bytes[8] = (bytes[8]! & 0x3f) | 0x80; // variant RFC 4122
   const hex = bytes.toString('hex');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+/**
+ * Remap a Firebase Storage resume path to the Supabase Storage convention so
+ * the migrated `resumes.storage_path` satisfies the bucket's RLS policy.
+ *
+ *   Firebase : `candidates/{email}/resumes/{ts}_{sanitizedName}`
+ *   Supabase : `candidate-resumes/{userId}/{ts}_{sanitizedName}`
+ *
+ * The Supabase `candidate-resumes` bucket RLS (0003_storage_buckets.sql)
+ * requires `(storage.foldername(name))[1] = auth.uid()::text` — i.e. the first
+ * path segment MUST be the user's uuid. The Firebase email-scoped path would
+ * fail this for every user. The file bytes themselves are migrated separately
+ * (copy objects between buckets during cutover); this function only rewrites
+ * the metadata reference stored on the `resumes` row. Unknown shapes are
+ * returned unchanged so the reconciler can flag them.
+ */
+export function remapResumeStoragePath(firebasePath: string, userId: string): string {
+  const m = firebasePath.match(/^candidates\/[^/]+\/resumes\/(.+)$/);
+  if (!m) return firebasePath; // unknown shape — leave as-is; reconciler flags it
+  return `candidate-resumes/${userId}/${m[1]}`;
 }
 
 /** Normalize a Firestore value that may be a Timestamp, Date, ISO string, or null → ISO string | null. */
@@ -96,8 +131,8 @@ export function mapUser(doc: FirestoreDoc): MappedRow[] {
       marketing_consent: bool(d.marketingConsent, false),
       marketing_consent_at: toISO(d.marketingConsentAt),
       token_version: num(d.tokenVersion) ?? 1,
-      created_at: toISO(d.createdAt) || new Date().toISOString(),
-      updated_at: toISO(d.updatedAt) || new Date().toISOString(),
+      created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
+      updated_at: toISO(d.updatedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
     },
   }];
 }
@@ -115,7 +150,7 @@ export function mapAdmin(doc: FirestoreDoc): MappedRow[] {
       user_id: userId,
       role,
       granted_by: str(d.grantedBy) ? (str(d.grantedByUid) || uuidV5(`user:${str(d.grantedBy)!.toLowerCase()}`)) : null,
-      granted_at: toISO(d.grantedAt) || new Date().toISOString(),
+      granted_at: toISO(d.grantedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
       suspended_at: toISO(d.suspendedAt),
       suspended_by: null,
     },
@@ -146,8 +181,8 @@ export function mapCandidate(doc: FirestoreDoc): MappedRow[] {
       domain: str(d.domain),
       job_alert_enabled: bool(d.jobAlertPreference, false),
       matching_threshold: Math.min(100, Math.max(25, num(d.matchingThreshold) ?? 80)),
-      created_at: toISO(d.createdAt) || new Date().toISOString(),
-      updated_at: toISO(d.updatedAt) || new Date().toISOString(),
+      created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
+      updated_at: toISO(d.updatedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
     },
   });
 
@@ -242,11 +277,14 @@ export function mapCandidate(doc: FirestoreDoc): MappedRow[] {
       table: 'resumes',
       row: {
         candidate_id: userId,
-        storage_path: str(d.resumeStoragePath)!,
+        // Remap the Firebase email-scoped Storage path to the Supabase
+        // user-id-scoped convention so the bucket RLS policy holds. See
+        // remapResumeStoragePath.
+        storage_path: remapResumeStoragePath(str(d.resumeStoragePath)!, userId),
         file_name: str(d.resumeFileName) || 'resume',
         content_type: str(d.resumeContentType) || 'application/octet-stream',
         size_bytes: num(d.resumeSizeBytes), // NULL for migrated rows without size info (schema allows it)
-        uploaded_at: toISO(d.resumeUploadedAt) || new Date().toISOString(),
+        uploaded_at: toISO(d.resumeUploadedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
         parsed_at: toISO(d.resumeParsedAt),
         deleted_at: null,
       },
@@ -287,8 +325,8 @@ export function mapJob(doc: FirestoreDoc): MappedRow[] {
       description: str(d.description),
       is_active: bool(d.isActive, true),
       deleted_at: toISO(d.deletedAt),
-      created_at: toISO(d.createdAt) || new Date().toISOString(),
-      updated_at: toISO(d.updatedAt) || new Date().toISOString(),
+      created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
+      updated_at: toISO(d.updatedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
     },
   }];
 }
@@ -322,7 +360,7 @@ export function mapApplication(doc: FirestoreDoc): MappedRow[] {
       applied_via: str(d.appliedVia) || 'web',
       status: str(d.status) || 'New',
       confirmation_email: d.confirmationEmail ?? null,
-      applied_at: toISO(d.appliedAt) || new Date().toISOString(),
+      applied_at: toISO(d.appliedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
       deleted_at: toISO(d.deletedAt),
     },
   }];
@@ -339,7 +377,7 @@ export function mapNewsletter(doc: FirestoreDoc): MappedRow[] {
       id: uuidV5(`newsletter:${doc.id}`),
       email,
       source: str(d.source) || 'Migration',
-      subscribed_at: toISO(d.subscribedAt) || new Date().toISOString(),
+      subscribed_at: toISO(d.subscribedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
       deleted_at: toISO(d.deletedAt),
       unsubscribed_at: toISO(d.unsubscribedAt),
       confirmation_email: d.confirmationEmail ?? null,
@@ -366,7 +404,7 @@ export function mapLead(doc: FirestoreDoc): MappedRow[] {
       preferred_contact: str(doc.data.preferredContact),
       additional_info: str(doc.data.additionalInfo),
       marketing_consent: bool(doc.data.marketingConsent, false),
-      submitted_at: toISO(doc.data.submittedAt) || toISO(doc.data.createdAt) || new Date().toISOString(),
+      submitted_at: (toISO(doc.data.submittedAt) || toISO(doc.data.createdAt)) ?? MIGRATION_FALLBACK_TIMESTAMP,
       status: str(doc.data.status) || 'New',
       deleted_at: toISO(doc.data.deletedAt),
     },
@@ -380,8 +418,8 @@ export function mapService(doc: FirestoreDoc): MappedRow[] {
     id: uuidV5(`service:${doc.id}`), slug: str(d.slug) || doc.id, title: str(d.title) || 'Untitled',
     summary: str(d.summary), description: str(d.description), icon: str(d.icon),
     is_active: bool(d.isActive, true), sort_order: num(d.sortOrder) ?? 0,
-    deleted_at: toISO(d.deletedAt), created_at: toISO(d.createdAt) || new Date().toISOString(),
-    updated_at: toISO(d.updatedAt) || new Date().toISOString(),
+    deleted_at: toISO(d.deletedAt), created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
+    updated_at: toISO(d.updatedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
   }}];
 }
 
@@ -392,7 +430,7 @@ export function mapBlogPost(doc: FirestoreDoc): MappedRow[] {
     excerpt: str(d.excerpt), content: str(d.content), cover_image: str(d.coverImage),
     author: str(d.author), is_published: bool(d.isPublished, bool(d.isActive, false)),
     published_at: toISO(d.publishedAt), deleted_at: toISO(d.deletedAt),
-    created_at: toISO(d.createdAt) || new Date().toISOString(), updated_at: toISO(d.updatedAt) || new Date().toISOString(),
+    created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP, updated_at: toISO(d.updatedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
   }}];
 }
 
@@ -402,8 +440,8 @@ export function mapTechEcosystem(doc: FirestoreDoc): MappedRow[] {
     id: uuidV5(`tech:${doc.id}`), slug: str(d.slug) || doc.id, name: str(d.name) || 'Untitled',
     category: str(d.category), description: str(d.description), logo: str(d.logo),
     is_active: bool(d.isActive, true), sort_order: num(d.sortOrder) ?? 0,
-    deleted_at: toISO(d.deletedAt), created_at: toISO(d.createdAt) || new Date().toISOString(),
-    updated_at: toISO(d.updatedAt) || new Date().toISOString(),
+    deleted_at: toISO(d.deletedAt), created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
+    updated_at: toISO(d.updatedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
   }}];
 }
 
@@ -414,7 +452,7 @@ export function mapTestimonial(doc: FirestoreDoc): MappedRow[] {
     client_role: str(d.clientRole) || str(d.role), company: str(d.company),
     content: str(d.content) || str(d.quote) || '', rating: num(d.rating),
     is_published: bool(d.isPublished, bool(d.isActive, false)), sort_order: num(d.sortOrder) ?? 0,
-    deleted_at: toISO(d.deletedAt), created_at: toISO(d.createdAt) || new Date().toISOString(),
+    deleted_at: toISO(d.deletedAt), created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
   }}];
 }
 
@@ -425,8 +463,8 @@ export function mapClientProject(doc: FirestoreDoc): MappedRow[] {
     client: str(d.client), summary: str(d.summary), description: str(d.description),
     technologies: strArr(d.technologies).length ? strArr(d.technologies) : strArr(d.techStack),
     image: str(d.image), is_published: bool(d.isPublished, bool(d.isActive, false)),
-    deleted_at: toISO(d.deletedAt), created_at: toISO(d.createdAt) || new Date().toISOString(),
-    updated_at: toISO(d.updatedAt) || new Date().toISOString(),
+    deleted_at: toISO(d.deletedAt), created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
+    updated_at: toISO(d.updatedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
   }}];
 }
 

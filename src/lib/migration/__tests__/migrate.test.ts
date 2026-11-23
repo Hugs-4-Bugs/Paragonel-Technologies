@@ -15,6 +15,7 @@ import { PGlite } from '@electric-sql/pglite';
 import fs from 'node:fs';
 import path from 'node:path';
 import { migrateCollectionToPg } from '../migrate';
+import { uuidV5, remapResumeStoragePath } from '../mapper';
 import type { FirestoreDoc } from '../mapper';
 
 const MIGRATIONS_DIR = path.resolve(__dirname, '../../../../supabase/migrations');
@@ -96,7 +97,11 @@ describe('migration write core (Firestore docs → PGlite)', () => {
 
     const resumes = await pg.query<{ storage_path: string }>('SELECT storage_path FROM resumes');
     expect(resumes.rows.length).toBe(1);
-    expect(resumes.rows[0].storage_path).toBe('candidates/alice/resumes/1.pdf');
+    // The Firebase email-scoped path is remapped to the Supabase user-id-scoped
+    // convention so the candidate-resumes bucket RLS holds (Task 4).
+    expect(resumes.rows[0].storage_path).toBe(
+      remapResumeStoragePath('candidates/alice/resumes/1.pdf', uuidV5('user:alice@example.com')),
+    );
   });
 
   it('candidate FK consistency: child rows reference the same user_id', async () => {
