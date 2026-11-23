@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
 import {
@@ -123,6 +123,25 @@ export function CareersClient({ jobs }: CareersClientProps) {
     setSelectedJobForDescription(job);
     setIsDescriptionModalOpen(true);
   };
+
+  // Post-login return: if the candidate was sent to /auth/login from an Apply
+  // click (careers list), the pending job id is in localStorage. On mount, once
+  // authenticated, re-open that job's apply modal so the candidate lands back
+  // where they intended instead of a generic /careers with no follow-through.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const pendingJobId = typeof window !== 'undefined' ? localStorage.getItem('pendingApplyJobId') : null;
+    const action = typeof window !== 'undefined' ? localStorage.getItem('actionAfterLogin') : null;
+    if (action !== 'applyJobModalOpen' || !pendingJobId) return;
+    const job = jobs.find((j) => String(j.id) === String(pendingJobId) || String(j.jobId) === String(pendingJobId));
+    // Clear the flags regardless so a stale pending id never loops.
+    localStorage.removeItem('pendingApplyJobId');
+    localStorage.removeItem('actionAfterLogin');
+    if (job) {
+      setSelectedJobForApplication(job);
+      setIsApplyModalOpen(true);
+    }
+  }, [isAuthenticated, jobs]);
 
   return (
     <div className="bg-[#1a1b3a] min-h-screen text-white">

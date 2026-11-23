@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 function ResetInner() {
   const params = useSearchParams();
   const token = params.get('token') ?? '';
+  const redirect = params.get('redirect') ?? '';
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,7 +33,7 @@ function ResetInner() {
       const data = await res.json();
       if (res.ok) {
         toast({ title: 'Password reset', description: 'You can now log in.' });
-        router.push('/auth/login');
+        router.push('/auth/login' + (redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''));
       } else {
         toast({ title: 'Reset failed', description: data.message ?? 'Try again.', variant: 'destructive' });
       }

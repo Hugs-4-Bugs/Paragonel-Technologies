@@ -114,6 +114,9 @@ export default function CandidateProfilePage() {
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
   const [parsedNote, setParsedNote] = useState('');
+  const [applications, setApplications] = useState<
+    Array<{ applicationId: string | null; jobId: string | null; jobTitle: string; status: string; appliedAt: string | null }>
+  >([]);
 
   const loadProfile = useCallback(async () => {
     const res = await fetch('/api/candidate/profile');
@@ -144,6 +147,27 @@ export default function CandidateProfilePage() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  // Load the candidate's application history (closes the "track status from
+  // your profile" dead-end — the candidate can now see their applications +
+  // statuses here). Best-effort: a failure leaves the list empty rather than
+  // blocking the profile.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/candidate/applications', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.applications)) setApplications(data.applications);
+      } catch {
+        // non-fatal
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const update = (field: keyof ProfileData, value: string | number | boolean) => {
     setProfile((p) => (p ? { ...p, [field]: value } : p));
@@ -371,6 +395,32 @@ export default function CandidateProfilePage() {
         {error && <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg"><AlertCircle className="h-4 w-4 mt-0.5 shrink-0" /><span>{error}</span></div>}
         {note && <p className="text-sm text-green-600">{note}</p>}
         {parsedNote && <div className="flex items-start gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg"><FileText className="h-4 w-4 mt-0.5 shrink-0" /><span>{parsedNote}</span></div>}
+
+        {/* My applications — closes the "track its status from your profile" dead-end */}
+        <Card>
+          <CardHeader><CardTitle className="text-lg">My applications</CardTitle><CardDescription>The roles you have applied to and their current status.</CardDescription></CardHeader>
+          <CardContent className="space-y-2">
+            {applications.length === 0 ? (
+              <p className="text-sm text-muted-foreground">You have not applied to any roles yet. <Link href="/careers" className="underline">Browse open roles</Link>.</p>
+            ) : (
+              <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {applications.map((a) => (
+                  <li key={a.applicationId ?? a.jobId ?? Math.random()} className="py-2 flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{a.jobTitle || 'Untitled role'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {a.appliedAt ? `Applied ${new Date(a.appliedAt).toLocaleDateString()}` : 'Applied recently'}
+                        {a.applicationId ? ` · ${a.applicationId}` : ''}
+                      </p>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{a.status}</span>
+                    {a.jobId && <Link href={`/careers/${encodeURIComponent(a.jobId)}`} className="text-xs underline text-primary">View role</Link>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Resume */}
         <Card>
