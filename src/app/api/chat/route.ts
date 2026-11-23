@@ -39,6 +39,11 @@ import { isProviderFailure } from '@/ai/models';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+// Bounded platform timeout. The in-process Gemini race
+// (GEMINI_REQUEST_TIMEOUT_MS, 25s) fires first + returns a classified 503; this
+// is the platform-level backstop so a stalled provider cannot hold the
+// function until the deploy-region default.
+export const maxDuration = 30;
 
 const CapturedFieldsSchema = z.object({
   name: z.string().max(100).optional(),

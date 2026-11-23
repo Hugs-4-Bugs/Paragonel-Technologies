@@ -6,7 +6,14 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { GEMINI_MODEL_REF } from '@/ai/models';
+import {
+  GEMINI_MODEL_REF,
+  GEMINI_REQUEST_TIMEOUT_MS,
+  hasGeminiKey,
+  classifyProviderError,
+  reasonLabel,
+  type FallbackReason,
+} from '@/ai/models';
 
 const AnalyzeResumeInputSchema = z.object({
   resumeDataUri: z.string().optional().describe('Base64 data URI of the resume file.'),
@@ -104,13 +111,61 @@ const prompt = ai.definePrompt({
   `,
 });
 
+/**
+ * Classified error from resume analysis. `reason` lets the caller surface an
+ * honest, specific status (provider unavailable vs. a real parse failure) and
+ * decide whether to retry. Never carries credentials or a raw provider stack.
+ */
+export class ResumeAnalysisError extends Error {
+  constructor(public reason: FallbackReason, message?: string) {
+    super(message || reason);
+    this.name = 'ResumeAnalysisError';
+  }
+}
+
+/**
+ * Analyze a resume via Gemini. Hardened (Batch 2 Task 4):
+ *   - `hasGeminiKey()` gate: if no API key is configured, fail CLOSED with
+ *     `missing_key` — never call the model + never fabricate an extraction.
+ *   - Bounded timeout: the prompt call is raced against
+ *     `GEMINI_REQUEST_TIMEOUT_MS` (default 25s) so a stalled provider cannot
+ *     hang the upload until the platform timeout.
+ *   - Classified failures: a thrown provider error is mapped via
+ *     `classifyProviderError` to a `FallbackReason` + re-thrown as a
+ *     `ResumeAnalysisError`, so the route can return an honest
+ *     service-unavailable status instead of a generic "parse failed".
+ *   - Null/malformed structured output → `invalid_output` (never fabricate).
+ */
 export async function analyzeResume(input: AnalyzeResumeInput): Promise<AnalyzeResumeOutput> {
+  if (!hasGeminiKey()) {
+    throw new ResumeAnalysisError('missing_key', 'AI resume parsing is not configured.');
+  }
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new ResumeAnalysisError('timeout', `Resume analysis timed out after ${GEMINI_REQUEST_TIMEOUT_MS}ms`)),
+      GEMINI_REQUEST_TIMEOUT_MS,
+    );
+  });
+
   try {
-    const { output } = await prompt(input);
-    if (!output) throw new Error("AI extraction failed");
+    const { output } = await Promise.race([prompt(input), timeoutPromise]);
+    if (!output) {
+      throw new ResumeAnalysisError('invalid_output', 'AI extraction returned no structured output.');
+    }
     return output;
-  } catch (error: any) {
-    console.error("analyzeResume Error:", error);
-    throw new Error("Failed to parse resume content.");
+  } catch (error) {
+    // Preserve an already-classified error (timeout / invalid_output / missing_key).
+    if (error instanceof ResumeAnalysisError) throw error;
+    const reason = classifyProviderError(error);
+    console.error(
+      '[analyzeResume] provider failure:',
+      reasonLabel(reason),
+      error instanceof Error ? error.message.slice(0, 120) : error,
+    );
+    throw new ResumeAnalysisError(reason, 'Failed to parse resume content.');
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }

@@ -28,7 +28,7 @@ import { NextResponse } from 'next/server';
 import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { verifySession } from '@/lib/auth/sessions';
-import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
+import { analyzeResume, ResumeAnalysisError } from '@/ai/flows/analyze-resume-flow';
 import { jsonError } from '@/lib/auth/route-helpers';
 import {
   MAX_RESUME_BYTES,
@@ -140,7 +140,18 @@ export async function POST(request: Request) {
   try {
     parsed = await withTimeout(analyzeResume({ resumeDataUri: dataUri }), PARSE_TIMEOUT_MS, 'analyzeResume');
   } catch (err) {
-    parseError = err instanceof Error ? err.message : 'Resume parsing failed.';
+    // Surface an honest, classified reason so the candidate can tell whether
+    // the AI service was unavailable (missing key / timeout / quota / bad key /
+    // unsupported model) vs a genuine parse failure — and never a fake success.
+    if (err instanceof ResumeAnalysisError) {
+      parseError =
+        err.reason === 'invalid_output'
+          ? 'Could not parse this resume. Your resume was stored — fill in your profile manually.'
+          : 'Resume parsing is unavailable right now (AI service). Your resume was stored — fill in your profile manually.';
+    } else {
+      parseError = 'Resume parsing failed. Your resume was stored — fill in your profile manually.';
+    }
+    console.error('[candidate/resume] parse failed:', err instanceof Error ? err.message.slice(0, 120) : err);
     // Not fatal — the resume is stored; the candidate can still use it.
   }
 

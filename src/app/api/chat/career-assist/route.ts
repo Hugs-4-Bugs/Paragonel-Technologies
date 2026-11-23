@@ -39,6 +39,10 @@ import { jsonError } from '@/lib/auth/route-helpers';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+// Bounded platform timeout for the server-side match (no AI call, but a
+// bounded scan of published jobs + scoring — cap so a pathological input
+// cannot hold the function).
+export const maxDuration = 15;
 
 /** Minimal shape of a CMS job doc as returned by getVerifiedJobs. */
 interface JobDoc {
