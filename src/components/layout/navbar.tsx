@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Brain, Cloud, GitBranch, Boxes, ArrowRight, Code2, BarChart3, Layers } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Brain, Cloud, GitBranch, Boxes, ArrowRight, Code2, BarChart3, Layers, Workflow, Network, Compass, ShieldCheck, Gauge, Building2, Cpu, FlaskConical } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,14 +26,23 @@ const mainNavLinks = [
   { href: "/about", label: "About" },
 ];
 
-// Services mega-menu — mirrors the five engineering domains on /services
-// (Prompt 05B). Anchor links jump to the domain sections on the landing page.
+// Services mega-menu — mirrors the thirteen engineering domains on /services
+// (Prompt 05B + 05E expansion). Anchor links jump to the domain sections on the
+// landing page. Rendered as a 2-column grid so all 13 fit the bounded panel.
 const servicesMega = [
   { href: "/services#product-engineering", label: "Product Engineering", icon: Boxes, desc: "SaaS, custom business software, API & systems integration." },
   { href: "/services#ai-and-intelligent-systems", label: "AI & Intelligent Systems", icon: Brain, desc: "Agents, copilots, RAG, workflow automation — tied to a real outcome." },
-  { href: "/services#cloud-infrastructure-platform", label: "Cloud, Infrastructure & Platform", icon: Cloud, desc: "Architecture, migration, DevOps/CI-CD, reliability." },
+  { href: "/services#cloud-infrastructure-platform", label: "Cloud, Infrastructure & Platform", icon: Cloud, desc: "Architecture, migration, DevOps/CI-CD, reliability, distributed systems, databases." },
   { href: "/services#data-engineering-analytics", label: "Data Engineering & Analytics", icon: BarChart3, desc: "Pipelines, warehouse, analytics, BI — one source of truth." },
   { href: "/services#experience-interface", label: "Experience & Interface", icon: Layers, desc: "UI/UX, design systems, frontend engineering, accessibility." },
+  { href: "/services#automation-digital-operations", label: "Automation & Digital Operations", icon: Workflow, desc: "API-first workflow automation that handles real operational variance." },
+  { href: "/services#enterprise-integration", label: "Enterprise Integration", icon: Network, desc: "API platforms, ERP/CRM extensions, middleware, event-driven architecture." },
+  { href: "/services#advisory-managed-engineering", label: "Advisory & Managed Engineering", icon: Compass, desc: "Architecture consulting, discovery, modernization, due diligence." },
+  { href: "/services#cybersecurity-application-security", label: "Cybersecurity & App Security", icon: ShieldCheck, desc: "Secure architecture, app-sec, DevSecOps, supply-chain security." },
+  { href: "/services#quality-engineering", label: "Quality Engineering", icon: Gauge, desc: "Test architecture, regression, reliability, performance engineering." },
+  { href: "/services#industry-solutions", label: "Industry Solutions", icon: Building2, desc: "Domain solutions for B2B SaaS, fintech, healthcare, logistics, government." },
+  { href: "/services#iot-embedded-edge", label: "IoT, Embedded & Edge", icon: Cpu, desc: "Device connectivity, embedded software, edge computing — research stage." },
+  { href: "/services#emerging-technology", label: "Emerging Technology", icon: FlaskConical, desc: "Digital twins, robotics, AR/VR, edge-AI — applied research only." },
 ];
 
 const moreNavLinks = [

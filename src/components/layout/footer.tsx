@@ -20,10 +20,12 @@ import { Button } from "@/components/ui/button";
  * none are invented.
  */
 const servicesLinks = [
-  { href: "/services/ai-solutions", label: "AI Solutions" },
-  { href: "/services/custom-software", label: "Custom Software Development" },
-  { href: "/services/cloud-devops", label: "Cloud & DevOps" },
-  { href: "/services/data-analytics", label: "Data & Analytics" },
+  { href: "/services", label: "All Services" },
+  { href: "/services#product-engineering", label: "Product Engineering" },
+  { href: "/services#ai-and-intelligent-systems", label: "AI & Intelligent Systems" },
+  { href: "/services#cloud-infrastructure-platform", label: "Cloud & Platform Engineering" },
+  { href: "/services#data-engineering-analytics", label: "Data Engineering & Analytics" },
+  { href: "/services#experience-interface", label: "Experience & Interface" },
 ];
 
 const productLinks = [
