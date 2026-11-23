@@ -28,6 +28,7 @@ import { checkRateLimit, getClientId } from '@/lib/submission-security';
 import { meetsApplicationMinimum } from '@/lib/auth/candidate-profile';
 import { logSecurityEvent } from '@/lib/auth/security-events';
 import { getClientIp, jsonError } from '@/lib/auth/route-helpers';
+import { validateResumePath } from '@/lib/resume-security';
 import { sendApplicationConfirmation, SAFE_ATTACHMENT_BYTES } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
@@ -190,7 +191,11 @@ export async function POST(request: Request) {
   let resumeBuffer: Buffer | undefined;
   let resumeFileName: string | undefined;
   const resumePath = profile.resumeStoragePath || '';
-  if (resumePath) {
+  // Validate the stored path shape BEFORE fetching the object (defense-in-depth:
+  // a corrupted/injected profile value cannot make this attachment fetch an
+  // arbitrary Storage object). The path already comes from the authenticated
+  // candidate's own profile, so this is a shape guard, not the ownership gate.
+  if (validateResumePath(resumePath)) {
     try {
       const bucket = getAdminBucket()?.bucket();
       if (bucket) {
