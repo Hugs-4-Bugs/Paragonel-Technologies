@@ -22,6 +22,7 @@ import {
 import { JobCard } from '@/components/job-card';
 import { ApplyJobModal } from '@/components/apply-job-modal';
 import { JobDescriptionModal } from '@/components/job-description-modal';
+import { CareerAssistant } from '@/components/careers/career-assistant';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -269,6 +270,8 @@ export function CareersClient({ jobs }: CareersClientProps) {
           )}
         </section>
       )}
+
+      <CareerAssistant />
 
       <section className="py-24 bg-[#14152e] border-y border-white/5">
         <div className="container mx-auto px-4 md:px-6">
