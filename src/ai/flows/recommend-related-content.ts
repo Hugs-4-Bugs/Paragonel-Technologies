@@ -7,6 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { GEMINI_MODEL_REF } from '@/ai/models';
+import { redactReason } from '@/lib/job-alerts/dedup';
 
 const RecommendRelatedContentInputSchema = z.object({
   jobTitles: z
@@ -62,7 +63,7 @@ const recommendRelatedContentFlow = ai.defineFlow(
       }
       return output;
     } catch (error) {
-      console.error("recommendRelatedContent AI Error:", error);
+      console.error("recommendRelatedContent AI Error:", redactReason(error));
       return {
         recommendations: [
           "Discover how we integrated machine learning to revolutionize talent acquisition workflows.",

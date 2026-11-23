@@ -27,7 +27,6 @@ import { verifyCaptcha } from '@/lib/auth/captcha';
 import { buildLoginConsent } from '@/lib/auth/candidate-profile';
 import { logSecurityEvent } from '@/lib/auth/security-events';
 import { getClientIp, jsonError, isSecureRequest } from '@/lib/auth/route-helpers';
-import { TERMS_VERSION, PRIVACY_POLICY_VERSION } from '@/lib/submission-security';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

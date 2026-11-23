@@ -14,6 +14,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { dummyJobs, type Job } from '@/lib/data';
 import type { UserProfile } from '@/types';
+import { redactReason } from '@/lib/job-alerts/dedup';
 import { GEMINI_MODEL_REF } from '@/ai/models';
 
 const GenerateJobMatchEmailInputSchema = z.object({
@@ -38,7 +39,7 @@ async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
     if (docSnap.exists()) return docSnap.data() as UserProfile;
     return null;
   } catch (error) {
-    console.error("fetchUserProfile Error:", error);
+    console.error("fetchUserProfile Error:", redactReason(error));
     return null;
   }
 }

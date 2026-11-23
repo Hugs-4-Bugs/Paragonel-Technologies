@@ -14,9 +14,11 @@ const MIGRATIONS_DIR = path.resolve(__dirname, '..', 'supabase', 'migrations');
 // 0001 (schema) + 0002 (RLS) are PGlite-testable. 0003 (storage) + 0004 (auth
 // triggers) target the Supabase platform schema (storage.buckets / auth.users)
 // which PGlite does not provision — they are reviewed + applied to the real
-// project, not executed here. 0007 (newsletter double-opt-in columns) is an
-// additive data-schema migration, so it is PGlite-testable alongside 0001/0002/0005.
-const APPLY = ['0001_initial_schema.sql', '0002_rls_policies.sql', '0005_grants.sql', '0007_newsletter_double_optin.sql'];
+// project, not executed here. 0006 (migration_audit table + RLS — additive,
+// depends on is_super_admin() from 0002) and 0007 (newsletter double-opt-in
+// columns) are additive data-schema migrations, so they are PGlite-testable
+// alongside 0001/0002/0005.
+const APPLY = ['0001_initial_schema.sql', '0002_rls_policies.sql', '0005_grants.sql', '0006_migration_reconciliation.sql', '0007_newsletter_double_optin.sql'];
 
 async function main() {
   const pg = new PGlite();
@@ -56,7 +58,7 @@ async function main() {
     'job_match_results', 'job_alert_preferences', 'job_alert_events',
     'newsletter_subscribers', 'contact_enquiries', 'email_delivery_events',
     'audit_logs', 'services', 'blog_posts', 'tech_ecosystem', 'testimonials',
-    'client_projects', 'app_settings',
+    'client_projects', 'app_settings', 'migration_audit',
   ];
   const t = await pg.query(
     "SELECT tablename FROM pg_tables WHERE schemaname='public'",
@@ -97,6 +99,24 @@ async function main() {
     process.exit(1);
   }
   console.log('[validate] atomic duplicate-application index present');
+
+  // Assert the 0006 migration_audit table + its unique source index (idempotent
+  // re-run upsert key) + the super-admin-only SELECT policy exist.
+  const maIdx = await pg.query(
+    "SELECT indexname FROM pg_indexes WHERE schemaname='public' AND indexname = 'uniq_migration_audit_source'",
+  );
+  if (maIdx.rows.length !== 1) {
+    console.error('[validate] MISSING uniq_migration_audit_source index (0006)');
+    process.exit(1);
+  }
+  const maPolicy = await pg.query(
+    "SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='migration_audit' AND policyname='migration_audit_select_super'",
+  );
+  if (maPolicy.rows.length !== 1) {
+    console.error('[validate] MISSING migration_audit_select_super RLS policy (0006)');
+    process.exit(1);
+  }
+  console.log('[validate] migration_audit table + unique index + super-admin RLS policy present');
 
   // Assert the bootstrap sentinel + default threshold.
   const bs = await pg.query("SELECT value FROM app_settings WHERE key='superadmin_bootstrapped'");

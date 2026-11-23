@@ -16,6 +16,8 @@
  * Errors are surfaced to the console but never thrown — audit logging must
  * not crash a successful admin action.
  */
+import { redactReason } from '@/lib/job-alerts/dedup';
+
 export async function logActivity(
   adminEmail: string,
   action: string,
@@ -30,6 +32,6 @@ export async function logActivity(
     });
   } catch (e) {
     // Surface, but never block the calling admin action.
-    console.error('[audit] failed to post activity:', e);
+    console.error('[audit] failed to post activity:', redactReason(e));
   }
 }

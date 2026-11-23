@@ -7,6 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { GEMINI_MODEL_REF } from '@/ai/models';
+import { redactReason } from '@/lib/job-alerts/dedup';
 
 const FetchTechNewsInputSchema = z.object({
   domains: z
@@ -72,7 +73,7 @@ const fetchTechNewsFlow = ai.defineFlow(
       }
       return output;
     } catch (error) {
-      console.error("fetchTechNews AI Error:", error);
+      console.error("fetchTechNews AI Error:", redactReason(error));
       return {
         newsItems: [
           {
