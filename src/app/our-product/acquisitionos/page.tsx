@@ -4,7 +4,7 @@ import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
 import { LifecycleWorkflow } from '@/components/product/lifecycle-workflow';
 import {
   ArrowRight, ExternalLink, ShieldCheck, CircleDot, KeyRound, Lock,
-  Cpu, Rocket, Lightbulb, Gauge,
+  Cpu, Rocket, Lightbulb, Gauge, Building2, Users, Briefcase,
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -40,6 +40,14 @@ const PRINCIPLES = [
   { icon: CircleDot, t: 'AI-assisted, not AI-autonomous', d: 'AI surfaces signals, drafts and suggested scores. A human decides and acts. AcquisitionOS is explicit that its output is assistance, not prediction.' },
   { icon: ShieldCheck, t: 'No invented data', d: 'The anti-hallucination stance: missing information stays missing rather than being fabricated. The system surfaces a gap instead of filling it with a guess.' },
   { icon: KeyRound, t: 'User-owned AI keys', d: 'You bring your own LLM provider keys (OpenAI, Anthropic, Google AI). Your prompts are not silently routed through a third party you did not choose.' },
+];
+
+const AUDIENCES = [
+  { icon: Building2, t: 'Businesses', d: 'Teams that acquire clients as part of growth and want one connected motion instead of a stitched-together stack that loses context at every handoff.' },
+  { icon: Users, t: 'Agencies', d: 'Service businesses running outbound for multiple clients, where prospect context is rebuilt per account and per campaign instead of carried forward.' },
+  { icon: Rocket, t: 'Founders', d: 'Operators doing sales themselves early on, who need the research-to-pipeline work to happen without standing up a dedicated sales ops team.' },
+  { icon: Lightbulb, t: 'Consultants', d: 'Independent practitioners who qualify, score, and personalize outreach as part of engagements, and need the reasoning behind each step to be defensible.' },
+  { icon: Briefcase, t: 'B2B sales teams', d: 'Sales teams that want prospect discovery, scoring, outreach, and pipeline in one workflow — with a human kept in control at every decision stage.' },
 ];
 
 const INTEGRATIONS = [
@@ -96,9 +104,10 @@ export default function AcquisitionOSPage() {
               The AI-native client acquisition<br />operating system.
             </h1>
             <p className="pt-lead mt-7 max-w-2xl">
-              An AI-powered Client Acquisition Operating System developed by Paragonel Technologies
-              Pvt. Ltd. It connects the client-acquisition lifecycle — from prospect discovery to
-              deal closure — in one connected workflow. Currently in private beta.
+              Paragonel&apos;s flagship product — an AI-powered Client Acquisition Operating System
+              developed by Paragonel Technologies Pvt. Ltd. It connects the client-acquisition
+              lifecycle — from prospect discovery to deal closure — in one connected workflow.
+              Currently in private beta.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link href={PRODUCT_DOMAIN} target="_blank" rel="noopener noreferrer" className="pt-btn pt-btn-primary">
@@ -170,6 +179,34 @@ export default function AcquisitionOSPage() {
               ))}
             </RevealGroup>
           </div>
+        </div>
+      </section>
+
+      {/* 3b. Who it's for — target audience */}
+      <section className="pt-section">
+        <div className="pt-shell">
+          <Reveal>
+            <span className="pt-eyebrow">Who it&apos;s for</span>
+            <h2 className="pt-h1 mt-6 text-foreground">Built for the people who carry the acquisition motion.</h2>
+            <p className="pt-lead mt-6 max-w-2xl">
+              AcquisitionOS is built for the operators who own prospect-to-pipeline work — not for
+              a generic audience. The workflow assumes a human reasons over the output at every
+              decision stage.
+            </p>
+          </Reveal>
+          <RevealGroup stagger={0.06} className="mt-12 grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-3">
+            {AUDIENCES.map((a) => (
+              <RevealItem key={a.t}>
+                <div className="bg-background p-6">
+                  <div className="flex items-center gap-3">
+                    <a.icon className="h-5 w-5 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">{a.t}</h3>
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{a.d}</p>
+                </div>
+              </RevealItem>
+            ))}
+          </RevealGroup>
         </div>
       </section>
 

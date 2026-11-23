@@ -16,6 +16,18 @@ function getJwtSecret(): Uint8Array | null {
 // Public admin-area pages that do NOT require an authenticated admin session.
 const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/admin/bootstrap', '/admin/accept-invite']);
 
+/**
+ * Canonical-domain decision for acquisitionos.net (Batch 3 Task 3). The `.net`
+ * domain is NOT an approved AcquisitionOS destination — the only approved
+ * destination is the private-beta site. If the `.net` host is ever pointed at
+ * this app, permanently redirect it to the approved beta domain so the paragonel
+ * site is never served under acquisitionos.net and the visitor lands on the real
+ * product. This preserves the existing decision (forbidden in the AI system
+ * prompt + hardcoded PRODUCT_DOMAIN on the AcquisitionOS page) at the redirect
+ * layer too — the `.net` host can never become canonical.
+ */
+const ACQUISITIONOS_APPROVED_DOMAIN = 'https://acquisitionosbeta.vercel.app/';
+
 function jsonRejection(status: number, message: string): NextResponse {
   return new NextResponse(JSON.stringify({ error: message }), {
     status,
@@ -25,6 +37,12 @@ function jsonRejection(status: number, message: string): NextResponse {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const host = request.headers.get('host') || '';
+
+  // 0. acquisitionos.net host redirect — preserve the canonical-domain decision.
+  if (host === 'acquisitionos.net' || host === 'www.acquisitionos.net') {
+    return NextResponse.redirect(ACQUISITIONOS_APPROVED_DOMAIN, 308);
+  }
 
   // 1. Admin page gate (/admin/**, except the public auth pages). A user-tier
   //    token, step-1 token, or legacy password-only JWT is NOT accepted. Data
@@ -89,5 +107,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/:path*'],
+  // Run on all routes except Next.js internals + static asset files, so the
+  // acquisitionos.net host redirect (step 0) is evaluated on every page request.
+  // The admin gate + API security (steps 1–2) still only act on /admin/** and
+  // /api/** paths respectively — they are no-ops on other paths.
+  matcher: [
+    '/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|manifest|js|css|woff|woff2|ttf|map)$).*)',
+  ],
 };
