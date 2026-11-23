@@ -7,8 +7,10 @@
  * src/lib/ai/knowledge-retrieval.ts) + recent conversation history. The model
  * synthesizes a grounded answer with citations, never fabricating facts.
  *
- * The legacy career resume-flow (analyzeResume + ChatCareerFlow) is preserved
- * for Prompt 05Q–05R and is NOT touched here.
+ * Career assistance (resume upload, AI parse review, deterministic job matching,
+ * application submission) lives on /careers via the CareerAssistant component
+ * and is separate from this knowledge assistant. analyzeResume remains available
+ * to /api/candidate/resume; the in-chat ChatCareerFlow was removed in Batch 8.
  *
  * === Defect 1 fix (this batch) ===
  * The previous version hardcoded 'googleai/gemini-1.5-flash-latest' (sunset by

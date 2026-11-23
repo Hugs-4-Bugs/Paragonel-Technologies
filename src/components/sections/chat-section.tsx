@@ -9,8 +9,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { MessageCircle, Send, X, Loader2, Bot, Trash2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useChatState } from '@/hooks/useChatState';
-import { ChatCareerFlow } from '@/components/ChatCareerFlow';
-import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import {
   ENQUIRY_CATEGORY_LABELS,
   COMPANY_LINKEDIN_URL,
@@ -22,15 +20,14 @@ import {
 } from '@/lib/ai/lead-qualification';
 
 /**
- * NOTE (Phase 6.3): the career-assistant flow previously read `jobs` and wrote
- * `jobApplications` via the CLIENT Firestore SDK. Both collections are
- * client-denied by firestore.rules, so the read returned 0 jobs and the write
- * silently failed — and the write also bypassed /api/job-applications' auth,
- * validation, atomic duplicate check, and confirmation email. The flow now
- * matches via the secure server route /api/chat/career-assist (which uses the
- * REAL match engine) and submits via /api/job-applications (authenticated,
- * transactional, sends the branded confirmation email). No client Firestore
- * imports remain in this component.
+ * ChatSection is the company + product knowledge assistant + lead-qualification
+ * flow. Career assistance (resume upload, AI parse review, deterministic job
+ * matching, and application submission) now lives on /careers via the dedicated
+ * CareerAssistant component, which reuses the secure server routes
+ * /api/chat/career-assist (real scoreJobCandidate engine) + /api/job-applications
+ * (authenticated, transactional, sends the branded confirmation email). This
+ * chat no longer embeds a career workflow; it answers knowledge questions and
+ * captures sales/marketing enquiries. No client Firestore imports remain here.
  */
 
 /** Suggested example questions (Prompt 05O §9). */
@@ -76,10 +73,6 @@ export function ChatSection() {
   const {
     messages, addMessage, updateMessage,
     sessionId,
-    careerStep, updateCareerStep,
-    candidateProfile, setCandidateProfile,
-    selectedJob, setSelectedJob,
-    matchedJobs, setMatchedJobs,
     clearChat,
     qualification, startEnquiry, updateCaptured, setQualificationStage,
     editCapturedField, consentAcknowledged, setConsent,
@@ -135,10 +128,10 @@ export function ChatSection() {
     return () => vp.removeEventListener('scroll', onScroll);
   }, [isOpen]);
 
-  // Conditional auto-scroll: when a new message / loading / career-step change
-  // arrives, scroll to the bottom ONLY if the visitor was already near the
-  // bottom. Otherwise leave them where they are + show the "New messages"
-  // affordance so they can jump down on their own terms.
+  // Conditional auto-scroll: when a new message or loading state arrives,
+  // scroll to the bottom ONLY if the visitor was already near the bottom.
+  // Otherwise leave them where they are + show the "New messages" affordance
+  // so they can jump down on their own terms.
   useEffect(() => {
     const vp = viewportRef.current;
     if (!vp) return;
@@ -150,7 +143,7 @@ export function ChatSection() {
       setShowJump(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, careerStep, isLoading]);
+  }, [messages, isLoading]);
 
   /** Scroll the chat history to the bottom (used by the "New messages" button). */
   const jumpToBottom = () => {
@@ -307,77 +300,10 @@ export function ChatSection() {
     }
   };
 
-  const handleFileUpload = async (file: File) => {
-    updateCareerStep('analyzing_resume');
-    setIsLoading(true);
-    
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async () => {
-      const dataUri = reader.result as string;
-      try {
-        const profile = await analyzeResume({ resumeDataUri: dataUri });
-        setCandidateProfile({ ...profile, resumeUrl: file.name, resumeDataUri: dataUri });
-        updateCareerStep('confirm_details');
-        addMessage('ai', "Extraction complete. Here is the profile I built for you. Please confirm to see your job matches.");
-      } catch {
-        addMessage('ai', "I couldn't parse that file. Please try pasting your resume content.");
-        updateCareerStep('resume_upload');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  };
-
-  const handleConfirmProfile = async (confirmed: boolean) => {
-    if (!confirmed) {
-      updateCareerStep('resume_upload');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Secure server-side match via /api/chat/career-assist (the REAL
-      // match engine, configurable threshold, published jobs only). The
-      // previous client-SDK read of `jobs` was denied by firestore.rules
-      // (returned 0 jobs) and the stub matcher diverged from the engine.
-      const res = await fetch('/api/chat/career-assist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profile: candidateProfile,
-          website: '', // honeypot
-        }),
-      });
-      if (!res.ok) {
-        addMessage('ai', "I couldn't verify current openings right now. You can browse all roles on the [Careers](/careers) page.");
-        updateCareerStep('matching_jobs');
-        return;
-      }
-      const data = (await res.json()) as {
-        matches?: Array<{ id: string; title: string; score: number; reasons?: string[]; [k: string]: unknown }>;
-        threshold?: number;
-      };
-      const matches = (data.matches || []).map((j) => ({
-        ...j,
-        matchScore: j.score,
-        matchReason: Array.isArray(j.reasons) ? j.reasons.join(' ') : '',
-      }));
-      setMatchedJobs(matches);
-      updateCareerStep('matching_jobs');
-      addMessage(
-        'ai',
-        matches.length > 0
-          ? `Found ${matches.length} role${matches.length > 1 ? 's' : ''} matching your profile at or above ${data.threshold}%. Tap a role to review + apply.`
-          : "I couldn't find a match at the current threshold, but you can still browse all roles on the [Careers](/careers) page.",
-      );
-    } catch {
-      addMessage('ai', "Failed to sync live roles. You can browse all roles on the [Careers](/careers) page.");
-      updateCareerStep('matching_jobs');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  /* handleFileUpload + handleConfirmProfile (dead in-chat career flow) removed
+     in Batch 8. Career assistance now lives on /careers via the
+     CareerAssistant component, which reuses /api/chat/career-assist +
+     /api/job-applications directly. */
 
   /**
    * Render a chat message body with minimal, safe inline Markdown:
@@ -515,7 +441,7 @@ export function ChatSection() {
               </div>
             ))}
             {/* Suggested example questions — only when the chat has just the greeting (no user messages yet). */}
-            {messages.length === 1 && messages[0]?.role === 'ai' && !isLoading && careerStep === 'idle' && !qualification.active && (
+            {messages.length === 1 && messages[0]?.role === 'ai' && !isLoading && !qualification.active && (
               <div className="flex flex-wrap gap-2 pt-1" aria-label="Suggested questions">
                 {SUGGESTED_QUESTIONS.map((q) => (
                   <button
@@ -662,84 +588,6 @@ export function ChatSection() {
                     New question
                   </button>
                 </div>
-              </div>
-            )}
-            {careerStep !== 'idle' && (
-              <div className="w-full">
-                <ChatCareerFlow 
-                  step={careerStep} 
-                  matchedJobs={matchedJobs} 
-                  selectedJob={selectedJob} 
-                  candidateProfile={candidateProfile}
-                  onAcceptHelp={(acc) => acc ? updateCareerStep('resume_upload') : updateCareerStep('idle')}
-                  onFileUpload={handleFileUpload}
-                  onConfirmProfile={handleConfirmProfile}
-                  onApplyOnBehalf={(job) => { setSelectedJob(job); updateCareerStep('apply_behalf'); }}
-                  onFinalSubmit={async (approved) => {
-                    if (!approved) return updateCareerStep('matching_jobs');
-                    setIsLoading(true);
-                    try {
-                      // Submit through the SECURE application API (auth, Zod
-                      // validation, atomic duplicate transaction, profile-minimum
-                      // check, branded confirmation email). The previous
-                      // client-SDK addDoc to `jobApplications` was denied by
-                      // firestore.rules + bypassed all of those guarantees.
-                      const res = await fetch('/api/job-applications', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          jobId: selectedJob.id,
-                          confirmSubmission: true,
-                          website: '', // honeypot
-                        }),
-                      });
-                      if (res.status === 401) {
-                        // Not logged in — guide to registration/login first.
-                        addMessage(
-                          'ai',
-                          "To submit an application, you'll need a candidate account. Please [sign in](/auth/login?redirect=/careers) or [create a free account](/auth/signup) first — then upload your resume from your profile so it is attached to your application.",
-                        );
-                        updateCareerStep('idle');
-                        return;
-                      }
-                      if (res.status === 422) {
-                        const j = await res.json().catch(() => ({}));
-                        addMessage(
-                          'ai',
-                          `Before applying, please complete your candidate profile — ${typeof j.error === 'string' ? j.error : 'it is missing required information (name, phone or location, and at least one skill).'} You can finish it on the [profile page](/candidate/profile), then come back to apply.`,
-                        );
-                        updateCareerStep('idle');
-                        return;
-                      }
-                      if (res.status === 409) {
-                        addMessage('ai', "You've already applied for this role. You can track its status on the [profile page](/candidate/profile).");
-                        updateCareerStep('idle');
-                        return;
-                      }
-                      if (!res.ok) {
-                        addMessage('ai', "I had trouble submitting your application. Please try applying directly on the [Careers](/careers) page.");
-                        updateCareerStep('matching_jobs');
-                        return;
-                      }
-                      const data = await res.json();
-                      updateCareerStep('submitted');
-                      const ref = typeof data.reference === 'string' && data.reference ? data.reference : '—';
-                      const note =
-                        data.notification === 'sent' ? ' A confirmation email is on its way to your inbox.'
-                        : data.notification === 'skipped' ? ' (Email notifications are not configured in this environment, but your application is safely stored.)'
-                        : ' (There was an email issue, but your application is safely stored.)';
-                      addMessage(
-                        'ai',
-                        `Success! Your application has been received (reference: ${ref}).${note} Our team will review your profile shortly — you can track the status on the [profile page](/candidate/profile).`,
-                      );
-                    } catch {
-                      addMessage('ai', "I had trouble submitting your application. Please try applying directly on the [Careers](/careers) page.");
-                      updateCareerStep('matching_jobs');
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}
-                />
               </div>
             )}
             {isLoading && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
