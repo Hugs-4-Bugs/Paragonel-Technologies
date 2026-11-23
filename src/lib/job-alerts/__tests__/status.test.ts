@@ -142,3 +142,74 @@ describe('summarizeAlertStatus — privacy (no candidate PII)', () => {
     expect(json).not.toContain('92');
   });
 });
+
+/**
+ * Consumer contract (Batch 4 Task 1): the /admin/alerts UI renders exactly the
+ * fields summarizeAlertStatus returns. This locks the shape so a future change
+ * to the summary that breaks the admin UI fails here. Every field the page
+ * reads (events.byStatus, events.total, events.stuck[].{eventId,jobId,
+ * claimedAt,attempts}, events.recentFailures[].{eventId,jobId,lastError,
+ * attempts}, alerts.byStatus, alerts.total, generatedAt) must be present with
+ * the expected types for a representative input.
+ */
+describe('summarizeAlertStatus — admin alerts UI consumer contract', () => {
+  it('returns every field the /admin/alerts page renders, with correct types', () => {
+    const stuckClaimed = Timestamp.fromMillis(NOW - STUCK_MS - 60_000);
+    const s = summarizeAlertStatus(
+      [
+        ev('e-stuck', { status: 'processing', jobId: 'j-stuck', claimedAt: stuckClaimed, attempts: 2 }),
+        ev('e-fail', { status: 'failed', jobId: 'j-fail', lastError: 'smtp timeout: secret@host', attempts: 3 }),
+        ev('e-ok', { status: 'processed', jobId: 'j-ok' }),
+      ],
+      [
+        al({ status: 'sent' }),
+        al({ status: 'skipped' }),
+      ],
+      NOW,
+      STUCK_MS,
+    );
+
+    // Top-level shape.
+    expect(typeof s.generatedAt).toBe('string');
+    expect(new Date(s.generatedAt).toISOString()).toBe(s.generatedAt);
+
+    // events block.
+    expect(s.events.total).toBe(3);
+    expect(s.events.byStatus).toEqual({ processing: 1, failed: 1, processed: 1 });
+
+    // stuck: one entry, all four UI fields present + correctly typed.
+    expect(s.events.stuck).toHaveLength(1);
+    const stuck = s.events.stuck[0];
+    expect(stuck.eventId).toBe('e-stuck');
+    expect(stuck.jobId).toBe('j-stuck');
+    expect(typeof stuck.claimedAt).toBe('string');
+    expect(stuck.attempts).toBe(2);
+
+    // recentFailures: one entry, all four UI fields present + redacted.
+    expect(s.events.recentFailures).toHaveLength(1);
+    const fail = s.events.recentFailures[0];
+    expect(fail.eventId).toBe('e-fail');
+    expect(fail.jobId).toBe('j-fail');
+    expect(typeof fail.lastError).toBe('string');
+    expect(fail.lastError).not.toContain('secret');
+    expect(fail.attempts).toBe(3);
+
+    // alerts block.
+    expect(s.alerts.total).toBe(2);
+    expect(s.alerts.byStatus).toEqual({ sent: 1, skipped: 1 });
+  });
+
+  it('returns stable empty structures (not undefined) when there is no data', () => {
+    const s = summarizeAlertStatus([], [], NOW, STUCK_MS);
+    // The UI maps over byStatus keys + stuck + recentFailures — these must be
+    // arrays/objects, never undefined, or the page throws on empty state.
+    expect(s.events.byStatus).toEqual({});
+    expect(Array.isArray(s.events.stuck)).toBe(true);
+    expect(s.events.stuck).toHaveLength(0);
+    expect(Array.isArray(s.events.recentFailures)).toBe(true);
+    expect(s.events.recentFailures).toHaveLength(0);
+    expect(s.events.total).toBe(0);
+    expect(s.alerts.byStatus).toEqual({});
+    expect(s.alerts.total).toBe(0);
+  });
+});
