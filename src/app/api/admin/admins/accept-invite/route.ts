@@ -5,27 +5,50 @@
  * their own password here, AFTER receiving the invite link by email (verified
  * email). On success the admin becomes status 'active', emailVerified true.
  * The token is single-use-ish (24h TTL, tied to the doc's status==='invited').
+ *
+ * Rate-limited per IP (public + abuse-prone: invite replay / flooding).
  */
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { verifySignedToken } from '@/lib/auth/crypto-utils';
 import { getOtpSecret } from '@/lib/auth/otp';
 import { hashPassword, validatePassword } from '@/lib/auth/password';
 import { logSecurityEvent } from '@/lib/auth/security-events';
-import { getClientIp, jsonError, passwordPolicyResponse } from '@/lib/auth/route-helpers';
+import {
+  getClientIp,
+  jsonError,
+  passwordPolicyResponse,
+  validateRequestBody,
+} from '@/lib/auth/route-helpers';
+import { POLICIES, checkBoth } from '@/lib/auth/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+const acceptInviteSchema = z.object({
+  token: z.string().min(1, 'Missing invite token.'),
+  newPassword: z.string().min(1, 'Missing new password.'),
+});
+
 export async function POST(request: Request) {
   const ip = getClientIp(request);
+
+  // Rate-limit per IP BEFORE any token work (public endpoint; invite replay
+  // / flooding is the abuse vector).
+  const rl = await checkBoth('acctMut', POLICIES.accountMutation, undefined, ip);
+  if (!rl.ok) {
+    await logSecurityEvent({ type: 'rate_limited', ip, detail: 'accept-invite' });
+    return jsonError(429, 'Too many attempts. Try again later.', { retryAfter: rl.retryAfter });
+  }
+
   const secret = getOtpSecret();
   if (!secret) return jsonError(500, 'Server auth misconfigured.');
-  let body: { token?: string; newPassword?: string };
-  try { body = await request.json(); } catch { return jsonError(400, 'Invalid request body.'); }
-  const { token, newPassword } = body;
-  if (!token || !newPassword) return jsonError(400, 'Missing invite token or new password.');
+
+  const parsed = await validateRequestBody(request, acceptInviteSchema);
+  if (!parsed.ok) return parsed.response;
+  const { token, newPassword } = parsed.data;
 
   const payload = verifySignedToken(token, secret);
   if (!payload) return jsonError(400, 'Invalid or expired invitation link.');

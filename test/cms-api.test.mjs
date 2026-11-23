@@ -46,12 +46,12 @@ function check(label, ok, detail = '') {
 }
 
 const rnd = () => Math.random().toString(36).slice(2, 8);
-const authHeaders = (token) => ({ 'Content-Type': 'application/json', Cookie: `qf_admin_token=${token}` });
+const authHeaders = (token) => ({ 'Content-Type': 'application/json', Cookie: `qf_admin_token=${token}`, Origin: BASE });
 
 async function req(method, path, { token, body } = {}) {
   const res = await fetch(BASE + path, {
     method,
-    headers: token ? authHeaders(token) : { 'Content-Type': 'application/json' },
+    headers: token ? authHeaders(token) : { 'Content-Type': 'application/json', Origin: BASE },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   let data = null;

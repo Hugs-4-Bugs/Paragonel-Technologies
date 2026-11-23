@@ -64,6 +64,7 @@ function check(label, ok, detail = '') {
 
 async function req(method, path, { token, headers, body } = {}) {
   const h = { ...(headers || {}) };
+  h.Origin = BASE; // same-origin signal for the CSRF guard (Task 2)
   if (token) h.Cookie = `qf_admin_token=${token}`;
   let res;
   if (body !== undefined) {
@@ -229,7 +230,7 @@ async function main() {
     form.append('phone', '555-0000');
     form.append('primarySkills', 'qa');
     form.append('coverLetter', 'regression probe');
-    const res = await fetch(BASE + '/api/job-applications', { method: 'POST', body: form });
+    const res = await fetch(BASE + '/api/job-applications', { method: 'POST', headers: { Origin: BASE }, body: form });
     check('10b. public job-application submission alive (201 or 429)',
       res.status === 201 || res.status === 429, `got ${res.status}`);
   }

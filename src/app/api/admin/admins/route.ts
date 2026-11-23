@@ -23,6 +23,7 @@ import { signToken } from '@/lib/auth/crypto-utils';
 import { getOtpSecret } from '@/lib/auth/otp';
 import { sendNotificationEmail } from '@/lib/auth/email';
 import { getClientIp, jsonError, passwordPolicyResponse } from '@/lib/auth/route-helpers';
+import { POLICIES, checkBoth } from '@/lib/auth/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -53,6 +54,15 @@ export async function POST(request: Request) {
   const ip = getClientIp(request);
   const auth = await requirePermission(request, 'admins.create');
   if (!auth.ok) return auth.response;
+
+  // Rate-limit account creation/invitation per actor + per IP (abuse-prone:
+  // a compromised super-admin could otherwise mass-create or mass-invite).
+  const rl = await checkBoth('acctMut', POLICIES.accountMutation, auth.user.email, ip);
+  if (!rl.ok) {
+    await logSecurityEvent({ type: 'rate_limited', email: auth.user.email, ip, detail: 'admins.create' });
+    return jsonError(429, 'Too many account actions. Try again later.', { retryAfter: rl.retryAfter });
+  }
+
   const db = getAdminDb();
   if (!db) return jsonError(503, 'Service unavailable.');
 

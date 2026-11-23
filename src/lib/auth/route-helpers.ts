@@ -2,6 +2,7 @@
  * route-helpers.ts — small shared helpers for auth API routes.
  */
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import type { PasswordPolicyError } from './password';
 import { passwordPolicyMessage } from './password';
 
@@ -20,6 +21,39 @@ export function jsonOk(data: unknown, init?: ResponseInit) {
 
 export function jsonError(status: number, message: string, extra?: Record<string, unknown>) {
   return NextResponse.json({ message, ...extra }, { status });
+}
+
+/**
+ * Parse + validate a JSON request body against a zod schema. Consolidates the
+ * `try { await request.json() } catch { 400 }` + `schema.safeParse(body)`
+ * pattern duplicated across routes. Returns a ready 400 response on a malformed
+ * body or a schema violation (issues surfaced as human-readable messages, never
+ * as raw internals). Never throws.
+ */
+export async function validateRequestBody<S extends z.ZodTypeAny>(
+  request: Request,
+  schema: S,
+): Promise<
+  | { ok: true; data: z.infer<S> }
+  | { ok: false; response: NextResponse }
+> {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return { ok: false, response: NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }) };
+  }
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Validation failed', issues: parsed.error.issues.map((i) => i.message) },
+        { status: 400 },
+      ),
+    };
+  }
+  return { ok: true, data: parsed.data };
 }
 
 /** Map a password policy error code to an HTTP 400 response. */
