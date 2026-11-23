@@ -36,6 +36,9 @@ class FakeDocRef {
     const cur = (this.col.docs.get(this.id) ?? {}) as Doc;
     this.col.docs.set(this.id, { ...cur, ...patch });
   }
+  async delete() {
+    this.col.docs.delete(this.id);
+  }
 }
 
 class FakeQuery {
