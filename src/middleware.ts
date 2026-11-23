@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { checkSameOrigin, checkBodySize } from '@/lib/api-security';
+import { canonicalHostRedirect } from '@/lib/canonical-host';
 
 // JWT secret MUST come from env (>= 32 chars). No insecure fallback.
 // If missing/weak, no token can be verified → fail closed (redirect to login).
@@ -16,17 +17,8 @@ function getJwtSecret(): Uint8Array | null {
 // Public admin-area pages that do NOT require an authenticated admin session.
 const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/admin/bootstrap', '/admin/accept-invite']);
 
-/**
- * Canonical-domain decision for acquisitionos.net (Batch 3 Task 3). The `.net`
- * domain is NOT an approved AcquisitionOS destination — the only approved
- * destination is the private-beta site. If the `.net` host is ever pointed at
- * this app, permanently redirect it to the approved beta domain so the paragonel
- * site is never served under acquisitionos.net and the visitor lands on the real
- * product. This preserves the existing decision (forbidden in the AI system
- * prompt + hardcoded PRODUCT_DOMAIN on the AcquisitionOS page) at the redirect
- * layer too — the `.net` host can never become canonical.
- */
-const ACQUISITIONOS_APPROVED_DOMAIN = 'https://acquisitionosbeta.vercel.app/';
+// Canonical-domain redirects (acquisitionos.net → approved beta; www.paragonel.com
+// → apex) are decided by the pure, tested src/lib/canonical-host.ts.
 
 function jsonRejection(status: number, message: string): NextResponse {
   return new NextResponse(JSON.stringify({ error: message }), {
@@ -39,22 +31,12 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get('host') || '';
 
-  // 0. Canonical-domain redirects.
-  //    a) acquisitionos.net is NOT an approved destination → permanently
-  //       redirect to the only approved AcquisitionOS host (the private-beta
-  //       site). The paragonel site is never served under the .net host.
-  //    b) www.paragonel.com → paragonel.com (apex). Canonical-domain
-  //       consistency: the apex is the canonical host (matches metadataBase +
-  //       sitemap/robots). Only fires if the www host is pointed at the app —
-  //       the Vercel preview host (paragonel.vercel.app) is never redirected, so
-  //       preview access is unaffected.
-  if (host === 'acquisitionos.net' || host === 'www.acquisitionos.net') {
-    return NextResponse.redirect(ACQUISITIONOS_APPROVED_DOMAIN, 308);
-  }
-  if (host === 'www.paragonel.com') {
-    const apexUrl = new URL(pathname, 'https://paragonel.com');
-    apexUrl.search = request.nextUrl.search;
-    return NextResponse.redirect(apexUrl, 308);
+  // 0. Canonical-domain redirects — see src/lib/canonical-host.ts (tested).
+  //    acquisitionos.net → approved beta; www.paragonel.com → apex. The Vercel
+  //    preview host + the apex itself are never redirected.
+  const canonical = canonicalHostRedirect(host, pathname, request.nextUrl.search);
+  if (canonical) {
+    return NextResponse.redirect(canonical.url, canonical.permanent ? 308 : 307);
   }
 
   // 1. Admin page gate (/admin/**, except the public auth pages). A user-tier
