@@ -69,8 +69,11 @@ alongside the structured catalogue.
 ## Flagship product — AcquisitionOS
 
 - **Status:** PRIVATE BETA ✅. Present as a real product, not just a service.
-- **Beta URL (only approved link):** https://acquisitionosbeta.vercel.app/ ✅
-- **Never use:** `acquisitionos.net`. ✅
+- **Canonical product domain:** `https://acquisitionos.net` ✅ (intended
+  canonical AcquisitionOS product domain — Batch 4 Task 2). Current temporary
+  deployment: `https://acquisitionosbeta.vercel.app` (accessible directly until
+  acquisitionos.net DNS is pointed at that Vercel deployment — see
+  `docs/DOMAINS.md`).
 - **Lifecycle (12 stages):** Discover → Research → Find Gaps → Opportunity
   Report → Score → Personalize → Outreach → Reply → Meeting → Pipeline →
   Proposal → Close. ✅

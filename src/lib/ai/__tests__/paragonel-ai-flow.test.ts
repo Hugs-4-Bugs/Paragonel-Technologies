@@ -30,7 +30,7 @@ const MOCK_CONTEXT: KnowledgeEntry[] = [
   {
     id: 'product-acquisitionos',
     title: 'AcquisitionOS — AI-Native Client Acquisition Platform (Private Beta)',
-    content: 'AcquisitionOS is in PRIVATE BETA. Approved URL: https://acquisitionosbeta.vercel.app/',
+    content: 'AcquisitionOS is in PRIVATE BETA. Canonical product domain: https://acquisitionos.net',
     category: 'products',
     canonicalPath: '/our-product/acquisitionos',
     sourceType: 'company-static',
@@ -59,8 +59,11 @@ describe('Paragonel AI grounding + safety', () => {
 
     it('enforces AcquisitionOS PRIVATE BETA status', () => {
       expect(SYSTEM_PROMPT).toContain('PRIVATE BETA');
-      expect(SYSTEM_PROMPT).toContain('acquisitionosbeta.vercel.app');
+      // Canonical product domain is acquisitionos.net (Batch 4 Task 2); the
+      // prompt no longer mentions the beta URL or forbids acquisitionos.net.
       expect(SYSTEM_PROMPT).toContain('acquisitionos.net');
+      expect(SYSTEM_PROMPT).not.toContain('acquisitionosbeta.vercel.app');
+      expect(SYSTEM_PROMPT).not.toContain('NEVER mention or use acquisitionos.net');
       expect(SYSTEM_PROMPT).toMatch(/never claim.*publicly launched|generally available/i);
     });
 

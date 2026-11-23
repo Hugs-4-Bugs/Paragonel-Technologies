@@ -77,7 +77,7 @@ export function HomeProducts({ clientProjects = [] }: { clientProjects?: ClientP
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link
-                    href="https://acquisitionosbeta.vercel.app/"
+                    href="https://acquisitionos.net"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="pt-btn pt-btn-primary"

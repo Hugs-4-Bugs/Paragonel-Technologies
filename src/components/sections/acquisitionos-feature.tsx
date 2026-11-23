@@ -74,7 +74,7 @@ export function AcquisitionOSFeature() {
             </Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="rounded-full px-8 h-14 text-base font-bold">
-            <Link href="https://acquisitionosbeta.vercel.app/" target="_blank" rel="noopener noreferrer">
+            <Link href="https://acquisitionos.net" target="_blank" rel="noopener noreferrer">
               Request private-beta access <ExternalLink className="ml-2 h-4 w-4" />
             </Link>
           </Button>

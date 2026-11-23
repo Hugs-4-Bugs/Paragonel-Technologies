@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'acquisitionos.net',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'acquisitionosbeta.vercel.app',
         port: '',
         pathname: '/**',

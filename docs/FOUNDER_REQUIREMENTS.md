@@ -194,8 +194,12 @@ partnerships, production uptime, or international presence.
 - **Status:** PRIVATE BETA ✅. Label honestly as private beta; do not claim
   general availability. Never represent planned or incomplete capabilities as
   fully operational.
-- **Beta URL:** `https://acquisitionosbeta.vercel.app/` ✅ — the ONLY approved
-  link. **Never** use `acquisitionos.net` or any unconfirmed domain.
+- **Canonical product domain:** `https://acquisitionos.net` ✅ — the intended
+  canonical AcquisitionOS product domain (Batch 4 Task 2). The current temporary
+  deployment is `https://acquisitionosbeta.vercel.app` (accessible directly
+  until acquisitionos.net DNS is pointed at that Vercel deployment — see
+  `docs/DOMAINS.md`). CTAs + metadata reference `acquisitionos.net` (canonical);
+  the raw URL is never shown as visible text — always behind a labelled link.
 - **What it is:** Paragonel's flagship AI-powered Client Acquisition Operating
   System — a real product (not merely another Paragonel service) that connects
   the client-acquisition lifecycle. ✅

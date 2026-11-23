@@ -21,11 +21,15 @@ export const metadata: Metadata = {
 };
 
 /**
- * The ONLY approved AcquisitionOS destination. The visitor never sees this raw
- * URL as visible text — it lives behind CTA buttons/links. The `.net` domain is
- * NOT approved and is not used anywhere on this page or in its metadata.
+ * The canonical AcquisitionOS product domain (Batch 4 Task 2). acquisitionos.net
+ * is the INTENDED canonical product domain — NOT redirected to the temporary
+ * beta Vercel URL. The current deployment lives at acquisitionosbeta.vercel.app
+ * (the temporary deployment host); acquisitionos.net DNS must be pointed at that
+ * Vercel deployment by the founder (see docs/DOMAINS.md). The visitor never sees
+ * this raw URL as visible text — it lives behind CTA buttons/links with a
+ * meaningful label.
  */
-const PRODUCT_DOMAIN = 'https://acquisitionosbeta.vercel.app/';
+const PRODUCT_DOMAIN = 'https://acquisitionos.net';
 
 const PROBLEMS = [
   { n: '01', t: 'Fragmented prospect research', d: 'Context rebuilt across browser tabs, spreadsheets and notes — never in one place, never current.' },
