@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-  'https://paragonel.vercel.app';
+  'https://paragonel.com';
 
 // Private paths blocked for EVERY crawler. Defence-in-depth: these are also
 // gated by auth + carry an `X-Robots-Tag: noindex,nofollow` header set in

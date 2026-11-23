@@ -39,11 +39,13 @@ const VAR_SPECS: VarSpec[] = [
   { name: 'JWT_SECRET', category: 'Security', requirement: 'always', secret: true, minLen: 32, note: 'Session JWT signing key (≥32 chars). Without it, login/admin return 500.' },
   { name: 'OTP_SECRET', category: 'Security', requirement: 'always', secret: true, minLen: 32, note: 'OTP/HMAC token signing key (≥32 chars). Without it, OTP auth returns 500.' },
   { name: 'SUPERADMIN_BOOTSTRAP_EMAIL', category: 'Security', requirement: 'always', secret: false, note: 'The founder email that may bootstrap the first super_admin.' },
+  { name: 'CRON_SECRET', category: 'Security', requirement: 'optional', secret: true, note: 'Verifies Vercel Cron invocations of /api/cron/process-match-events. Vercel auto-provisions it when vercel.json has a crons entry; if unset, the cron route returns honest 503.' },
 
   // --- Supabase (primary backend) ---
   { name: 'NEXT_PUBLIC_SUPABASE_URL', category: 'Supabase', requirement: 'prod', secret: false, note: 'Supabase project URL (browser + server). Required once routes are cut over to Supabase.' },
   { name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY', category: 'Supabase', requirement: 'prod', secret: false, note: 'Supabase anon/publishable key (public, RLS-enforced).' },
   { name: 'SUPABASE_SERVICE_ROLE_KEY', category: 'Supabase', requirement: 'prod', secret: true, note: 'Supabase service-role key (server only, bypasses RLS). NEVER in NEXT_PUBLIC_*.' },
+  { name: 'SUPABASE_URL', category: 'Supabase', requirement: 'optional', secret: false, note: 'Server-side fallback for NEXT_PUBLIC_SUPABASE_URL (supabase/server.ts). Optional — set NEXT_PUBLIC_SUPABASE_URL instead.' },
 
   // --- Firebase Admin (RETAINED during cutover — remove after route migration) ---
   { name: 'FIREBASE_ADMIN_PROJECT_ID', category: 'Firebase (cutover)', requirement: 'prod', secret: false, note: 'Firebase project id. RETAINED — the 50 Firebase routes are still active until the Supabase cutover.' },
@@ -53,17 +55,20 @@ const VAR_SPECS: VarSpec[] = [
   // --- Email / SMTP ---
   { name: 'SMTP_HOST', category: 'Email', requirement: 'optional', secret: false, note: 'SMTP host. If unset, dev falls back to Mailpit; prod skips sending (honest).' },
   { name: 'SMTP_PORT', category: 'Email', requirement: 'optional', secret: false, note: 'SMTP port (e.g. 587 / 465).' },
+  { name: 'SMTP_SECURE', category: 'Email', requirement: 'optional', secret: false, note: "Set 'true' for port 465 (implicit TLS); omit/empty for 587 (STARTTLS). Parsed as === 'true'." },
   { name: 'SMTP_USER', category: 'Email', requirement: 'optional', secret: true, note: 'SMTP username. Required with SMTP_HOST to send.' },
   { name: 'SMTP_PASS', category: 'Email', requirement: 'optional', secret: true, note: 'SMTP password. Required with SMTP_HOST to send.' },
   { name: 'SMTP_FROM', category: 'Email', requirement: 'optional', secret: false, note: 'Verified sender address (e.g. "Paragonel <noreply@domain>").' },
   { name: 'COMPANY_INBOX', category: 'Email', requirement: 'optional', secret: false, note: 'Recipient for enquiry notifications. If unset, company notifications are skipped.' },
-  { name: 'APP_BASE_URL', category: 'Email', requirement: 'optional', secret: false, note: 'Public base URL used in email body links.' },
+  { name: 'APP_BASE_URL', category: 'Email', requirement: 'optional', secret: false, note: 'Public base URL used in email body links (server-only). Defaults vary by call site — set to https://paragonel.com in production.' },
+  { name: 'NEXT_PUBLIC_SITE_URL', category: 'URLs', requirement: 'optional', secret: false, note: 'Canonical site apex for metadataBase, sitemap, robots, OG/canonical URLs. Set to https://paragonel.com in production (fallback is the apex).' },
 
   // --- AI ---
   { name: 'GEMINI_API_KEY', category: 'AI', requirement: 'optional', secret: true, minLen: 10, note: 'Google AI / Gemini key for chatbot + resume parsing. If empty, chatbot returns honest fallback (503) + resume parse is skipped.' },
   { name: 'GOOGLE_API_KEY', category: 'AI', requirement: 'optional', secret: true, minLen: 10, note: 'Alternative to GEMINI_API_KEY (Genkit accepts either).' },
   { name: 'GEMINI_MODEL', category: 'AI', requirement: 'optional', secret: false, note: 'Gemini model id (without provider prefix). Defaults to gemini-flash-latest. Pin to gemini-2.0-flash if your key lacks the latest.' },
   { name: 'GEMINI_REQUEST_TIMEOUT_MS', category: 'AI', requirement: 'optional', secret: false, note: 'Bounded model-request timeout in ms (default 25000). Prevents perpetual loading.' },
+  { name: 'NEXT_PUBLIC_GA4_MEASUREMENT_ID', category: 'Analytics', requirement: 'optional', secret: false, note: 'Google Analytics 4 measurement id (G-XXXXXXXXXX). If unset, the GA4 component is a no-op (the site runs analytics-free).' },
 
   // --- CAPTCHA (prod) ---
   { name: 'TURNSTILE_SECRET_KEY', category: 'CAPTCHA', requirement: 'prod', secret: true, note: 'Cloudflare Turnstile server secret. Without it, prod registration/login fail-closed.' },
@@ -76,9 +81,12 @@ const VAR_SPECS: VarSpec[] = [
   { name: 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET', category: 'Firebase Client (cutover)', requirement: 'always', secret: false, note: 'Firebase Storage bucket. RETAINED during cutover.' },
   { name: 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID', category: 'Firebase Client (cutover)', requirement: 'always', secret: false, note: 'Firebase messaging sender id. RETAINED during cutover.' },
   { name: 'NEXT_PUBLIC_FIREBASE_APP_ID', category: 'Firebase Client (cutover)', requirement: 'always', secret: false, note: 'Firebase app id. RETAINED during cutover.' },
+  { name: 'NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID', category: 'Firebase Client (cutover)', requirement: 'optional', secret: false, note: 'Firebase measurement id (optional, for GA4-style analytics).' },
 
   // --- Dev-only ---
   { name: 'FIRESTORE_EMULATOR_HOST', category: 'Dev', requirement: 'dev', secret: false, note: 'Points the Admin SDK at the local emulator (e.g. localhost:8080).' },
+  { name: 'MAILPIT_HOST', category: 'Dev', requirement: 'dev', secret: false, note: 'Mailpit host for local email capture (dev fallback when SMTP_HOST is unset).' },
+  { name: 'MAILPIT_SMTP_PORT', category: 'Dev', requirement: 'dev', secret: false, note: 'Mailpit SMTP port (e.g. 1025) for local email capture.' },
 ];
 
 export interface VarReport {

@@ -4,7 +4,7 @@ import { getPublishedPosts, getPublicJobs } from '@/lib/public-data';
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-  'https://paragonel.vercel.app';
+  'https://paragonel.com';
 
 // Revalidate hourly so newly published/removed blog articles (and future
 // dynamic content) appear in the sitemap without a full rebuild.

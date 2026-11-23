@@ -94,8 +94,9 @@ FIREBASE_ADMIN_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KE
 
 If any of the trio is missing/malformed, `getAdminDb()` / `getAdminBucket()`
 return null → routes respond 503 (never throw, never use a fallback credential).
-Locally, set `FIRESTORE_EMULATOR_HOST=localhost:8080` + `STORAGE_EMULATOR_HOST` 
-to run against the emulators without service-account creds.
+Locally, set `FIRESTORE_EMULATOR_HOST=localhost:8080` to run against the
+emulator without service-account creds. (Storage emulator is not used — the
+Storage Admin SDK reads `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` directly.)
 
 ## Supabase (migration-readiness; not yet the live data source)
 
