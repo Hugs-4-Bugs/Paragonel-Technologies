@@ -22,6 +22,8 @@ import { computeJobVersion, shouldEnqueueOnUpdate, shouldEnqueueOnToggle } from 
 import { enqueueAndProcessJobEvent } from '@/lib/job-alerts/runtime';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 60; // Batch 15: the inline publish drain + first after() hop need headroom (Hobby 10s default is insufficient)
 
 export async function GET(
   request: Request,

@@ -39,6 +39,16 @@ describe('shouldContinueAfter (pure)', () => {
   it('false when empty', () => {
     expect(shouldContinueAfter([], 5)).toBe(false);
   });
+  it('false when all outcomes are in-flight (processing, no real work) even at the cap — spin prevention', () => {
+    // A parallel/replayed token claimed every event → all outcomes 'processing',
+    // no sends, no evals. shouldContinueAfter must NOT schedule another hop
+    // (would spin up to MAX_HOPS doing zero work). Batch 15 didRealWork fix.
+    const inflight = Array.from({ length: 5 }, () => ({
+      eventId: 'e', status: 'processing', candidatesEvaluated: 0,
+      alertsSent: 0, alertsSkipped: 0, alertsFailed: 0,
+    }));
+    expect(shouldContinueAfter(inflight, 5)).toBe(false);
+  });
 });
 
 describe('scheduleContinuation', () => {

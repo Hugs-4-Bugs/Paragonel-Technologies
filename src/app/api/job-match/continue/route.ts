@@ -22,10 +22,11 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import { drainPendingJobMatchEvents } from '@/lib/job-alerts/runtime';
 import { verifyContinueToken, MAX_CONTINUATION_HOPS } from '@/lib/job-alerts/continue-token';
 import { shouldContinueAfter, scheduleContinuation, CONTINUE_DRAIN_OPTS } from '@/lib/job-alerts/continuation';
+import { redactReason } from '@/lib/job-alerts/dedup';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-export const maxDuration = 30;
+export const maxDuration = 60; // Batch 15: 30s could not fit worst-case sequential SMTP drain (severed the chain)
 
 export async function POST(request: Request) {
   // Token auth (Bearer <continue-token>). The caller is the deployment's own
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error(
       '[job-match/continue] drain failed:',
-      err instanceof Error ? err.message : err,
+      redactReason(err),
     );
     return NextResponse.json({ error: 'Drain failed.' }, { status: 500 });
   }
