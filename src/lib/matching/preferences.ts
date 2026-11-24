@@ -8,7 +8,9 @@
  * This module is the SINGLE place that turns those stored values into the values
  * the matching/notification engine actually uses. Rules (Prompt 05R §5):
  *   - Default minimum match threshold is 80%.
- *   - The candidate may configure a threshold between 25% and 100%.
+ *   - The candidate may configure a threshold between 75% and 100% (75% is the
+ *     hard floor per Prompt §5.2: "The threshold must never be configurable
+ *     below 75%").
  *   - Values are validated AND clamped server-side. Out-of-range values are
  *     rejected at the preference endpoint (jobAlertPreferencesSchema) and, as a
  *     belt-and-suspenders defense, clamped at resolution time so a stale/legacy
@@ -23,17 +25,23 @@ import { z } from 'zod';
 
 /** Rubric-wide default minimum match threshold (Prompt 05R §5). */
 export const DEFAULT_MATCHING_THRESHOLD = 80;
-/** Supported threshold range (inclusive). */
-export const MIN_THRESHOLD = 25;
+/**
+ * Hard floor for any candidate-configured matching threshold (Prompt §5.2:
+ * "The threshold must never be configurable below 75%"). The DEFAULT stays at
+ * 80 (stricter than the 75 floor) so existing candidates see no increase in
+ * alert volume; the floor only tightens previously-allowed 25–74 values up to
+ * 75. An admin-configurable raise above 75 is tracked as remaining work.
+ */
+export const MIN_THRESHOLD = 75;
 export const MAX_THRESHOLD = 100;
 
 /**
  * Resolve the effective threshold for a candidate profile.
  *   - undefined / null / non-number  -> DEFAULT_MATCHING_THRESHOLD (80)
- *   - < MIN_THRESHOLD                 -> clamped UP to MIN_THRESHOLD (25)
+ *   - < MIN_THRESHOLD                 -> clamped UP to MIN_THRESHOLD (75)
  *   - > MAX_THRESHOLD                 -> clamped DOWN to MAX_THRESHOLD (100)
  *   - otherwise                       -> the stored integer value
- * Always returns an integer in [25, 100].
+ * Always returns an integer in [75, 100].
  */
 export function resolveMatchingThreshold(
   stored: number | undefined | null | unknown

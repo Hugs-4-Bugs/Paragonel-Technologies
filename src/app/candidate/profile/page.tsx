@@ -16,7 +16,8 @@
  *   - Job matching preferences (jobAlertPreference, matchingThreshold,
  *     preferred roles/locations/employment type/work mode). 05R wires these to
  *     the explainable matching engine + automated job-match email alerts. The
- *     threshold is clamped to 25-100 (default 80); alerts are opt-in and
+ *     threshold is clamped to 75-100 (default 80; 75% hard floor per Prompt
+ *     §5.2); alerts are opt-in and
  *     separate from marketing emails.
  */
 import { useState, useEffect, useCallback } from 'react';
@@ -560,9 +561,9 @@ export default function CandidateProfilePage() {
                 onChange={(e) => {
                   if (e.target.value === '') { update('matchingThreshold', 80); return; }
                   const n = Math.floor(Number(e.target.value) || 80);
-                  update('matchingThreshold', Math.max(25, Math.min(100, n)));
+                  update('matchingThreshold', Math.max(75, Math.min(100, n)));
                 }}
-                min={25}
+                min={75}
                 max={100}
                 placeholder="80"
                 aria-describedby="mt-help"

@@ -23,7 +23,7 @@
  *     MatchResult.otherEvidence. No internal rubric detail, no other
  *     candidates' data, no resume content.
  *
- * Threshold: defaults to DEFAULT_MATCHING_THRESHOLD (80), clamped to 25–100
+ * Threshold: defaults to DEFAULT_MATCHING_THRESHOLD (80), clamped to 75–100
  * (same bounds as the candidate-preference setting). The caller may pass the
  * candidate's saved threshold if they are logged in.
  *

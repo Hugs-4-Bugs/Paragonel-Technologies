@@ -5,7 +5,7 @@
  * Ownership: identical to /api/candidate/profile — the doc id is the
  * authenticated candidate's email (from verifySession tier 'user'). A candidate
  * can only read/change their OWN preferences; any client-supplied email is
- * ignored. The threshold is validated (25-100 integer) + clamped server-side at
+ * ignored. The threshold is validated (75-100 integer) + clamped server-side at
  * decision time; the alert opt-in is opt-in (absent => off).
  *
  * GET returns both the raw stored values and the resolved effective values so

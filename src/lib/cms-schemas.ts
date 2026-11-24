@@ -325,12 +325,26 @@ export function buildTechEcosystemUpdatePayload(values: TechEcosystemFormValues)
   };
 }
 
-/** Split a comma-list skills string into a trimmed, de-duplicated array. */
-function splitSkills(raw: string): string[] {
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
+/**
+ * Split a comma-list skills string into a trimmed, de-duplicated array.
+ * Trims whitespace, drops empty entries, and removes duplicates
+ * (case-insensitive key, first-seen display form preserved) so a job form
+ * entry like "React, react, Node" cannot inflate the required-skills
+ * denominator in the matching engine (Prompt §4.2 / §5.3: "Do not allow
+ * duplicate skills to inflate the score").
+ */
+export function splitSkills(raw: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const piece of raw.split(',')) {
+    const trimmed = piece.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(trimmed);
+  }
+  return out;
 }
 
 /**

@@ -62,7 +62,7 @@ describe('GET /api/candidate/profile/preferences', () => {
     expect(data.raw.matchingThreshold).toBeUndefined();
     expect(data.effective.jobAlertPreference).toBe(false);
     expect(data.effective.matchingThreshold).toBe(80); // DEFAULT_MATCHING_THRESHOLD
-    expect(data.defaults.min).toBe(25);
+    expect(data.defaults.min).toBe(75);
     expect(data.defaults.max).toBe(100);
   });
 

@@ -616,7 +616,7 @@ export function CareerAssistant() {
                 <Label className="text-xs text-zinc-400">Match threshold</Label>
                 <span className="text-sm font-bold text-[#4da3ff]">{prefThreshold}%</span>
               </div>
-              <input type="range" min={25} max={100} value={prefThreshold} onChange={(e) => setPrefThreshold(Number(e.target.value))}
+              <input type="range" min={75} max={100} value={prefThreshold} onChange={(e) => setPrefThreshold(Number(e.target.value))}
                 className="w-full accent-[#4da3ff]" />
               <p className="text-xs text-zinc-500">Only jobs scoring at or above this threshold are shown.</p>
             </div>
