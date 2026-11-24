@@ -41,6 +41,12 @@ export function CaptchaWidget({
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || TEST_SITE_KEY;
   const isTest = !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && process.env.NODE_ENV !== 'production';
+  // Production with no real site key — do NOT fall back to the test widget (which
+  // would render Cloudflare's "For testing only / Success!" widget + mislead users
+  // into thinking CAPTCHA passed). Render the unavailable notice instead; the
+  // server's verifyCaptcha() also fail-closes with mode:'misconfigured'. This
+  // matches the documented intent in the file header (lines 7-9).
+  const misconfiguredInProd = !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && process.env.NODE_ENV === 'production';
 
   const renderWidget = useCallback(() => {
     if (!containerRef.current || !window.turnstile) return;
@@ -60,6 +66,10 @@ export function CaptchaWidget({
   }, [siteKey, onVerify, onExpire]);
 
   useEffect(() => {
+    if (misconfiguredInProd) {
+      setStatus('unavailable');
+      return;
+    }
     if (isTest) {
       // Dev test mode — auto-verify with a test token (documented dev-only).
       setStatus('ready');
@@ -83,7 +93,7 @@ export function CaptchaWidget({
         widgetIdRef.current = null;
       }
     };
-  }, [isTest, renderWidget, onVerify]);
+  }, [isTest, misconfiguredInProd, renderWidget, onVerify]);
 
   if (status === 'unavailable') {
     return (

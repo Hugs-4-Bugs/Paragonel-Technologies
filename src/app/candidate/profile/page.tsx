@@ -261,7 +261,7 @@ export default function CandidateProfilePage() {
         setCompleteness(data.completeness ?? 0);
         setNote('Profile saved.');
       } else {
-        setError(data.error || 'Could not save.');
+        setError(data.message || data.error ||'Could not save.');
       }
     } catch {
       setError('Network error.');
@@ -313,7 +313,7 @@ export default function CandidateProfilePage() {
           setParsedNote('Resume uploaded but could not be parsed. Fill in your details manually.');
         }
       } else {
-        setError(data.error || 'Upload failed.');
+        setError(data.message || data.error ||'Upload failed.');
       }
     } catch {
       setError('Network error.');
@@ -329,7 +329,7 @@ export default function CandidateProfilePage() {
       if (res.ok && data.url) {
         window.open(data.url, '_blank', 'noopener,noreferrer');
       } else {
-        setError(data.error || 'No resume on file.');
+        setError(data.message || data.error ||'No resume on file.');
       }
     } catch {
       setError('Network error.');
@@ -345,7 +345,7 @@ export default function CandidateProfilePage() {
         await loadProfile();
       } else {
         const data = await res.json();
-        setError(data.error || 'Could not remove.');
+        setError(data.message || data.error ||'Could not remove.');
       }
     } catch {
       setError('Network error.');
@@ -568,7 +568,7 @@ export default function CandidateProfilePage() {
                 placeholder="80"
                 aria-describedby="mt-help"
               />
-              <p id="mt-help" className="text-xs text-muted-foreground">Minimum 25%, maximum 100%. Default is 80% — we only email you when a role matches at or above this score.</p>
+              <p id="mt-help" className="text-xs text-muted-foreground">Minimum 75%, maximum 100%. Default is 80% — we only email you when a role matches at or above this score.</p>
             </div>
             <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 space-y-2">
               <label className="flex items-start gap-2 text-sm">

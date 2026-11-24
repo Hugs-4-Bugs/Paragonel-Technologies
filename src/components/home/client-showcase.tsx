@@ -23,10 +23,10 @@ import { Reveal } from '@/components/motion/reveal';
  * logo assets (e.g. public/images/clients/primoreon.png), they can be added to
  * the `logo` field below + rendered with preserved proportions.
  *
- * MAAROGYAM: the founder named the brand but did not supply its official
- * website/profile URL. It is shown as a client project (brand name only, no
- * link) per "link only to its correct website or profile — do not substitute
- * another similarly named organization." The founder can supply the URL.
+ * MAAROGYAM: the founder supplied the official website https://marogyam.com/.
+ * Shown as a client project (brand name + Visit link), consistent with the
+ * Primoreon + DietMended cards. Per "link only to its correct website or
+ * profile — do not substitute another similarly named organization."
  *
  * Server Component (no client interactivity — native horizontal scroll only).
  */
@@ -38,7 +38,7 @@ interface ClientBrand {
 const CLIENTS: ClientBrand[] = [
   { name: 'Primoreon', url: 'https://www.primoreon.com/' },
   { name: 'DietMended', url: 'https://share.google/Ia3Kq6Ot7oHDTzjyp' },
-  { name: 'Maarogyam' },
+  { name: 'Maarogyam', url: 'https://marogyam.com/' },
 ];
 
 export function ClientShowcase() {

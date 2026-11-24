@@ -67,7 +67,7 @@ function SignupInner() {
         body: JSON.stringify({ name, email, captchaToken, consentAcknowledged: ack }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Could not start registration.'); return; }
+      if (!res.ok) { setError(data.message || data.error ||'Could not start registration.'); return; }
       setOtpRequestId(data.otpRequestId);
       setNote(data.emailDeliveryNote || 'A verification code was sent to your email.');
       setStep(1);
@@ -87,7 +87,7 @@ function SignupInner() {
         body: JSON.stringify({ otpRequestId, code }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Invalid or expired code.'); return; }
+      if (!res.ok) { setError(data.message || data.error ||'Invalid or expired code.'); return; }
       setVerificationToken(data.verificationToken);
       setStep(2);
     } catch {
@@ -106,7 +106,7 @@ function SignupInner() {
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Could not resend.'); return; }
+      if (!res.ok) { setError(data.message || data.error ||'Could not resend.'); return; }
       setOtpRequestId(data.otpRequestId);
       setNote('A new code was sent.');
     } catch {
@@ -125,7 +125,7 @@ function SignupInner() {
         body: JSON.stringify({ verificationToken, password, confirmPassword: confirm }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Could not complete registration.'); return; }
+      if (!res.ok) { setError(data.message || data.error ||'Could not complete registration.'); return; }
       setStep(3);
       setTimeout(() => router.push(redirect), 1500);
     } catch {
