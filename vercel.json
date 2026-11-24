@@ -1,10 +1,4 @@
 {
   "framework": "nextjs",
-  "installCommand": "npm ci",
-  "crons": [
-    {
-      "path": "/api/cron/process-match-events",
-      "schedule": "30 3 * * *"
-    }
-  ]
+  "installCommand": "npm ci"
 }

@@ -39,7 +39,6 @@ const VAR_SPECS: VarSpec[] = [
   { name: 'JWT_SECRET', category: 'Security', requirement: 'always', secret: true, minLen: 32, note: 'Session JWT signing key (≥32 chars). Without it, login/admin return 500.' },
   { name: 'OTP_SECRET', category: 'Security', requirement: 'always', secret: true, minLen: 32, note: 'OTP/HMAC token signing key (≥32 chars). Without it, OTP auth returns 500.' },
   { name: 'SUPERADMIN_BOOTSTRAP_EMAIL', category: 'Security', requirement: 'always', secret: false, note: 'The founder email that may bootstrap the first super_admin.' },
-  { name: 'CRON_SECRET', category: 'Security', requirement: 'optional', secret: true, note: 'Verifies Vercel Cron invocations of /api/cron/process-match-events. Vercel auto-provisions it when vercel.json has a crons entry; if unset, the cron route returns honest 503.' },
 
   // --- Supabase (primary backend) ---
   { name: 'NEXT_PUBLIC_SUPABASE_URL', category: 'Supabase', requirement: 'prod', secret: false, note: 'Supabase project URL (browser + server). Required once routes are cut over to Supabase.' },
