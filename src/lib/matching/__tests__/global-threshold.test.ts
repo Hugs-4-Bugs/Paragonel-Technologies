@@ -1,9 +1,20 @@
 /**
- * global-threshold.test.ts — admin-configurable global matching-threshold floor
- * (Prompt §5.2). Tests the pure clamp + the reader/writer behavior when the
- * database is unconfigured (the sandbox state — getAdminDb() returns null).
+ * global-threshold.test.ts — admin-configurable global matching-threshold floor,
+ * Supabase-backed (Prompt §5.1/§5.2). Locks: pure clamp + the reader/writer via
+ * the Supabase data-access layer (mocked — no real DB in the sandbox) + the
+ * unconfigured fallback (default 80) + cache invalidation.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+const { getSettingMock, setSettingMock } = vi.hoisted(() => ({
+  getSettingMock: vi.fn(),
+  setSettingMock: vi.fn(),
+}));
+vi.mock('@/lib/supabase/data/app-settings', () => ({
+  getSetting: getSettingMock,
+  setSetting: setSettingMock,
+}));
+
 import {
   clampGlobalThreshold,
   getGlobalMatchingThreshold,
@@ -37,42 +48,104 @@ describe('clampGlobalThreshold (pure, Prompt §5.2 bounds)', () => {
   });
 });
 
-describe('getGlobalMatchingThreshold (DB unconfigured — sandbox state)', () => {
+describe('getGlobalMatchingThreshold (Supabase-backed)', () => {
   beforeEach(() => {
     invalidateGlobalMatchingThresholdCache();
+    getSettingMock.mockReset();
   });
 
-  it('returns the DEFAULT (80) when the database is not configured (getAdminDb() === null)', async () => {
-    // In the test sandbox no Firebase credentials are provisioned, so
-    // getAdminDb() returns null and the reader falls back to the default.
+  it('returns the DEFAULT (80) when Supabase returns null (unconfigured/unset)', async () => {
+    getSettingMock.mockResolvedValue(null);
     const v = await getGlobalMatchingThreshold();
     expect(v).toBe(DEFAULT_MATCHING_THRESHOLD);
     expect(v).toBe(80);
+    expect(getSettingMock).toHaveBeenCalledWith(GLOBAL_THRESHOLD_SETTING_KEY);
+  });
+
+  it('returns the persisted value when Supabase has the row', async () => {
+    getSettingMock.mockResolvedValue({ minimum_matching_percentage: 85 });
+    expect(await getGlobalMatchingThreshold()).toBe(85);
+  });
+
+  it('clamps a persisted value below 75 UP to 75 (defense-in-depth)', async () => {
+    getSettingMock.mockResolvedValue({ minimum_matching_percentage: 50 });
+    expect(await getGlobalMatchingThreshold()).toBe(75);
+  });
+
+  it('clamps a persisted value above 100 DOWN to 100', async () => {
+    getSettingMock.mockResolvedValue({ minimum_matching_percentage: 150 });
+    expect(await getGlobalMatchingThreshold()).toBe(100);
+  });
+
+  it('returns the default (80) for a malformed persisted value', async () => {
+    getSettingMock.mockResolvedValue({ wrong_field: 90 });
+    expect(await getGlobalMatchingThreshold()).toBe(80);
   });
 
   it('never throws on a read failure (matching must still run)', async () => {
-    await expect(getGlobalMatchingThreshold()).resolves.toBeDefined();
+    getSettingMock.mockRejectedValue(new Error('supabase down'));
+    await expect(getGlobalMatchingThreshold()).resolves.toBe(80);
   });
 
-  it('caches the value (second read does not re-fetch)', async () => {
-    const first = await getGlobalMatchingThreshold();
-    const second = await getGlobalMatchingThreshold();
-    expect(first).toBe(second);
+  it('caches the value (second read within TTL does not re-fetch)', async () => {
+    getSettingMock.mockResolvedValue({ minimum_matching_percentage: 85 });
+    await getGlobalMatchingThreshold();
+    await getGlobalMatchingThreshold();
+    expect(getSettingMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('cache invalidation forces a re-fetch', async () => {
+    getSettingMock.mockResolvedValue({ minimum_matching_percentage: 85 });
+    await getGlobalMatchingThreshold();
+    invalidateGlobalMatchingThresholdCache();
+    getSettingMock.mockResolvedValue({ minimum_matching_percentage: 90 });
+    expect(await getGlobalMatchingThreshold()).toBe(90);
+    expect(getSettingMock).toHaveBeenCalledTimes(2);
   });
 });
 
-describe('setGlobalMatchingThreshold (DB unconfigured)', () => {
+describe('setGlobalMatchingThreshold (Supabase-backed)', () => {
   beforeEach(() => {
     invalidateGlobalMatchingThresholdCache();
+    setSettingMock.mockReset();
   });
 
-  it('throws an honest "Service unavailable" when the database is not configured', async () => {
+  it('persists the clamped value + returns it on success', async () => {
+    setSettingMock.mockResolvedValue(true);
+    const v = await setGlobalMatchingThreshold(85);
+    expect(v).toBe(85);
+    expect(setSettingMock).toHaveBeenCalledWith(
+      GLOBAL_THRESHOLD_SETTING_KEY,
+      { minimum_matching_percentage: 85 },
+    );
+  });
+
+  it('clamps the input before persisting (admin may raise to 100, never below 75)', async () => {
+    setSettingMock.mockResolvedValue(true);
+    await setGlobalMatchingThreshold(150);
+    expect(setSettingMock.mock.calls[0][1]).toEqual({ minimum_matching_percentage: 100 });
+    setSettingMock.mockClear();
+    await setGlobalMatchingThreshold(10);
+    expect(setSettingMock.mock.calls[0][1]).toEqual({ minimum_matching_percentage: 75 });
+  });
+
+  it('throws an honest "Service unavailable" when the Supabase write fails', async () => {
+    setSettingMock.mockResolvedValue(false);
     await expect(setGlobalMatchingThreshold(85)).rejects.toThrow(/Service unavailable/);
+  });
+
+  it('invalidates the cache after a successful write (next read re-fetches)', async () => {
+    setSettingMock.mockResolvedValue(true);
+    getSettingMock.mockResolvedValue({ minimum_matching_percentage: 85 });
+    await setGlobalMatchingThreshold(85);
+    // After the write, the cache holds 85; a read returns it without re-fetching.
+    expect(await getGlobalMatchingThreshold()).toBe(85);
+    expect(getSettingMock).not.toHaveBeenCalled();
   });
 });
 
 describe('GLOBAL_THRESHOLD_SETTING_KEY', () => {
-  it('is the app_settings doc/key name (mirrors the 0008/0009 SQL seed)', () => {
+  it('is the app_settings key (mirrors the 0008/0009 SQL seed)', () => {
     expect(GLOBAL_THRESHOLD_SETTING_KEY).toBe('matching_threshold_floor');
   });
 });

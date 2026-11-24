@@ -1,14 +1,15 @@
 /**
- * global-threshold.ts — admin-configurable global matching-threshold floor
- * (Prompt §5.2).
+ * global-threshold.ts — admin-configurable global matching-threshold floor,
+ * Supabase-backed (Prompt §5.1: "must become Supabase-backed"; no separate
+ * conflicting Firestore value).
  *
  * The global threshold is a persisted, super-admin-configurable FLOOR that no
- * candidate-level preference can fall below. Stored in the `app_settings`
- * collection (Firestore, the app's current persistent store) under doc id
- * `matching_threshold_floor` with field `minimum_matching_percentage`. The
- * Supabase `app_settings` row of the same key is seeded by migration 0008 +
- * upserted to the default (80) by migration 0009 — when the Supabase cutover
- * occurs, this reader swaps to the Supabase client with no call-site change.
+ * candidate-level preference can fall below. Stored in the Supabase `app_settings`
+ * table under key `matching_threshold_floor` with value
+ * `{"minimum_matching_percentage": <int>}` (seeded by 0008, upserted to the
+ * default 80 by 0009). Reads/writes go through the Supabase data-access layer
+ * (src/lib/supabase/data/app-settings.ts) — the Firestore app_settings doc is
+ * no longer used for the threshold (removed per §5.1 to avoid conflicting values).
  *
  * Rules (Prompt §5.2):
  *   - Default global threshold: 80 (DEFAULT_MATCHING_THRESHOLD).
@@ -19,8 +20,10 @@
  *
  * The reader is cached (CACHE_TTL_MS) so a drain that scores many candidates
  * does not re-read the setting per candidate. The cache is invalidated on write.
+ * When Supabase is unreachable (not configured), the reader returns the default
+ * (80) — matching still runs; the writer returns an honest 503 (the route surfaces it).
  */
-import { getAdminDb } from '@/lib/firebase-admin';
+import { getSetting, setSetting } from '@/lib/supabase/data/app-settings';
 import {
   MIN_THRESHOLD,
   MAX_THRESHOLD,
@@ -39,9 +42,9 @@ export function clampGlobalThreshold(value: number): number {
 }
 
 /**
- * Read the persisted global matching-threshold floor. Defaults to
- * DEFAULT_MATCHING_THRESHOLD (80) when unset or unreadable; clamped to
- * [75, 100]. Never throws — matching must still run on a read failure.
+ * Read the persisted global matching-threshold floor from Supabase. Defaults to
+ * DEFAULT_MATCHING_THRESHOLD (80) when unset, Supabase unreachable, or on any
+ * read error; clamped to [75, 100]. Never throws — matching must still run.
  */
 export async function getGlobalMatchingThreshold(): Promise<number> {
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
@@ -49,14 +52,10 @@ export async function getGlobalMatchingThreshold(): Promise<number> {
   }
   let v = DEFAULT_MATCHING_THRESHOLD;
   try {
-    const db = getAdminDb();
-    if (db) {
-      const snap = await db.collection('app_settings').doc(GLOBAL_THRESHOLD_SETTING_KEY).get();
-      if (snap.exists) {
-        const data = snap.data() as { minimum_matching_percentage?: unknown } | undefined;
-        const raw = data?.minimum_matching_percentage;
-        if (typeof raw === 'number' && Number.isFinite(raw)) v = raw;
-      }
+    const raw = await getSetting(GLOBAL_THRESHOLD_SETTING_KEY);
+    if (raw && typeof raw === 'object') {
+      const n = (raw as { minimum_matching_percentage?: unknown }).minimum_matching_percentage;
+      if (typeof n === 'number' && Number.isFinite(n)) v = n;
     }
   } catch {
     // fall back to default — never throw (matching must still run)
@@ -72,20 +71,21 @@ export function invalidateGlobalMatchingThresholdCache(): void {
 }
 
 /**
- * Persist the global threshold floor. Clamps to [75, 100]. Caller MUST enforce
- * super_admin authorization (the route layer does — mirrors the Supabase RLS
- * `settings_write_super` policy). Returns the clamped persisted value.
+ * Persist the global threshold floor to Supabase. Clamps to [75, 100]. Caller
+ * MUST enforce super_admin authorization (the route layer does — mirrors the
+ * Supabase RLS `settings_write_super` policy). Returns the clamped persisted
+ * value; throws an honest "Service unavailable" if Supabase is unconfigured or
+ * the write failed (the route surfaces this as 503).
  */
 export async function setGlobalMatchingThreshold(value: number): Promise<number> {
   const v = clampGlobalThreshold(value);
-  const db = getAdminDb();
-  if (!db) {
-    throw new Error('Service unavailable — database not configured.');
+  const ok = await setSetting(
+    GLOBAL_THRESHOLD_SETTING_KEY,
+    { minimum_matching_percentage: v },
+  );
+  if (!ok) {
+    throw new Error('Service unavailable — Supabase not configured or write failed.');
   }
-  await db.collection('app_settings').doc(GLOBAL_THRESHOLD_SETTING_KEY).set({
-    minimum_matching_percentage: v,
-    updatedAt: new Date().toISOString(),
-  });
   cached = { value: v, at: Date.now() };
   return v;
 }
