@@ -85,7 +85,7 @@ export const candidateProfileSchema = z.object({
 
   // 05R-ready preference fields (defined here, NOT acted on in 05Q).
   jobAlertPreference: z.boolean().optional(),
-  matchingThreshold: z.coerce.number().int().min(0).max(100).optional(),
+  matchingThreshold: z.coerce.number().int().min(75, 'Threshold must be between 75 and 100').max(100).optional(),
 });
 
 export type CandidateProfileInput = z.infer<typeof candidateProfileSchema>;

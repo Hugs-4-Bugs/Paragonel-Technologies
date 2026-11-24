@@ -109,11 +109,11 @@ describe('mapCandidate — embedded doc fans out to normalized tables', () => {
   it('splits skills into one row each (4 total: 3 skills + 1 techStack)', () => {
     expect(rows.filter((r) => r.table === 'candidate_skills').length).toBe(4);
   });
-  it('clamps matching_threshold to 25–100', () => {
+  it('clamps matching_threshold to 75–100', () => {
     const over = mapCandidate({ id: 'd@e.com', data: { email: 'd@e.com', matchingThreshold: 150 } });
     expect(over.find((r) => r.table === 'candidate_profiles')!.row.matching_threshold).toBe(100);
     const under = mapCandidate({ id: 'f@g.com', data: { email: 'f@g.com', matchingThreshold: 10 } });
-    expect(under.find((r) => r.table === 'candidate_profiles')!.row.matching_threshold).toBe(25);
+    expect(under.find((r) => r.table === 'candidate_profiles')!.row.matching_threshold).toBe(75);
   });
   it('resume row carries the remapped storage path (Supabase user-id-scoped, private)', () => {
     const r = rows.find((x) => x.table === 'resumes')!;

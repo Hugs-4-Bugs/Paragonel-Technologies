@@ -180,7 +180,7 @@ export function mapCandidate(doc: FirestoreDoc): MappedRow[] {
       phone: str(d.phone),
       domain: str(d.domain),
       job_alert_enabled: bool(d.jobAlertPreference, false),
-      matching_threshold: Math.min(100, Math.max(25, num(d.matchingThreshold) ?? 80)),
+      matching_threshold: Math.min(100, Math.max(75, num(d.matchingThreshold) ?? 80)),
       created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
       updated_at: toISO(d.updatedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
     },
@@ -297,7 +297,7 @@ export function mapCandidate(doc: FirestoreDoc): MappedRow[] {
     row: {
       candidate_id: userId,
       enabled: bool(d.jobAlertPreference, false),
-      threshold: Math.min(100, Math.max(25, num(d.matchingThreshold) ?? 80)),
+      threshold: Math.min(100, Math.max(75, num(d.matchingThreshold) ?? 80)),
     },
   });
 
