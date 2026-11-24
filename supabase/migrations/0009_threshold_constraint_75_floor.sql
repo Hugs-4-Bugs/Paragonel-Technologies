@@ -157,4 +157,12 @@ SELECT key, value FROM public.app_settings WHERE key = 'matching_threshold_floor
 --     ... same for job_alert_preferences.threshold ...
 --     COMMIT;
 --   (Only do this if you intentionally want to revert to the 25-100 policy.)
+--
+--   Part E (threshold row) rollback — restore the 0008 seed value of 75:
+--     UPDATE public.app_settings
+--       SET value = '{"minimum_matching_percentage": 75}'::jsonb,
+--           updated_at = now()
+--       WHERE key = 'matching_threshold_floor';
+--   (The updated_by column is nullable; set it explicitly to your profile uuid
+--    if audit attribution is desired.)
 -- =============================================================================

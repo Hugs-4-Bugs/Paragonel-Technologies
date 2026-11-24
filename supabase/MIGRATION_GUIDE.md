@@ -30,6 +30,7 @@ This guide consolidates the ordered SQL migration package, the execution order, 
 ## 3. Pre-execution checks (before 0009)
 
 - Confirm `candidate_profiles.matching_threshold` + `job_alert_preferences.threshold` currently have `CHECK (BETWEEN 25 AND 100)` (from 0001): `SELECT con.conname, pg_get_constraintdef(con.oid) FROM pg_constraint con JOIN pg_class rel ON rel.oid = con.conrelid WHERE rel.relname IN ('candidate_profiles','job_alert_preferences') AND con.contype = 'c';`
+- Confirm the `app_settings` table exists with the columns Part E depends on (from 0001): `SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='app_settings';` → must show `key` (text, PK), `value` (jsonb, NOT NULL), `updated_at` (timestamptz), `updated_by` (uuid, nullable). If 0001 was applied, these are present.
 - Run Part A to see how many rows (if any) are <75. If zero, you may skip Part B.
 
 ## 4. Post-execution verification (after 0009)
@@ -41,7 +42,18 @@ This guide consolidates the ordered SQL migration package, the execution order, 
 
 ## 5. Recovery (if Part C failed or you want to revert)
 
-Part C is atomic — a failure rolls back the `DROP`, leaving the original 25-100 `CHECK` in place. To intentionally restore the 25-100 policy, run the same `DO $$ ... DROP ... $$; ALTER TABLE ... ADD CONSTRAINT ... CHECK (BETWEEN 25 AND 100);` pattern (documented at the bottom of the 0009 file). Only do this if you intentionally want the looser policy.
+**Part C (CHECK constraint):** atomic — a failure rolls back the `DROP`, leaving the original 25-100 `CHECK` in place. To intentionally restore the 25-100 policy, run the same `DO $$ ... DROP ... $$; ALTER TABLE ... ADD CONSTRAINT ... CHECK (BETWEEN 25 AND 100);` pattern (documented at the bottom of the 0009 file). Only do this if you intentionally want the looser policy.
+
+**Part E (threshold row):** to revert the global threshold from 80 back to the 0008 seed value of 75, run:
+
+```sql
+UPDATE public.app_settings
+  SET value = '{"minimum_matching_percentage": 75}'::jsonb,
+      updated_at = now()
+  WHERE key = 'matching_threshold_floor';
+```
+
+This restores the 0008 seed value. The `updated_by` column is nullable; set it explicitly to your profile uuid if you want audit attribution.
 
 ## 6. Migration status checklist
 
@@ -59,5 +71,5 @@ Part C is atomic — a failure rolls back the `DROP`, leaving the original 25-10
 
 - **Threshold (this batch):** Supabase-backed. `getGlobalMatchingThreshold` reads `app_settings` via the Supabase data-access layer (`src/lib/supabase/data/app-settings.ts`); `setGlobalMatchingThreshold` writes it. The Firestore `app_settings` threshold doc is no longer used (removed per Prompt §5.1 — no conflicting values). Until Supabase is provisioned, the reader returns the default 80 (matching still runs) and admin writes return an honest 503.
 - **Threshold default divergence (T-4, HIGH — founder action):** migration `0008_seed_sample_jobs_and_blogs.sql` seeds `matching_threshold_floor` at **75**. Migration `0009` Part E (the upsert-to-80 step) is PREPARED, NOT YET APPLIED. **If 0008 was applied but 0009 has not been, the live Supabase row is 75, not the documented default 80.** The code-level default is 80 (returned only when the row is absent), but since 0008 seeds the row at 75, the reader returns 75 until 0009 Part E runs. Run 0009 Part E (or manually `UPSERT app_settings 'matching_threshold_floor' = '{"minimum_matching_percentage": 80}'`) to correct the live default to 80. The floor is still 75 (admin can legitimately set 75), so this is a default-vs-seed divergence, not a correctness bug — but it contradicts the documented "default 80" until corrected.
-- **Other routes:** 56 direct + 8 transitive = **64 Firestore-dependent routes** remain on Firestore (the custom JWT auth layer + all candidate/admin/public data; 67 total API routes, 3 Firestore-free). The threshold route itself remains transitively Firestore-dependent (its audit write to `adminActivityLogs`). The full route cutover is a separate, founder-approved effort; the schema (0001-0009), the migration mapper (12 collections → 18 tables), and the typed Supabase clients are staged. Auth stays on the custom Firestore+JWT layer until the Supabase Auth transition is implemented and verified. Prioritized migration sequence: Tier 1 public-data reads + admin CMS content → Tier 2 candidate profile/applications → Tier 3 admin operations + audit_logs table → Tier 4 job-alert processing pipeline → Tier 5 auth/session lifecycle (highest criticality, last).
+- **Other routes:** 56 direct + 9 transitive = **65 Firestore-dependent routes** remain on Firestore (the custom JWT auth layer + all candidate/admin/public data; 67 total API routes, 2 Firestore-free — `/api/health` + the deprecated `/api/auth/register` 410 stub). The +1 transitive vs the Batch 15 figure is `/api/chat/career-assist` (reads Firestore via `getVerifiedJobs` in `public-data.ts`). The threshold route itself remains transitively Firestore-dependent (its audit write to `adminActivityLogs`). The full route cutover is a separate, founder-approved effort; the schema (0001-0009), the migration mapper (12 collections → 18 tables), and the typed Supabase clients are staged. Auth stays on the custom Firestore+JWT layer until the Supabase Auth transition is implemented and verified. Prioritized migration sequence: Tier 1 public-data reads + admin CMS content → Tier 2 candidate profile/applications → Tier 3 admin operations + audit_logs table → Tier 4 job-alert processing pipeline → Tier 5 auth/session lifecycle (highest criticality, last).
 - **Live acceptance is separate from code acceptance:** the SQL must be executed + verified against the actual project before the Supabase database is considered migrated.
