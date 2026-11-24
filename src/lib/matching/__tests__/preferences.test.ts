@@ -48,6 +48,27 @@ describe('preferences (Prompt 05R §5, §5.2)', () => {
       expect(MIN_THRESHOLD).toBe(75);
       expect(MAX_THRESHOLD).toBe(100);
     });
+    it('applies the admin global floor: candidate threshold is max(floor, candidate) (Prompt §5.2)', () => {
+      // No global floor passed (default MIN_THRESHOLD=75): existing behavior preserved.
+      expect(resolveMatchingThreshold(80)).toBe(80);
+      expect(resolveMatchingThreshold(75)).toBe(75);
+      // Global floor 85: candidate 80 -> 85 (floor wins); candidate 90 -> 90.
+      expect(resolveMatchingThreshold(80, 85)).toBe(85);
+      expect(resolveMatchingThreshold(90, 85)).toBe(90);
+      // Candidate below MIN: clamped to 75 first, then raised to the floor.
+      expect(resolveMatchingThreshold(50, 80)).toBe(80);
+      // Undefined candidate: max(floor, DEFAULT=80).
+      expect(resolveMatchingThreshold(undefined, 85)).toBe(85);
+      expect(resolveMatchingThreshold(undefined, 75)).toBe(80);
+    });
+    it('clamps an out-of-range global floor to [75, 100] (defense-in-depth)', () => {
+      expect(resolveMatchingThreshold(80, 50)).toBe(80); // floor 50 -> 75; max(75,80)=80
+      expect(resolveMatchingThreshold(80, 120)).toBe(100); // floor 120 -> 100; max(100,80)=100
+    });
+    it('a candidate can never bypass the global floor (Prompt §5.2)', () => {
+      // Even a candidate threshold of 75 (the min) is raised to a floor of 90.
+      expect(resolveMatchingThreshold(75, 90)).toBe(90);
+    });
   });
 
   describe('resolveJobAlertPreference (OPT-IN)', () => {

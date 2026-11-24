@@ -28,6 +28,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import type { CandidateProfile } from '@/lib/auth/candidate-profile';
 import { scoreJobCandidate, meetsThreshold, type MatchResult, type JobForMatching } from '@/lib/matching/match-engine';
 import { resolveMatchingThreshold, resolveJobAlertPreference } from '@/lib/matching/preferences';
+import { getGlobalMatchingThreshold } from '@/lib/matching/global-threshold';
 import {
   JOB_ALERTS_SENT_COLLECTION,
   JOB_MATCH_EVENTS_COLLECTION,
@@ -367,7 +368,7 @@ export async function processJobMatchEvent(
       cursor = doc.id; // advance cursor past this evaluated candidate
 
       const key = dedupKey(email, job.id, jobVersion);
-      const threshold = resolveMatchingThreshold(profile.matchingThreshold);
+      const threshold = resolveMatchingThreshold(profile.matchingThreshold, await getGlobalMatchingThreshold());
       const result = scoreJobCandidate(jobForMatching, profile as unknown as Parameters<typeof scoreJobCandidate>[1]);
 
       if (!meetsThreshold(result, threshold).pass) {

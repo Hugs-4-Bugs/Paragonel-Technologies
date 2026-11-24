@@ -36,23 +36,38 @@ export const MIN_THRESHOLD = 75;
 export const MAX_THRESHOLD = 100;
 
 /**
- * Resolve the effective threshold for a candidate profile.
- *   - undefined / null / non-number  -> DEFAULT_MATCHING_THRESHOLD (80)
+ * Resolve the effective threshold for a candidate profile, applying the
+ * admin-configurable global floor (Prompt §5.2).
+ *   - The global floor (default MIN_THRESHOLD=75) is clamped to [75, 100].
+ *   - undefined / null / non-number  -> max(floor, DEFAULT_MATCHING_THRESHOLD)
  *   - < MIN_THRESHOLD                 -> clamped UP to MIN_THRESHOLD (75)
  *   - > MAX_THRESHOLD                 -> clamped DOWN to MAX_THRESHOLD (100)
- *   - otherwise                       -> the stored integer value
- * Always returns an integer in [75, 100].
+ *   - otherwise                       -> max(floor, the stored integer value)
+ * A candidate's threshold can never fall below the global floor. Always returns
+ * an integer in [75, 100] (and ≥ the global floor).
  */
 export function resolveMatchingThreshold(
-  stored: number | undefined | null | unknown
+  stored: number | undefined | null | unknown,
+  globalFloor: number = MIN_THRESHOLD,
 ): number {
+  // Clamp the admin-configurable global floor to the supported range first
+  // (defense-in-depth — the persisted value is validated on write, but a stale
+  // or buggy caller must never produce an out-of-range effective threshold).
+  const floor = Math.min(
+    Math.max(Number.isFinite(globalFloor) ? Math.round(globalFloor) : MIN_THRESHOLD, MIN_THRESHOLD),
+    MAX_THRESHOLD,
+  );
   if (typeof stored !== 'number' || !Number.isFinite(stored)) {
-    return DEFAULT_MATCHING_THRESHOLD;
+    return Math.max(floor, DEFAULT_MATCHING_THRESHOLD);
   }
   let v = Math.round(stored);
   if (v < MIN_THRESHOLD) v = MIN_THRESHOLD;
   if (v > MAX_THRESHOLD) v = MAX_THRESHOLD;
-  return v;
+  // A candidate can never set their threshold BELOW the global floor — the
+  // effective threshold is the higher of the candidate's (clamped) value and the
+  // global floor (Prompt §5.2: "Candidate-level preferences must not bypass the
+  // global threshold").
+  return Math.max(floor, v);
 }
 
 /**

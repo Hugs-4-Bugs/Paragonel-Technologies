@@ -64,6 +64,73 @@ export default function JobAlertsPage() {
   const [draining, setDraining] = useState(false);
   const { toast } = useToast();
 
+  // Global matching-threshold floor (admin-configurable, super_admin-writable).
+  const [thresholdSetting, setThresholdSetting] = useState<{
+    minimum_matching_percentage: number;
+    min: number;
+    max: number;
+    default: number;
+    canEdit: boolean;
+  } | null>(null);
+  const [thresholdInput, setThresholdInput] = useState('');
+  const [savingThreshold, setSavingThreshold] = useState(false);
+
+  const loadThreshold = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/jobs/matching-threshold', { cache: 'no-store' });
+      if (!res.ok) return;
+      const d = (await res.json()) as {
+        minimum_matching_percentage: number;
+        min: number;
+        max: number;
+        default: number;
+        canEdit: boolean;
+      };
+      setThresholdSetting(d);
+      setThresholdInput(String(d.minimum_matching_percentage));
+    } catch {
+      // non-fatal — the rest of the page still loads
+    }
+  }, []);
+
+  useEffect(() => {
+    loadThreshold();
+  }, [loadThreshold]);
+
+  const saveThreshold = useCallback(async () => {
+    const n = Math.round(Number(thresholdInput));
+    if (!Number.isFinite(n)) return;
+    setSavingThreshold(true);
+    try {
+      const res = await fetch('/api/admin/jobs/matching-threshold', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ minimum_matching_percentage: n }),
+      });
+      const d = await res.json().catch(() => ({} as { minimum_matching_percentage?: number; error?: string }));
+      if (!res.ok) {
+        throw new Error(d.error || `HTTP ${res.status}`);
+      }
+      const value = d.minimum_matching_percentage ?? n;
+      setThresholdSetting((prev) =>
+        prev ? { ...prev, minimum_matching_percentage: value } : prev,
+      );
+      setThresholdInput(String(value));
+      toast({
+        title: 'Threshold updated',
+        description: `Global matching floor set to ${value}%.`,
+      });
+    } catch (e) {
+      toast({
+        title: 'Update failed',
+        description: e instanceof Error ? e.message : 'Could not update the threshold.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingThreshold(false);
+    }
+  }, [thresholdInput, toast]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -145,6 +212,40 @@ export default function JobAlertsPage() {
           </span>
         )}
       </div>
+
+      {thresholdSetting && (
+        <Card className="border-none shadow-sm rounded-2xl bg-white dark:bg-zinc-900">
+          <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex-1">
+              <h2 className="text-sm font-bold uppercase tracking-wide text-zinc-500 flex items-center gap-2">
+                <BellRing className="h-4 w-4 text-primary" /> Global matching threshold (floor)
+              </h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                Candidates below this floor never receive automatic job-match alerts. Default {thresholdSetting.default}%; range {thresholdSetting.min}–{thresholdSetting.max}%.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={thresholdSetting.min}
+                max={thresholdSetting.max}
+                value={thresholdInput}
+                onChange={(e) => setThresholdInput(e.target.value)}
+                disabled={!thresholdSetting.canEdit || savingThreshold}
+                className="w-20 rounded-md border border-zinc-200 dark:border-zinc-700 bg-transparent px-2 py-1 text-sm"
+              />
+              <Button
+                onClick={saveThreshold}
+                disabled={!thresholdSetting.canEdit || savingThreshold}
+                variant="default"
+              >
+                {savingThreshold ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Save
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {error && (
         <Card className="border-red-200 dark:border-red-900">

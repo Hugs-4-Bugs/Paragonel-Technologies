@@ -79,7 +79,7 @@ describe('GET /api/candidate/profile/preferences', () => {
     expect(data.raw.matchingThreshold).toBe(75);
     expect(data.raw.preferredRoles).toEqual(['Senior Engineer']);
     expect(data.effective.jobAlertPreference).toBe(true);
-    expect(data.effective.matchingThreshold).toBe(75);
+    expect(data.effective.matchingThreshold).toBe(80); // global floor (default 80) raises candidate 75 → effective 80 (Prompt §5.2: candidate cannot bypass the global threshold)
   });
 });
 
@@ -96,7 +96,7 @@ describe('PATCH /api/candidate/profile/preferences', () => {
     const data = await res.json();
     expect(data.message).toBe('Preferences saved.');
     expect(data.effective.jobAlertPreference).toBe(true);
-    expect(data.effective.matchingThreshold).toBe(75);
+    expect(data.effective.matchingThreshold).toBe(80); // global floor (default 80) raises candidate 75 → effective 80 (Prompt §5.2: candidate cannot bypass the global threshold)
     // Persisted on the candidate's own doc (id == session email).
     const snap = await fakeDb.collection('candidates').doc('cand@example.com').get();
     expect(snap.exists).toBe(true);

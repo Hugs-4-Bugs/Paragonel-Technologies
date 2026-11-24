@@ -25,6 +25,7 @@ import {
   MIN_THRESHOLD,
   MAX_THRESHOLD,
 } from '@/lib/matching/preferences';
+import { getGlobalMatchingThreshold } from '@/lib/matching/global-threshold';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
     },
     effective: {
       jobAlertPreference: resolveJobAlertPreference(data.jobAlertPreference),
-      matchingThreshold: resolveMatchingThreshold(data.matchingThreshold),
+      matchingThreshold: resolveMatchingThreshold(data.matchingThreshold, await getGlobalMatchingThreshold()),
     },
     defaults: { matchingThreshold: DEFAULT_MATCHING_THRESHOLD, min: MIN_THRESHOLD, max: MAX_THRESHOLD },
     note: 'Job alerts are based on profile matching and are separate from marketing emails.',
@@ -103,7 +104,7 @@ export async function PATCH(request: Request) {
     message: 'Preferences saved.',
     effective: {
       jobAlertPreference: resolveJobAlertPreference(data.jobAlertPreference),
-      matchingThreshold: resolveMatchingThreshold(data.matchingThreshold),
+      matchingThreshold: resolveMatchingThreshold(data.matchingThreshold, await getGlobalMatchingThreshold()),
     },
   });
 }
