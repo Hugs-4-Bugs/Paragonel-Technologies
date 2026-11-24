@@ -1,14 +1,19 @@
 /**
  * GET / PATCH /api/admin/jobs/matching-threshold — admin-configurable global
- * matching-threshold floor (Prompt §5.2).
+ * matching-threshold floor (Prompt §5.2), Supabase-backed (Batch 14).
  *
  * GET (cms.read — any admin): returns the current global floor + bounds + canEdit
  *   (canEdit = the caller is super_admin, mirroring the Supabase RLS
- *   `settings_write_super` policy).
+ *   `settings_write_super` policy) + storeConfigured (whether the Supabase server
+ *   client is configured — false means the reader is returning the default 80
+ *   from the fail-open fallback, so a PATCH will 503). Batch 15 addition.
  * PATCH (super_admin only): validates minimum_matching_percentage ∈ [75,100],
- *   persists via setGlobalMatchingThreshold (Firestore `app_settings` now; the
- *   Supabase `app_settings` row of the same key is upserted by migration 0009
- *   for the cutover), invalidates the in-memory cache, and writes an audit entry.
+ *   persists via setGlobalMatchingThreshold (Supabase `app_settings` — the
+ *   Firestore threshold doc was removed in Batch 14 per §5.1) + writes an audit
+ *   entry to adminActivityLogs (Firestore — transitional, pending the audit_logs
+ *   Supabase migration). The writer pre-populates the in-memory cache with the
+ *   clamped value, so no separate invalidate call is needed (Batch 15: removed
+ *   the redundant invalidate that defeated the pre-populate optimization).
  *
  * The setting is the FLOOR — candidate-level thresholds are clamped UP to it at
  * resolution time (resolveMatchingThreshold) and can never bypass it. Default 80,
@@ -21,8 +26,8 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import {
   getGlobalMatchingThreshold,
   setGlobalMatchingThreshold,
-  invalidateGlobalMatchingThresholdCache,
 } from '@/lib/matching/global-threshold';
+import { appSettingsStoreConfigured } from '@/lib/supabase/data/app-settings';
 import { MIN_THRESHOLD, MAX_THRESHOLD, DEFAULT_MATCHING_THRESHOLD } from '@/lib/matching/preferences';
 
 export const dynamic = 'force-dynamic';
@@ -47,6 +52,7 @@ export async function GET(request: Request) {
     max: MAX_THRESHOLD,
     default: DEFAULT_MATCHING_THRESHOLD,
     canEdit: auth.user.role === 'super_admin',
+    storeConfigured: appSettingsStoreConfigured(),
   });
 }
 
@@ -73,8 +79,10 @@ export async function PATCH(request: Request) {
   }
 
   try {
+    // setGlobalMatchingThreshold clamps + persists to Supabase + pre-populates the
+    // in-memory cache with the clamped value (so the next GET on this instance
+    // returns it without a re-fetch). No separate invalidate call is needed.
     const value = await setGlobalMatchingThreshold(parsed.data.minimum_matching_percentage);
-    invalidateGlobalMatchingThresholdCache();
 
     // Audit log (same pattern as other admin mutations — adminActivityLogs).
     const db = getAdminDb();
