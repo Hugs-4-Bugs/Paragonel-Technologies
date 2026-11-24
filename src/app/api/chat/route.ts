@@ -36,6 +36,7 @@ import { getKnowledgeBase, retrieve } from '@/lib/ai/knowledge-retrieval';
 import { paragonelAIFlow } from '@/ai/flows/paragonel-ai-flow';
 import { ENQUIRY_CATEGORIES } from '@/lib/ai/lead-qualification';
 import { isProviderFailure } from '@/ai/models';
+import { redactReason } from '@/lib/job-alerts/dedup';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -120,7 +121,7 @@ export async function POST(request: Request) {
     const base = await getKnowledgeBase();
     retrieved = retrieve(message, base, 5);
   } catch (err) {
-    console.error('[chat] knowledge retrieval failed:', err instanceof Error ? err.message : 'unknown');
+    console.error('[chat] knowledge retrieval failed:', redactReason(err));
     // Continue with empty context — the flow returns a safe fallback.
   }
 
@@ -164,7 +165,7 @@ export async function POST(request: Request) {
     // Unexpected route-level error (never expose internals/stack/credentials).
     // Non-sensitive signal only; the flow's own classification handles the
     // common provider failures above.
-    console.error('[chat] route error:', err instanceof Error ? err.message : 'unknown');
+    console.error('[chat] route error:', redactReason(err));
     return NextResponse.json(
       {
         answer: "I'm having trouble responding right now. Please try again in a moment, or reach the Paragonel team via the Contact page.",

@@ -397,13 +397,19 @@ export async function paragonelAIFlow(input: ParagonelAIInput): Promise<Paragone
       })),
       qualificationState: cleanQualState,
     });
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(
+      timeoutHandle = setTimeout(
         () => reject(new Error(`Gemini request timed out after ${GEMINI_REQUEST_TIMEOUT_MS}ms`)),
         GEMINI_REQUEST_TIMEOUT_MS,
       );
     });
-    const { output } = await Promise.race([modelPromise, timeoutPromise]);
+    // Clear the timer when the race settles (either way) so a model-win does
+    // not leave a dangling setTimeout that rejects into a detached promise
+    // (unhandled-rejection noise). Batch 15 fix.
+    const { output } = await Promise.race([modelPromise, timeoutPromise]).finally(() => {
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+    });
 
     if (!output) {
       const out = safeFallback(cleanQuestion, input.retrievedContext as KnowledgeEntry[] | undefined, 'invalid_output');

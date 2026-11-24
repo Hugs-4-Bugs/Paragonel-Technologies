@@ -65,6 +65,52 @@ describe('paragonelAIFlow — model-success path (mocked Genkit)', () => {
     expect(out.needsClarification).toBe(false);
   });
 
+  it('service question → grounded qna answer citing the services page (Part 5 cat 2)', async () => {
+    promptMock.mockResolvedValue({
+      output: qnaOutput(
+        'Paragonel provides AI solutions, cloud engineering, and custom product development. [Services](/services)',
+        [{ title: 'Services', path: '/services' }],
+      ),
+    });
+    const out = await paragonelAIFlow(mkInput('What services does Paragonel provide?'));
+    expect(out.intent).toBe('qna');
+    expect(out.answer).toContain('AI solutions');
+    expect(out.citations).toEqual([{ title: 'Services', path: '/services' }]);
+    expect(out.fallbackReason).toBeUndefined();
+  });
+
+  it('career/job-application question → enquiry intent with enquiryCategory=career (Part 5 cat 4)', async () => {
+    promptMock.mockResolvedValue({
+      output: {
+        answer: 'You can explore open roles on our Careers page. [Careers](/careers)',
+        citations: [{ title: 'Careers', path: '/careers' }],
+        needsClarification: false,
+        intent: 'enquiry',
+        enquiryCategory: 'career',
+      },
+    });
+    const out = await paragonelAIFlow(mkInput('How do I apply for a job at Paragonel?'));
+    expect(out.intent).toBe('enquiry');
+    expect(out.enquiryCategory).toBe('career');
+    expect(out.citations).toEqual([{ title: 'Careers', path: '/careers' }]);
+    expect(out.fallbackReason).toBeUndefined();
+  });
+
+  it('AcquisitionOS question → grounded qna answer noting Private Beta + citing the product page (Part 5 cat 3, e2e)', async () => {
+    promptMock.mockResolvedValue({
+      output: qnaOutput(
+        "AcquisitionOS is Paragonel's talent-acquisition platform, currently in Private Beta. [AcquisitionOS](/products/acquisitionos)",
+        [{ title: 'AcquisitionOS', path: '/products/acquisitionos' }],
+      ),
+    });
+    const out = await paragonelAIFlow(mkInput('What is AcquisitionOS?'));
+    expect(out.intent).toBe('qna');
+    expect(out.answer.toLowerCase()).toContain('beta');
+    expect(out.answer).toContain('AcquisitionOS');
+    expect(out.citations).toEqual([{ title: 'AcquisitionOS', path: '/products/acquisitionos' }]);
+    expect(out.fallbackReason).toBeUndefined();
+  });
+
   it('tags unknown_company_fact (the HTTP 200 honest path) when the model returns intent=fallback', async () => {
     promptMock.mockResolvedValue({
       output: {
