@@ -9,6 +9,7 @@ import { HomeBlog } from '@/components/home/blog';
 import { HomeApproach } from '@/components/home/approach';
 import { HomeEngagement } from '@/components/home/engagement';
 import { HomeConversion } from '@/components/home/conversion';
+import { ClientShowcase } from '@/components/home/client-showcase';
 import { getPublishedTestimonials, getPublishedClientProjects } from '@/lib/public-data';
 import { TestimonialsMarquee } from '@/components/sections/testimonials-marquee';
 
@@ -98,6 +99,7 @@ export default async function HomePage() {
       <div className="pt-shell"><div className="pt-hair" /></div>
       <HomeApproach />
       <HomeEngagement />
+      <ClientShowcase />
       <HomeConversion />
     </>
   );

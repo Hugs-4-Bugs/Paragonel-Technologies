@@ -198,10 +198,10 @@ export function ArticleReader({ post, newer, older, related }: ArticleReaderProp
 
       {/* Body + TOC */}
       <div className="pt-shell pt-section">
-        <div className="mx-auto grid max-w-4xl gap-10 lg:grid-cols-[1fr_16rem] lg:gap-12">
+        <div className={cn("mx-auto grid max-w-4xl gap-10 lg:gap-12", hasToc ? "lg:grid-cols-[1fr_16rem]" : "")}>
           {/* TOC — sticky on desktop, collapsible on mobile */}
           {hasToc && (
-            <aside className="order-1 lg:order-none">
+            <aside className="order-1 lg:order-2">
               {/* Desktop sticky */}
               <nav aria-label="Table of contents" className="hidden lg:sticky lg:top-28 lg:block">
                 <p className="pt-index text-[0.65rem] mb-3">CONTENTS</p>
@@ -257,7 +257,7 @@ export function ArticleReader({ post, newer, older, related }: ArticleReaderProp
           )}
 
           {/* Markdown body — comfortable reading width */}
-          <div className="order-2 lg:order-none min-w-0">
+          <div className="order-2 lg:order-1 min-w-0">
             <Markdown>{post.body || ''}</Markdown>
 
             {/* Tags */}

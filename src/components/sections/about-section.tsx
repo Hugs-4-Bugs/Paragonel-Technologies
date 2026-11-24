@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Linkedin, ArrowUpRight } from 'lucide-react';
+import { ArrowRight, Linkedin, ArrowUpRight, Instagram } from 'lucide-react';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion/reveal';
 import { XIcon } from '@/components/brand/x-icon';
 
@@ -130,7 +130,7 @@ export function AboutSection() {
           <RevealGroup stagger={0.07} className="mt-12 grid gap-px bg-border md:grid-cols-2">
             {PRINCIPLES.map((p) => (
               <RevealItem key={p.n}>
-                <div className="bg-background p-6 md:p-7">
+                <div className="flex h-full flex-col bg-background p-6 md:p-7">
                   <span className="pt-index text-xs">{p.n}</span>
                   <h3 className="mt-3 text-base font-semibold text-foreground">{p.t}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{p.d}</p>
@@ -199,14 +199,23 @@ export function AboutSection() {
                 >
                   <XIcon className="h-4 w-4" /> X
                 </Link>
+                <Link
+                  href="https://www.instagram.com/_s_4_sharma/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pt-btn pt-btn-ghost"
+                  aria-label="Prabhat Kumar on Instagram (opens in a new tab)"
+                >
+                  <Instagram className="h-4 w-4" /> Instagram
+                </Link>
               </div>
             </Reveal>
           </div>
 
           {/* D2–D5. Foundation · what he is building · vision · product direction */}
           <div className="mt-14 grid gap-10 md:grid-cols-2 lg:gap-14">
-            <Reveal>
-              <div className="border-t border-border pt-6">
+            <Reveal className="h-full">
+              <div className="h-full border-t border-border pt-6">
                 <h3 className="text-base font-semibold text-foreground">Engineering foundation</h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                   His engineering foundation is in computer science and Java backend development —
@@ -220,8 +229,8 @@ export function AboutSection() {
                 </p>
               </div>
             </Reveal>
-            <Reveal>
-              <div className="border-t border-border pt-6">
+            <Reveal className="h-full">
+              <div className="h-full border-t border-border pt-6">
                 <h3 className="text-base font-semibold text-foreground">What he is building</h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                   Paragonel ships its own products alongside its engineering services.{' '}
@@ -239,8 +248,8 @@ export function AboutSection() {
                 </p>
               </div>
             </Reveal>
-            <Reveal>
-              <div className="border-t border-border pt-6">
+            <Reveal className="h-full">
+              <div className="h-full border-t border-border pt-6">
                 <h3 className="text-base font-semibold text-foreground">Vision</h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                   Paragonel is being built as an engineering-led technology company where strong
@@ -252,8 +261,8 @@ export function AboutSection() {
                 </p>
               </div>
             </Reveal>
-            <Reveal>
-              <div className="border-t border-border pt-6">
+            <Reveal className="h-full">
+              <div className="h-full border-t border-border pt-6">
                 <h3 className="text-base font-semibold text-foreground">Why AcquisitionOS matters</h3>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                   AcquisitionOS matters to Paragonel because it is where the company&apos;s
@@ -325,7 +334,7 @@ export function AboutSection() {
           <RevealGroup stagger={0.08} className="mt-12 grid gap-px bg-border md:grid-cols-3">
             {ENGAGEMENT.map((s) => (
               <RevealItem key={s.n}>
-                <div className="bg-background p-6 md:p-7">
+                <div className="flex h-full flex-col bg-background p-6 md:p-7">
                   <span className="pt-index text-xs">{s.n}</span>
                   <h3 className="mt-3 text-base font-semibold text-foreground">{s.t}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{s.d}</p>

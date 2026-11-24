@@ -201,7 +201,7 @@ export default function AcquisitionOSPage() {
           <RevealGroup stagger={0.06} className="mt-12 grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-3">
             {AUDIENCES.map((a) => (
               <RevealItem key={a.t}>
-                <div className="bg-background p-6">
+                <div className="flex h-full flex-col bg-background p-6">
                   <div className="flex items-center gap-3">
                     <a.icon className="h-5 w-5 text-primary" />
                     <h3 className="text-sm font-semibold text-foreground">{a.t}</h3>
@@ -335,7 +335,7 @@ export default function AcquisitionOSPage() {
           <RevealGroup stagger={0.07} className="mt-12 grid gap-px bg-border sm:grid-cols-2 lg:grid-cols-4">
             {TRUST.map((c) => (
               <RevealItem key={c.t}>
-                <div className="bg-background p-6">
+                <div className="flex h-full flex-col bg-background p-6">
                   <c.icon className="h-6 w-6 text-primary" />
                   <h3 className="mt-4 text-sm font-semibold text-foreground">{c.t}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{c.d}</p>
@@ -423,7 +423,7 @@ export default function AcquisitionOSPage() {
 function RoadmapColumn({ icon: Icon, label, items }: { icon: typeof Cpu; label: string; items: string[] }) {
   return (
     <RevealItem>
-      <div className="bg-background p-6">
+      <div className="flex h-full flex-col bg-background p-6">
         <Icon className="h-6 w-6 text-primary" />
         <h3 className="mt-4 text-sm font-semibold text-foreground">{label}</h3>
         <ul className="mt-3 space-y-2">
