@@ -194,10 +194,21 @@ export function ChatSection() {
       // appears. Never disguise a provider failure as a successful answer.
       const data = await res.json().catch(() => ({} as { answer?: string; citations?: unknown[] }));
       if (!res.ok) {
+        // Distinguish a deployment-config failure (missing/invalid key,
+        // unsupported model — NOT user-retryable) from a transient provider
+        // failure (quota/timeout — retryable). The route returns fallbackReason;
+        // mapping it to an actionable hint avoids showing the SAME generic
+        // "knowledge service" string for every failure (Prompt §5.4). No secrets
+        // or provider internals are exposed — only a safe, actionable hint.
+        const reason = typeof data.fallbackReason === 'string' ? data.fallbackReason : '';
+        const isConfigIssue =
+          reason === 'missing_key' || reason === 'invalid_key' || reason === 'unsupported_model';
+        const content = isConfigIssue
+          ? "The AI assistant isn't configured correctly for this deployment, so I can't answer right now. Please reach the Paragonel team via the [Contact](/contact) page to report this."
+          : (typeof data.answer === 'string' && data.answer) ||
+            "I'm having trouble responding right now. Please try again, or reach the Paragonel team via the [Contact](/contact) page.";
         updateMessage(loadingId, {
-          content:
-            (typeof data.answer === 'string' && data.answer) ||
-            "I'm having trouble responding right now. Please try again, or reach the Paragonel team via the [Contact](/contact) page.",
+          content,
           citations: Array.isArray(data.citations) ? (data.citations as { title: string; path: string }[]) : [],
           status: 'error',
         });

@@ -4,17 +4,23 @@
  * The fail-closed contract: when no Gemini key is configured, hasGeminiKey()
  * returns false → the chat route returns an honest classified 503 + the resume
  * parser throws ResumeAnalysisError('missing_key') (resume stored, parse
- * skipped). This test locks that contract + the model/timeout defaults.
+ * skipped). This test locks that contract + the model/timeout defaults +
+ * the three accepted env-var names (GEMINI_API_KEY, GOOGLE_API_KEY,
+ * GOOGLE_GENAI_API_KEY — the last is the Genkit plugin's third accepted name;
+ * the gate must accept it so a deployment setting only that name does not
+ * fast-fail with 'missing_key').
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('hasGeminiKey (fail-closed)', () => {
   const origGemini = process.env.GEMINI_API_KEY;
   const origGoogle = process.env.GOOGLE_API_KEY;
+  const origGenai = process.env.GOOGLE_GENAI_API_KEY;
 
   beforeEach(() => {
     delete process.env.GEMINI_API_KEY;
     delete process.env.GOOGLE_API_KEY;
+    delete process.env.GOOGLE_GENAI_API_KEY;
   });
 
   afterEach(() => {
@@ -22,6 +28,8 @@ describe('hasGeminiKey (fail-closed)', () => {
     else delete process.env.GEMINI_API_KEY;
     if (origGoogle !== undefined) process.env.GOOGLE_API_KEY = origGoogle;
     else delete process.env.GOOGLE_API_KEY;
+    if (origGenai !== undefined) process.env.GOOGLE_GENAI_API_KEY = origGenai;
+    else delete process.env.GOOGLE_GENAI_API_KEY;
   });
 
   it('returns false when no key is configured (fail-closed)', async () => {
@@ -47,9 +55,19 @@ describe('hasGeminiKey (fail-closed)', () => {
     expect(hasGeminiKey()).toBe(true);
   });
 
-  it('prefers GEMINI_API_KEY when both are set (both satisfy presence)', async () => {
+  it('returns true via GOOGLE_GENAI_API_KEY (Genkit plugin accepts it; the gate must too)', async () => {
+    // Closes the Paragonel-AI outage: a deployment setting ONLY
+    // GOOGLE_GENAI_API_KEY would pass the plugin's key resolution but fail the
+    // gate → fast-fail 'missing_key' → the "knowledge service" error.
+    process.env.GOOGLE_GENAI_API_KEY = 'genai-key-present';
+    const { hasGeminiKey } = await import('../models');
+    expect(hasGeminiKey()).toBe(true);
+  });
+
+  it('prefers GEMINI_API_KEY when all three are set (all satisfy presence)', async () => {
     process.env.GEMINI_API_KEY = 'primary';
     process.env.GOOGLE_API_KEY = 'fallback';
+    process.env.GOOGLE_GENAI_API_KEY = 'genai';
     const { hasGeminiKey } = await import('../models');
     expect(hasGeminiKey()).toBe(true);
   });

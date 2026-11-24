@@ -39,9 +39,16 @@ export const GEMINI_REQUEST_TIMEOUT_MS =
     : 25000;
 
 /** Is a Gemini API key present (non-empty)? Presence-only; never logs the value.
- *  GEMINI_API_KEY is primary; GOOGLE_API_KEY is a documented fallback. */
+ *  Accepts the three env-var names the Genkit google-genai plugin reads
+ *  (node_modules/@genkit-ai/google-genai/.../utils.js): GEMINI_API_KEY (primary),
+ *  GOOGLE_API_KEY (documented fallback), and GOOGLE_GENAI_API_KEY (the plugin's
+ *  third accepted name). Accepting all three closes the most common Paragonel-AI
+ *  outage: a deployment that sets ONLY GOOGLE_GENAI_API_KEY would pass the
+ *  plugin's own key resolution but fail this presence gate → fast-fail
+ *  'missing_key' → the "knowledge service" error — even though a valid key is
+ *  configured. The key is still never exposed (server-only; no NEXT_PUBLIC_). */
 export function hasGeminiKey(): boolean {
-  const k = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const k = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
   return typeof k === 'string' && k.trim().length > 0;
 }
 
