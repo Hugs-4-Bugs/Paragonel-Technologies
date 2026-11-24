@@ -16,6 +16,7 @@
  * without the Firestore emulator or a Supabase project.
  */
 import { createHash } from 'node:crypto';
+import { MIN_THRESHOLD, MAX_THRESHOLD, DEFAULT_MATCHING_THRESHOLD } from '@/lib/matching/preferences';
 
 /** Fixed namespace for UUIDv5 derivation (deterministic across runs). */
 const NAMESPACE = '6b1d7f9a-3c2e-4b5a-8d9f-0e1a2b3c4d5e';
@@ -180,7 +181,7 @@ export function mapCandidate(doc: FirestoreDoc): MappedRow[] {
       phone: str(d.phone),
       domain: str(d.domain),
       job_alert_enabled: bool(d.jobAlertPreference, false),
-      matching_threshold: Math.min(100, Math.max(75, num(d.matchingThreshold) ?? 80)),
+      matching_threshold: Math.min(MAX_THRESHOLD, Math.max(MIN_THRESHOLD, num(d.matchingThreshold) ?? DEFAULT_MATCHING_THRESHOLD)),
       created_at: toISO(d.createdAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
       updated_at: toISO(d.updatedAt) ?? MIGRATION_FALLBACK_TIMESTAMP,
     },
@@ -297,7 +298,7 @@ export function mapCandidate(doc: FirestoreDoc): MappedRow[] {
     row: {
       candidate_id: userId,
       enabled: bool(d.jobAlertPreference, false),
-      threshold: Math.min(100, Math.max(75, num(d.matchingThreshold) ?? 80)),
+      threshold: Math.min(MAX_THRESHOLD, Math.max(MIN_THRESHOLD, num(d.matchingThreshold) ?? DEFAULT_MATCHING_THRESHOLD)),
     },
   });
 

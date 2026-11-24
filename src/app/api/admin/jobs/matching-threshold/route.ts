@@ -10,8 +10,9 @@
  * PATCH (super_admin only): validates minimum_matching_percentage ∈ [75,100],
  *   persists via setGlobalMatchingThreshold (Supabase `app_settings` — the
  *   Firestore threshold doc was removed in Batch 14 per §5.1) + writes an audit
- *   entry to adminActivityLogs (Firestore — transitional, pending the audit_logs
- *   Supabase migration). The writer pre-populates the in-memory cache with the
+ *   entry to the Supabase `audit_logs` table (Issue 1 incremental migration —
+ *   replaces the transitional Firestore `adminActivityLogs` write that was this
+ *   route's last Firestore dependency). The writer pre-populates the in-memory cache with the
  *   clamped value, so no separate invalidate call is needed (Batch 15: removed
  *   the redundant invalidate that defeated the pre-populate optimization).
  *
@@ -22,12 +23,12 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyAdminPermission } from '@/lib/admin-auth';
-import { getAdminDb } from '@/lib/firebase-admin';
 import {
   getGlobalMatchingThreshold,
   setGlobalMatchingThreshold,
 } from '@/lib/matching/global-threshold';
 import { appSettingsStoreConfigured } from '@/lib/supabase/data/app-settings';
+import { insertAuditLog } from '@/lib/supabase/data/audit-logs';
 import { MIN_THRESHOLD, MAX_THRESHOLD, DEFAULT_MATCHING_THRESHOLD } from '@/lib/matching/preferences';
 
 export const dynamic = 'force-dynamic';
@@ -84,19 +85,20 @@ export async function PATCH(request: Request) {
     // returns it without a re-fetch). No separate invalidate call is needed.
     const value = await setGlobalMatchingThreshold(parsed.data.minimum_matching_percentage);
 
-    // Audit log (same pattern as other admin mutations — adminActivityLogs).
-    const db = getAdminDb();
-    if (db) {
-      try {
-        await db.collection('adminActivityLogs').add({
-          actor: auth.user.email,
-          action: 'matching_threshold_update',
-          detail: `Global matching threshold floor set to ${value}%`,
-          ts: new Date().toISOString(),
-        });
-      } catch {
-        // non-fatal — the setting is already persisted; a failed audit must not revert it
-      }
+    // Audit log (Supabase `audit_logs` — Issue 1 incremental migration; the
+    // transitional Firestore `adminActivityLogs` write was this route's last
+    // Firestore dependency). Non-fatal: a failed audit must never revert the
+    // persisted setting.
+    try {
+      await insertAuditLog(
+        'matching_threshold_update',
+        auth.user.email,
+        { value, detail: `Global matching threshold floor set to ${value}%` },
+        'app_settings',
+        'matching_threshold_floor',
+      );
+    } catch {
+      // non-fatal — the setting is already persisted; a failed audit must not revert it
     }
 
     return NextResponse.json({

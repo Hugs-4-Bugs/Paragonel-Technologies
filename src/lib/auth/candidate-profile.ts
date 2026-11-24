@@ -15,6 +15,7 @@
  */
 import { z } from 'zod';
 import { CONSENT_NOTICE_VERSION, PRIVACY_POLICY_VERSION, TERMS_VERSION } from '@/lib/submission-security';
+import { MIN_THRESHOLD, MAX_THRESHOLD } from '@/lib/matching/preferences';
 
 /* --------------------------- shared sub-schemas --------------------------- */
 
@@ -85,7 +86,7 @@ export const candidateProfileSchema = z.object({
 
   // 05R-ready preference fields (defined here, NOT acted on in 05Q).
   jobAlertPreference: z.boolean().optional(),
-  matchingThreshold: z.coerce.number().int().min(75, 'Threshold must be between 75 and 100').max(100).optional(),
+  matchingThreshold: z.coerce.number().int().min(MIN_THRESHOLD, 'Threshold must be between 75 and 100').max(MAX_THRESHOLD).optional(),
 });
 
 export type CandidateProfileInput = z.infer<typeof candidateProfileSchema>;

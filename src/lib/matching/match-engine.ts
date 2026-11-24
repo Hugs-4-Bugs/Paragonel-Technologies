@@ -44,6 +44,7 @@
  */
 import { canonicalSkill, canonicalSkillSet } from './skill-aliases';
 import type { CandidateProfile } from '@/lib/auth/candidate-profile';
+import { DEFAULT_MATCHING_THRESHOLD } from './preferences';
 
 export const RUBRIC_VERSION = '1.0';
 
@@ -560,11 +561,16 @@ export function scoreJobCandidate(
   const overallScore = Math.round(overall);
   if (bonus.points > 0) otherEvidence.push(`Projects/certifications: ${bonus.reason}`);
 
-  /* --- eligibility (at default 80 threshold + hard gate on required skills) --- */
+  /* --- eligibility (at the default threshold + hard gate on required skills) ---
+   * The `eligible` boolean is a pre-pass using DEFAULT_MATCHING_THRESHOLD (80).
+   * It is NOT the authoritative threshold decision — alert flows re-check via
+   * meetsThreshold(result, threshold) with the admin-configurable global floor
+   * (resolveMatchingThreshold). Wiring to the constant (not a literal 80) guards
+   * against drift if the default ever changes. */
   const hasRequiredSkills = requiredSkills.length > 0;
   const matchedAnyRequired = matchedRequiredSkills.length > 0;
   const hardGatePass = !hasRequiredSkills || matchedAnyRequired;
-  const eligible = overallScore >= 80 && hardGatePass;
+  const eligible = overallScore >= DEFAULT_MATCHING_THRESHOLD && hardGatePass;
   if (hasRequiredSkills && !matchedAnyRequired) {
     reasons.push('No required skills matched — ineligible regardless of score.');
   }
