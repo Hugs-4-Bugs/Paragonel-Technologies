@@ -26,9 +26,15 @@ const mainNavLinks = [
   { href: "/about", label: "About" },
 ];
 
-// Services mega-menu — mirrors the thirteen engineering domains on /services
-// (Prompt 05B + 05E expansion). Anchor links jump to the domain sections on the
-// landing page. Rendered as a 2-column grid so all 13 fit the bounded panel.
+// Services mega-menu — the full thirteen engineering domains on /services
+// (Prompt 05B + 05E expansion). The navbar hover panel renders only the FIRST
+// FIVE (the original master/production set: Product Engineering, AI & Intelligent
+// Systems, Cloud/Infrastructure/Platform, Data Engineering & Analytics,
+// Experience & Interface) + a "View All Services" link to /services (where all
+// 13 domains are shown). This restores the master hover behavior the user
+// requested; the full array is preserved so the /services landing page + future
+// expansions are unaffected. The first five entries' order, labels, links +
+// icons are unchanged from master (regression-sensitive — see assignment §4).
 const servicesMega = [
   { href: "/services#product-engineering", label: "Product Engineering", icon: Boxes, desc: "SaaS, custom business software, API & systems integration." },
   { href: "/services#ai-and-intelligent-systems", label: "AI & Intelligent Systems", icon: Brain, desc: "Agents, copilots, RAG, workflow automation — tied to a real outcome." },
@@ -163,7 +169,7 @@ export function Navbar() {
                   >
                     <div className="rounded-[var(--pt-radius-md)] border border-border bg-background/95 p-4 shadow-2xl backdrop-blur">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {servicesMega.map((s) => (
+                        {servicesMega.slice(0, 5).map((s) => (
                           <Link
                             key={s.href}
                             href={s.href}

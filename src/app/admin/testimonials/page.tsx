@@ -100,7 +100,7 @@ export default function AdminTestimonialsPage() {
           No testimonials yet. Click <span className="font-semibold">New testimonial</span> to create a draft for a confirmed client.
         </div>
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
+        <div className="rounded-lg border border-border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-secondary/40 text-muted-foreground">
               <tr>

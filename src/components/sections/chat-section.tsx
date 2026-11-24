@@ -389,10 +389,10 @@ export function ChatSection() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={clearChat} aria-label="Clear chat conversation" className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
+          <Button variant="ghost" size="icon" onClick={clearChat} aria-label="Clear chat conversation" className="h-9 w-9 text-white hover:bg-white/10 rounded-full">
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} aria-label="Close chat" className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} aria-label="Close chat" className="h-9 w-9 text-white hover:bg-white/10 rounded-full">
             <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>

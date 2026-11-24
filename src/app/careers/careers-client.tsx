@@ -230,7 +230,7 @@ export function CareersClient({ jobs }: CareersClientProps) {
               </div>
               <div className="space-y-4">
                 <Label className="text-xs font-black uppercase text-zinc-400 tracking-widest">Arrangement</Label>
-                <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex gap-8">
+                <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex flex-wrap gap-x-6 gap-y-3">
                   {['Any', 'Remote', 'Onsite'].map((type) => (
                     <div key={type} className="flex items-center space-x-2">
                       <RadioGroupItem value={type} id={`arr-${type}`} className="border-zinc-600 text-[#4da3ff]" />

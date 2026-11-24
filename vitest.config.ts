@@ -20,6 +20,9 @@ export default defineConfig({
       'src/lib/supabase/**/*.test.ts',
       // Firebase→Supabase migration mapper tests (pure functions).
       'src/lib/migration/**/*.test.ts',
+      // Navbar Services dropdown regression guard (source-invariant — reads
+      // navbar.tsx source, no React render, works in the node environment).
+      'src/components/layout/__tests__/**/*.test.ts',
     ],
     globals: false,
     setupFiles: ['./vitest.setup.ts'],

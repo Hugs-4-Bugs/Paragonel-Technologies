@@ -222,7 +222,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                   <RadioGroup
                       value={workArrangementFilter}
                       onValueChange={setWorkArrangementFilter}
-                      className="flex space-x-6"
+                      className="flex flex-wrap gap-x-6 gap-y-2"
                     >
                       {workArrangements.map((type) => (
                         <div key={type} className="flex items-center space-x-2">

@@ -122,7 +122,7 @@ export function IntegrationsDirectory({
                     <span className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${badgeStyle[selected.badge]}`}>{selected.badge}</span>
                   </div>
                 </div>
-                <button type="button" onClick={() => setSelected(null)} className="rounded-full p-1.5 text-muted-foreground hover:bg-muted">
+                <button type="button" onClick={() => setSelected(null)} aria-label="Close details" className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted">
                   <X className="h-5 w-5" />
                 </button>
               </div>
