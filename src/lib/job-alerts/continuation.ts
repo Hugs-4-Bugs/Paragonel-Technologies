@@ -28,6 +28,19 @@
  *   - scheduleContinuation warns once when APP_BASE_URL is unset (the chain was
  *     silently disabled otherwise) + redacts fetch-error reasons.
  *
+ * Batch-16 Hobby-safety (Part 5A):
+ *   - The Batch-15 bounds (20 sends/hop ≈ 20-40s at 1-2s/send) assume Vercel Pro
+ *     (maxDuration=60). On Vercel Hobby the serverless cap is 10s — Vercel caps
+ *     maxDuration=60 to 10s, + a 20-send hop would be killed mid-drain, severing
+ *     the chain + stranding the event. The Vercel plan could NOT be verified from
+ *     the sandbox, so the bounds are shrunk to the safest config compatible with
+ *     BOTH plans: 1 event × 5 alerts = 5 sends/hop ≈ 5-7.5s at ≤1.5s/send (a fast
+ *     production SMTP relay: Resend/SendGrid/SES). This fits Hobby's 10s with
+ *     margin for the fetch/claim/status overhead AND Pro's 60s with large headroom.
+ *     Tradeoff: ~100 sends per chain (20 hops × 5) vs Batch-15's ~400; a single
+ *     event with >100 matching candidates needs the admin manual-drain backstop.
+ *     A founder on Pro + a fast relay may raise these bounds in code.
+ *
  * Limitation (Prompt §7.3, reported honestly): reliable continuation requires
  * APP_BASE_URL (the deployment URL) to be configured, because after() runs
  * post-response without access to the request object. If APP_BASE_URL is unset
@@ -43,16 +56,19 @@ import { redactReason } from './dedup';
 import type { ProcessOutcome } from './process';
 
 /**
- * Loose bounds for a background continuation drain. Shrunk in Batch 15 so the
- * worst-case per-hop send count (maxEventsPerRun × maxAlertsPerRun = 2 × 10 =
- * 20 sequential SMTP sends ≈ 20s) fits inside the continue route's maxDuration=60
- * (Pro). The original 5 × 20 = 100 sends/hop could exceed even 60s on a slow
- * transport, severing the chain mid-drain + stranding the in-flight event.
+ * Loose bounds for a background continuation drain. Batch-16 (Part 5A): shrunk to
+ * the safest config compatible with BOTH Vercel plans — 1 event × 5 alerts = 5
+ * sequential SMTP sends/hop ≈ 5-7.5s at ≤1.5s/send (fast production relay), which
+ * fits Hobby's 10s serverless cap (with fetch/claim/status overhead) AND Pro's 60s.
+ * The Batch-15 bounds (2×10=20 sends/hop ≈ 20-40s) assumed Pro + would sever on
+ * Hobby (Vercel caps maxDuration=60 to 10s on Hobby). maxDuration=60 is kept for
+ * Pro headroom. Tradeoff: ~100 sends per chain (20 hops × 5); a founder on Pro +
+ * a fast relay may raise these bounds in code. See the Batch-16 note above.
  */
 export const CONTINUE_DRAIN_OPTS = {
   candidateBatchSize: 25,
-  maxAlertsPerRun: 10,
-  maxEventsPerRun: 2,
+  maxAlertsPerRun: 5,
+  maxEventsPerRun: 1,
 };
 
 /**

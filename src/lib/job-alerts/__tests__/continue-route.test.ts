@@ -79,9 +79,12 @@ describe('POST /api/job-match/continue', () => {
     expect(res.status).toBe(503);
   });
 
-  it('200 + processed count when the drain succeeds (no pending → no continuation)', async () => {
+  it('200 + processed count when the drain returns no real work (no continuation)', async () => {
+    // Batch-16: maxEventsPerRun=1 means any non-empty drain hits the cap, so the
+    // didRealWork guard is what prevents a spin. A processed outcome with 0 evals
+    // + 0 sends (e.g. all candidates already processed/in-flight) must NOT continue.
     vi.mocked(drainPendingJobMatchEvents).mockResolvedValue([
-      mkOutcome({ status: 'processed' }),
+      mkOutcome({ status: 'processed', candidatesEvaluated: 0, alertsSent: 0 }),
     ]);
     const res = await POST(req(signContinueToken({ iat: Date.now(), hop: 0 })));
     expect(res.status).toBe(200);
