@@ -203,10 +203,21 @@ export function ChatSection() {
         const reason = typeof data.fallbackReason === 'string' ? data.fallbackReason : '';
         const isConfigIssue =
           reason === 'missing_key' || reason === 'invalid_key' || reason === 'unsupported_model';
-        const content = isConfigIssue
-          ? "The AI assistant isn't configured correctly for this deployment, so I can't answer right now. Please reach the Paragonel team via the [Contact](/contact) page to report this."
-          : (typeof data.answer === 'string' && data.answer) ||
-            "I'm having trouble responding right now. Please try again, or reach the Paragonel team via the [Contact](/contact) page.";
+        // Prefer a SUBSTANTIVE degraded answer (the retrieved knowledge snippet
+        // surfaced by safeFallback when the provider is down but knowledge
+        // retrieval succeeded) over the generic config-issue message — so the
+        // visitor gets a useful, accurate answer to "What services do you
+        // offer?" / "What is Paragonel?" even when the AI provider is
+        // unavailable. The snippet is real company knowledge, not fabricated.
+        // Only fall back to the config-issue / generic message when there is no
+        // substantive answer (no retrieved context for the query, e.g. "hi").
+        const substantiveAnswer =
+          typeof data.answer === 'string' && data.answer.length > 60 ? data.answer : '';
+        const content = substantiveAnswer
+          ? substantiveAnswer
+          : isConfigIssue
+            ? "The AI assistant isn't configured correctly for this deployment, so I can't answer right now. Please reach the Paragonel team via the [Contact](/contact) page to report this."
+            : "I'm having trouble responding right now. Please try again, or reach the Paragonel team via the [Contact](/contact) page.";
         updateMessage(loadingId, {
           content,
           citations: Array.isArray(data.citations) ? (data.citations as { title: string; path: string }[]) : [],

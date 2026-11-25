@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
  */
 export default function BootstrapPage() {
   const [available, setAvailable] = useState<boolean | null>(null);
+  const [reason, setReason] = useState<string>('');
   const [maskedEmail, setMaskedEmail] = useState('');
   const [otpRequestId, setOtpRequestId] = useState('');
   const [code, setCode] = useState('');
@@ -31,7 +32,7 @@ export default function BootstrapPage() {
   useEffect(() => {
     fetch('/api/admin/bootstrap')
       .then((r) => r.json())
-      .then((d) => { setAvailable(!!d.available); setMaskedEmail(d.maskedEmail ?? ''); })
+      .then((d) => { setAvailable(!!d.available); setReason(typeof d.reason === 'string' ? d.reason : ''); setMaskedEmail(d.maskedEmail ?? ''); })
       .catch(() => setAvailable(false));
   }, []);
 
@@ -106,7 +107,15 @@ export default function BootstrapPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {available === false && (
-              <Alert><Info className="h-4 w-4" /><AlertDescription>A Super Admin already exists, or the bootstrap email is not configured. Bootstrap is disabled.</AlertDescription></Alert>
+              <Alert><Info className="h-4 w-4" /><AlertDescription>
+                {reason === 'not_configured'
+                  ? 'Bootstrap is disabled because SUPERADMIN_BOOTSTRAP_EMAIL is not set in the server environment. Set it to the intended Super Admin email (contact@prabhat.online) in Vercel Project Settings → Environment Variables, then redeploy. Bootstrap + recovery are both disabled until this is set.'
+                  : reason === 'already_complete'
+                    ? 'A Super Admin account already exists, so the one-time bootstrap is disabled. If you have lost the password, use the recovery page (/admin/recover) to reset it securely via email verification.'
+                    : reason === 'unavailable'
+                      ? 'Bootstrap is temporarily unavailable — the Firebase Admin SDK did not initialize. Check the FIREBASE_ADMIN_* environment variables (PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY) in Vercel, then redeploy.'
+                      : 'A Super Admin already exists, or the bootstrap email is not configured. Bootstrap is disabled.'}
+              </AlertDescription></Alert>
             )}
             {available && !otpRequestId && (
               <Button className="w-full" onClick={requestOtp} disabled={loading}>

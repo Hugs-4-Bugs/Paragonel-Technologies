@@ -211,4 +211,60 @@ describe('paragonelAIFlow — model-success path (mocked Genkit)', () => {
     expect(out.fallbackReason).toBe('missing_key');
     expect(promptMock).not.toHaveBeenCalled(); // never reached the model call
   });
+
+  describe('Degraded answer — surfaces real knowledge content when the provider is down (not just citation links)', () => {
+    it('missing_key + retrieved context → answer contains the ACTUAL knowledge content, not the generic "trouble reaching my knowledge service" message', async () => {
+      delete process.env.GEMINI_API_KEY;
+      delete process.env.GOOGLE_API_KEY;
+      delete process.env.GOOGLE_GENAI_API_KEY;
+      const out = await paragonelAIFlow(mkInput('What services do you offer?'));
+      // The degraded answer surfaces the real retrieved knowledge content.
+      expect(out.answer).toContain('Paragonel Technologies is an engineering services company.');
+      // It no longer shows the generic "trouble reaching my knowledge service" string
+      // when context is available (the visitor gets a useful, accurate answer instead).
+      expect(out.answer).not.toContain("I'm having trouble reaching my knowledge service");
+      // Honest signaling preserved: it is still a fallback with the provider reason.
+      expect(out.intent).toBe('fallback');
+      expect(out.fallbackReason).toBe('missing_key');
+      // Citations still point to the canonical page for full detail.
+      expect(out.citations).toEqual(expect.arrayContaining([{ title: 'Paragonel — Company Overview', path: '/about' }]));
+      // Never fabricated — the content is the real knowledge entry, verbatim.
+      expect(out.answer).toContain('Here\'s what I can share about that:');
+    });
+
+    it('missing_key + NO retrieved context → keeps the honest generic fallback (no fabricated content)', async () => {
+      delete process.env.GEMINI_API_KEY;
+      delete process.env.GOOGLE_API_KEY;
+      delete process.env.GOOGLE_GENAI_API_KEY;
+      const out = await paragonelAIFlow({ question: 'hi' }); // no retrievedContext
+      expect(out.fallbackReason).toBe('missing_key');
+      // No context → the honest generic fallback, NOT a fabricated answer.
+      expect(out.answer).toContain("I'm having trouble reaching my knowledge service");
+      expect(out.answer).not.toContain("Here's what I can share about that:");
+    });
+
+    it('quota failure + context → also surfaces the real knowledge content (any provider failure, not just missing_key)', async () => {
+      process.env.GEMINI_API_KEY = 'test-key';
+      const quotaErr = Object.assign(new Error('Resource has been exhausted (quota)'), { status: 429 });
+      promptMock.mockRejectedValueOnce(quotaErr);
+      const out = await paragonelAIFlow(mkInput('Tell me about AcquisitionOS.'));
+      expect(out.fallbackReason).toBe('quota');
+      expect(out.answer).toContain('Paragonel Technologies is an engineering services company.');
+      expect(out.answer).not.toContain("I'm having trouble reaching my knowledge service");
+    });
+
+    it('the degraded snippet is bounded (≤ 500 chars) + does not dump the entire knowledge entry', async () => {
+      delete process.env.GEMINI_API_KEY;
+      delete process.env.GOOGLE_API_KEY;
+      delete process.env.GOOGLE_GENAI_API_KEY;
+      // A long content entry to verify the snippet is bounded.
+      const longCtx = [{ title: 'Long Entry', content: 'X'.repeat(2000), category: 'company', canonicalPath: '/x' }];
+      const { paragonelAIFlow: flow } = await import('@/ai/flows/paragonel-ai-flow');
+      const out = await flow({ question: 'what is this', retrievedContext: longCtx });
+      // The snippet (between the intro + the footer) must be bounded.
+      const snippet = out.answer.split('\n\n').filter((s) => s.startsWith('X'))[0] ?? '';
+      expect(snippet.length).toBeLessThanOrEqual(510); // 500 + ellipsis tolerance
+      expect(out.answer).toContain('…'); // truncated
+    });
+  });
 });
