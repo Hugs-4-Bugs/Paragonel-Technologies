@@ -75,7 +75,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (isLoginPage) return <>{children}</>;
 
   return (
-    <div className="flex h-screen w-full bg-zinc-50 dark:bg-zinc-950 overflow-hidden isolate">
+    <div className="flex h-screen w-full bg-zinc-50 dark:bg-zinc-950 overflow-hidden isolate" data-lenis-prevent>
+      {/* data-lenis-prevent on the admin root: the global Lenis smooth-scroll
+          (mounted in AppShell) hijacks wheel/touch events to scroll the WINDOW.
+          But this root is overflow-hidden (the window can't scroll), so Lenis
+          consumed the wheel events + the Radix ScrollArea viewports (sidebar +
+          main content) never received them — the "must drag the scrollbar"
+          bug. data-lenis-prevent tells Lenis to SKIP events originating inside
+          the admin (per Lenis 1.3.x composedPath check), so native wheel/
+          trackpad/touch scroll reaches the ScrollArea viewports directly. This
+          is the SAME proven pattern the chat-widget uses (chat-section.tsx).
+          Scoped to admin only — the public site keeps Lenis smooth-scroll. */}
       <style dangerouslySetInnerHTML={{ __html: `
         header:not(.admin-header), footer:not(.admin-footer), .chat-widget { display: none !important; }
         main { padding-top: 0 !important; }
@@ -117,7 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0 py-6 px-3">
+          <ScrollArea className="flex-1 min-h-0 py-6 px-3" data-lenis-prevent>
             {!isCollapsed && (
               <div className="px-3 mb-6">
                 <div className="relative">
@@ -191,7 +201,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <ScrollArea className="flex-1 min-h-0 w-full h-full">
+        <ScrollArea className="flex-1 min-h-0 w-full h-full" data-lenis-prevent>
           {/* NOTE: NO h-full on this inner div — h-full would force it to the
               ScrollArea viewport height, making scrollHeight === clientHeight
               so tall content gets CLIPPED instead of scrolling (the "user must

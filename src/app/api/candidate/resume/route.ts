@@ -173,19 +173,44 @@ export async function POST(request: Request) {
   }
 
   // Record the resume ref on the candidate profile (storage path, NOT a URL).
+  // Wrapped in try/catch (PHASE B4 fix): previously this Firestore write was
+  // UNguarded — if it failed (Firestore unavailable / permissions / transient),
+  // the route threw an unhandled 500 AFTER the resume was already stored, so the
+  // resume was orphaned in Storage with no profile ref + the candidate saw a
+  // generic "Internal Server Error" with no classified reason or recovery path.
+  // Now: on failure, best-effort delete the just-uploaded Storage object (avoid
+  // the orphan) + return a classified 500 the candidate can understand + retry.
   const now = Timestamp.fromMillis(Date.now());
-  await db.collection('candidates').doc(email).set(
-    {
-      email,
-      resumeStoragePath: objectPath,
-      resumeFileName: safeName,
-      resumeContentType: contentType,
-      resumeUploadedAt: now,
-      resumeParsedAt: parsed ? now : null,
-      updatedAt: now,
-    },
-    { merge: true },
-  );
+  try {
+    await db.collection('candidates').doc(email).set(
+      {
+        email,
+        resumeStoragePath: objectPath,
+        resumeFileName: safeName,
+        resumeContentType: contentType,
+        resumeUploadedAt: now,
+        resumeParsedAt: parsed ? now : null,
+        updatedAt: now,
+      },
+      { merge: true },
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[candidate/resume] profile write failed:', msg);
+    // Best-effort cleanup of the just-uploaded object so it does not orphan.
+    try {
+      await storage.bucket().file(objectPath).delete();
+    } catch {
+      // Non-fatal — the orphan is logged above for later cleanup.
+    }
+    const reason =
+      /permission|forbidden|403/i.test(msg)
+        ? 'Could not save resume metadata (permission denied). The Firebase service account needs Firestore write access.'
+      : /not.?found|404|collection/i.test(msg)
+        ? 'Could not save resume metadata (Firestore unavailable). Please try again or contact support.'
+        : 'Could not save resume metadata. Please try again or contact support.';
+    return jsonError(500, reason);
+  }
 
   // Phase 4: delete the PREVIOUS resume object now that the new one is stored +
   // the profile points at the new path. Best-effort + non-fatal: a failure here
