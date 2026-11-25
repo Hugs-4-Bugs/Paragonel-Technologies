@@ -32,6 +32,7 @@ import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
 import { useAutosave, loadServerDraft } from '@/hooks/useAutosave';
 import { SaveStatusIndicator } from '@/components/cms/SaveStatusIndicator';
+import { JobStructuredSections } from '@/components/admin/job-structured-sections';
 
 const jobSchema = z.object({
   jobId: z.string().min(3, 'Job ID is required (e.g. ABC123)'),
@@ -48,6 +49,23 @@ const jobSchema = z.object({
   preferredSkills: z.string().optional().or(z.literal('')),
   seniority: z.string().optional().or(z.literal('')),
   educationRequired: z.string().optional().or(z.literal('')),
+  // Structured job-posting fields (Task 2/3) — all optional.
+  summary: z.string().max(500).optional().or(z.literal('')),
+  responsibilities: z.string().max(5000).optional().or(z.literal('')),
+  qualifications: z.string().max(5000).optional().or(z.literal('')),
+  preferredQualifications: z.string().max(5000).optional().or(z.literal('')),
+  benefits: z.string().max(3000).optional().or(z.literal('')),
+  certifications: z.string().max(500).optional().or(z.literal('')),
+  reportingManager: z.string().max(200).optional().or(z.literal('')),
+  shiftHours: z.string().max(200).optional().or(z.literal('')),
+  travelRequired: z.string().max(200).optional().or(z.literal('')),
+  aboutTeam: z.string().max(3000).optional().or(z.literal('')),
+  companyCulture: z.string().max(3000).optional().or(z.literal('')),
+  additionalNotes: z.string().max(3000).optional().or(z.literal('')),
+  screeningQuestions: z.string().max(3000).optional().or(z.literal('')),
+  resumeRequired: z.boolean().optional(),
+  linkedinRequired: z.boolean().optional(),
+  portfolioRequired: z.boolean().optional(),
   description: z.string().min(50, 'Full job description is required'),
   deadline: z.string().optional(),
   status: z.string().default('Active'),
@@ -80,6 +98,22 @@ export default function NewJobPage() {
       preferredSkills: '',
       seniority: '',
       educationRequired: '',
+      summary: '',
+      responsibilities: '',
+      qualifications: '',
+      preferredQualifications: '',
+      benefits: '',
+      certifications: '',
+      reportingManager: '',
+      shiftHours: '',
+      travelRequired: '',
+      aboutTeam: '',
+      companyCulture: '',
+      additionalNotes: '',
+      screeningQuestions: '',
+      resumeRequired: false,
+      linkedinRequired: false,
+      portfolioRequired: false,
       description: '',
       deadline: '',
       status: 'Active',
@@ -438,6 +472,8 @@ export default function NewJobPage() {
               />
             </CardContent>
           </Card>
+
+          <JobStructuredSections form={form} />
 
           <div className="flex justify-end gap-4 pt-4 sticky bottom-6 z-10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md p-4 rounded-2xl border shadow-xl">
             <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading} size="lg">

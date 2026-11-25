@@ -28,16 +28,19 @@ describe('recruitment status architecture', () => {
       expect(candidateStatusFromInternal('assessment_review')).toBe('under_review');
     });
 
-    it('maps interview stages → interview_in_progress', () => {
+    it('maps interview stage → interview_in_progress; feedback → interview_completed', () => {
       expect(candidateStatusFromInternal('interview')).toBe('interview_in_progress');
-      expect(candidateStatusFromInternal('interview_feedback')).toBe('interview_in_progress');
+      expect(candidateStatusFromInternal('interview_feedback')).toBe('interview_completed');
     });
 
-    it('maps internal-only hold/approval stages → decision_pending (never exposes internal_hold)', () => {
+    it('maps internal-only hold/approval/deliberation stages → decision_pending (never exposes them)', () => {
       expect(candidateStatusFromInternal('internal_hold')).toBe('decision_pending');
       expect(candidateStatusFromInternal('approval_pending')).toBe('decision_pending');
       expect(candidateStatusFromInternal('rejection_approval')).toBe('decision_pending');
       expect(candidateStatusFromInternal('offer_approval')).toBe('decision_pending');
+      expect(candidateStatusFromInternal('internal_deliberation')).toBe('decision_pending');
+      expect(candidateStatusFromInternal('reference_check')).toBe('decision_pending');
+      expect(candidateStatusFromInternal('compensation_review')).toBe('decision_pending');
     });
 
     it('maps terminal stages directly', () => {
@@ -52,12 +55,19 @@ describe('recruitment status architecture', () => {
     it('isValidCandidateStatus accepts valid + rejects invalid', () => {
       expect(isValidCandidateStatus('submitted')).toBe(true);
       expect(isValidCandidateStatus('shortlisted')).toBe(true);
+      expect(isValidCandidateStatus('interview_rescheduled')).toBe(true);
+      expect(isValidCandidateStatus('interview_completed')).toBe(true);
+      expect(isValidCandidateStatus('on_hold')).toBe(true);
+      expect(isValidCandidateStatus('not_selected')).toBe(true);
       expect(isValidCandidateStatus('nonsense')).toBe(false);
       expect(isValidCandidateStatus(undefined)).toBe(false);
     });
 
     it('isValidInternalStage accepts valid + rejects invalid', () => {
       expect(isValidInternalStage('new')).toBe(true);
+      expect(isValidInternalStage('internal_deliberation')).toBe(true);
+      expect(isValidInternalStage('reference_check')).toBe(true);
+      expect(isValidInternalStage('compensation_review')).toBe(true);
       expect(isValidInternalStage('internal_hold')).toBe(true);
       expect(isValidInternalStage('nonsense')).toBe(false);
     });

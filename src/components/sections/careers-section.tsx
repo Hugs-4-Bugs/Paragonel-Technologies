@@ -4,7 +4,6 @@
 import React, { useState, useMemo } from 'react';
 import type { Job } from '@/types';
 import { JobCard } from '@/components/job-card';
-import { ApplyJobModal } from '@/components/apply-job-modal';
 import { JobDescriptionModal } from '@/components/job-description-modal';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Input } from '@/components/ui/input';
@@ -30,10 +29,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
   const [employmentTypeFilter, setEmploymentTypeFilter] = useState('All Types');
   const [dateFilter, setDateFilter] = useState('Any time');
   const [workArrangementFilter, setWorkArrangementFilter] = useState('Any');
-  const [showOpenRoles, setShowOpenRoles] = useState(true); 
-
-  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
-  const [selectedJobForApplication, setSelectedJobForApplication] = useState<Job | null>(null);
+  const [showOpenRoles, setShowOpenRoles] = useState(true);
 
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
   const [selectedJobForDescription, setSelectedJobForDescription] = useState<Job | null>(null);
@@ -51,26 +47,11 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
   }, [initialJobs]);
 
   const handleApplyNowClick = async (job: Job) => {
-    // Check the REAL server session at click time (not the AuthProvider's
-    // cached state) so a freshly-logged-in candidate is never falsely
-    // redirected to login. Mirrors JobApplyCta on the detail page — eliminates
-    // the stale-context redirect loop (Issue B) on the careers list.
-    try {
-      const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
-      if (res.ok) {
-        setSelectedJobForApplication(job);
-        setIsApplyModalOpen(true);
-        return;
-      }
-    } catch {
-      // Network error — fall through to the login redirect (server will 401).
-    }
-    // Preserve the pending-apply intent for the post-login return; the
-    // server-verified /auth/login page honours ?redirect= to bring the
-    // user back here after they authenticate.
-    localStorage.setItem('pendingApplyJobId', job.id);
-    localStorage.setItem('actionAfterLogin', 'applyJobModalOpen');
-    router.push(`/auth/login?redirect=${encodeURIComponent('/careers')}`);
+    // Navigate to the dedicated full-page application route (/careers/[id]/apply).
+    // The apply page performs its own auth check + redirects to /auth/login?
+    // redirect=/careers/[id]/apply if no candidate session — preserving the
+    // intended job. No modal — the full-page form is the ONLY apply path (Phase 3).
+    router.push(`/careers/${job.id}/apply`);
   };
 
   const handleViewDetailsClick = (job: Job) => {
@@ -277,7 +258,6 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
           </>
         )}
       </div>
-      <ApplyJobModal isOpen={isApplyModalOpen} onOpenChange={setIsApplyModalOpen} job={selectedJobForApplication} />
       <JobDescriptionModal isOpen={isDescriptionModalOpen} onOpenChange={setIsDescriptionModalOpen} job={selectedJobForDescription} />
     </section>
   );

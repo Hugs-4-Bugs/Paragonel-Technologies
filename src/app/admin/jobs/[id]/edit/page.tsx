@@ -26,6 +26,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { JobStructuredSections } from '@/components/admin/job-structured-sections';
 import { ArrowLeft, Loader2, Save, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
@@ -45,6 +46,24 @@ const jobSchema = z.object({
   preferredSkills: z.string().optional().or(z.literal('')),
   seniority: z.string().optional().or(z.literal('')),
   educationRequired: z.string().optional().or(z.literal('')),
+  // Structured job-posting fields (Task 2/3) — must be present so an edit
+  // round-trips them (does not wipe them when the admin saves other fields).
+  summary: z.string().max(500).optional().or(z.literal('')),
+  responsibilities: z.string().max(5000).optional().or(z.literal('')),
+  qualifications: z.string().max(5000).optional().or(z.literal('')),
+  preferredQualifications: z.string().max(5000).optional().or(z.literal('')),
+  benefits: z.string().max(3000).optional().or(z.literal('')),
+  certifications: z.string().max(500).optional().or(z.literal('')),
+  reportingManager: z.string().max(200).optional().or(z.literal('')),
+  shiftHours: z.string().max(200).optional().or(z.literal('')),
+  travelRequired: z.string().max(200).optional().or(z.literal('')),
+  aboutTeam: z.string().max(3000).optional().or(z.literal('')),
+  companyCulture: z.string().max(3000).optional().or(z.literal('')),
+  additionalNotes: z.string().max(3000).optional().or(z.literal('')),
+  screeningQuestions: z.string().max(3000).optional().or(z.literal('')),
+  resumeRequired: z.boolean().optional(),
+  linkedinRequired: z.boolean().optional(),
+  portfolioRequired: z.boolean().optional(),
   description: z.string().min(50, 'Full job description is required'),
   deadline: z.string().optional(),
   status: z.string().default('Active'),
@@ -86,6 +105,22 @@ export default function EditJobPage() {
             preferredSkills: Array.isArray(j.preferredSkills) ? j.preferredSkills.join(', ') : (j.preferredSkills || ''),
             seniority: j.seniority || '',
             educationRequired: j.educationRequired || '',
+            summary: j.summary || '',
+            responsibilities: j.responsibilities || '',
+            qualifications: j.qualifications || '',
+            preferredQualifications: j.preferredQualifications || '',
+            benefits: j.benefits || '',
+            certifications: j.certifications || '',
+            reportingManager: j.reportingManager || '',
+            shiftHours: j.shiftHours || '',
+            travelRequired: j.travelRequired || '',
+            aboutTeam: j.aboutTeam || '',
+            companyCulture: j.companyCulture || '',
+            additionalNotes: j.additionalNotes || '',
+            screeningQuestions: j.screeningQuestions || '',
+            resumeRequired: !!j.resumeRequired,
+            linkedinRequired: !!j.linkedinRequired,
+            portfolioRequired: !!j.portfolioRequired,
             description: j.description,
             deadline: j.deadline || '',
             status: j.status || (j.isActive ? 'Active' : 'Draft'),
@@ -264,6 +299,8 @@ export default function EditJobPage() {
               )} />
             </CardContent>
           </Card>
+
+          <JobStructuredSections form={form} />
 
           <div className="flex justify-end gap-4 sticky bottom-6 z-10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md p-4 rounded-2xl border shadow-xl">
             <Button variant="outline" onClick={() => router.back()} disabled={isLoading} size="lg">Cancel</Button>

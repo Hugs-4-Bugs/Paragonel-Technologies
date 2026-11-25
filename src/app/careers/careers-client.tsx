@@ -20,7 +20,7 @@ import {
   Monitor
 } from 'lucide-react';
 import { JobCard } from '@/components/job-card';
-import { ApplyJobModal } from '@/components/apply-job-modal';
+
 import { JobDescriptionModal } from '@/components/job-description-modal';
 import { CareerAssistant } from '@/components/careers/career-assistant';
 import { useAuth } from '@/contexts/auth-context';
@@ -55,8 +55,6 @@ export function CareersClient({ jobs }: CareersClientProps) {
   const [showOpenRoles, setShowOpenRoles] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
-  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
-  const [selectedJobForApplication, setSelectedJobForApplication] = useState<any>(null);
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
   const [selectedJobForDescription, setSelectedJobForDescription] = useState<any>(null);
 
@@ -110,26 +108,13 @@ export function CareersClient({ jobs }: CareersClientProps) {
   }, [jobs, searchTerm, jobIdSearch, locationFilter, departmentFilter, employmentTypeFilter, workArrangementFilter, dateFilter, showOpenRoles]);
 
   const handleApply = async (job: any) => {
-    // Check the REAL server session at click time (not the AuthProvider's
-    // cached state) so a freshly-logged-in candidate is never falsely
-    // redirected to login. The AuthProvider's isAuthenticated is refreshed on
-    // login/signup now (see auth-context.refresh), but a direct /api/auth/me
-    // check here is the robust, race-free source of truth at click time —
-    // mirroring JobApplyCta on the detail page. This eliminates the
-    // stale-context redirect loop (Issue B).
-    try {
-      const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
-      if (res.ok) {
-        setSelectedJobForApplication(job);
-        setIsApplyModalOpen(true);
-        return;
-      }
-    } catch {
-      // Network error — fall through to the login redirect (server will 401).
-    }
-    localStorage.setItem('pendingApplyJobId', job.id);
-    localStorage.setItem('actionAfterLogin', 'applyJobModalOpen');
-    router.push(`/auth/login?redirect=${encodeURIComponent('/careers')}`);
+    // Navigate to the dedicated full-page application route (/careers/[id]/apply).
+    // The apply page performs its own auth check + redirects to /auth/login?
+    // redirect=/careers/[id]/apply if no candidate session — preserving the
+    // intended job so the candidate lands on THIS application page after auth.
+    // No modal — the full-page form is the ONLY apply path (Phase 3). This
+    // replaces the cramped ApplyJobModal that previously opened from the list.
+    router.push(`/careers/${job.id}/apply`);
   };
 
   const handleView = (job: any) => {
@@ -137,24 +122,21 @@ export function CareersClient({ jobs }: CareersClientProps) {
     setIsDescriptionModalOpen(true);
   };
 
-  // Post-login return: if the candidate was sent to /auth/login from an Apply
-  // click (careers list), the pending job id is in localStorage. On mount, once
-  // authenticated, re-open that job's apply modal so the candidate lands back
-  // where they intended instead of a generic /careers with no follow-through.
+  // Post-login return: if a candidate was sent to /auth/login from an Apply
+  // click BEFORE this fix (when the modal path set localStorage flags), clear
+  // any stale flags + navigate to that job's full-page application route so
+  // the candidate lands where they intended. handleApply now navigates
+  // directly (no flags set), so this only clears legacy state.
   useEffect(() => {
     if (!isAuthenticated) return;
     const pendingJobId = typeof window !== 'undefined' ? localStorage.getItem('pendingApplyJobId') : null;
     const action = typeof window !== 'undefined' ? localStorage.getItem('actionAfterLogin') : null;
     if (action !== 'applyJobModalOpen' || !pendingJobId) return;
-    const job = jobs.find((j) => String(j.id) === String(pendingJobId) || String(j.jobId) === String(pendingJobId));
     // Clear the flags regardless so a stale pending id never loops.
     localStorage.removeItem('pendingApplyJobId');
     localStorage.removeItem('actionAfterLogin');
-    if (job) {
-      setSelectedJobForApplication(job);
-      setIsApplyModalOpen(true);
-    }
-  }, [isAuthenticated, jobs]);
+    router.push(`/careers/${pendingJobId}/apply`);
+  }, [isAuthenticated, jobs, router]);
 
   return (
     <div className="bg-[#1a1b3a] min-h-screen text-white">
@@ -336,7 +318,6 @@ export function CareersClient({ jobs }: CareersClientProps) {
         </div>
       </section>
 
-      <ApplyJobModal isOpen={isApplyModalOpen} onOpenChange={setIsApplyModalOpen} job={selectedJobForApplication} />
       <JobDescriptionModal isOpen={isDescriptionModalOpen} onOpenChange={setIsDescriptionModalOpen} job={selectedJobForDescription} />
     </div>
   );

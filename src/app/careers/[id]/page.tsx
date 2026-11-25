@@ -191,12 +191,41 @@ export default async function JobDetailPage({
           </dl>
         </header>
 
+        {typeof job.summary === 'string' && job.summary.trim() ? (
+          <section className="mt-8">
+            <p className="text-lg text-foreground/90 leading-relaxed font-medium border-l-4 border-primary pl-4">
+              {job.summary}
+            </p>
+          </section>
+        ) : null}
+
         <section className="mt-8">
           <h2 className="text-xl font-semibold text-foreground mb-3">About the role</h2>
           <p className="whitespace-pre-line text-foreground/90 leading-relaxed text-base">
             {job.description}
           </p>
         </section>
+
+        {typeof job.responsibilities === 'string' && job.responsibilities.trim() ? (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-3">Key responsibilities</h2>
+            <p className="whitespace-pre-line text-foreground/90 leading-relaxed text-base">{job.responsibilities}</p>
+          </section>
+        ) : null}
+
+        {typeof job.qualifications === 'string' && job.qualifications.trim() ? (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-3">Required qualifications</h2>
+            <p className="whitespace-pre-line text-foreground/90 leading-relaxed text-base">{job.qualifications}</p>
+          </section>
+        ) : null}
+
+        {typeof job.preferredQualifications === 'string' && job.preferredQualifications.trim() ? (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-3">Preferred qualifications</h2>
+            <p className="whitespace-pre-line text-foreground/90 leading-relaxed text-base">{job.preferredQualifications}</p>
+          </section>
+        ) : null}
 
         {Array.isArray(job.skills) && job.skills.length > 0 ? (
           <section className="mt-8">
@@ -211,6 +240,68 @@ export default async function JobDetailPage({
                 </li>
               ))}
             </ul>
+          </section>
+        ) : null}
+
+        {(typeof job.benefits === 'string' && job.benefits.trim()) ||
+        (typeof job.certifications === 'string' && job.certifications.trim()) ? (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-3">Compensation & benefits</h2>
+            {typeof job.benefits === 'string' && job.benefits.trim() ? (
+              <p className="whitespace-pre-line text-foreground/90 leading-relaxed text-base mb-3">{job.benefits}</p>
+            ) : null}
+            {typeof job.certifications === 'string' && job.certifications.trim() ? (
+              <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Certifications: </span>{job.certifications}</p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {(typeof job.aboutTeam === 'string' && job.aboutTeam.trim()) ||
+        (typeof job.companyCulture === 'string' && job.companyCulture.trim()) ? (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-3">Team & culture</h2>
+            {typeof job.aboutTeam === 'string' && job.aboutTeam.trim() ? (
+              <p className="whitespace-pre-line text-foreground/90 leading-relaxed text-base mb-3">{job.aboutTeam}</p>
+            ) : null}
+            {typeof job.companyCulture === 'string' && job.companyCulture.trim() ? (
+              <p className="whitespace-pre-line text-foreground/90 leading-relaxed text-base">{job.companyCulture}</p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {(typeof job.shiftHours === 'string' && job.shiftHours.trim()) ||
+        (typeof job.travelRequired === 'string' && job.travelRequired.trim()) ? (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-3">Working conditions</h2>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              {typeof job.shiftHours === 'string' && job.shiftHours.trim() ? <li><span className="font-medium text-foreground">Working hours: </span>{job.shiftHours}</li> : null}
+              {typeof job.travelRequired === 'string' && job.travelRequired.trim() ? <li><span className="font-medium text-foreground">Travel: </span>{job.travelRequired}</li> : null}
+            </ul>
+          </section>
+        ) : null}
+
+        {job.resumeRequired || job.linkedinRequired || job.portfolioRequired ||
+        (typeof job.screeningQuestions === 'string' && job.screeningQuestions.trim()) ? (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-3">Application requirements</h2>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              {job.resumeRequired ? <li>Resume required</li> : null}
+              {job.linkedinRequired ? <li>LinkedIn profile required</li> : null}
+              {job.portfolioRequired ? <li>Portfolio / GitHub required</li> : null}
+            </ul>
+            {typeof job.screeningQuestions === 'string' && job.screeningQuestions.trim() ? (
+              <div className="mt-3">
+                <p className="font-medium text-foreground text-sm mb-1">Screening questions</p>
+                <p className="whitespace-pre-line text-foreground/90 leading-relaxed text-base">{job.screeningQuestions}</p>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {typeof job.additionalNotes === 'string' && job.additionalNotes.trim() ? (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-3">Additional notes</h2>
+            <p className="whitespace-pre-line text-foreground/90 leading-relaxed text-base">{job.additionalNotes}</p>
           </section>
         ) : null}
 
