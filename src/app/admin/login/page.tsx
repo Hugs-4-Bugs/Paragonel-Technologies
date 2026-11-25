@@ -24,6 +24,7 @@ export default function AdminLoginPage() {
   const [step1Token, setStep1Token] = useState('');
   const [otpRequestId, setOtpRequestId] = useState('');
   const [deliveryNote, setDeliveryNote] = useState<string | undefined>();
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -43,10 +44,11 @@ export default function AdminLoginPage() {
         return;
       }
       setStep1Token(data.step1Token);
-      setOtpRequestId(data.otpRequestId);
+      setMfaRequired(!!data.mfaRequired);
+      setOtpRequestId(data.otpRequestId || '');
       setDeliveryNote(data.emailDeliveryNote);
       setStep(2);
-      toast({ title: 'Password accepted', description: 'Enter the code sent to your email.' });
+      toast({ title: 'Password accepted', description: data.mfaRequired ? 'Enter the code from your authenticator app.' : 'Enter the code sent to your email.' });
     } catch {
       toast({ title: 'Error', description: 'Network error.', variant: 'destructive' });
     } finally {
@@ -111,7 +113,9 @@ export default function AdminLoginPage() {
             <CardDescription>
               {step === 1
                 ? 'Secure two-step login for Paragonel administrators.'
-                : `A one-time code was sent to ${email}. Password accepted — enter the code to finish.`}
+                : mfaRequired
+                  ? `Enter the 6-digit code from your authenticator app (or a backup code).`
+                  : `A one-time code was sent to ${email}. Password accepted — enter the code to finish.`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -139,7 +143,7 @@ export default function AdminLoginPage() {
                   {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying…</> : 'Log in'}
                 </Button>
                 <div className="flex justify-between text-sm">
-                  <button type="button" className="text-muted-foreground hover:text-foreground underline" onClick={resendCode} disabled={loading}>Resend code</button>
+                  {!mfaRequired && <button type="button" className="text-muted-foreground hover:text-foreground underline" onClick={resendCode} disabled={loading}>Resend code</button>}
                   <button type="button" className="text-muted-foreground hover:text-foreground underline" onClick={() => { setStep(1); setCode(''); }}>Back</button>
                 </div>
               </form>

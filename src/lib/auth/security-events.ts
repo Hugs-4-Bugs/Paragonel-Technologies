@@ -21,7 +21,8 @@ export type SecurityEventType =
   | 'bootstrap_attempt' | 'bootstrap_success'
   | 'admin_created' | 'admin_invited' | 'role_changed'
   | 'admin_suspended' | 'admin_reactivated' | 'session_revoked'
-  | 'unauthorized_access';
+  | 'unauthorized_access'
+  | 'mfa_failed' | 'mfa_enrolled' | 'mfa_disabled' | 'mfa_disable_failed';
 
 export interface SecurityEventInput {
   type: SecurityEventType;

@@ -11,7 +11,9 @@
  *     transactional duplicate check — no second doc written.
  *   - A POST against a non-published job (isActive:false) is rejected (404).
  *   - A POST against a non-existent job is rejected (404).
- *   - A POST with an incomplete profile is rejected (422).
+ *   - A POST with an incomplete profile is ACCEPTED (201) — profile completeness
+ *     is NEVER a gate (Phase 2A: a candidate with an incomplete profile can
+ *     submit a valid application). A POST with NO profile doc is also accepted.
  *
  * Firebase Admin + the email transport are mocked. The Firestore fake
  * serializes the transaction so the dup check + insert are atomic.
@@ -145,14 +147,48 @@ describe('POST /api/job-applications — authenticated submission', () => {
     expect(res.status).toBe(404);
   });
 
-  it('rejects an incomplete profile with 422 (meetsApplicationMinimum gate)', async () => {
+  it('ACCEPTS an application with an incomplete profile (201) — profile completeness is NEVER a gate (Phase 2A)', async () => {
     await seedPublishedJob();
-    // No skills, no headline, no designation → fails the minimum.
+    // No skills, no headline, no designation, no phone, no resume — minimal.
+    await fakeDb.collection('candidates').doc(EMAIL).set({ email: EMAIL, fullName: 'Jane Doe' });
+    const res = await POST(applyReq());
+    expect(res.status).toBe(201);
+    const apps = await fakeDb.collection('jobApplications').get();
+    expect(apps.size).toBe(1);
+    const doc = apps.docs[0].data() as { candidateName: string; candidateEmail: string };
+    expect(doc.candidateName).toBe('Jane Doe');
+    expect(doc.candidateEmail).toBe(EMAIL);
+  });
+
+  it('ACCEPTS an application with NO profile doc at all (201)', async () => {
+    await seedPublishedJob();
+    // No candidates/{email} doc exists.
+    const res = await POST(applyReq());
+    expect(res.status).toBe(201);
+    const apps = await fakeDb.collection('jobApplications').get();
+    expect(apps.size).toBe(1);
+  });
+
+  it('rejects an application when the job requires a resume but none is supplied (422)', async () => {
+    await fakeDb.collection('jobs').doc(JOB_ID).set({
+      title: 'Senior React Engineer', isActive: true, deletedAt: null, resumeRequired: true,
+    });
+    // No resume in profile + none in the form.
     await fakeDb.collection('candidates').doc(EMAIL).set({ email: EMAIL, fullName: 'Jane Doe' });
     const res = await POST(applyReq());
     expect(res.status).toBe(422);
     const data = await res.json();
-    expect(data.incomplete).toBe(true);
+    expect(data.resumeRequired).toBe(true);
+  });
+
+  it('rejects a client-supplied resumeStoragePath that is NOT under the candidate\'s own prefix (400)', async () => {
+    await seedPublishedJob();
+    await seedCompleteProfile();
+    const res = await POST(new Request('http://localhost/api/job-applications', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: JOB_ID, confirmSubmission: true, resumeStoragePath: 'candidates/someone-else@example.com/resumes/evil.pdf' }),
+    }));
+    expect(res.status).toBe(400);
   });
 
   it('rejects when confirmSubmission is not true (validation)', async () => {

@@ -25,7 +25,6 @@ import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { verifySession } from '@/lib/auth/sessions';
 import { checkRateLimit, getClientId } from '@/lib/submission-security';
-import { meetsApplicationMinimum } from '@/lib/auth/candidate-profile';
 import { logSecurityEvent } from '@/lib/auth/security-events';
 import { getClientIp, jsonError } from '@/lib/auth/route-helpers';
 import { validateResumePath } from '@/lib/resume-security';
@@ -36,6 +35,15 @@ export const runtime = 'nodejs';
 
 const applySchema = z.object({
   jobId: z.string().trim().min(1, 'Job ID is required').max(100),
+  // Form-supplied identity (prefilled from the profile in the UI, editable).
+  // Profile completeness is NEVER a gate — these fall back to the profile.
+  fullName: z.string().trim().max(200).optional().or(z.literal('')),
+  phone: z.string().trim().max(32).optional().or(z.literal('')),
+  // Optional resume path from an inline upload (stored via
+  // /api/candidate/resume under candidates/{email}/resumes/). Ownership is
+  // enforced server-side (the path MUST be under the authenticated candidate's
+  // own prefix).
+  resumeStoragePath: z.string().trim().max(300).optional().or(z.literal('')),
   coverLetter: z.string().trim().max(5000).optional().or(z.literal('')),
   expectedSalary: z.string().trim().max(100).optional().or(z.literal('')),
   noticePeriod: z.string().trim().max(100).optional().or(z.literal('')),
@@ -109,22 +117,42 @@ export async function POST(request: Request) {
     return jsonError(404, 'This role is no longer accepting applications.');
   }
 
-  // 4. Read the candidate profile → verify minimum application info.
+  // 4. Read the candidate profile (BEST-EFFORT prefill fallback). Profile
+  //    completeness is NEVER a gate for applying — a candidate with an
+  //    incomplete (or even non-existent) profile can submit a valid
+  //    application. The form supplies fullName/phone/resumeStoragePath; the
+  //    profile is only a fallback for fields the candidate left blank.
   const profileSnap = await db.collection('candidates').doc(email).get();
-  if (!profileSnap.exists) {
-    return NextResponse.json(
-      { error: 'Please complete your candidate profile before applying.', incomplete: true, redirect: '/candidate/profile' },
-      { status: 422 },
-    );
+  const profile = profileSnap.exists
+    ? (profileSnap.data() as { fullName?: string; phone?: string; skills?: string[]; resumeStoragePath?: string })
+    : {};
+
+  // 5. Resume handling. The resume is OPTIONAL by default. A job may set
+  //    resumeRequired:true to require it (the apply form communicates this
+  //    before submission). The candidate may supply a resumeStoragePath from
+  //    an inline upload (stored via /api/candidate/resume under
+  //    candidates/{email}/resumes/). OWNERSHIP is enforced: the path MUST be
+  //    under the authenticated candidate's own prefix — a client cannot
+  //    reference another candidate's resume. The shape is validated by
+  //    validateResumePath.
+  const jobData = jobSnap.data() as { resumeRequired?: boolean } | undefined;
+  const resumeRequired = !!(jobData?.resumeRequired);
+  let resumePath = '';
+  if (typeof data.resumeStoragePath === 'string' && data.resumeStoragePath) {
+    const ownerPrefix = `candidates/${email}/resumes/`;
+    if (data.resumeStoragePath.startsWith(ownerPrefix) && validateResumePath(data.resumeStoragePath)) {
+      resumePath = data.resumeStoragePath;
+    } else {
+      return jsonError(400, 'Invalid resume reference.');
+    }
   }
-  const profile = profileSnap.data() as {
-    fullName?: string; phone?: string; skills?: string[]; resumeStoragePath?: string;
-  };
-  if (!meetsApplicationMinimum(profile)) {
-    return NextResponse.json(
-      { error: 'Your profile is missing required information (name, phone or location, and at least one skill/headline/designation). Please complete it before applying.', incomplete: true, redirect: '/candidate/profile' },
-      { status: 422 },
-    );
+  if (!resumePath) {
+    // Fall back to the profile resume if the candidate has one (already owned:
+    // /api/candidate/resume writes under the same authenticated prefix).
+    resumePath = profile.resumeStoragePath && validateResumePath(profile.resumeStoragePath) ? profile.resumeStoragePath : '';
+  }
+  if (resumeRequired && !resumePath) {
+    return jsonError(422, 'A resume is required for this role. Please upload your resume to continue.', { resumeRequired: true });
   }
 
   // 5 + 6. Transactional duplicate-check + create. The duplicate check + the
@@ -154,12 +182,12 @@ export async function POST(request: Request) {
       tx.create(appRef, {
         applicationId,
         candidateId: email, // authenticated candidate
-        candidateName: profile.fullName,
+        candidateName: data.fullName || profile.fullName || '',
         candidateEmail: email, // verified account email
-        candidatePhone: profile.phone || '',
+        candidatePhone: data.phone || profile.phone || '',
         jobId: data.jobId,
         jobTitle: job.title || '',
-        resumeStoragePath: profile.resumeStoragePath || '',
+        resumeStoragePath: resumePath, // validated + ownership-checked at step 5
         skills: Array.isArray(profile.skills) ? profile.skills : [],
         coverLetter: data.coverLetter || '',
         expectedSalary: data.expectedSalary || '',
@@ -190,11 +218,10 @@ export async function POST(request: Request) {
   //    discards the successfully stored application.
   let resumeBuffer: Buffer | undefined;
   let resumeFileName: string | undefined;
-  const resumePath = profile.resumeStoragePath || '';
-  // Validate the stored path shape BEFORE fetching the object (defense-in-depth:
-  // a corrupted/injected profile value cannot make this attachment fetch an
-  // arbitrary Storage object). The path already comes from the authenticated
-  // candidate's own profile, so this is a shape guard, not the ownership gate.
+  // resumePath is the validated + ownership-checked path computed at step 5
+  // (form upload → profile fallback). Validate the shape BEFORE fetching the
+  // object (defense-in-depth: a corrupted value cannot make this attachment
+  // fetch an arbitrary Storage object). Ownership was already enforced.
   if (validateResumePath(resumePath)) {
     try {
       const bucket = getAdminBucket()?.bucket();
@@ -214,7 +241,7 @@ export async function POST(request: Request) {
   }
   const confirmation = await sendApplicationConfirmation({
     to: email,
-    candidateName: profile.fullName || '',
+    candidateName: data.fullName || profile.fullName || '',
     jobTitle: job.title || '',
     applicationId,
     appliedAt: new Date(),
