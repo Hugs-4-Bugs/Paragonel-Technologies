@@ -32,8 +32,12 @@ export async function GET() {
   // Public availability check — reveals ONLY whether recovery is configured
   // (bootstrap email set) + the masked email. Never reveals whether an account
   // exists (that's checked at request_otp time, with a uniform message).
+  // Names the EXACT missing env var (the name is not a secret) so the founder
+  // can configure correctly without guessing.
   const email = getBootstrapEmail();
-  if (!email) return jsonError(503, 'Recovery is not configured (SUPERADMIN_BOOTSTRAP_EMAIL not set).');
+  if (!email) {
+    return jsonError(503, 'Recovery is not configured: set SUPERADMIN_BOOTSTRAP_EMAIL in the server environment (Vercel Project Settings → Environment Variables).');
+  }
   const masked = `${email.slice(0, 2)}••••@${email.split('@')[1]}`;
   return NextResponse.json({
     available: true,
@@ -51,12 +55,21 @@ export async function POST(request: Request) {
   if (action === 'request_otp') {
     const r = await requestRecoveryOtp({ email: body.email ?? '', ip });
     if (!r.ok) {
-      // Uniform message for not_authorized / no_account to avoid enumeration.
-      const status = r.reason === 'rate_limited' ? 429 : r.reason === 'misconfigured' ? 503 : 400;
+      // Granular pre-flight reasons NAME the exact missing var so the founder
+      // can configure it. Enumeration-safe reasons (not_authorized/no_account)
+      // stay uniform to avoid leaking which emails have accounts.
+      const status =
+        r.reason === 'rate_limited' ? 429 :
+        ['bootstrap_email_not_set', 'otp_secret_not_set', 'firebase_not_initialized', 'smtp_not_configured'].includes(r.reason ?? '') ? 503 :
+        400;
       const msg =
         r.reason === 'rate_limited' ? 'Too many attempts. Try again later.' :
-        r.reason === 'misconfigured' ? 'Recovery is not configured.' :
-        r.reason === 'unavailable' ? 'Recovery is temporarily unavailable.' :
+        r.reason === 'bootstrap_email_not_set' ? 'Recovery is not configured: set SUPERADMIN_BOOTSTRAP_EMAIL in the server environment.' :
+        r.reason === 'otp_secret_not_set' ? 'Recovery is not configured: set OTP_SECRET (min 32 chars) in the server environment.' :
+        r.reason === 'firebase_not_initialized' ? 'Recovery is not configured: set FIREBASE_ADMIN_PROJECT_ID / CLIENT_EMAIL / PRIVATE_KEY in the server environment.' :
+        r.reason === 'smtp_not_configured' ? 'Recovery cannot deliver the verification code: set SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM in the server environment.' :
+        r.reason === 'unavailable' ? 'Recovery is temporarily unavailable. Try again.' :
+        // Uniform for not_authorized / no_account (no enumeration).
         'If that email is the configured Super Admin, a verification code has been sent.';
       return NextResponse.json({ available: false, reason: r.reason, retryAfter: r.retryAfter, message: msg }, { status });
     }

@@ -104,13 +104,18 @@ export async function POST(request: Request) {
   }
   const { message, history, qualificationState } = parsed.data;
   const sessionId = parsed.data.sessionId || randomHex(16);
+  // Server-generated correlation ID — threaded through the flow (logging) +
+  // returned to the client so a failed chat can be matched to a server log
+  // entry. NEVER derived from the message/PII (it is an opaque server UUID).
+  const correlationId = randomHex(16);
+  console.log(`[chat] cid=${correlationId} session=${sessionId} q_len=${message.length}`);
 
   // 2. Rate limit (per client; in-memory, process-local — see §10 limitation note).
   const clientId = getClientId(request);
   const rl = checkRateLimit('chat', clientId);
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: 'Too many messages. Please slow down and try again shortly.' },
+      { error: 'Too many messages. Please slow down and try again shortly.', correlationId },
       { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } },
     );
   }
@@ -137,14 +142,15 @@ export async function POST(request: Request) {
         canonicalPath: r.entry.canonicalPath,
       })),
       qualificationState,
-    });
+    }, { correlationId });
 
     // Honest HTTP status: a provider failure (missing/invalid key, unsupported
     // model, quota, timeout) is a retryable 503 — the UI shows the message +
     // a Retry button. An honest "I don't have verified info" answer (model
     // returned intent=fallback for an unknown Paragonel fact) is a 200 — a
     // legitimate answer, not an error. Never disguise provider failure as a
-    // successful AI answer.
+    // successful AI answer. The correlationId is returned so a failed chat can
+    // be matched to the server log entry ([chat] cid=… / logChatDiagnostics).
     const isFailure = isProviderFailure(result.fallbackReason);
     return NextResponse.json(
       {
@@ -158,6 +164,7 @@ export async function POST(request: Request) {
         fallbackReason: result.fallbackReason,
         retryable: isFailure,
         sessionId,
+        correlationId,
       },
       { status: isFailure ? 503 : 200 },
     );
@@ -165,7 +172,7 @@ export async function POST(request: Request) {
     // Unexpected route-level error (never expose internals/stack/credentials).
     // Non-sensitive signal only; the flow's own classification handles the
     // common provider failures above.
-    console.error('[chat] route error:', redactReason(err));
+    console.error(`[chat] cid=${correlationId} route error:`, redactReason(err));
     return NextResponse.json(
       {
         answer: "I'm having trouble responding right now. Please try again in a moment, or reach the Paragonel team via the Contact page.",
@@ -176,6 +183,7 @@ export async function POST(request: Request) {
         fallbackReason: 'provider_error',
         retryable: true,
         sessionId,
+        correlationId,
       },
       { status: 503 },
     );
