@@ -13,7 +13,6 @@ import { Search, Filter, Briefcase, ChevronDown, ChevronUp, Laptop, Building, Ha
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 
 interface CareersSectionProps {
@@ -39,7 +38,6 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
   const [isDescriptionModalOpen, setIsDescriptionModalOpen] = useState(false);
   const [selectedJobForDescription, setSelectedJobForDescription] = useState<Job | null>(null);
 
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
   const departments = useMemo(() => {
@@ -52,20 +50,27 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
     return ['All Locations', ...Array.from(locs)].sort();
   }, [initialJobs]);
 
-  const handleApplyNowClick = (job: Job) => {
-    if (authLoading) return; 
-
-    if (!isAuthenticated) {
-      // Preserve the pending-apply intent for the post-login return; the
-      // server-verified /auth/login page honours ?redirect= to bring the
-      // user back here after they authenticate.
-      localStorage.setItem('pendingApplyJobId', job.id);
-      localStorage.setItem('actionAfterLogin', 'applyJobModalOpen');
-      router.push('/auth/login?redirect=/careers');
-    } else {
-      setSelectedJobForApplication(job);
-      setIsApplyModalOpen(true);
+  const handleApplyNowClick = async (job: Job) => {
+    // Check the REAL server session at click time (not the AuthProvider's
+    // cached state) so a freshly-logged-in candidate is never falsely
+    // redirected to login. Mirrors JobApplyCta on the detail page — eliminates
+    // the stale-context redirect loop (Issue B) on the careers list.
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      if (res.ok) {
+        setSelectedJobForApplication(job);
+        setIsApplyModalOpen(true);
+        return;
+      }
+    } catch {
+      // Network error — fall through to the login redirect (server will 401).
     }
+    // Preserve the pending-apply intent for the post-login return; the
+    // server-verified /auth/login page honours ?redirect= to bring the
+    // user back here after they authenticate.
+    localStorage.setItem('pendingApplyJobId', job.id);
+    localStorage.setItem('actionAfterLogin', 'applyJobModalOpen');
+    router.push(`/auth/login?redirect=${encodeURIComponent('/careers')}`);
   };
 
   const handleViewDetailsClick = (job: Job) => {

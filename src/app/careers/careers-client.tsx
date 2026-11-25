@@ -109,15 +109,27 @@ export function CareersClient({ jobs }: CareersClientProps) {
     return filtered;
   }, [jobs, searchTerm, jobIdSearch, locationFilter, departmentFilter, employmentTypeFilter, workArrangementFilter, dateFilter, showOpenRoles]);
 
-  const handleApply = (job: any) => {
-    if (!isAuthenticated) {
-      localStorage.setItem('pendingApplyJobId', job.id);
-      localStorage.setItem('actionAfterLogin', 'applyJobModalOpen');
-      router.push('/auth/login?redirect=/careers');
-    } else {
-      setSelectedJobForApplication(job);
-      setIsApplyModalOpen(true);
+  const handleApply = async (job: any) => {
+    // Check the REAL server session at click time (not the AuthProvider's
+    // cached state) so a freshly-logged-in candidate is never falsely
+    // redirected to login. The AuthProvider's isAuthenticated is refreshed on
+    // login/signup now (see auth-context.refresh), but a direct /api/auth/me
+    // check here is the robust, race-free source of truth at click time —
+    // mirroring JobApplyCta on the detail page. This eliminates the
+    // stale-context redirect loop (Issue B).
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      if (res.ok) {
+        setSelectedJobForApplication(job);
+        setIsApplyModalOpen(true);
+        return;
+      }
+    } catch {
+      // Network error — fall through to the login redirect (server will 401).
     }
+    localStorage.setItem('pendingApplyJobId', job.id);
+    localStorage.setItem('actionAfterLogin', 'applyJobModalOpen');
+    router.push(`/auth/login?redirect=${encodeURIComponent('/careers')}`);
   };
 
   const handleView = (job: any) => {

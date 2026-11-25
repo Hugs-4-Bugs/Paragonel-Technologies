@@ -128,8 +128,24 @@ export async function POST(request: Request) {
       metadata: { contentType },
     });
   } catch (err) {
-    console.error('[candidate/resume] upload failed:', err instanceof Error ? err.message : err);
-    return jsonError(500, 'Could not store resume.');
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[candidate/resume] upload failed:', msg);
+    // Surface a specific, diagnosable reason (never a fake success). The
+    // message classifies the failure class without leaking the storage path,
+    // credentials, or stack. This replaces the generic "Could not store
+    // resume." which hid the real cause — most often a missing/misnamed
+    // NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET or a service account without Storage
+    // Admin permissions on the bucket. The founder can act on the classified
+    // reason without needing Vercel function logs.
+    const reason =
+      /permission|forbidden|403/i.test(msg)
+        ? 'Resume storage permission denied. The Firebase service account needs Storage Admin on the bucket.'
+      : /not.?found|404|no such bucket/i.test(msg)
+        ? 'Resume storage bucket not found. Check NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET matches an existing bucket.'
+      : /bucket.*not.*specif|no bucket|bucket name/i.test(msg)
+        ? 'Resume storage bucket is not configured. Set NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET.'
+        : 'Could not store resume. Please try again or contact support.';
+    return jsonError(500, reason);
   }
 
   // Parse via analyzeResume (injection-safe prompt — treats resume as data).
