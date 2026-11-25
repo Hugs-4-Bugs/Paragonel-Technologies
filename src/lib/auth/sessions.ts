@@ -49,6 +49,9 @@ export interface IssueSessionInput {
   tier: Tier;
   role: Role; // for admin; ignored for user (defaults 'viewer' semantically)
   ip?: string;
+  /** For admin tier: whether TOTP MFA is enrolled. Embedded in the JWT so the
+   *  middleware (edge) can enforce super_admin MFA without a Firestore read. */
+  mfaEnrolled?: boolean;
 }
 
 export interface IssuedSession {
@@ -92,6 +95,7 @@ export async function issueSession(input: IssueSessionInput): Promise<IssuedSess
     role: input.role,
     sid,
     ver: tokenVersion,
+    mfaEnrolled: input.mfaEnrolled === true,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

@@ -69,6 +69,22 @@ export async function middleware(request: NextRequest) {
         response.cookies.delete('qf_admin_token');
         return response;
       }
+      // Super-admin MFA enforcement (Phase 3, server-side/edge). A super_admin
+      // whose session has mfaEnrolled !== true can ONLY access the enrollment
+      // page + the enrollment APIs — every other admin page/API is blocked
+      // until TOTP is enrolled. This prevents a super_admin from operating the
+      // admin portal without MFA, even via a step-2 session obtained through
+      // the first-login email-OTP path (allowed only BEFORE TOTP enrollment).
+      // For /api/* paths, return 403 JSON (not a redirect) so API clients get a
+      // clean error instead of an HTML page.
+      const mfaEnrollExempt =
+        pathname === '/admin/mfa-enroll' || pathname.startsWith('/api/admin/auth/mfa/');
+      if (payload.role === 'super_admin' && payload.mfaEnrolled !== true && !mfaEnrollExempt) {
+        if (pathname.startsWith('/api/')) {
+          return jsonRejection(403, 'MFA enrollment required.');
+        }
+        return NextResponse.redirect(new URL('/admin/mfa-enroll', request.url));
+      }
       return NextResponse.next();
     } catch (error) {
       console.error('JWT Verification Failed:', error);

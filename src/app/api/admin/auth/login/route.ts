@@ -58,10 +58,28 @@ export async function POST(request: Request) {
 
   clearFailures('adminLogin', email, ip);
 
-  // Issue the step-1 token + the admin OTP.
+  // Issue the step-1 token (password verified). Step 2 completes at
+  // /api/admin/auth/otp/verify.
   const step1Token = issueAdminStep1Token(email);
   if (!step1Token) return jsonError(500, 'Server auth misconfigured (OTP_SECRET).');
 
+  // MFA branch (Phase 3): if the admin has TOTP enrolled, step 2 requires an
+  // authenticator-app code (or a backup code) — NOT an email OTP. The
+  // otp/verify route reads the admin doc + validates the TOTP code. No email
+  // OTP is issued: the authenticator is the second factor.
+  const mfaEnabled = !!((data as { mfa?: { enabled?: boolean } }).mfa?.enabled);
+  if (mfaEnabled) {
+    await logSecurityEvent({ type: 'login_success', email, ip, detail: 'admin step1 (mfa)' });
+    return NextResponse.json({
+      step: 1,
+      step1Token,
+      mfaRequired: true,
+      message: 'Password accepted. Enter the 6-digit code from your authenticator app.',
+    });
+  }
+
+  // No MFA: email-OTP second factor (the first-login path before TOTP
+  // enrollment, + the fallback for admin/editor/viewer roles not enrolled).
   const issued = await issueOtp({ email, purpose: 'admin_login', ip });
   if (!issued.ok || !issued.code || !issued.otpRequestId) {
     return jsonError(429, 'Too many code requests. Wait a moment and try again.', { retryAfter: issued.retryAfter ?? 60 });
