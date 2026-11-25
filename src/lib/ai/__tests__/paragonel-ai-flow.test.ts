@@ -102,9 +102,16 @@ describe('Paragonel AI grounding + safety', () => {
   });
 
   describe('safeFallback (honest, classified, never fabricated)', () => {
-    it('provider failure + context: trouble-reaching message + context citations', () => {
+    it('provider failure + context: surfaces the REAL knowledge content (degraded answer) + context citations', () => {
       const r = safeFallback('question', MOCK_CONTEXT, 'provider_error');
-      expect(r.answer).toContain("having trouble reaching my knowledge service");
+      // Degraded mode (this batch): when the provider is down but knowledge
+      // retrieval succeeded, surface the ACTUAL retrieved content so the visitor
+      // gets a useful, accurate answer — not the generic "trouble reaching my
+      // knowledge service" string with only citation links. The content is the
+      // real company knowledge (verbatim), never fabricated.
+      expect(r.answer).toContain("Here's what I can share about that:");
+      expect(r.answer).toContain('AcquisitionOS is in PRIVATE BETA');
+      expect(r.answer).not.toContain("having trouble reaching my knowledge service");
       expect(r.citations.length).toBeGreaterThan(0);
       expect(r.citations[0].path).toBe('/our-product/acquisitionos');
       expect(r.intent).toBe('fallback');

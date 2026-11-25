@@ -23,10 +23,17 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const email = getBootstrapEmail();
-  if (!email) return jsonError(503, 'Bootstrap email not configured (SUPERADMIN_BOOTSTRAP_EMAIL).');
+  // Returns {available, reason?, maskedEmail?} for EVERY state so the bootstrap
+  // PAGE can show a SPECIFIC message (not_configured / already_complete /
+  // unavailable) instead of a combined generic one. checkBootstrapAvailable()
+  // already distinguishes these reasons; the old early-return here collapsed
+  // not_configured into a generic jsonError message that hid the actual state
+  // from the founder. HTTP status: 200 available, 409 already_complete, 503
+  // not_configured/unavailable (so the page's fetch still parses the body).
   const avail = await checkBootstrapAvailable();
-  return NextResponse.json(avail);
+  return NextResponse.json(avail, {
+    status: avail.available ? 200 : avail.reason === 'already_complete' ? 409 : 503,
+  });
 }
 
 export async function POST(request: Request) {

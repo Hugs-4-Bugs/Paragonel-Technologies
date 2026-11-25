@@ -235,6 +235,44 @@ Classify the visitor's intent (qna / enquiry / fallback). If enquiry, classify t
  * vs HTTP 200 for an honest "I don't have verified info" answer.
  * Exported for testing (Prompt 05O §12 grounding/safety).
  */
+/**
+ * Build a degraded-mode answer from the ACTUAL retrieved knowledge content
+ * (not AI-synthesized) when the Gemini provider is unavailable but knowledge
+ * retrieval succeeded. This is HONEST — the content is the real Paragonel
+ * company knowledge from the static knowledge base, never fabricated. It lets
+ * the chatbot provide a useful, accurate answer to "What services do you
+ * offer?" / "What is Paragonel?" / "Tell me about AcquisitionOS" even when the
+ * AI provider is down (missing key, quota, timeout, etc.), instead of a generic
+ * "trouble reaching my knowledge service" message with only citation links.
+ *
+ * The snippet is bounded (≤ 500 chars, sentence-truncated) + drawn from the
+ * top-scored retrieved entry. The citations still point to the canonical pages
+ * for full detail. fallbackReason stays the provider reason (for diagnostics);
+ * intent stays 'fallback' (so the route/frontend know this is degraded, not a
+ * full AI answer).
+ */
+function buildDegradedAnswer(context: KnowledgeEntry[]): string {
+  const top = context[0];
+  if (!top?.content) {
+    return "I'm having trouble reaching my knowledge service right now. Based on what I have, you can learn more on the relevant pages below — or please try again in a moment.";
+  }
+  // Take a bounded snippet + cut at the last sentence boundary within the limit
+  // so the answer does not end mid-sentence.
+  const max = 500;
+  let snippet = top.content.trim().replace(/\s+/g, ' ');
+  if (snippet.length > max) {
+    snippet = snippet.slice(0, max);
+    const lastStop = Math.max(
+      snippet.lastIndexOf('. '),
+      snippet.lastIndexOf('! '),
+      snippet.lastIndexOf('? '),
+    );
+    if (lastStop > max * 0.5) snippet = snippet.slice(0, lastStop + 1);
+    else snippet = snippet.slice(0, max - 1).trimEnd() + '…';
+  }
+  return `Here's what I can share about that:\n\n${snippet}\n\nFor more detail, see the pages below, or reach the Paragonel team via the Contact page.`;
+}
+
 export function safeFallback(
   question: string,
   context: KnowledgeEntry[] | undefined,
@@ -242,10 +280,14 @@ export function safeFallback(
 ): ParagonelAIOutput {
   const hasContext = context && context.length > 0;
   const isProvider = isProviderFailure(reason);
-  // Provider-failure message (retryable) vs honest unknown-company-fact message.
+  // Provider-failure message (retryable). When knowledge retrieval succeeded
+  // (always — static JSON), surface the ACTUAL retrieved content so the visitor
+  // gets a useful, accurate answer even when the AI provider is down, instead
+  // of a generic "trouble reaching my knowledge service" message with only
+  // links. Honest — the content is the real company knowledge, not fabricated.
   const answer = isProvider
     ? hasContext
-      ? "I'm having trouble reaching my knowledge service right now. Based on what I have, you can learn more on the relevant pages below — or please try again in a moment."
+      ? buildDegradedAnswer(context!)
       : "I'm having trouble reaching my knowledge service right now. Please try again in a moment, or reach the Paragonel team via the Contact page."
     : hasContext
       ? "I don't have verified information about that yet, and I'd rather not guess. You can learn more on the relevant pages below, or I can direct you to the Paragonel team for confirmation via the Contact page."
