@@ -15,6 +15,7 @@ function VerifyInner() {
   const otpRequestId = params.get('otpRequestId') ?? '';
   const purpose = (params.get('purpose') ?? 'register') as 'register' | 'password_reset';
   const email = params.get('email') ?? '';
+  const redirect = params.get('redirect') ?? '';
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [verificationToken, setVerificationToken] = useState('');
@@ -31,13 +32,14 @@ function VerifyInner() {
       });
       const data = await res.json();
       if (res.ok) {
+        const redirectSuffix = redirect ? `?redirect=${encodeURIComponent(redirect)}` : '';
         if (purpose === 'register') {
           toast({ title: 'Email verified', description: 'You can now log in.' });
-          router.push('/auth/login');
+          router.push(`/auth/login${redirectSuffix}`);
         } else {
           setVerificationToken(data.verificationToken);
           toast({ title: 'Email verified', description: 'Set your new password.' });
-          router.push(`/auth/reset-password?token=${encodeURIComponent(data.verificationToken)}`);
+          router.push(`/auth/reset-password?token=${encodeURIComponent(data.verificationToken)}${redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''}`);
         }
       } else {
         toast({ title: 'Verification failed', description: data.message ?? 'Invalid code.', variant: 'destructive' });

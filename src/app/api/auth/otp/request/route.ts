@@ -13,7 +13,6 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { issueOtp } from '@/lib/auth/otp';
 import { deliverOtp } from '@/lib/auth/email';
-import { logSecurityEvent } from '@/lib/auth/security-events';
 import { getClientIp, jsonError } from '@/lib/auth/route-helpers';
 import { getOtpSecret } from '@/lib/auth/otp';
 import { signToken, randomHex } from '@/lib/auth/crypto-utils';

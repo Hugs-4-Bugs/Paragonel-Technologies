@@ -1,8 +1,8 @@
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import type { Firestore } from 'firebase/firestore';
-import type { Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getAuth, type Auth } from 'firebase/auth';
 import { firebaseConfig, isFirebaseConfigured } from './config';
 
 export type FirebaseInit = { app: FirebaseApp | null; firestore: Firestore | null; auth: Auth | null };
@@ -25,8 +25,6 @@ export function initializeFirebase(): FirebaseInit {
     return { app: null, firestore: null, auth: null };
   }
   try {
-    const { getFirestore } = require('firebase/firestore');
-    const { getAuth } = require('firebase/auth');
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     const firestore = getFirestore(app);
     const auth = getAuth(app);

@@ -14,11 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 // metadataBase resolves relative Open Graph / canonical URLs site-wide.
-// The verified live deployment origin is paragonel.vercel.app (Phase 0 audit).
-// Override per-environment with NEXT_PUBLIC_SITE_URL if a custom domain ships.
+// Canonical site URL. Prefer NEXT_PUBLIC_SITE_URL (set in production); fall
+// back to the apex domain paragonel.com (NOT the Vercel preview host) so OG /
+// canonical URLs resolve to the canonical apex by default — avoids
+// duplicate-indexing of paragonel.vercel.app alongside paragonel.com. The
+// www→apex + acquisitionos.net redirects are enforced in src/middleware.ts.
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-  'https://paragonel.vercel.app';
+  'https://paragonel.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -93,8 +96,9 @@ export const viewport: Viewport = { themeColor: '#0f172a' };
 
 // JSON-LD Organization structured data (SEO gap G9 / PART N). Verified facts
 // only — no invented awards, team size, founding-year metrics, or members.
-// `sameAs` is intentionally empty until the founder provides verified social
-// profile URLs (LinkedIn / X / GitHub / Crunchbase) — MANUAL, do not invent.
+// `sameAs` lists the social profiles already configured + in use across the
+// footer, About founder card, and team section (LinkedIn / X / GitHub). No
+// unconfigured profile (e.g. Crunchbase) is invented.
 const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -111,7 +115,11 @@ const organizationJsonLd = {
     name: 'Prabhat Kumar',
     jobTitle: 'Founder & CEO',
   },
-  sameAs: [] as string[],
+  sameAs: [
+    'https://www.linkedin.com/in/prabhat-kumar-6963661a4/',
+    'https://x.com/PrabhatKumarHQ',
+    'https://github.com/Hugs-4-Bugs',
+  ],
 };
 
 // JSON-LD WebSite entity (Prompt 05I §5.5). Site-wide, alongside Organization.

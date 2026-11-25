@@ -45,9 +45,9 @@ export async function POST(request: Request) {
   const auth = await verifyAdmin(request);
   if (!auth.ok) return auth.response;
 
-  let body: any;
+  let body: Record<string, unknown>;
   try {
-    body = await request.json();
+    body = (await request.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }

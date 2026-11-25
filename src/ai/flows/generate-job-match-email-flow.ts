@@ -14,6 +14,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { dummyJobs, type Job } from '@/lib/data';
 import type { UserProfile } from '@/types';
+import { redactReason } from '@/lib/job-alerts/dedup';
+import { GEMINI_MODEL_REF } from '@/ai/models';
 
 const GenerateJobMatchEmailInputSchema = z.object({
   jobId: z.string().describe('The ID of the job to check against.'),
@@ -37,7 +39,7 @@ async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
     if (docSnap.exists()) return docSnap.data() as UserProfile;
     return null;
   } catch (error) {
-    console.error("fetchUserProfile Error:", error);
+    console.error("fetchUserProfile Error:", redactReason(error));
     return null;
   }
 }
@@ -48,7 +50,7 @@ function findJobById(jobId: string): Job | undefined {
 
 const emailFormattingPrompt = ai.definePrompt({
     name: 'formatJobMatchEmailPrompt',
-    model: 'googleai/gemini-1.5-flash-latest',
+    model: GEMINI_MODEL_REF,
     input: { schema: z.object({
         jobTitle: z.string(),
         jobCompany: z.string(),

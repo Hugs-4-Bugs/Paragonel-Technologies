@@ -12,7 +12,7 @@
     "location": "HSR Layout, Bangalore, 560102, India",
     "phone": "+91 9663076023",
     "email": "contact@paragonel.com",
-    "website": "https://acquisitionosbeta.vercel.app/",
+    "website": "https://acquisitionos.net",
     "linkedin": "https://www.linkedin.com/company/paragonel.vercel.app/home/?viewAsMember=true",
     "twitter": "https://x.com/PrabhatKumarHQ",
     "technologies": ["AI/ML", "Next.js", "React", "Node.js", "Firebase", "Spring Boot", "AWS", "GCP", "DevOps", "Kubernetes", "Docker", "Java", "Python"],
@@ -38,7 +38,7 @@
       "status": "Private Beta",
       "type": "AI-Native Client Acquisition Platform",
       "description": "An AI-native client acquisition operating system that unifies prospect discovery, research, gap detection, opportunity reporting, scoring, personalized outreach, reply handling, meeting workflows, pipeline management, and proposal generation into a single connected workflow. Currently in private beta.",
-      "link": "https://acquisitionosbeta.vercel.app/"
+      "link": "https://acquisitionos.net"
     },
     {
       "name": "SystemFoundry",

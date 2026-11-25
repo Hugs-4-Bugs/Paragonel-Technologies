@@ -28,44 +28,9 @@ export interface ChatMessage {
 
 export type LeadSubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
 
-export type CareerFlowStep =
-  | 'idle'
-  | 'offering_help'
-  | 'resume_upload'
-  | 'analyzing_resume'
-  | 'confirm_details'
-  | 'matching_jobs'
-  | 'apply_behalf'
-  | 'submitting'
-  | 'submitted';
-
-export interface CandidateProfile {
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  skills: string[];
-  experienceYears: number;
-  education: string;
-  domain: string;
-  seniority: string;
-  summary: string;
-  // Tolerates structured project entries ({name,description,...}) emitted by the
-  // resume parser (analyze-resume-flow). The chat flow never reads this field —
-  // matching uses skills/experienceYears/domain only — so a permissive shape is safe.
-  projects?: unknown[];
-  resumeUrl?: string;
-  resumeDataUri?: string;
-}
-
 export interface ChatState {
   sessionId: string;
   messages: ChatMessage[];
-  careerStep: CareerFlowStep;
-  candidateProfile: CandidateProfile | null;
-  selectedJob: any | null;
-  jobListings: any[];
-  matchedJobs: any[];
   /** Lead-qualification state (Prompt 05P). */
   qualification: QualificationState;
   /** Consent for the lead review/submit step (Phase 4). */
@@ -95,11 +60,6 @@ export function useChatState() {
   const [state, setState] = useState<ChatState>({
     sessionId: '',
     messages: [],
-    careerStep: 'idle',
-    candidateProfile: null,
-    selectedJob: null,
-    jobListings: [],
-    matchedJobs: [],
     qualification: { ...INITIAL_QUALIFICATION_STATE },
     consentAcknowledged: false,
     marketingConsent: false,
@@ -162,10 +122,6 @@ export function useChatState() {
     },
     [],
   );
-
-  const updateCareerStep = useCallback((step: CareerFlowStep) => {
-    setState((prev) => ({ ...prev, careerStep: step }));
-  }, []);
 
   /* -------- Lead qualification (Prompt 05P Phase 3–7) -------- */
 
@@ -249,33 +205,12 @@ export function useChatState() {
     }));
   }, []);
 
-  const setCandidateProfile = useCallback((profile: CandidateProfile | null) => {
-    setState((prev) => ({ ...prev, candidateProfile: profile }));
-  }, []);
-
-  const setSelectedJob = useCallback((job: any | null) => {
-    setState((prev) => ({ ...prev, selectedJob: job }));
-  }, []);
-
-  const setJobListings = useCallback((jobs: any[]) => {
-    setState((prev) => ({ ...prev, jobListings: jobs }));
-  }, []);
-
-  const setMatchedJobs = useCallback((jobs: any[]) => {
-    setState((prev) => ({ ...prev, matchedJobs: jobs }));
-  }, []);
-
   const clearChat = useCallback(() => {
     const sid = newSessionId();
     sessionStorage.setItem(SESSION_KEY, sid);
     setState({
       sessionId: sid,
       messages: [],
-      careerStep: 'idle',
-      candidateProfile: null,
-      selectedJob: null,
-      jobListings: [],
-      matchedJobs: [],
       qualification: { ...INITIAL_QUALIFICATION_STATE },
       consentAcknowledged: false,
       marketingConsent: false,
@@ -289,11 +224,6 @@ export function useChatState() {
     ...state,
     addMessage,
     updateMessage,
-    updateCareerStep,
-    setCandidateProfile,
-    setSelectedJob,
-    setJobListings,
-    setMatchedJobs,
     clearChat,
     // Lead qualification (Prompt 05P).
     startEnquiry,

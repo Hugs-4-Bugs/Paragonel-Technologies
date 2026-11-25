@@ -29,6 +29,38 @@ describe('dedup (Prompt 05R §7/§8)', () => {
     expect(r).not.toContain('secretpass');
     expect(r).toContain('***@');
   });
+  it('redactReason redacts bare email addresses (no candidate PII leaks)', () => {
+    const r = redactReason('failed to notify candidate@secret.com about job j1');
+    expect(r).not.toContain('candidate@secret.com');
+    expect(r).not.toContain('candidate@');
+    expect(r).toContain('[REDACTED]');
+  });
+  it('redactReason redacts common API-key / token prefixes + Bearer tokens', () => {
+    const cases = [
+      'OpenAI error: sk-abc123def456ghi789jkl invalid key',
+      'Firebase admin init failed: AIzaSyB-LongFirebaseWebApiKey9876543210',
+      'github token github_pat_11A4P6EGA0P43nSwZvprql leaked in trace',
+      'auth header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
+      'slack bot token xoxb-1234567890-abcdef rejected',
+    ];
+    for (const c of cases) {
+      const r = redactReason(c);
+      // The secret value must not survive; [REDACTED] must be present.
+      expect(r).toContain('[REDACTED]');
+      expect(r).not.toContain('sk-abc123def456ghi789jkl');
+      expect(r).not.toContain('AIzaSyB-LongFirebaseWebApiKey9876543210');
+      expect(r).not.toContain('github_pat_11A4P6EGA0P43nSwZvprql');
+      expect(r).not.toContain('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
+      expect(r).not.toContain('xoxb-1234567890-abcdef');
+    }
+  });
+  it('redactReason still preserves non-sensitive context for debugging', () => {
+    const r = redactReason('smtp timeout connecting to mail.host:587 after 30s');
+    // The host + port + timeout context survive (no credentials to strip).
+    expect(r).toContain('smtp timeout');
+    expect(r).toContain('mail.host:587');
+    expect(r).toContain('30s');
+  });
   it('redactReason truncates long reasons', () => {
     expect(redactReason('x'.repeat(500)).length).toBeLessThanOrEqual(160);
   });

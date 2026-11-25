@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Briefcase, MapPin, Users, CalendarDays, DollarSign, Building } from 'lucide-react';
@@ -31,13 +30,9 @@ export function JobDescriptionModal({ isOpen, onOpenChange, job }: JobDescriptio
 
   return (
  <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-20">
- <span className="sr-only">Close</span>
-      </DialogClose>
       <DialogContent className="sm:max-w-2xl lg:max-w-3xl flex flex-col h-[90svh] sm:h-[85vh] shadow-2xl p-0">
- {/* Close button is now outside DialogContent */}
 
-        <DialogHeader className="p-6 border-b sticky top-0 bg-background z-10">
+        <DialogHeader className="flex-shrink-0 p-6 border-b bg-background z-10">
           <div className="flex items-start space-x-4">
             {job.companyLogoUrl ? (
               <Image
@@ -64,7 +59,7 @@ export function JobDescriptionModal({ isOpen, onOpenChange, job }: JobDescriptio
           </div>
         </DialogHeader>
         
-        <ScrollArea className="flex-grow px-6 py-4">
+        <ScrollArea className="flex-grow min-h-0 px-6 py-4">
           <div className="space-y-6">
             <section className="space-y-3">
               <h3 className="text-lg font-semibold text-primary">Job Overview</h3>

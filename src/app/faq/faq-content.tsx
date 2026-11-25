@@ -1,0 +1,101 @@
+"use client";
+
+/**
+ * FaqContent — the interactive FAQ client component (accordion + ScrollFadeIn).
+ * Extracted from page.tsx so the page can be a Server Component that exports
+ * Next.js `metadata` (a client component cannot export metadata). The FAQPage
+ * JSON-LD stays here; it is still server-rendered into the initial HTML.
+ */
+import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { HelpCircle } from 'lucide-react';
+
+const faqItems = [
+  {
+    q: "What types of clients do you work with?",
+    a: "We work with startups, SMBs, and enterprises across any industry. If you have a software problem, we can build an AI-native solution for it. We specialize in helping companies eliminate operational bottlenecks through intelligent automation."
+  },
+  {
+    q: "How do you price your projects?",
+    a: "We use fixed-scope, milestone-based pricing to ensure total transparency. Each project is quoted individually based on technical complexity, required integration depth, and business impact. We do not bill by the hour for project-based work, ensuring your budget remains predictable from start to finish."
+  },
+  {
+    q: "Do you work with international clients?",
+    a: "Yes. We are India-based but serve clients globally. We accept payments in INR via Razorpay and USD/EUR via Stripe, ensuring a seamless transaction process regardless of your location."
+  },
+  {
+    q: "How long does a typical project take?",
+    a: "A simple web application or MVP usually takes 6–10 weeks to ship. A full-scale SaaS platform or complex AI integration typically takes 12–22 weeks. We provide a detailed project timeline in every initial proposal."
+  },
+  {
+    q: "Do you provide post-launch support?",
+    a: "Absolutely. We offer tailored monthly retainers for ongoing development, critical bug fixes, performance monitoring, and feature additions. Our goal is to be your long-term technology partner, ensuring your platform grows alongside your business."
+  },
+  {
+    q: "What tech stack do you use?",
+    a: "We choose the best tool for the job. Our primary stack includes Java (Spring Boot) or Python for backends, Next.js or React for web frontends, and Flutter for mobile. We host primarily on AWS or GCP and leverage Firebase for real-time data needs."
+  },
+  {
+    q: "Can I see your previous products?",
+    a: "Yes. AcquisitionOS — our AI-native client acquisition platform — is currently in private beta; you can explore it and request access at the AcquisitionOS private beta site. SystemFoundry is an internal infrastructure simulator we use for our own cloud engineering work. CodeGuard AI, a VS Code extension for real-time cloud cost intelligence, is published on the VS Code Marketplace. You can read about all three on our Our Product page."
+  },
+  {
+    q: "Who will I be working with?",
+    a: "You will work directly with our engineering team and founders. We eliminate account managers and middlemen to ensure that the technical vision is never lost in translation. Direct engineer-to-client communication is our standard."
+  }
+];
+
+// JSON-LD FAQPage structured data (Prompt 05I §5.5). The FAQ content is already
+// structured as Q/A pairs above — emit it as FAQPage schema for rich-result
+// eligibility.
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqItems.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
+
+export function FaqContent() {
+  return (
+    <section className="section-padding bg-background min-h-screen">
+      <div className="container mx-auto px-4 md:px-6">
+        <ScrollFadeIn className="text-center mb-16">
+          <HelpCircle className="h-16 w-16 text-primary mx-auto mb-6 neon-icon" />
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+            Frequently Asked <span className="text-primary">Questions</span>
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto font-medium">
+            Find quick answers to common questions about our services, process, and how we build high-impact technology.
+          </p>
+        </ScrollFadeIn>
+
+        <ScrollFadeIn className="max-w-3xl mx-auto">
+          <Accordion type="single" collapsible className="w-full">
+            {faqItems.map((item, index) => (
+              <AccordionItem value={`item-${index}`} key={index} className="border-b border-primary/10">
+                <AccordionTrigger className="text-left text-lg hover:no-underline py-5 font-bold hover:text-primary transition-colors">
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent className="pt-1 pb-5 text-muted-foreground leading-relaxed text-base font-medium">
+                  {item.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </ScrollFadeIn>
+      </div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+    </section>
+  );
+}

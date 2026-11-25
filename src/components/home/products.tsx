@@ -77,7 +77,7 @@ export function HomeProducts({ clientProjects = [] }: { clientProjects?: ClientP
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link
-                    href="https://acquisitionosbeta.vercel.app/"
+                    href="https://acquisitionos.net"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="pt-btn pt-btn-primary"
@@ -142,7 +142,7 @@ export function HomeProducts({ clientProjects = [] }: { clientProjects?: ClientP
                 <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">{w.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{w.body}</p>
                 {w.href && w.ctaLabel && (
-                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                  <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                     {w.ctaLabel} <ArrowUpRight className="h-4 w-4" />
                   </span>
                 )}
@@ -150,16 +150,16 @@ export function HomeProducts({ clientProjects = [] }: { clientProjects?: ClientP
             );
             return (
               <RevealItem key={w.slug}>
-                <MotionCard className="group block h-full border-t border-border pt-6 rounded-[var(--pt-radius-sm)]">
+                <MotionCard className="group flex h-full flex-col border-t border-border pt-6 rounded-[var(--pt-radius-sm)]">
                   {w.href ? (
                     <Link
                       href={w.href}
-                      className="block rounded-[var(--pt-radius-sm)] focus:outline-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                      className="flex-1 flex flex-col rounded-[var(--pt-radius-sm)] focus:outline-none focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                       {inner}
                     </Link>
                   ) : (
-                    <div>{inner}</div>
+                    <div className="flex-1 flex flex-col">{inner}</div>
                   )}
                 </MotionCard>
               </RevealItem>

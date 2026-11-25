@@ -3,7 +3,14 @@
  * for the resume attached to application [id] (Phase 4, IU-0 slice 3).
  *
  * Security model:
- *   - Only an authenticated, authorized admin may request it (verifyAdmin → 401).
+ *   - Only an authenticated admin with the `cms.read` permission may request it
+ *     (verifyAdminPermission('cms.read') → 401/403). Every active admin role
+ *     (viewer/editor/admin/super_admin) holds `cms.read`, so legitimate admin
+ *     access is unchanged; the gate is now RBAC-aware instead of a bare
+ *     admin-tier check.
+ *   - A `resume_download` audit entry is written (actor + application id) so
+ *     every resume view is traceable. The resume path + signed URL are NEVER
+ *     logged.
  *   - The resume object path is resolved from the authorized job-application
  *     record in Firestore — NEVER from a client-supplied path.
  *   - The stored path is validated against a strict `resumes/<safe-name>` pattern
@@ -22,7 +29,7 @@
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
-import { verifyAdmin, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdminPermission, serviceUnavailable, logActivityServer } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,8 +47,8 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await verifyAdmin(request);
-  if (!auth.ok) return auth.response; // 401 (missing/invalid JWT)
+  const auth = await verifyAdminPermission(request, 'cms.read');
+  if (!auth.ok) return auth.response; // 401/403 (missing/invalid JWT or insufficient role)
 
   const db = getAdminDb();
   if (!db) return serviceUnavailable(); // 503
@@ -99,6 +106,11 @@ export async function GET(
       expires: Date.now() + SIGNED_URL_TTL_MS,
       version: 'v4',
     });
+
+    // Audit the resume download (actor + application id only — never the path
+    // or the signed URL). Best-effort: a failed audit log does not block the
+    // signed URL the admin already earned through authorization.
+    await logActivityServer(auth.user, 'resume_download', 'jobApplication', id);
 
     return NextResponse.json({
       url,

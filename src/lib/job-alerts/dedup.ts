@@ -37,11 +37,22 @@ export function eventId(jobFirestoreId: string, jobVersion: number): string {
   return `${j}__v${v}`;
 }
 
-/** Safely redact a failure reason so no credentials/PII leak into stored logs. */
+/** Safely redact a failure reason so no credentials/PII leak into stored logs or
+ * the admin alert-status summary (recentFailures.lastError). Redacts URL
+ * credentials, bare email addresses, and common API-key / token prefixes
+ * (OpenAI sk-, Firebase AIza, GitHub ghp_/github_pat_, Slack xox, Bearer). */
 export function redactReason(reason: unknown): string {
   if (!reason) return 'unknown';
   const s = reason instanceof Error ? reason.message : String(reason);
-  // Keep it short + strip anything that looks like a URL with credentials or a
-  // long token. Never log SMTP passwords / API keys.
-  return s.replace(/:[^:@/]+@/g, ':***@').slice(0, 160);
+  return s
+    // 1. URL credentials: scheme://user:pass@host → user:***@host.
+    .replace(/:[^:@/]+@/g, ':***@')
+    // 2. Bare email addresses → [REDACTED] (no candidate PII in stored logs).
+    .replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, '[REDACTED]')
+    // 3. Common API-key / token prefixes + Bearer tokens → [REDACTED].
+    .replace(
+      /(?:sk-|sk_live_|pk_live_|AIza|ghp_|gho_|ghs_|github_pat_|xox[bpoa]-|Bearer\s+)[A-Za-z0-9_.-]{6,}/g,
+      '[REDACTED]',
+    )
+    .slice(0, 160);
 }

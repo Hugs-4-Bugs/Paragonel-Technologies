@@ -10,6 +10,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { GEMINI_MODEL_REF } from '@/ai/models';
+import { redactReason } from '@/lib/job-alerts/dedup';
 
 const FormatApplicationEmailInputSchema = z.object({
   fullName: z.string(),
@@ -69,7 +71,7 @@ export async function formatApplicationEmail(
 
 const prompt = ai.definePrompt({
   name: 'formatDetailedApplicationEmailPrompt',
-  model: 'googleai/gemini-1.5-flash-latest',
+  model: GEMINI_MODEL_REF,
   input: {schema: FormatApplicationEmailInputSchema},
   output: {schema: FormatApplicationEmailOutputSchema},
   prompt: `
@@ -103,7 +105,7 @@ const formatApplicationEmailFlow = ai.defineFlow(
       if (!output) throw new Error("AI output failure");
       return output;
     } catch (error) {
-      console.error("formatApplicationEmail AI Error:", error);
+      console.error("formatApplicationEmail AI Error:", redactReason(error));
       return {
         adminEmailSubject: `New Job Application: ${input.jobTitle} - ${input.fullName}`,
         adminEmailBody: `New application received for ${input.jobTitle}. Name: ${input.fullName}, Email: ${input.email}. Please review in the dashboard.`,

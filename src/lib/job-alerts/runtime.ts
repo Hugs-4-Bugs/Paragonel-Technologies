@@ -9,6 +9,7 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { enqueueJobMatchEvent, type JobMatchTriggerKind } from './trigger';
 import { eventId } from './dedup';
+import { scheduleContinuation } from './continuation';
 import {
   processJobMatchEvent,
   processPendingJobMatchEvents,
@@ -52,7 +53,17 @@ export async function enqueueAndProcessJobEvent(
 ): Promise<ProcessOutcome> {
   const store = jobAlertStore(db);
   await enqueueJobMatchEvent(store, input); // idempotent: no-op if already processed
-  return processJobMatchEvent(store, eventId(input.jobId, input.jobVersion), realAlertSender, opts);
+  const outcome = await processJobMatchEvent(store, eventId(input.jobId, input.jobVersion), realAlertSender, opts);
+  // Event-driven continuation (Prompt §7): if the inline drain left the event
+  // partial (send cap hit, cursor persisted) or pending, schedule a background
+  // continuation chain via Next.js after() — no cron, no paid scheduler. The
+  // chain is idempotent (atomic claimEvent + claimSendSlot make redundant hops
+  // safe) + bounded by MAX_CONTINUATION_HOPS + the token TTL. Requires
+  // APP_BASE_URL; otherwise the admin manual-drain remains the backstop.
+  if (outcome.partial || outcome.status === 'pending') {
+    scheduleContinuation(0);
+  }
+  return outcome;
 }
 
 /** Drain pending events (admin endpoint). */

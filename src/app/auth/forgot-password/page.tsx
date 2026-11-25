@@ -28,7 +28,13 @@ export default function ForgotPasswordPage() {
       const data = await res.json();
       // Uniform message — only proceed if an OTP was actually issued.
       if (res.ok && data.otpRequestId) {
-        router.push(`/auth/verify?otpRequestId=${encodeURIComponent(data.otpRequestId)}&purpose=password_reset&email=${encodeURIComponent(email)}`);
+        // Preserve the post-login redirect target through the reset chain so a
+        // candidate mid-apply who forgot their password returns to the job.
+        const redirect = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('redirect') : null;
+        const verifyUrl =
+          `/auth/verify?otpRequestId=${encodeURIComponent(data.otpRequestId)}&purpose=password_reset&email=${encodeURIComponent(email)}` +
+          (redirect ? `&redirect=${encodeURIComponent(redirect)}` : '');
+        router.push(verifyUrl);
       } else {
         setSubmitted(true);
       }

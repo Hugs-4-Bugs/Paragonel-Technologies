@@ -20,10 +20,12 @@ import { Button } from "@/components/ui/button";
  * none are invented.
  */
 const servicesLinks = [
-  { href: "/services/ai-solutions", label: "AI Solutions" },
-  { href: "/services/custom-software", label: "Custom Software Development" },
-  { href: "/services/cloud-devops", label: "Cloud & DevOps" },
-  { href: "/services/data-analytics", label: "Data & Analytics" },
+  { href: "/services", label: "All Services" },
+  { href: "/services#product-engineering", label: "Product Engineering" },
+  { href: "/services#ai-and-intelligent-systems", label: "AI & Intelligent Systems" },
+  { href: "/services#cloud-infrastructure-platform", label: "Cloud & Platform Engineering" },
+  { href: "/services#data-engineering-analytics", label: "Data Engineering & Analytics" },
+  { href: "/services#experience-interface", label: "Experience & Interface" },
 ];
 
 const productLinks = [
@@ -180,7 +182,7 @@ export function Footer() {
             <Link href="https://www.linkedin.com/in/prabhat-kumar-6963661a4/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-all hover:scale-110 hover:text-primary" aria-label="LinkedIn">
               <Linkedin className="h-5 w-5" />
             </Link>
-            <Link href="https://x.com/PrabhatKumarHQ" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-all hover:scale-110 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md" aria-label="Parabhat Kumar on X (opens in a new tab)">
+            <Link href="https://x.com/PrabhatKumarHQ" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-all hover:scale-110 hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md" aria-label="Prabhat Kumar on X (opens in a new tab)">
               <XIcon className="h-5 w-5" />
             </Link>
             <Link href="https://github.com/Hugs-4-Bugs" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-all hover:scale-110 hover:text-primary" aria-label="GitHub">

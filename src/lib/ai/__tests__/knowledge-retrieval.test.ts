@@ -30,7 +30,7 @@ const MOCK_BASE: KnowledgeEntry[] = [
   {
     id: 'product-acquisitionos',
     title: 'AcquisitionOS — AI-Native Client Acquisition Platform (Private Beta)',
-    content: 'AcquisitionOS is an AI-native client acquisition operating system. STATUS: PRIVATE BETA. Not publicly launched. Approved URL: https://acquisitionosbeta.vercel.app/',
+    content: 'AcquisitionOS is an AI-native client acquisition operating system. STATUS: PRIVATE BETA. Not publicly launched. Canonical product domain: https://acquisitionos.net',
     category: 'products',
     canonicalPath: '/our-product/acquisitionos',
     sourceType: 'company-static',
@@ -117,7 +117,7 @@ describe('Paragonel AI knowledge retrieval', () => {
       const acq = r.find((x) => x.entry.id === 'product-acquisitionos');
       expect(acq).toBeDefined();
       expect(acq!.entry.content).toContain('PRIVATE BETA');
-      expect(acq!.entry.content).toContain('acquisitionosbeta.vercel.app');
+      expect(acq!.entry.content).toContain('acquisitionos.net');
     });
 
     it('missing knowledge → returns empty (no fabricated matches)', () => {
@@ -179,8 +179,11 @@ describe('Paragonel AI knowledge retrieval', () => {
       // AcquisitionOS entry carries the PRIVATE BETA + approved URL rules.
       const acq = base.find((e) => e.id === 'product-acquisitionos');
       expect(acq?.content).toContain('PRIVATE BETA');
-      expect(acq?.content).toContain('acquisitionosbeta.vercel.app');
-      expect(acq?.content).toContain('acquisitionos.net'); // the "never mention" instruction
+      // Canonical product domain is acquisitionos.net (Batch 4 Task 2); the
+      // beta URL + the old "never mention acquisitionos.net" instruction are gone.
+      expect(acq?.content).toContain('acquisitionos.net');
+      expect(acq?.content).not.toContain('acquisitionosbeta.vercel.app');
+      expect(acq?.content).not.toContain('Never mention acquisitionos.net');
     }, 15000);
 
     it('never includes fabricated testimonials or client projects when CMS is empty', async () => {

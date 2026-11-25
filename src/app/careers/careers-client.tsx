@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +22,7 @@ import {
 import { JobCard } from '@/components/job-card';
 import { ApplyJobModal } from '@/components/apply-job-modal';
 import { JobDescriptionModal } from '@/components/job-description-modal';
+import { CareerAssistant } from '@/components/careers/career-assistant';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -124,6 +125,25 @@ export function CareersClient({ jobs }: CareersClientProps) {
     setIsDescriptionModalOpen(true);
   };
 
+  // Post-login return: if the candidate was sent to /auth/login from an Apply
+  // click (careers list), the pending job id is in localStorage. On mount, once
+  // authenticated, re-open that job's apply modal so the candidate lands back
+  // where they intended instead of a generic /careers with no follow-through.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const pendingJobId = typeof window !== 'undefined' ? localStorage.getItem('pendingApplyJobId') : null;
+    const action = typeof window !== 'undefined' ? localStorage.getItem('actionAfterLogin') : null;
+    if (action !== 'applyJobModalOpen' || !pendingJobId) return;
+    const job = jobs.find((j) => String(j.id) === String(pendingJobId) || String(j.jobId) === String(pendingJobId));
+    // Clear the flags regardless so a stale pending id never loops.
+    localStorage.removeItem('pendingApplyJobId');
+    localStorage.removeItem('actionAfterLogin');
+    if (job) {
+      setSelectedJobForApplication(job);
+      setIsApplyModalOpen(true);
+    }
+  }, [isAuthenticated, jobs]);
+
   return (
     <div className="bg-[#1a1b3a] min-h-screen text-white">
       <section className="pt-20 pb-12 text-center px-4">
@@ -210,7 +230,7 @@ export function CareersClient({ jobs }: CareersClientProps) {
               </div>
               <div className="space-y-4">
                 <Label className="text-xs font-black uppercase text-zinc-400 tracking-widest">Arrangement</Label>
-                <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex gap-8">
+                <RadioGroup value={workArrangementFilter} onValueChange={setWorkArrangementFilter} className="flex flex-wrap gap-x-6 gap-y-3">
                   {['Any', 'Remote', 'Onsite'].map((type) => (
                     <div key={type} className="flex items-center space-x-2">
                       <RadioGroupItem value={type} id={`arr-${type}`} className="border-zinc-600 text-[#4da3ff]" />
@@ -250,6 +270,8 @@ export function CareersClient({ jobs }: CareersClientProps) {
           )}
         </section>
       )}
+
+      <CareerAssistant />
 
       <section className="py-24 bg-[#14152e] border-y border-white/5">
         <div className="container mx-auto px-4 md:px-6">

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { HomeHero } from '@/components/home/hero';
 import { HomeProblems } from '@/components/home/problems';
 import { HomeWhyParagonel } from '@/components/home/why-paragonel';
@@ -8,8 +9,27 @@ import { HomeBlog } from '@/components/home/blog';
 import { HomeApproach } from '@/components/home/approach';
 import { HomeEngagement } from '@/components/home/engagement';
 import { HomeConversion } from '@/components/home/conversion';
+import { ClientShowcase } from '@/components/home/client-showcase';
 import { getPublishedTestimonials, getPublishedClientProjects } from '@/lib/public-data';
 import { TestimonialsMarquee } from '@/components/sections/testimonials-marquee';
+
+// Page-specific metadata for the homepage (the root layout default is a
+// fallback only). Uses title.absolute so the home page does not get the
+// '%s | Paragonel Technologies' template suffix.
+export const metadata: Metadata = {
+  title: {
+    absolute: 'Paragonel Technologies — Engineering AI-Native Systems, End-to-End',
+  },
+  description:
+    'Paragonel Technologies Pvt. Ltd. engineers AI-native systems end-to-end — product engineering, AI & intelligent systems, cloud & platform engineering, data systems, and its own products (AcquisitionOS private beta, CodeGuard AI).',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'Paragonel Technologies — Engineering AI-Native Systems, End-to-End',
+    description:
+      'Paragonel Technologies Pvt. Ltd. engineers AI-native systems end-to-end — product engineering, AI, cloud, data, and its own products.',
+    type: 'website',
+  },
+};
 
 /**
  * Paragonel homepage (Prompt 05A — reference-led visual transformation).
@@ -79,6 +99,7 @@ export default async function HomePage() {
       <div className="pt-shell"><div className="pt-hair" /></div>
       <HomeApproach />
       <HomeEngagement />
+      <ClientShowcase />
       <HomeConversion />
     </>
   );

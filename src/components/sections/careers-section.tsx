@@ -56,9 +56,12 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
     if (authLoading) return; 
 
     if (!isAuthenticated) {
-      localStorage.setItem('pendingApplyJobId', job.id); 
-      localStorage.setItem('actionAfterLogin', 'applyJobModalOpen'); 
-      router.push('/auth/login');
+      // Preserve the pending-apply intent for the post-login return; the
+      // server-verified /auth/login page honours ?redirect= to bring the
+      // user back here after they authenticate.
+      localStorage.setItem('pendingApplyJobId', job.id);
+      localStorage.setItem('actionAfterLogin', 'applyJobModalOpen');
+      router.push('/auth/login?redirect=/careers');
     } else {
       setSelectedJobForApplication(job);
       setIsApplyModalOpen(true);
@@ -219,7 +222,7 @@ export function CareersSection({ initialJobs }: CareersSectionProps) {
                   <RadioGroup
                       value={workArrangementFilter}
                       onValueChange={setWorkArrangementFilter}
-                      className="flex space-x-6"
+                      className="flex flex-wrap gap-x-6 gap-y-2"
                     >
                       {workArrangements.map((type) => (
                         <div key={type} className="flex items-center space-x-2">

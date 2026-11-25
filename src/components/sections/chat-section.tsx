@@ -6,11 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageCircle, Send, X, Loader2, Bot, Trash2 } from 'lucide-react';
+import { MessageCircle, Send, X, Loader2, Bot, Trash2, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useChatState } from '@/hooks/useChatState';
-import { ChatCareerFlow } from '@/components/ChatCareerFlow';
-import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import {
   ENQUIRY_CATEGORY_LABELS,
   COMPANY_LINKEDIN_URL,
@@ -22,15 +20,14 @@ import {
 } from '@/lib/ai/lead-qualification';
 
 /**
- * NOTE (Phase 6.3): the career-assistant flow previously read `jobs` and wrote
- * `jobApplications` via the CLIENT Firestore SDK. Both collections are
- * client-denied by firestore.rules, so the read returned 0 jobs and the write
- * silently failed — and the write also bypassed /api/job-applications' auth,
- * validation, atomic duplicate check, and confirmation email. The flow now
- * matches via the secure server route /api/chat/career-assist (which uses the
- * REAL match engine) and submits via /api/job-applications (authenticated,
- * transactional, sends the branded confirmation email). No client Firestore
- * imports remain in this component.
+ * ChatSection is the company + product knowledge assistant + lead-qualification
+ * flow. Career assistance (resume upload, AI parse review, deterministic job
+ * matching, and application submission) now lives on /careers via the dedicated
+ * CareerAssistant component, which reuses the secure server routes
+ * /api/chat/career-assist (real scoreJobCandidate engine) + /api/job-applications
+ * (authenticated, transactional, sends the branded confirmation email). This
+ * chat no longer embeds a career workflow; it answers knowledge questions and
+ * captures sales/marketing enquiries. No client Firestore imports remain here.
  */
 
 /** Suggested example questions (Prompt 05O §9). */
@@ -64,14 +61,18 @@ export function ChatSection() {
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLElement | null>(null);
+  // Whether the visitor is currently parked near the bottom of the chat history.
+  // Auto-scroll to new messages ONLY when this is true — never yank a visitor
+  // back down while they are reading earlier messages (Defect 2 §19/20).
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  // Whether to show the "New messages ↓" affordance (visitor is scrolled up +
+  // a new message arrived).
+  const [showJump, setShowJump] = useState(false);
 
   const {
     messages, addMessage, updateMessage,
     sessionId,
-    careerStep, updateCareerStep,
-    candidateProfile, setCandidateProfile,
-    selectedJob, setSelectedJob,
-    matchedJobs, setMatchedJobs,
     clearChat,
     qualification, startEnquiry, updateCaptured, setQualificationStage,
     editCapturedField, consentAcknowledged, setConsent,
@@ -102,12 +103,56 @@ export function ChatSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // Attach a scroll listener to the Radix ScrollArea viewport so we can track
+  // whether the visitor is parked near the bottom. This drives the conditional
+  // auto-scroll below (Defect 2: never yank a visitor back down while they read
+  // earlier messages). Re-attaches when the chat opens (the viewport is created
+  // on open).
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollViewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollViewport) scrollViewport.scrollTop = scrollViewport.scrollHeight;
+    if (!isOpen) {
+      viewportRef.current = null;
+      return;
     }
-  }, [messages, careerStep, isLoading]);
+    const root = scrollAreaRef.current;
+    if (!root) return;
+    const vp = root.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
+    if (!vp) return;
+    viewportRef.current = vp;
+    const onScroll = () => {
+      const distanceFromBottom = vp.scrollHeight - vp.scrollTop - vp.clientHeight;
+      const near = distanceFromBottom < 80;
+      setIsAtBottom(near);
+      if (near) setShowJump(false);
+    };
+    vp.addEventListener('scroll', onScroll, { passive: true });
+    return () => vp.removeEventListener('scroll', onScroll);
+  }, [isOpen]);
+
+  // Conditional auto-scroll: when a new message or loading state arrives,
+  // scroll to the bottom ONLY if the visitor was already near the bottom.
+  // Otherwise leave them where they are + show the "New messages" affordance
+  // so they can jump down on their own terms.
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    if (isAtBottom) {
+      vp.scrollTop = vp.scrollHeight;
+      setShowJump(false);
+    } else {
+      // A new message arrived while the visitor is scrolled up → offer a jump.
+      setShowJump(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, isLoading]);
+
+  /** Scroll the chat history to the bottom (used by the "New messages" button). */
+  const jumpToBottom = () => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    vp.scrollTop = vp.scrollHeight;
+    setIsAtBottom(true);
+    setShowJump(false);
+  };
 
   // The stub `calculateMatchScore` matcher that previously lived here was
   // removed in Phase 6.3. It diverged from the real match engine (max 85,
@@ -143,8 +188,32 @@ export function ChatSection() {
           qualificationState: qualification.active ? qualification : undefined,
         }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      // Read the body in both branches — a 503 (provider failure: missing key,
+      // unsupported model, quota, timeout) carries an honest message + retryable
+      // flag; we show that message with status='error' so the Retry button
+      // appears. Never disguise a provider failure as a successful answer.
+      const data = await res.json().catch(() => ({} as { answer?: string; citations?: unknown[] }));
+      if (!res.ok) {
+        // Distinguish a deployment-config failure (missing/invalid key,
+        // unsupported model — NOT user-retryable) from a transient provider
+        // failure (quota/timeout — retryable). The route returns fallbackReason;
+        // mapping it to an actionable hint avoids showing the SAME generic
+        // "knowledge service" string for every failure (Prompt §5.4). No secrets
+        // or provider internals are exposed — only a safe, actionable hint.
+        const reason = typeof data.fallbackReason === 'string' ? data.fallbackReason : '';
+        const isConfigIssue =
+          reason === 'missing_key' || reason === 'invalid_key' || reason === 'unsupported_model';
+        const content = isConfigIssue
+          ? "The AI assistant isn't configured correctly for this deployment, so I can't answer right now. Please reach the Paragonel team via the [Contact](/contact) page to report this."
+          : (typeof data.answer === 'string' && data.answer) ||
+            "I'm having trouble responding right now. Please try again, or reach the Paragonel team via the [Contact](/contact) page.";
+        updateMessage(loadingId, {
+          content,
+          citations: Array.isArray(data.citations) ? (data.citations as { title: string; path: string }[]) : [],
+          status: 'error',
+        });
+        return;
+      }
       updateMessage(loadingId, {
         content: data.answer || "I couldn't generate a response. Please try again.",
         citations: Array.isArray(data.citations) ? data.citations : [],
@@ -242,77 +311,10 @@ export function ChatSection() {
     }
   };
 
-  const handleFileUpload = async (file: File) => {
-    updateCareerStep('analyzing_resume');
-    setIsLoading(true);
-    
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async () => {
-      const dataUri = reader.result as string;
-      try {
-        const profile = await analyzeResume({ resumeDataUri: dataUri });
-        setCandidateProfile({ ...profile, resumeUrl: file.name, resumeDataUri: dataUri });
-        updateCareerStep('confirm_details');
-        addMessage('ai', "Extraction complete. Here is the profile I built for you. Please confirm to see your job matches.");
-      } catch {
-        addMessage('ai', "I couldn't parse that file. Please try pasting your resume content.");
-        updateCareerStep('resume_upload');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-  };
-
-  const handleConfirmProfile = async (confirmed: boolean) => {
-    if (!confirmed) {
-      updateCareerStep('resume_upload');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Secure server-side match via /api/chat/career-assist (the REAL
-      // match engine, configurable threshold, published jobs only). The
-      // previous client-SDK read of `jobs` was denied by firestore.rules
-      // (returned 0 jobs) and the stub matcher diverged from the engine.
-      const res = await fetch('/api/chat/career-assist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profile: candidateProfile,
-          website: '', // honeypot
-        }),
-      });
-      if (!res.ok) {
-        addMessage('ai', "I couldn't verify current openings right now. You can browse all roles on the [Careers](/careers) page.");
-        updateCareerStep('matching_jobs');
-        return;
-      }
-      const data = (await res.json()) as {
-        matches?: Array<{ id: string; title: string; score: number; reasons?: string[]; [k: string]: unknown }>;
-        threshold?: number;
-      };
-      const matches = (data.matches || []).map((j) => ({
-        ...j,
-        matchScore: j.score,
-        matchReason: Array.isArray(j.reasons) ? j.reasons.join(' ') : '',
-      }));
-      setMatchedJobs(matches);
-      updateCareerStep('matching_jobs');
-      addMessage(
-        'ai',
-        matches.length > 0
-          ? `Found ${matches.length} role${matches.length > 1 ? 's' : ''} matching your profile at or above ${data.threshold}%. Tap a role to review + apply.`
-          : "I couldn't find a match at the current threshold, but you can still browse all roles on the [Careers](/careers) page.",
-      );
-    } catch {
-      addMessage('ai', "Failed to sync live roles. You can browse all roles on the [Careers](/careers) page.");
-      updateCareerStep('matching_jobs');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  /* handleFileUpload + handleConfirmProfile (dead in-chat career flow) removed
+     in Batch 8. Career assistance now lives on /careers via the
+     CareerAssistant component, which reuses /api/chat/career-assist +
+     /api/job-applications directly. */
 
   /**
    * Render a chat message body with minimal, safe inline Markdown:
@@ -387,18 +389,25 @@ export function ChatSection() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={clearChat} aria-label="Clear chat conversation" className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
+          <Button variant="ghost" size="icon" onClick={clearChat} aria-label="Clear chat conversation" className="h-9 w-9 text-white hover:bg-white/10 rounded-full">
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} aria-label="Close chat" className="h-8 w-8 text-white hover:bg-white/10 rounded-full">
+          <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} aria-label="Close chat" className="h-9 w-9 text-white hover:bg-white/10 rounded-full">
             <X className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </CardHeader>
       
-      {/* Scrollable Chat Area */}
-      <CardContent className="flex-grow p-0 overflow-hidden bg-background relative">
-        <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
+      {/* Scrollable Chat Area.
+          min-h-0 is the CRITICAL flexbox fix (Defect 2): a flex-grow child with
+          overflow-hidden must have min-height:0, otherwise it grows to fit all
+          content and the inner ScrollArea's h-full resolves to the unbounded
+          content height — so wheel/touch events chain to the page instead of
+          scrolling the chat. data-lenis-prevent tells the global Lenis
+          smooth-scroll driver (app-shell) to ignore wheel/touch over the chat
+          so native scrolling takes over here. */}
+      <CardContent className="flex-grow min-h-0 p-0 overflow-hidden bg-background relative">
+        <ScrollArea className="h-full w-full" ref={scrollAreaRef} data-lenis-prevent={true}>
           <div className="p-4 sm:p-5 space-y-6 pb-10">
             {messages.map((msg) => (
               <div key={msg.id} className={cn("flex flex-col w-full", msg.role === 'user' ? 'items-end' : 'items-start')}>
@@ -443,7 +452,7 @@ export function ChatSection() {
               </div>
             ))}
             {/* Suggested example questions — only when the chat has just the greeting (no user messages yet). */}
-            {messages.length === 1 && messages[0]?.role === 'ai' && !isLoading && careerStep === 'idle' && !qualification.active && (
+            {messages.length === 1 && messages[0]?.role === 'ai' && !isLoading && !qualification.active && (
               <div className="flex flex-wrap gap-2 pt-1" aria-label="Suggested questions">
                 {SUGGESTED_QUESTIONS.map((q) => (
                   <button
@@ -592,87 +601,22 @@ export function ChatSection() {
                 </div>
               </div>
             )}
-            {careerStep !== 'idle' && (
-              <div className="w-full">
-                <ChatCareerFlow 
-                  step={careerStep} 
-                  matchedJobs={matchedJobs} 
-                  selectedJob={selectedJob} 
-                  candidateProfile={candidateProfile}
-                  onAcceptHelp={(acc) => acc ? updateCareerStep('resume_upload') : updateCareerStep('idle')}
-                  onFileUpload={handleFileUpload}
-                  onConfirmProfile={handleConfirmProfile}
-                  onApplyOnBehalf={(job) => { setSelectedJob(job); updateCareerStep('apply_behalf'); }}
-                  onFinalSubmit={async (approved) => {
-                    if (!approved) return updateCareerStep('matching_jobs');
-                    setIsLoading(true);
-                    try {
-                      // Submit through the SECURE application API (auth, Zod
-                      // validation, atomic duplicate transaction, profile-minimum
-                      // check, branded confirmation email). The previous
-                      // client-SDK addDoc to `jobApplications` was denied by
-                      // firestore.rules + bypassed all of those guarantees.
-                      const res = await fetch('/api/job-applications', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          jobId: selectedJob.id,
-                          confirmSubmission: true,
-                          website: '', // honeypot
-                        }),
-                      });
-                      if (res.status === 401) {
-                        // Not logged in — guide to registration/login first.
-                        addMessage(
-                          'ai',
-                          "To submit an application, you'll need a candidate account. Please [sign in](/auth/login?redirect=/careers) or [create a free account](/auth/signup) first — then upload your resume from your profile so it is attached to your application.",
-                        );
-                        updateCareerStep('idle');
-                        return;
-                      }
-                      if (res.status === 422) {
-                        const j = await res.json().catch(() => ({}));
-                        addMessage(
-                          'ai',
-                          `Before applying, please complete your candidate profile — ${typeof j.error === 'string' ? j.error : 'it is missing required information (name, phone or location, and at least one skill).'} You can finish it on the [profile page](/candidate/profile), then come back to apply.`,
-                        );
-                        updateCareerStep('idle');
-                        return;
-                      }
-                      if (res.status === 409) {
-                        addMessage('ai', "You've already applied for this role. You can track its status on the [profile page](/candidate/profile).");
-                        updateCareerStep('idle');
-                        return;
-                      }
-                      if (!res.ok) {
-                        addMessage('ai', "I had trouble submitting your application. Please try applying directly on the [Careers](/careers) page.");
-                        updateCareerStep('matching_jobs');
-                        return;
-                      }
-                      const data = await res.json();
-                      updateCareerStep('submitted');
-                      const ref = typeof data.reference === 'string' && data.reference ? data.reference : '—';
-                      const note =
-                        data.notification === 'sent' ? ' A confirmation email is on its way to your inbox.'
-                        : data.notification === 'skipped' ? ' (Email notifications are not configured in this environment, but your application is safely stored.)'
-                        : ' (There was an email issue, but your application is safely stored.)';
-                      addMessage(
-                        'ai',
-                        `Success! Your application has been received (reference: ${ref}).${note} Our team will review your profile shortly — you can track the status on the [profile page](/candidate/profile).`,
-                      );
-                    } catch {
-                      addMessage('ai', "I had trouble submitting your application. Please try applying directly on the [Careers](/careers) page.");
-                      updateCareerStep('matching_jobs');
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}
-                />
-              </div>
-            )}
             {isLoading && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}
           </div>
         </ScrollArea>
+        {/* "New messages" affordance — shown only when the visitor is scrolled up
+            reading earlier messages AND a new message arrived. Does NOT yank them
+            down; they click to jump on their own terms (Defect 2 §20). */}
+        {showJump && (
+          <button
+            type="button"
+            onClick={jumpToBottom}
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground shadow-lg px-3 py-1.5 text-xs font-semibold hover:scale-105 transition-transform"
+            aria-label="Jump to the newest message"
+          >
+            New messages <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        )}
       </CardContent>
 
       {/* Sticky Bottom Input Bar */}

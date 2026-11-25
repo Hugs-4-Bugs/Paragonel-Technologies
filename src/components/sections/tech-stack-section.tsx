@@ -121,8 +121,8 @@ export function TechStackSection() {
           </ScrollFadeIn>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {trustFactors.map((factor, i) => (
-              <ScrollFadeIn key={factor.title} delay={`${i * 100}ms`}>
-                <div className="p-8 rounded-[2rem] bg-background border border-zinc-100 dark:border-zinc-800 shadow-lg hover:border-primary/30 transition-colors">
+              <ScrollFadeIn key={factor.title} delay={`${i * 100}ms`} className="h-full">
+                <div className="flex h-full flex-col p-8 rounded-[2rem] bg-background border border-zinc-100 dark:border-zinc-800 shadow-lg hover:border-primary/30 transition-colors">
                   <div className="p-3 bg-primary/5 rounded-xl inline-block mb-6">
                     <factor.icon className="h-8 w-8 text-primary" />
                   </div>

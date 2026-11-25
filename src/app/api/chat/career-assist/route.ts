@@ -23,7 +23,7 @@
  *     MatchResult.otherEvidence. No internal rubric detail, no other
  *     candidates' data, no resume content.
  *
- * Threshold: defaults to DEFAULT_MATCHING_THRESHOLD (80), clamped to 25–100
+ * Threshold: defaults to DEFAULT_MATCHING_THRESHOLD (80), clamped to 75–100
  * (same bounds as the candidate-preference setting). The caller may pass the
  * candidate's saved threshold if they are logged in.
  *
@@ -33,12 +33,17 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getVerifiedJobs } from '@/lib/public-data';
 import { scoreJobCandidate, meetsThreshold, type JobForMatching, type ProfileForMatching } from '@/lib/matching/match-engine';
-import { DEFAULT_MATCHING_THRESHOLD, MIN_THRESHOLD, MAX_THRESHOLD } from '@/lib/matching/preferences';
+import { MIN_THRESHOLD, MAX_THRESHOLD, resolveMatchingThreshold } from '@/lib/matching/preferences';
+import { getGlobalMatchingThreshold } from '@/lib/matching/global-threshold';
 import { checkRateLimit, getClientId } from '@/lib/submission-security';
 import { jsonError } from '@/lib/auth/route-helpers';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+// Bounded platform timeout for the server-side match (no AI call, but a
+// bounded scan of published jobs + scoring — cap so a pathological input
+// cannot hold the function).
+export const maxDuration = 15;
 
 /** Minimal shape of a CMS job doc as returned by getVerifiedJobs. */
 interface JobDoc {
@@ -141,8 +146,11 @@ export async function POST(request: Request) {
     );
   }
 
-  // Resolve threshold (default 80, clamped). Same bounds as candidate prefs.
-  const effectiveThreshold = Math.min(Math.max(Math.round(threshold ?? DEFAULT_MATCHING_THRESHOLD), MIN_THRESHOLD), MAX_THRESHOLD);
+  // Resolve threshold (default 80, clamped). The candidate-supplied threshold
+  // is clamped to [75,100] AND to the admin-configurable global floor — a
+  // candidate can never bypass the global floor (Prompt §5.2). The global floor
+  // is read from the persisted app_settings row (default 80, never below 75).
+  const effectiveThreshold = resolveMatchingThreshold(threshold, await getGlobalMatchingThreshold());
 
   // Load ONLY genuine published jobs — never dummy/sample data.
   const jobsDocs: JobDoc[] = await getVerifiedJobs(50);

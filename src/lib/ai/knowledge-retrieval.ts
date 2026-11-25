@@ -122,7 +122,7 @@ async function buildKnowledgeBase(): Promise<KnowledgeEntry[]> {
       id: `product-${p.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
       title: `${p.name} — ${p.type} (${p.status})`,
       content: isAcq
-        ? `${p.name} is ${p.description} STATUS: PRIVATE BETA. It is NOT publicly launched. The ONLY approved access URL is https://acquisitionosbeta.vercel.app/ (do not display the raw URL as visible text; use a meaningful label like "Request private-beta access"). Never mention acquisitionos.net. Full workflow: Discover → Research → Find Gaps → Opportunity Report → Score → Personalize → Outreach → Reply → Meeting → Pipeline → Proposal → Close. Distinguish current functionality from planned roadmap features.`
+        ? `${p.name} is ${p.description} STATUS: PRIVATE BETA. It is NOT publicly launched. The canonical product domain is https://acquisitionos.net (do not display the raw URL as visible text; use a meaningful label like "Request private-beta access"). Full workflow: Discover → Research → Find Gaps → Opportunity Report → Score → Personalize → Outreach → Reply → Meeting → Pipeline → Proposal → Close. Distinguish current functionality from planned roadmap features.`
         : `${p.name} is ${p.description} Status: ${p.status}. Type: ${p.type}.`,
       category: 'products',
       canonicalPath: `/our-product/${p.name.toLowerCase() === 'acquisitionos' ? 'acquisitionos' : p.name.toLowerCase() === 'systemfoundry' ? 'systemfoundry' : 'codeguard-ai'}`,

@@ -35,8 +35,8 @@ export function ProcessSection() {
         </ScrollFadeIn>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
           {steps.map((step, i) => (
-            <ScrollFadeIn key={i} delay={`${i * 100}ms`} className="relative">
-              <div className="flex flex-col items-center md:items-start">
+            <ScrollFadeIn key={i} delay={`${i * 100}ms`} className="relative h-full">
+              <div className="flex h-full flex-col items-center md:items-start">
                 <span className="text-5xl font-black text-primary/20 mb-4">{step.num}</span>
                 <h3 className="text-xl font-bold mb-2">{step.title}</h3>
                 <p className="text-muted-foreground text-sm text-center md:text-left">{step.description}</p>

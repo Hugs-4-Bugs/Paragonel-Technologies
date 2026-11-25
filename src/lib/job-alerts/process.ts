@@ -28,6 +28,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import type { CandidateProfile } from '@/lib/auth/candidate-profile';
 import { scoreJobCandidate, meetsThreshold, type MatchResult, type JobForMatching } from '@/lib/matching/match-engine';
 import { resolveMatchingThreshold, resolveJobAlertPreference } from '@/lib/matching/preferences';
+import { getGlobalMatchingThreshold } from '@/lib/matching/global-threshold';
 import {
   JOB_ALERTS_SENT_COLLECTION,
   JOB_MATCH_EVENTS_COLLECTION,
@@ -266,7 +267,7 @@ export async function processJobMatchEvent(
   const candidateBatchSize = opts.candidateBatchSize ?? DEFAULTS.candidateBatchSize;
   const maxAlertsPerRun = opts.maxAlertsPerRun ?? DEFAULTS.maxAlertsPerRun;
   const stuckTimeoutMs = opts.stuckTimeoutMs ?? DEFAULTS.stuckTimeoutMs;
-  const baseUrl = opts.appBaseUrl || process.env.APP_BASE_URL || 'http://localhost:3000';
+  const baseUrl = opts.appBaseUrl || process.env.APP_BASE_URL || 'https://paragonel.com';
 
   const ZERO: ProcessOutcome = { eventId: eventDocId, status: 'missing', candidatesEvaluated: 0, alertsSent: 0, alertsSkipped: 0, alertsFailed: 0 };
 
@@ -349,10 +350,13 @@ export async function processJobMatchEvent(
     try {
       batchSnap = await q.get();
     } catch (err) {
-      // Persist the cursor + CUMULATIVE stats so a retry resumes from where this
-      // run left off (no re-evaluation of already-processed candidates).
-      await setEventStatus(db, eventDocId, { status: 'failed', claimedAt: null, lastError: redactReason(err), lastCandidateId: cursor, stats: cum() });
-      return { eventId: eventDocId, status: 'failed', candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed, reason: redactReason(err) };
+      // Transient batch-fetch error: stay 'pending' (cursor preserved) so the
+      // continuation chain / admin drain re-attempts from this point. 'failed'
+      // is reserved for send-level failures after all candidates were evaluated
+      // (the allDone branch below) — a fetch error is not a send failure + must
+      // not strand the event. Batch 15 fix (D3).
+      await setEventStatus(db, eventDocId, { status: 'pending', claimedAt: null, lastError: redactReason(err), lastCandidateId: cursor, stats: cum() });
+      return { eventId: eventDocId, status: 'pending', partial: true, candidatesEvaluated: evaluated, alertsSent: sent, alertsSkipped: skipped, alertsFailed: failed, reason: redactReason(err) };
     }
     if (batchSnap.size === 0) { allDone = true; break; }
 
@@ -367,7 +371,7 @@ export async function processJobMatchEvent(
       cursor = doc.id; // advance cursor past this evaluated candidate
 
       const key = dedupKey(email, job.id, jobVersion);
-      const threshold = resolveMatchingThreshold(profile.matchingThreshold);
+      const threshold = resolveMatchingThreshold(profile.matchingThreshold, await getGlobalMatchingThreshold());
       const result = scoreJobCandidate(jobForMatching, profile as unknown as Parameters<typeof scoreJobCandidate>[1]);
 
       if (!meetsThreshold(result, threshold).pass) {
@@ -507,7 +511,7 @@ export async function backfillCandidate(
   opts: ProcessOptions = {}
 ): Promise<ProcessOutcome> {
   const email = (candidateEmail || '').trim().toLowerCase();
-  const baseUrl = opts.appBaseUrl || process.env.APP_BASE_URL || 'http://localhost:3000';
+  const baseUrl = opts.appBaseUrl || process.env.APP_BASE_URL || 'https://paragonel.com';
   const maxAlertsPerRun = opts.maxAlertsPerRun ?? DEFAULTS.maxAlertsPerRun;
   const jobBatch = opts.candidateBatchSize ?? 50;
 
@@ -528,7 +532,7 @@ export async function backfillCandidate(
   if (!resolveJobAlertPreference(profile.jobAlertPreference)) {
     return { ...empty, status: 'opted-out', reason: 'candidate has not opted in to job alerts' };
   }
-  const threshold = resolveMatchingThreshold(profile.matchingThreshold);
+  const threshold = resolveMatchingThreshold(profile.matchingThreshold, await getGlobalMatchingThreshold());
 
   let jobsSnap: QuerySnap;
   try {

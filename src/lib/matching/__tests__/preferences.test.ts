@@ -1,6 +1,6 @@
 /**
- * preferences.test.ts — threshold clamping (25-100, default 80), opt-in
- * resolution, and strict schema validation (Prompt 05R §5, §9).
+ * preferences.test.ts — threshold clamping (75-100, default 80), opt-in
+ * resolution, and strict schema validation (Prompt 05R §5, §9; §5.2 75% floor).
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -12,23 +12,28 @@ import {
   MAX_THRESHOLD,
 } from '../preferences';
 
-describe('preferences (Prompt 05R §5)', () => {
-  describe('resolveMatchingThreshold (clamp + default 80)', () => {
+describe('preferences (Prompt 05R §5, §5.2)', () => {
+  describe('resolveMatchingThreshold (clamp + default 80, 75% floor)', () => {
     it('returns 80 (default) when undefined/null/non-number', () => {
       expect(resolveMatchingThreshold(undefined)).toBe(80);
       expect(resolveMatchingThreshold(null)).toBe(80);
       expect(resolveMatchingThreshold('abc')).toBe(80);
     });
-    it('returns the stored value when in [25, 100]', () => {
+    it('returns the stored value when in [75, 100]', () => {
+      expect(resolveMatchingThreshold(75)).toBe(75);
       expect(resolveMatchingThreshold(80)).toBe(80);
-      expect(resolveMatchingThreshold(25)).toBe(25);
       expect(resolveMatchingThreshold(100)).toBe(100);
-      expect(resolveMatchingThreshold(73)).toBe(73);
+      expect(resolveMatchingThreshold(90)).toBe(90);
     });
-    it('clamps values below 25 UP to 25', () => {
-      expect(resolveMatchingThreshold(0)).toBe(25);
-      expect(resolveMatchingThreshold(10)).toBe(25);
-      expect(resolveMatchingThreshold(24)).toBe(25);
+    it('clamps values below 75 UP to 75 (Prompt §5.2: never below 75%)', () => {
+      expect(resolveMatchingThreshold(0)).toBe(75);
+      expect(resolveMatchingThreshold(10)).toBe(75);
+      expect(resolveMatchingThreshold(24)).toBe(75);
+      expect(resolveMatchingThreshold(74)).toBe(75);
+      // legacy 25-74 values (previously allowed) are tightened up to the floor
+      expect(resolveMatchingThreshold(25)).toBe(75);
+      expect(resolveMatchingThreshold(50)).toBe(75);
+      expect(resolveMatchingThreshold(73)).toBe(75);
     });
     it('clamps values above 100 DOWN to 100', () => {
       expect(resolveMatchingThreshold(101)).toBe(100);
@@ -38,10 +43,31 @@ describe('preferences (Prompt 05R §5)', () => {
       expect(resolveMatchingThreshold(80.6)).toBe(81);
       expect(resolveMatchingThreshold(80.4)).toBe(80);
     });
-    it('default is 80 and range is 25-100 (constants)', () => {
+    it('default is 80 and floor is 75 / max 100 (constants)', () => {
       expect(DEFAULT_MATCHING_THRESHOLD).toBe(80);
-      expect(MIN_THRESHOLD).toBe(25);
+      expect(MIN_THRESHOLD).toBe(75);
       expect(MAX_THRESHOLD).toBe(100);
+    });
+    it('applies the admin global floor: candidate threshold is max(floor, candidate) (Prompt §5.2)', () => {
+      // No global floor passed (default MIN_THRESHOLD=75): existing behavior preserved.
+      expect(resolveMatchingThreshold(80)).toBe(80);
+      expect(resolveMatchingThreshold(75)).toBe(75);
+      // Global floor 85: candidate 80 -> 85 (floor wins); candidate 90 -> 90.
+      expect(resolveMatchingThreshold(80, 85)).toBe(85);
+      expect(resolveMatchingThreshold(90, 85)).toBe(90);
+      // Candidate below MIN: clamped to 75 first, then raised to the floor.
+      expect(resolveMatchingThreshold(50, 80)).toBe(80);
+      // Undefined candidate: max(floor, DEFAULT=80).
+      expect(resolveMatchingThreshold(undefined, 85)).toBe(85);
+      expect(resolveMatchingThreshold(undefined, 75)).toBe(80);
+    });
+    it('clamps an out-of-range global floor to [75, 100] (defense-in-depth)', () => {
+      expect(resolveMatchingThreshold(80, 50)).toBe(80); // floor 50 -> 75; max(75,80)=80
+      expect(resolveMatchingThreshold(80, 120)).toBe(100); // floor 120 -> 100; max(100,80)=100
+    });
+    it('a candidate can never bypass the global floor (Prompt §5.2)', () => {
+      // Even a candidate threshold of 75 (the min) is raised to a floor of 90.
+      expect(resolveMatchingThreshold(75, 90)).toBe(90);
     });
   });
 
@@ -58,20 +84,30 @@ describe('preferences (Prompt 05R §5)', () => {
     });
   });
 
-  describe('jobAlertPreferencesSchema (strict validation)', () => {
-    it('accepts a valid preferences body', () => {
-      const r = jobAlertPreferencesSchema.safeParse({
+  describe('jobAlertPreferencesSchema (strict validation, 75% floor)', () => {
+    it('accepts a valid preferences body at the floor (75) and above', () => {
+      const r75 = jobAlertPreferencesSchema.safeParse({
+        jobAlertPreference: true,
+        matchingThreshold: 75,
+      });
+      expect(r75.success).toBe(true);
+      const r80 = jobAlertPreferencesSchema.safeParse({
         jobAlertPreference: true,
         matchingThreshold: 80,
       });
-      expect(r.success).toBe(true);
+      expect(r80.success).toBe(true);
     });
-    it('rejects a threshold below 25', () => {
-      const r = jobAlertPreferencesSchema.safeParse({
+    it('rejects a threshold below 75 (10 and 74)', () => {
+      const r10 = jobAlertPreferencesSchema.safeParse({
         jobAlertPreference: true,
         matchingThreshold: 10,
       });
-      expect(r.success).toBe(false);
+      expect(r10.success).toBe(false);
+      const r74 = jobAlertPreferencesSchema.safeParse({
+        jobAlertPreference: true,
+        matchingThreshold: 74,
+      });
+      expect(r74.success).toBe(false);
     });
     it('rejects a threshold above 100', () => {
       const r = jobAlertPreferencesSchema.safeParse({

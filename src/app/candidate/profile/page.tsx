@@ -16,7 +16,8 @@
  *   - Job matching preferences (jobAlertPreference, matchingThreshold,
  *     preferred roles/locations/employment type/work mode). 05R wires these to
  *     the explainable matching engine + automated job-match email alerts. The
- *     threshold is clamped to 25-100 (default 80); alerts are opt-in and
+ *     threshold is clamped to 75-100 (default 80; 75% hard floor per Prompt
+ *     §5.2); alerts are opt-in and
  *     separate from marketing emails.
  */
 import { useState, useEffect, useCallback } from 'react';
@@ -114,6 +115,9 @@ export default function CandidateProfilePage() {
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
   const [parsedNote, setParsedNote] = useState('');
+  const [applications, setApplications] = useState<
+    Array<{ applicationId: string | null; jobId: string | null; jobTitle: string; status: string; appliedAt: string | null }>
+  >([]);
 
   const loadProfile = useCallback(async () => {
     const res = await fetch('/api/candidate/profile');
@@ -144,6 +148,27 @@ export default function CandidateProfilePage() {
   useEffect(() => {
     loadProfile();
   }, [loadProfile]);
+
+  // Load the candidate's application history (closes the "track status from
+  // your profile" dead-end — the candidate can now see their applications +
+  // statuses here). Best-effort: a failure leaves the list empty rather than
+  // blocking the profile.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/candidate/applications', { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && Array.isArray(data.applications)) setApplications(data.applications);
+      } catch {
+        // non-fatal
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const update = (field: keyof ProfileData, value: string | number | boolean) => {
     setProfile((p) => (p ? { ...p, [field]: value } : p));
@@ -236,7 +261,7 @@ export default function CandidateProfilePage() {
         setCompleteness(data.completeness ?? 0);
         setNote('Profile saved.');
       } else {
-        setError(data.error || 'Could not save.');
+        setError(data.message || data.error ||'Could not save.');
       }
     } catch {
       setError('Network error.');
@@ -288,7 +313,7 @@ export default function CandidateProfilePage() {
           setParsedNote('Resume uploaded but could not be parsed. Fill in your details manually.');
         }
       } else {
-        setError(data.error || 'Upload failed.');
+        setError(data.message || data.error ||'Upload failed.');
       }
     } catch {
       setError('Network error.');
@@ -304,7 +329,7 @@ export default function CandidateProfilePage() {
       if (res.ok && data.url) {
         window.open(data.url, '_blank', 'noopener,noreferrer');
       } else {
-        setError(data.error || 'No resume on file.');
+        setError(data.message || data.error ||'No resume on file.');
       }
     } catch {
       setError('Network error.');
@@ -320,7 +345,7 @@ export default function CandidateProfilePage() {
         await loadProfile();
       } else {
         const data = await res.json();
-        setError(data.error || 'Could not remove.');
+        setError(data.message || data.error ||'Could not remove.');
       }
     } catch {
       setError('Network error.');
@@ -371,6 +396,32 @@ export default function CandidateProfilePage() {
         {error && <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg"><AlertCircle className="h-4 w-4 mt-0.5 shrink-0" /><span>{error}</span></div>}
         {note && <p className="text-sm text-green-600">{note}</p>}
         {parsedNote && <div className="flex items-start gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg"><FileText className="h-4 w-4 mt-0.5 shrink-0" /><span>{parsedNote}</span></div>}
+
+        {/* My applications — closes the "track its status from your profile" dead-end */}
+        <Card>
+          <CardHeader><CardTitle className="text-lg">My applications</CardTitle><CardDescription>The roles you have applied to and their current status.</CardDescription></CardHeader>
+          <CardContent className="space-y-2">
+            {applications.length === 0 ? (
+              <p className="text-sm text-muted-foreground">You have not applied to any roles yet. <Link href="/careers" className="underline">Browse open roles</Link>.</p>
+            ) : (
+              <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                {applications.map((a) => (
+                  <li key={a.applicationId ?? a.jobId ?? Math.random()} className="py-2 flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{a.jobTitle || 'Untitled role'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {a.appliedAt ? `Applied ${new Date(a.appliedAt).toLocaleDateString()}` : 'Applied recently'}
+                        {a.applicationId ? ` · ${a.applicationId}` : ''}
+                      </p>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">{a.status}</span>
+                    {a.jobId && <Link href={`/careers/${encodeURIComponent(a.jobId)}`} className="text-xs underline text-primary">View role</Link>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Resume */}
         <Card>
@@ -510,14 +561,14 @@ export default function CandidateProfilePage() {
                 onChange={(e) => {
                   if (e.target.value === '') { update('matchingThreshold', 80); return; }
                   const n = Math.floor(Number(e.target.value) || 80);
-                  update('matchingThreshold', Math.max(25, Math.min(100, n)));
+                  update('matchingThreshold', Math.max(75, Math.min(100, n)));
                 }}
-                min={25}
+                min={75}
                 max={100}
                 placeholder="80"
                 aria-describedby="mt-help"
               />
-              <p id="mt-help" className="text-xs text-muted-foreground">Minimum 25%, maximum 100%. Default is 80% — we only email you when a role matches at or above this score.</p>
+              <p id="mt-help" className="text-xs text-muted-foreground">Minimum 75%, maximum 100%. Default is 80% — we only email you when a role matches at or above this score.</p>
             </div>
             <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 p-3 space-y-2">
               <label className="flex items-start gap-2 text-sm">

@@ -125,9 +125,9 @@ export function OfferingDetail({ offering }: { offering: ServiceOffering }) {
               {siblings.map((s) => (
                 <RevealItem key={s.slug}>
                   <Link href={`/services/${s.slug}`} className="group flex items-baseline gap-4 border-t border-border py-5 hover:bg-secondary/30 transition-colors">
-                    <span className="text-sm font-medium text-foreground group-hover:text-primary">{s.name}</span>
-                    <span className="text-sm text-muted-foreground truncate">{s.tagline}</span>
-                    <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary" />
+                    <span className="text-sm font-medium text-foreground group-hover:text-primary shrink-0">{s.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{s.tagline}</span>
+                    <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary" />
                   </Link>
                 </RevealItem>
               ))}

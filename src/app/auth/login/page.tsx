@@ -54,7 +54,7 @@ function LoginInner() {
         router.push(redirect);
         router.refresh();
       } else {
-        setError(data.error || 'Invalid email or password.');
+        setError(data.message || data.error || 'Invalid email or password.');
       }
     } catch {
       setError('Network error. Please try again.');

@@ -160,10 +160,10 @@ export function CatalogueLanding({ dynamicServices = [], ecosystemSlot }: { dyna
             <RevealGroup stagger={0.06} className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {dynamicServices.map((s) => (
                 <RevealItem key={s.slug ?? s.title}>
-                  <Link href={`/services/${s.slug}`} className="group block h-full border-t border-border pt-5">
+                  <Link href={`/services/${s.slug}`} className="group flex h-full flex-col border-t border-border pt-5">
                     <h3 className="text-lg font-semibold tracking-tight text-foreground">{s.title}</h3>
                     {s.description && <p className="mt-2 text-sm leading-relaxed text-muted-foreground line-clamp-3">{s.description}</p>}
-                    <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-foreground group-hover:text-primary">
+                    <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-foreground group-hover:text-primary">
                       View <ArrowUpRight className="h-4 w-4" />
                     </span>
                   </Link>

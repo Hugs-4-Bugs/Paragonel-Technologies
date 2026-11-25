@@ -1,22 +1,27 @@
 /**
- * POST /api/newsletter — secure server-side newsletter subscription (Phase 1B + Phase 7).
+ * POST /api/newsletter — secure server-side newsletter subscription with double
+ * opt-in (Batch 2 Task 5).
  *
- * Flow: input validation -> honeypot -> rate limit -> duplicate check against
- *       existing active subscribers (Firestore Admin SDK) -> store -> send a
- *       branded confirmation email with a one-click unsubscribe link.
+ * Flow: input validation -> honeypot -> rate limit -> TRANSACTIONAL duplicate
+ *       check + create as 'pending' -> send a signed confirmation email with a
+ *       one-click confirm link (and an unsubscribe link) -> record email status.
  *
- * Phase 7 changes: a branded confirmation email is now sent immediately after
- * the subscription is stored (previously "No email is sent"). The email includes
- * a signed one-click unsubscribe link bound to the subscriber's address. The
- * email status (sent/skipped/failed) is recorded on the subscriber document for
- * diagnosis; a failed email NEVER discards the stored subscription.
+ * Double opt-in: the subscriber is created with `status:'pending'` and a
+ * confirmation email is sent carrying an HMAC-signed confirm link
+ * (`/api/newsletter/confirm?token=`). The subscription is NOT active until the
+ * subscriber clicks that link (verified by `/api/newsletter/confirm`). This:
+ *   - prevents abuse/forged subscriptions (the owner of the inbox must confirm);
+ *   - prevents duplicate CONFIRMATION SENDS — a re-POST while 'pending' returns
+ *     202 without re-sending (the rate limiter caps the POST frequency);
+ *   - prevents duplicate SUBSCRIPTIONS — the dup-check + insert run inside a
+ *     single Firestore transaction (no TOCTOU race).
  *
- * Suppression: the duplicate check refuses a re-subscribe while an ACTIVE
- * subscription exists (deletedAt == null). The unsubscribe route sets deletedAt,
- * which any future campaign send MUST filter on (campaign send is not yet built).
+ * Suppression: an ACTIVE subscription (deletedAt == null, status == 'active')
+ * refuses re-subscribe with 409. Unsubscribe soft-deletes (preserves consent
+ * evidence); a re-subscribe after unsubscribe creates a fresh 'pending' doc.
  *
- * Status codes: 201 subscribed, 400 invalid, 409 already subscribed,
- *               429 rate-limited, 503 admin SDK not configured.
+ * Status codes: 201 subscribed-pending, 202 already-pending, 400 invalid,
+ *               409 already-subscribed, 429 rate-limited, 503 unavailable.
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
@@ -27,8 +32,13 @@ import {
 } from '@/lib/submission-security';
 import { sendNewsletterConfirmation } from '@/lib/email';
 import { newsletterUnsubscribeUrl } from '@/lib/newsletter/unsubscribe';
+import { newsletterConfirmUrl } from '@/lib/newsletter/confirm-token';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+class AlreadyActive extends Error {}
+class AlreadyPending extends Error {}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -47,7 +57,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Validation failed', issues: parsed.error.issues.map((i) => i.message) },
-      { status: 400 }
+      { status: 400 },
     );
   }
   const data = parsed.data;
@@ -57,7 +67,7 @@ export async function POST(request: Request) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Too many requests. Please try again shortly.' },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } }
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } },
     );
   }
 
@@ -66,53 +76,72 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Subscription service unavailable.' }, { status: 503 });
   }
 
-  // Duplicate check: existing active subscriber with the same email.
+  // Transactional duplicate-check + create as 'pending'. The check + insert run
+  // inside a single Firestore transaction so two concurrent POSTs from the same
+  // email cannot both pass an empty-result check and both write (the TOCTOU race
+  // a non-atomic query-then-write would leave). A soft-deleted doc does NOT
+  // block a fresh re-subscribe (it stays as a suppression record).
+  const newId = 'sub_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  const newRef = db.collection('newsletterSubscribers').doc(newId);
+  let created = false;
   try {
-    const existing = await db
-      .collection('newsletterSubscribers')
-      .where('email', '==', data.email)
-      .limit(1)
-      .get();
-    if (!existing.empty) {
-      const doc = existing.docs[0];
-      const d = doc.data();
-      if (d && d.deletedAt == null) {
-        return NextResponse.json(
-          { error: 'You are already subscribed.' },
-          { status: 409 }
-        );
+    await db.runTransaction(async (tx) => {
+      const existing = await tx.get(
+        db.collection('newsletterSubscribers').where('email', '==', data.email).limit(10),
+      );
+      for (const d of existing.docs) {
+        const dd = d.data() as { deletedAt?: unknown; status?: string };
+        if (dd && dd.deletedAt == null) {
+          if (dd.status === 'active') throw new AlreadyActive();
+          if (dd.status === 'pending') throw new AlreadyPending();
+        }
       }
-    }
-  } catch (err) {
-    console.error('[newsletter] dup-check failed:', err instanceof Error ? err.message : err);
-    // Fail closed on uncertain state to avoid duplicates; surface 500.
-    return NextResponse.json({ error: 'Could not verify subscription.' }, { status: 500 });
-  }
-
-  let ref;
-  try {
-    ref = await db.collection('newsletterSubscribers').add({
-      email: data.email,
-      source: 'Website Footer',
-      subscribedAt: new Date(),
-      deletedAt: null,
+      tx.set(newRef, {
+        email: data.email,
+        source: 'Website Footer',
+        subscribedAt: new Date(),
+        deletedAt: null,
+        status: 'pending',
+      });
     });
+    created = true;
   } catch (err) {
+    if (err instanceof AlreadyActive) {
+      return NextResponse.json({ error: 'You are already subscribed.' }, { status: 409 });
+    }
+    if (err instanceof AlreadyPending) {
+      // Already pending: do NOT re-send the confirmation (prevents duplicate
+      // confirmation sends). The rate limiter caps the POST frequency.
+      return NextResponse.json(
+        {
+          message:
+            'You are already subscribed but have not confirmed your email. Check your inbox for the confirmation link.',
+        },
+        { status: 202 },
+      );
+    }
     console.error('[newsletter] store failed:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Could not store subscription.' }, { status: 500 });
   }
 
-  // Send the branded confirmation email with a one-click unsubscribe link.
-  // Best-effort: a failed email never discards the stored subscription. The
-  // status is recorded on the subscriber doc for diagnosis/retry.
+  if (!created) {
+    // Defensive: transaction did not create + did not throw a known class.
+    return NextResponse.json({ error: 'Could not store subscription.' }, { status: 500 });
+  }
+
+  // Send the double-opt-in confirmation email with a signed confirm link +
+  // a one-click unsubscribe link. Best-effort: a failed email never discards the
+  // stored (pending) subscription; the status is recorded for diagnosis/retry.
   const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
+  const confirmUrl = newsletterConfirmUrl(data.email, baseUrl);
   const unsubUrl = newsletterUnsubscribeUrl(data.email, baseUrl);
   const confirmation = await sendNewsletterConfirmation({
     to: data.email,
+    confirmUrl,
     unsubscribeUrl: unsubUrl,
   });
   try {
-    await ref.update({
+    await newRef.update({
       confirmationEmail: { status: confirmation.status, detail: confirmation.detail || null, at: new Date() },
     });
   } catch {
@@ -120,8 +149,8 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { success: true, notification: confirmation.status },
-    { status: 201 }
+    { success: true, status: 'pending', notification: confirmation.status },
+    { status: 201 },
   );
 }
 

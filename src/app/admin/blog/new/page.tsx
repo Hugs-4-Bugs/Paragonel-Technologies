@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useAutosave } from '@/hooks/useAutosave';
+import { useAutosave, loadServerDraft } from '@/hooks/useAutosave';
 import { SaveStatusIndicator } from '@/components/cms/SaveStatusIndicator';
 
 const blogSchema = z.object({
@@ -82,26 +82,46 @@ export default function NewBlogPage() {
     collectionName: 'blogPosts',
     docId: draftId,
     data: formValues,
-    enabled: isDirty
+    enabled: isDirty,
+    storageKey: AUTOSAVE_KEY,
   });
 
-  // Recovery logic
+  // Recovery logic — try the server-backed draft first (cross-device), then
+  // fall back to the localStorage backup (offline / server outage).
   useEffect(() => {
-    const saved = localStorage.getItem(AUTOSAVE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const timeStr = new Date(parsed.timestamp).toLocaleTimeString();
-        if (confirm(`You have an unsaved draft from ${timeStr}. Restore it?`)) {
-          form.reset(parsed.data);
-          setIsDirty(true);
-        } else {
-          localStorage.removeItem(AUTOSAVE_KEY);
+    let cancelled = false;
+    (async () => {
+      const serverDraft = await loadServerDraft('blogPosts');
+      if (cancelled) return;
+      let candidate: { data: Record<string, unknown>; timestamp: number } | null = null;
+      if (serverDraft?.data) {
+        candidate = {
+          data: serverDraft.data,
+          timestamp: serverDraft.updatedAt ? new Date(serverDraft.updatedAt).getTime() : Date.now(),
+        };
+      } else {
+        const saved = localStorage.getItem(AUTOSAVE_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed?.data) candidate = { data: parsed.data, timestamp: parsed.timestamp ?? Date.now() };
+          } catch {
+            localStorage.removeItem(AUTOSAVE_KEY);
+          }
         }
-      } catch {
+      }
+      if (!candidate) return;
+      const timeStr = new Date(candidate.timestamp).toLocaleTimeString();
+      if (confirm(`You have an unsaved draft from ${timeStr}. Restore it?`)) {
+        form.reset(candidate.data);
+        setIsDirty(true);
+      } else {
         localStorage.removeItem(AUTOSAVE_KEY);
       }
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [form]);
 
   // Handle unsaved changes protection

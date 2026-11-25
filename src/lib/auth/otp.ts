@@ -23,7 +23,7 @@ import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { randomOtpCode, randomHex, signToken, verifySignedToken, hashIp } from './crypto-utils';
 import { hashPassword } from './password';
-import { POLICIES, checkRateLimit, checkBoth, recordFailure, clearFailures, rateKeys } from './rate-limit';
+import { POLICIES, checkBoth, recordFailure, clearFailures } from './rate-limit';
 import { logSecurityEvent } from './security-events';
 
 const OTP_TTL_SECONDS = 10 * 60; // 10 minutes
@@ -72,7 +72,6 @@ export async function issueOtp(input: OtpIssueInput): Promise<OtpIssueResult> {
   if (!db) return { ok: false, reason: 'unavailable' };
 
   const email = input.email.toLowerCase().trim();
-  const { emailKey, ipKey } = rateKeys(`otpReq:${input.purpose}`, email, input.ip);
 
   // Rate limit (email + IP).
   const rl = await checkBoth(`otpReq:${input.purpose}`, POLICIES.otpRequest, email, input.ip);

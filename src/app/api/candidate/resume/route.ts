@@ -29,17 +29,19 @@ import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { verifySession } from '@/lib/auth/sessions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
+import { ResumeAnalysisError } from '@/lib/ai/resume-analysis-error';
 import { jsonError } from '@/lib/auth/route-helpers';
+import {
+  MAX_RESUME_BYTES,
+  ALLOWED_RESUME_TYPES,
+  detectResumeKind,
+  sanitizeFileName,
+  validateResumePath,
+} from '@/lib/resume-security';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const MAX_RESUME_BYTES = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_RESUME_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-];
 const SIGNED_URL_TTL_SECONDS = 5 * 60; // 5 minutes
 const PARSE_TIMEOUT_MS = 30_000; // hard cap on the AI parse call (parser-abuse guard)
 
@@ -58,30 +60,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   });
 }
 
-/** Magic-byte validation (don't trust the extension/MIME alone). */
-function detectResumeKind(buf: Buffer): 'pdf' | 'doc' | 'docx' | null {
-  if (buf.length >= 5 && buf.slice(0, 5).toString('ascii') === '%PDF-') return 'pdf';
-  // DOCX / ZIP: PK\x03\x04
-  if (buf.length >= 4 && buf[0] === 0x50 && buf[1] === 0x4b && buf[2] === 0x03 && buf[3] === 0x04) {
-    // Could be a docx (zip). Validate it's a word doc by checking for word/ in the
-    // central directory — but a full zip parse is heavy. Accept as docx (the MIME
-    // + extension already narrow this); reject if save fails.
-    return 'docx';
-  }
-  // Legacy DOC (OLE2): D0CF11E0A1B11AE1
-  if (
-    buf.length >= 8 &&
-    buf[0] === 0xd0 && buf[1] === 0xcf && buf[2] === 0x11 && buf[3] === 0xe0 &&
-    buf[4] === 0xa1 && buf[5] === 0xb1 && buf[6] === 0x1a && buf[7] === 0xe1
-  ) {
-    return 'doc';
-  }
-  return null;
-}
-
-function sanitizeFileName(name: string): string {
-  return (name || 'resume').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
-}
+// Type/size/filename validation + DOCX ZIP hardening live in
+// `@/lib/resume-security` (shared with the admin download + email-attachment
+// paths and unit-tested there).
 
 export async function POST(request: Request) {
   const v = await verifySession(request, undefined, 'user');
@@ -160,7 +141,18 @@ export async function POST(request: Request) {
   try {
     parsed = await withTimeout(analyzeResume({ resumeDataUri: dataUri }), PARSE_TIMEOUT_MS, 'analyzeResume');
   } catch (err) {
-    parseError = err instanceof Error ? err.message : 'Resume parsing failed.';
+    // Surface an honest, classified reason so the candidate can tell whether
+    // the AI service was unavailable (missing key / timeout / quota / bad key /
+    // unsupported model) vs a genuine parse failure — and never a fake success.
+    if (err instanceof ResumeAnalysisError) {
+      parseError =
+        err.reason === 'invalid_output'
+          ? 'Could not parse this resume. Your resume was stored — fill in your profile manually.'
+          : 'Resume parsing is unavailable right now (AI service). Your resume was stored — fill in your profile manually.';
+    } else {
+      parseError = 'Resume parsing failed. Your resume was stored — fill in your profile manually.';
+    }
+    console.error('[candidate/resume] parse failed:', err instanceof Error ? err.message.slice(0, 120) : err);
     // Not fatal — the resume is stored; the candidate can still use it.
   }
 
@@ -225,9 +217,11 @@ export async function GET(request: Request) {
   const storage = getAdminBucket();
   if (!storage) return jsonError(503, 'Resume storage unavailable.');
 
-  // Enforce the path is within this candidate's own folder (defense-in-depth).
+  // Enforce the path is within this candidate's own folder (ownership) AND
+  // matches the strict resume-path shape (defense-in-depth against a tampered
+  // or injected profile value). Both must pass.
   const expectedPrefix = `candidates/${email}/resumes/`;
-  if (!path.startsWith(expectedPrefix) || !/^candidates\/[^\s/]+\/resumes\/[A-Za-z0-9._-]{1,200}$/.test(path)) {
+  if (!validateResumePath(path) || !path.startsWith(expectedPrefix)) {
     return jsonError(403, 'Resume path is not authorized.');
   }
 
@@ -256,8 +250,10 @@ export async function DELETE(request: Request) {
   const path = profile?.resumeStoragePath;
   if (!path) return jsonError(404, 'No resume on file.');
 
+  // Same strict shape + ownership check as GET (defense-in-depth: a tampered
+  // profile value cannot make this delete an arbitrary Storage path).
   const expectedPrefix = `candidates/${email}/resumes/`;
-  if (!path.startsWith(expectedPrefix)) {
+  if (!validateResumePath(path) || !path.startsWith(expectedPrefix)) {
     return jsonError(403, 'Resume path is not authorized.');
   }
 

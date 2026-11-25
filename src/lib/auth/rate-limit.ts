@@ -37,6 +37,12 @@ export const POLICIES = {
   otpVerify: { max: 10, windowSeconds: 300, lockoutThreshold: 5, lockoutSeconds: 900 },
   login: { max: 10, windowSeconds: 300, lockoutThreshold: 10, lockoutSeconds: 900 },
   bootstrap: { max: 3, windowSeconds: 3600, lockoutThreshold: 5, lockoutSeconds: 3600 },
+  // Account / invitation mutations: admin create+invite, invite acceptance,
+  // suspend/reactivate/revoke-sessions. Tight per-IP + per-actor budget so a
+  // compromised admin account or a public invite-flooder cannot mass-create or
+  // mass-replay invitations. See docs/AUTH_IMPLEMENTATION_PLAN.md §7 for the
+  // documented distributed-limiter follow-up (this is in-memory only).
+  accountMutation: { max: 10, windowSeconds: 600, lockoutThreshold: 15, lockoutSeconds: 1800 },
 } satisfies Record<string, RateLimitConfig>;
 
 export interface RateLimitResult {

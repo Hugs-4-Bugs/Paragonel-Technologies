@@ -1,7 +1,7 @@
 /**
  * services-catalogue.ts — Paragonel engineering services catalogue (Prompt 05B).
  *
- * Five engineering domains → 13 individual offerings. The source of truth for
+ * Thirteen engineering domains → individual offerings. The source of truth for
  * the new /services landing + the /services/[slug] detail pages.
  *
  * Content standard (per founder): every offering answers —
@@ -339,6 +339,86 @@ export const OFFERINGS: ServiceOffering[] = [
     metaTitle: 'Platform Engineering & Reliability — Paragonel',
     metaDescription: 'Observability, SLOs, alerting, capacity planning and self-healing — systems that stay up and warn you early.',
   },
+  {
+    slug: 'distributed-systems-engineering',
+    domainSlug: 'cloud-infrastructure-platform',
+    name: 'Distributed Systems Engineering',
+    tagline: 'Correctness that holds across nodes — not just on the happy path.',
+    problem:
+      'A service that worked on one node breaks across many — state drift, partial failures, network partitions, clock skew. The team treats distributed correctness as an afterthought and pays for it in data loss and silent inconsistency.',
+    deliverable:
+      'Distributed-systems engineering — consensus and replication choices, partition handling, idempotency and dedup at the edges, failure-domain reasoning. Systems whose invariants hold across nodes, not only on the happy path.',
+    why: 'Most production incidents in scaled systems are distributed bugs — partial writes, duplicate events, split-brain. Engineering for them up front is cheaper than discovering them during an outage.',
+    tech: ['Consensus (Raft / Paxos patterns)', 'Replication + quorum design', 'Idempotency + dedup keys', 'Partition tolerance + CAP tradeoffs', 'Distributed tracing'],
+    engagement:
+      'Starts with the specific failure mode that already bit you (a partial write, a duplicate, a stale read) and the invariant that should hold. We design the contract before scaling it.',
+    metaTitle: 'Distributed Systems Engineering — Paragonel',
+    metaDescription: 'Distributed-systems correctness — consensus, replication, idempotency, partition handling. Invariants that hold across nodes, not just on the happy path.',
+  },
+  {
+    slug: 'scalability-engineering',
+    domainSlug: 'cloud-infrastructure-platform',
+    name: 'Scalability Engineering',
+    tagline: 'A reasoned growth curve — not “add more instances.”',
+    problem:
+      'The product survives a demo and dies under real load. Scaling is a wishlist of “add more instances” with no model of where the next bottleneck lives — the database, the queue, a hot lock, a third-party rate limit.',
+    deliverable:
+      'Scalability engineering — load and bottleneck modelling, capacity planning, horizontal and vertical scaling paths, caching strategy, back-pressure and load shedding. A system with a reasoned growth path, not hope.',
+    why: 'Scaling without a model is expensive and unpredictable — you overprovision the wrong thing and still fall over on the right one. A reasoned growth path lets you spend on the actual next constraint.',
+    tech: ['Load + capacity modelling', 'Horizontal + vertical scaling', 'Caching layers + invalidation', 'Back-pressure + load shedding', 'Bottleneck profiling'],
+    engagement:
+      'Begins with a load profile of the real system and the identified next constraint. We remove the right bottleneck first, then model the one after.',
+    metaTitle: 'Scalability Engineering — Paragonel',
+    metaDescription: 'Scalability with a model — load profiling, capacity planning, caching, back-pressure. A reasoned growth path instead of “add more instances.”',
+  },
+  {
+    slug: 'microservices-architecture',
+    domainSlug: 'cloud-infrastructure-platform',
+    name: 'Microservices Architecture',
+    tagline: 'Boundaries drawn on real seams — or none at all.',
+    problem:
+      'A monolith that was easy to reason about is split into N services nobody can reason about — cascading failures, schema drift across services, a service mesh that costs more than the features it enables.',
+    deliverable:
+      'Microservices architecture done deliberately — service boundaries around true business seams, typed contracts, inter-service failure isolation, and an honest decision about where a monolith is still the right answer. Not “microservices because everyone has them.”',
+    why: 'The cost of microservices is operational and cognitive — network failure, contract drift, distributed debugging. They pay off only when boundaries are drawn on real seams; otherwise they multiply complexity for no gain.',
+    tech: ['Service boundary design (DDD)', 'Typed API contracts', 'Circuit breakers + bulkheads', 'Saga / outbox patterns', 'Service mesh where justified'],
+    engagement:
+      'Starts with the seam that is hurting (a coupled deploy, a blast radius) and whether a service boundary actually solves it. We split only where the boundary is real.',
+    metaTitle: 'Microservices Architecture — Paragonel',
+    metaDescription: 'Microservices drawn on real business seams — typed contracts, failure isolation, and an honest call on when a monolith is still right.',
+  },
+  {
+    slug: 'database-engineering',
+    domainSlug: 'cloud-infrastructure-platform',
+    name: 'Database Engineering',
+    tagline: 'A data layer reasoned about — not endured.',
+    problem:
+      'The database is treated as a bucket — schema grown by accretion, queries that work at 1k rows and time out at 1M, indexes nobody understands, migrations risky enough to avoid. The data layer becomes the constraint on everything.',
+    deliverable:
+      'Database engineering — schema design, indexing strategy, query optimization, partitioning and sharding where warranted, safe migration practices. A data layer that is reasoned about, not endured.',
+    why: 'The database is usually the hardest thing to change later and the first thing to break under scale. Engineering it deliberately — schema, indexes, query plans — pays back for the life of the product.',
+    tech: ['Schema + data modelling', 'Index strategy + query plans', 'Partitioning / sharding', 'Safe migrations', 'PostgreSQL / SQL tuning'],
+    engagement:
+      'Starts with the query or table that already hurts and the access pattern that drives it. We fix the data model and the query together, not just add an index.',
+    metaTitle: 'Database Engineering — Paragonel',
+    metaDescription: 'Database engineering — schema design, indexing, query optimization, partitioning, safe migrations. A data layer reasoned about, not endured.',
+  },
+  {
+    slug: 'event-streaming-systems',
+    domainSlug: 'cloud-infrastructure-platform',
+    name: 'Event Streaming Systems',
+    tagline: 'A durable event spine the rest of the system can trust.',
+    problem:
+      'The system needs things to happen in response to other things — across services, asynchronously, durably. Without an event backbone, teams build point-to-point polling, fragile webhooks, and background jobs that silently drop on failure.',
+    deliverable:
+      'Event-streaming architecture — topic and partition design, producer and consumer contracts, at-least-once / exactly-once reasoning, replay and backfill, schema evolution. A durable event spine the rest of the system can trust.',
+    why: 'A well-designed event backbone decouples producers from consumers, makes the system observable at the seam, and survives partial failure. A poorly designed one just moves the fragility into the broker.',
+    tech: ['Kafka-class brokers / Redpanda', 'Topic + partition design', 'At-least-once + idempotent consumers', 'Schema registry + evolution', 'Replay + backfill'],
+    engagement:
+      'Starts with the event that already has to flow and the consumer that needs it. We design the contract and the delivery guarantee before standing up the broker.',
+    metaTitle: 'Event Streaming Systems — Paragonel',
+    metaDescription: 'Event-streaming architecture — topic design, delivery guarantees, replay, schema evolution. A durable event spine the rest of the system can trust.',
+  },
 
   // ── 04 Data Engineering & Analytics ──────────────────────────────────────
   {
@@ -591,6 +671,23 @@ export const OFFERINGS: ServiceOffering[] = [
       'Research / feasibility engagement only. No delivery of production emerging-tech systems is promised. Engage via /contact to discuss a specific research question.',
     metaTitle: 'Emerging Technology & Applied Research — Paragonel',
     metaDescription: 'Applied research into digital twins, robotics software, spatial/AR-VR, distributed ledgers and edge-AI — labelled as research.',
+    status: 'research',
+  },
+  {
+    slug: 'augmented-reality-spatial',
+    domainSlug: 'emerging-technology',
+    name: 'Augmented Reality & Spatial Computing',
+    tagline: 'AR researched per use case — labelled as research, not a delivery service.',
+    problem:
+      'Augmented reality and spatial computing are commercially relevant in specific domains — field service, training, retail try-on, guided assembly — but the hardware and tooling maturity is uneven, and most organisations cannot tell where it is actually ready versus hype.',
+    deliverable:
+      'Applied research and feasibility assessment into AR and spatial computing for a specific use case — where it is mature enough to pilot, what the integration cost is, and what validation is required before investing. Prototyping where justified. Not delivered as an established production service.',
+    why: 'AR done prematurely is expensive and underdelivers; AR ignored where it is ready cedes ground. The honest stance is to research it per use case and separate ready from not — the same stance Paragonel applies to its own roadmap.',
+    tech: ['AR foundations (research)', 'WebXR / mobile AR (research)', 'Spatial interaction design (research)', '3D asset pipelines (research)', 'Hardware integration (research)'],
+    engagement:
+      'Research / feasibility engagement only. No delivery of production AR systems is promised. Engage via /contact to discuss a specific use case.',
+    metaTitle: 'Augmented Reality & Spatial Computing — Paragonel',
+    metaDescription: 'Applied research into AR and spatial computing for specific use cases — labelled as research, not an established delivery service.',
     status: 'research',
   },
 ];

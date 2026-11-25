@@ -95,23 +95,23 @@ export function TeamSection() {
               </CardContent>
               <CardFooter className="justify-center space-x-4 pb-8">
                 {member.socials?.linkedin && (
-                  <Link href={member.socials.linkedin} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                    <Linkedin className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                  <Link href={member.socials.linkedin} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} aria-label={`${member.name} on LinkedIn (opens in a new tab)`} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-primary transition-colors">
+                    <Linkedin className="h-5 w-5" />
                   </Link>
                 )}
                 {member.socials?.twitter && (
-                  <Link href={member.socials.twitter} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} aria-label={`${member.name} on X (opens in a new tab)`}>
-                    <XIcon className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                  <Link href={member.socials.twitter} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} aria-label={`${member.name} on X (opens in a new tab)`} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-primary transition-colors">
+                    <XIcon className="h-5 w-5" />
                   </Link>
                 )}
                 {member.socials?.instagram && (
-                  <Link href={member.socials.instagram} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                    <Instagram className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                  <Link href={member.socials.instagram} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} aria-label={`${member.name} on Instagram (opens in a new tab)`} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-primary transition-colors">
+                    <Instagram className="h-5 w-5" />
                   </Link>
                 )}
                 {member.socials?.globe && (
-                  <Link href={member.socials.globe} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                    <Globe className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                  <Link href={member.socials.globe} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} aria-label={`${member.name} website (opens in a new tab)`} className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-primary transition-colors">
+                    <Globe className="h-5 w-5" />
                   </Link>
                 )}
               </CardFooter>

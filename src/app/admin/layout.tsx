@@ -22,7 +22,8 @@ import {
   FileUser,
   MessageSquareQuote,
   FolderGit2,
-  Network
+  Network,
+  BellRing
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -34,6 +35,7 @@ const sidebarItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/applications', label: 'Applications', icon: FileUser },
   { href: '/admin/jobs', label: 'Jobs', icon: Briefcase },
+  { href: '/admin/alerts', label: 'Job Alerts', icon: BellRing },
   { href: '/admin/leads', label: 'Leads', icon: Mail },
   { href: '/admin/blog', label: 'Blog', icon: BookOpen },
   { href: '/admin/services', label: 'Services', icon: Layers },

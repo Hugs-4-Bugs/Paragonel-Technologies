@@ -69,10 +69,10 @@ export const basePortfolio = [
     description: 'AcquisitionOS is Paragonel\u2019s flagship AI-native client acquisition platform, built to take businesses from prospect discovery to qualified pipeline. **The Problem:** Sales teams spend significant time manually researching companies, identifying opportunities, finding business gaps, personalizing outreach, and managing follow-ups across disconnected tools. **The Solution:** A connected acquisition workflow covering prospect discovery, multi-source company research, signal interpretation, opportunity and gap detection, AI-generated opportunity reports, lead scoring, personalized outreach, reply and conversation analysis, meeting workflows, pipeline management, proposal generation, and closing. **Status:** AcquisitionOS is currently in private beta, where real-user feedback is driving product refinement and workflow validation as we prepare for broader adoption.',
     status: 'Private Beta',
     techs: ['Spring Boot', 'Next.js', 'Python', 'Vector DB', 'AWS'],
-    // Approved beta destination (kept for the flagship card's internal use;
-    // the /our-product index renders the flagship CTA to /our-product/acquisitionos,
-    // so this URL is never shown as visible text).
-    link: 'https://acquisitionosbeta.vercel.app/',
+    // Canonical AcquisitionOS product domain (kept for the flagship card's
+    // internal use; the /our-product index renders the flagship CTA to
+    // /our-product/acquisitionos, so this URL is never shown as visible text).
+    link: 'https://acquisitionos.net',
     createdAt: new Date('2024-01-01').toISOString()
   },
   {

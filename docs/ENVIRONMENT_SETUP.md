@@ -1,274 +1,228 @@
-# Environment Setup — Paragonel Technologies
+# Environment Setup — Paragonel Technologies (Supabase architecture)
 
 This document is the complete handoff for configuring every environment variable
 the application needs, plus the external (non-code) setup that environment
-variables alone cannot cover. The goal: the founder can fill in the variables
-and configure the corresponding Firebase / email / CAPTCHA / AI resources
-without hunting through source code.
+variables alone cannot cover. The goal: the founder can fill in the variables +
+configure the corresponding Supabase / email / CAPTCHA / AI resources without
+hunting through source code.
+
+## Architecture status
+
+**Supabase is the approved primary backend.** The complete Supabase foundation
+is delivered + verified locally against real Postgres (PGlite):
+
+- `supabase/migrations/0001_initial_schema.sql` — 24 normalized tables (UUID PKs,
+  FKs, indexes, constraints, soft-delete where justified).
+- `supabase/migrations/0002_rls_policies.sql` — 73 RLS policies (anon/candidate/
+  admin/super-admin least-privilege).
+- `supabase/migrations/0003_storage_buckets.sql` — private `candidate-resumes`
+  bucket + storage RLS.
+- `supabase/migrations/0004_auth_triggers.sql` — auto-create `profiles` +
+  `candidate_profiles` on Supabase Auth signup.
+- `supabase/migrations/0005_grants.sql` — role grants (portable to raw Postgres).
+- `src/lib/supabase/{server,client,types}.ts` — typed Supabase client lib.
+- `src/lib/migration/{mapper,migrate}.ts` + `scripts/migrate-firebase-to-supabase.ts`
+  — idempotent Firebase→Supabase migration tooling (verified end-to-end:
+  Firestore emulator → PGlite, with counts + reconciliation).
+- 49 local tests pass (23 RLS behavioral + 19 mapper + 7 migration e2e).
+
+**The Firebase variables are RETAINED** because the 50 Firebase Admin SDK routes
+are still active. The route-level data-access cutover (swapping `getAdminDb()`
+calls for `getSupabaseServer()` + the data-access layer) is the next batch.
+Removing the Firebase variables before the routes are swapped would break the
+running app. Once the cutover is complete + the founder confirms, delete the
+entire Firebase section from `.env.local`.
 
 A startup validation module (`src/lib/env-validation.ts`, wired via
 `src/instrumentation.ts`) prints a non-sensitive summary of missing/empty
-required variables on every server boot — so misconfigurations are visible
-immediately instead of surfacing as mysterious per-route 500/503 errors.
+required variables on every server boot.
 
 ---
 
-## 1. Two files you need
+## 1. Files you need
 
 | File | Purpose | Committed? |
 | --- | --- | --- |
-| `.env.example` | Placeholders only — documents every variable the code reads. Copy it to start. | Yes (tracked) |
-| `.env.local` | Your real local values. The dev server reads this automatically. | No (gitignored) |
-| `.env.template` | A blank, founder-facing template (same variables, shorter notes). | Yes (tracked) |
+| `.env.example` | Placeholders only — documents every variable. Copy to start. | Yes |
+| `.env.template` | Founder-facing blank quick-fill template. | Yes |
+| `.env.local` | Your real local values. The dev server reads this. | No (gitignored) |
 
-**Never commit a `.env` or `.env.local` containing real secrets.** The
-`.gitignore` already excludes them. If you accidentally commit a secret,
-rotate it immediately — git history is permanent.
+**Never commit a `.env.local` containing real secrets.**
 
 ---
 
-## 2. Variable reference
+## 2. Supabase variables (primary backend)
 
-Each variable is marked **Public** (safe to expose to the browser, prefixed
-`NEXT_PUBLIC_`) or **Secret** (server-only, never in `NEXT_PUBLIC_*`).
-
-### 2.1 Security (auth) — REQUIRED always
-
-| Variable | Public/Secret | Where to obtain | Local value | Vercel |
+| Variable | Public/Secret | Where to obtain | Local | Vercel |
 | --- | --- | --- | --- | --- |
-| `JWT_SECRET` | Secret | Generate: `openssl rand -hex 32` | random 32+ chars | Project → Settings → Environment Variables |
-| `OTP_SECRET` | Secret | Generate: `openssl rand -hex 32` | random 32+ chars | same |
-| `SUPERADMIN_BOOTSTRAP_EMAIL` | Public-ish (not secret, not `NEXT_PUBLIC_`) | The founder email that may bootstrap the first super_admin | `contact@prabhat.online` | same |
+| `NEXT_PUBLIC_SUPABASE_URL` | Public | Supabase dashboard → Project settings → API → Project URL | `https://<project>.supabase.co` (or local) | Project → Settings → Environment Variables |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Supabase dashboard → API → anon public key | the anon key | same |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | Supabase dashboard → API → service_role key | the service-role key | same (mark as Sensitive) |
 
-`JWT_SECRET` signs session JWTs (candidate + admin). `OTP_SECRET` signs OTP
-request IDs and the one-click unsubscribe tokens (job-alerts + newsletter).
-Both MUST be ≥32 characters. If either is missing or too short, all auth
-routes fail closed (500) — by design, never silently insecure.
+**Never put `SUPABASE_SERVICE_ROLE_KEY` in a `NEXT_PUBLIC_*` variable.** It
+bypasses RLS + must stay server-side.
 
-### 2.2 Firebase client config — REQUIRED always (public-by-design)
+---
 
-| Variable | Public/Secret | Where to obtain |
-| --- | --- | --- |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Public | Firebase console → Project settings → Web app |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Public | `<project>.firebaseapp.com` |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Public | Firebase project id |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Public | `<project>.firebasestorage.app` |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Public | Firebase console → Web app |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | Public | Firebase console → Web app |
-| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Public (optional) | Firebase console → Analytics |
-
-These identify the Firebase project to the client SDK. They are public by
-design (they're embedded in the browser bundle) — security is enforced by
-Firestore/Storage rules + the Admin SDK, not by hiding these values.
-
-### 2.3 Firebase Admin SDK — REQUIRED in production (optional locally)
+## 3. Email / SMTP
 
 | Variable | Public/Secret | Where to obtain |
 | --- | --- | --- |
-| `FIREBASE_ADMIN_PROJECT_ID` | Secret | Firebase console → Project settings → Service accounts |
-| `FIREBASE_ADMIN_CLIENT_EMAIL` | Secret | Same (service-account email) |
-| `FIREBASE_ADMIN_PRIVATE_KEY` | Secret | Same (private key — paste with `\n` escapes) |
-
-**Local dev:** you do NOT need these. Set `FIRESTORE_EMULATOR_HOST` instead
-(§2.7) and the Admin SDK connects to the emulator without credentials.
-
-**Production:** generate a service account key (JSON) from the Firebase console
-→ Project settings → Service accounts → Generate new private key. Set the three
-variables above from that JSON. The private key must have its newlines escaped
-as `\n` (the JSON file already has them escaped; paste carefully).
-
-### 2.4 Email / SMTP — optional (dev falls back to Mailpit)
-
-| Variable | Public/Secret | Where to obtain |
-| --- | --- | --- |
-| `SMTP_HOST` | Secret | Your SMTP provider (e.g. `smtp.resend.com`, `smtp.gmail.com`) |
+| `SMTP_HOST` | Secret | Your SMTP provider (e.g. `smtp.resend.com`) |
 | `SMTP_PORT` | Secret | `587` (STARTTLS) or `465` (TLS) |
-| `SMTP_SECURE` | Secret | `true` for port 465, `false` for 587 |
+| `SMTP_SECURE` | Secret | `true` for 465, `false` for 587 |
 | `SMTP_USER` | Secret | SMTP username (API key for Resend) |
 | `SMTP_PASS` | Secret | SMTP password / API key |
 | `SMTP_FROM` | Secret | Verified sender: `Paragonel <noreply@yourdomain.com>` |
 | `COMPANY_INBOX` | Secret | Real company inbox for enquiry notifications |
-| `APP_BASE_URL` | Public-ish | `http://localhost:3000` (dev) / `https://yourdomain.com` (prod) |
+| `APP_BASE_URL` | Public-ish | `http://localhost:3000` (dev) / prod URL |
 
-**Provider choice:** the app uses **Nodemailer over generic SMTP**. Resend,
-AWS SES, SendGrid, or a self-hosted SMTP all work — pick ONE and configure its
-SMTP credentials above. Do not configure multiple competing providers.
-
-**Verified sender domain:** whichever provider you choose, you MUST verify the
-sending domain (e.g. `yourdomain.com`) in the provider's dashboard (DNS TXT/CNAME
-records). `SMTP_FROM` must use an address on a verified domain. Without domain
-verification, the provider rejects outbound mail — the app reports `failed`
-honestly, it does not fake success.
-
-**Local dev:** leave `SMTP_HOST` empty and the app falls back to Mailpit
-(`localhost:1025`) — generated emails are inspectable in Mailpit's web UI at
-`http://localhost:8025` without reaching any real mailbox.
-
-### 2.5 AI (Genkit / Google Gemini) — optional (chatbot + resume parse)
-
-| Variable | Public/Secret | Where to obtain |
-| --- | --- | --- |
-| `GEMINI_API_KEY` | Secret | Google AI Studio → Get API key (`https://aistudio.google.com/app/apikey`) |
-| `GOOGLE_API_KEY` | Secret | Alternative — Genkit accepts either |
-
-Required for: the Paragonel AI chatbot, resume parsing, and tech-news flows.
-If empty, the chatbot returns an honest fallback message for every question
-and resume parsing is skipped (the resume is still stored; the candidate fills
-the profile manually). This is the current state of `.env.local` — the chatbot
-is wired correctly but returns fallbacks until a key is provided.
-
-### 2.6 CAPTCHA (Cloudflare Turnstile) — REQUIRED in production
-
-| Variable | Public/Secret | Where to obtain |
-| --- | --- | --- |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Public | Cloudflare dashboard → Turnstile → Add site |
-| `TURNSTILE_SECRET_KEY` | Secret | Same (the secret key, server-only) |
-
-Without these, production registration + login fail closed (the server cannot
-verify the CAPTCHA). **Local dev** automatically uses Turnstile test mode
-(always passes) when the keys are absent, so local auth works without them.
-
-### 2.7 Local dev only (NEVER set in production)
-
-| Variable | Purpose |
-| --- | --- |
-| `FIRESTORE_EMULATOR_HOST` | `localhost:8080` — routes Admin SDK to the emulator |
-| `STORAGE_EMULATOR_HOST` | `localhost:9199` — routes Storage to the emulator |
-| `MAILPIT_HOST` | `localhost` — Mailpit SMTP host (fallback when no SMTP_HOST) |
-| `MAILPIT_SMTP_PORT` | `1025` — Mailpit SMTP port |
-
-These are set automatically by `scripts/dev-supervisor.sh` for local dev. NEVER
-set them in Vercel — they would point production traffic at nonexistent local
-services.
+Pick ONE provider (Resend recommended — simple, generous free tier, SMTP-compatible).
+Verify the sending domain in the provider dashboard (DNS SPF/DKIM/DMARC). `SMTP_FROM`
+must use an address on a verified domain. Local dev: leave `SMTP_HOST` empty → the
+email service falls back to Mailpit (`localhost:1025`); inspect captured emails at
+`http://localhost:8025`.
 
 ---
 
-## 3. External setup (cannot be done with environment variables alone)
+## 4. AI (Gemini)
 
-Environment variables are necessary but NOT sufficient. The following must be
-configured in the respective provider consoles:
+| Variable | Public/Secret | Where to obtain |
+| --- | --- | --- |
+| `GEMINI_API_KEY` | Secret | `https://aistudio.google.com/app/apikey` |
+| `GOOGLE_API_KEY` | Secret | Alternative (Genkit accepts either) |
 
-### 3.1 Firebase project (production)
-
-1. Create a Firebase project at `https://console.firebase.google.com`.
-2. Add a Web app → copy the client config into the `NEXT_PUBLIC_FIREBASE_*` vars.
-3. Enable Firestore (production mode) + deploy rules:
-   `firebase deploy --only firestore:rules,firestore:indexes,storage`.
-4. Create the Storage bucket ( Blaze plan required for Storage + signed URLs).
-5. Generate a service-account key → set `FIREBASE_ADMIN_*` vars.
-6. The Firestore rules in this repo (`firestore.rules`, `storage.rules`) deny
-   ALL client access by default — every read/write goes through the Next.js
-   API routes via the Admin SDK. Do not loosen them.
-
-### 3.2 Email provider (production)
-
-1. Pick ONE provider (Resend recommended — simple, generous free tier).
-2. Verify the sending domain in the provider dashboard (add the DNS records
-   they show you — typically SPF, DKIM, DMARC TXT/CNAME records).
-3. Create an API key / SMTP credential → set `SMTP_USER` + `SMTP_PASS`.
-4. Set `SMTP_FROM` to an address on the verified domain.
-5. Set `COMPANY_INBOX` to a real inbox the founder monitors (enquiry
-   notifications go here).
-
-### 3.3 Cloudflare Turnstile (production)
-
-1. Create a Turnstile widget at `https://dash.cloudflare.com` → Turnstile.
-2. Copy the site key → `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
-3. Copy the secret key → `TURNSTILE_SECRET_KEY`.
-
-### 3.4 Google AI (Gemini) key
-
-1. Get a key at `https://aistudio.google.com/app/apikey`.
-2. Set `GEMINI_API_KEY`. The chatbot + resume parser start working immediately.
-
-### 3.5 Vercel (production hosting)
-
-1. Import the GitHub repo into Vercel.
-2. Set every **Secret** + **Public** variable above in
-   Project → Settings → Environment Variables (Production environment).
-   Do NOT set the §2.7 local-dev vars.
-3. Set `APP_BASE_URL` to the production URL.
-4. Deploy. The startup env-validation summary appears in the Vercel function
-   logs on cold start — check it for any `problems=` count > 0.
-5. If Vercel Deployment Protection is enabled, set it to "Production only"
-   (Preview protection blocks the founder from viewing preview deploy logs
-   without SSO).
+Required for the chatbot, resume parsing, + tech-news. Without it the chatbot
+returns an honest fallback + resume parse is skipped.
 
 ---
 
-## 4. Local development quickstart
+## 5. Security
+
+| Variable | Public/Secret | Where to obtain |
+| --- | --- | --- |
+| `JWT_SECRET` | Secret | `openssl rand -hex 32` (≥32 chars) |
+| `OTP_SECRET` | Secret | `openssl rand -hex 32` (≥32 chars) |
+| `SUPERADMIN_BOOTSTRAP_EMAIL` | Non-secret | `contact@prabhat.online` |
+
+`JWT_SECRET` signs session tokens during the cutover. `OTP_SECRET` signs OTP
+request IDs + one-click unsubscribe tokens. Both ≥32 chars. After the Supabase
+Auth cutover, `JWT_SECRET` may be retired (Supabase manages sessions) — keep it
+until then.
+
+---
+
+## 6. CAPTCHA (Cloudflare Turnstile)
+
+| Variable | Public/Secret | Where to obtain |
+| --- | --- | --- |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Public | `https://dash.cloudflare.com` → Turnstile |
+| `TURNSTILE_SECRET_KEY` | Secret | same |
+
+Required in production (dev uses test mode automatically).
+
+---
+
+## 7. Firebase — RETAINED during cutover (remove after route migration)
+
+These keep the 50 active Firebase routes running. In local dev, set
+`FIRESTORE_EMULATOR_HOST` (the supervisor does this automatically) instead of the
+service-account vars. Once the routes are cut over to Supabase + the founder
+confirms, delete this entire section.
+
+`NEXT_PUBLIC_FIREBASE_*`, `FIREBASE_ADMIN_*`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`,
+`FIRESTORE_EMULATOR_HOST`, `STORAGE_EMULATOR_HOST`.
+
+---
+
+## 8. External setup (cannot be done with env vars alone)
+
+### 8.1 Supabase project (production)
+1. Create a project at `https://supabase.com`.
+2. Apply the schema: `supabase db push` (after `supabase link`) OR paste
+   `supabase/migrations/0001..0005` into the SQL editor in order.
+3. Copy the Project URL + anon key + service-role key into the env vars.
+4. Verify RLS is enabled on all tables (the migration does this; check in the
+   dashboard → Authentication → Policies).
+5. Storage: the `candidate-resumes` bucket is created by migration 0003. Verify
+   it is private in the dashboard → Storage.
+
+### 8.2 Data migration (Firebase → Supabase)
+1. With the Firestore emulator running + seeded, run:
+   `FIRESTORE_EMULATOR_HOST=localhost:8080 npx tsx scripts/migrate-firebase-to-supabase.ts`
+2. Review the per-collection counts + reconciliation.
+3. For production Firebase data: the script reads production Firebase if
+   `FIRESTORE_EMULATOR_HOST` is unset + service-account creds are present. Output
+   SQL with `--sql` + apply to Supabase via the SQL editor. **BLOCKED until the
+   founder provides production Firebase service-account creds.**
+
+### 8.3 Email provider
+Pick ONE, verify the sending domain, create API key/SMTP creds, set `SMTP_FROM`
+on the verified domain, set `COMPANY_INBOX`.
+
+### 8.4 Cloudflare Turnstile, Google AI, Vercel
+As in the Firebase-era doc: Turnstile widget keys, Gemini API key, import the
+GitHub repo into Vercel + set all Secret + Public vars (do NOT set the §7 dev-only
+vars). The startup env-validation summary appears in Vercel function logs.
+
+---
+
+## 9. Local development quickstart (Mac)
 
 ```bash
-# 1. Install dependencies
+# 1. Install deps
 npm install
 
-# 2. Copy the template + fill in the required local values
-cp .env.example .env.local
-# Edit .env.local:
-#   - JWT_SECRET / OTP_SECRET: generate with `openssl rand -hex 32`
-#   - SUPERADMIN_BOOTSTRAP_EMAIL: contact@prabhat.online
-#   - NEXT_PUBLIC_FIREBASE_*: from your Firebase web app (or dev project)
-#   - GEMINI_API_KEY: optional — chatbot works only with a real key
-#   - Leave SMTP_* empty to use Mailpit for local email
+# 2. Copy the template + fill required local values
+cp .env.template .env.local
+# Edit .env.local: JWT_SECRET/OTP_SECRET (openssl rand -hex 32),
+#   NEXT_PUBLIC_SUPABASE_* + SUPABASE_SERVICE_ROLE_KEY (or leave for after cutover),
+#   GEMINI_API_KEY (optional), FIRESTORE_EMULATOR_HOST=localhost:8080 (emulator).
 
 # 3. Start the supervised dev server (Firestore emulator + Next.js + health check)
 bash scripts/dev-supervisor.sh
 # → http://localhost:3000  (app)
 # → http://localhost:8080  (Firestore emulator)
-# → http://localhost:8025  (Mailpit web UI — inspect sent emails)
+# → http://localhost:8025  (Mailpit — install separately if you want email capture)
 
-# 4. Bootstrap the first super_admin (one-time):
-#    Visit /admin/bootstrap with SUPERADMIN_BOOTSTRAP_EMAIL set.
-```
+# 4. (Supabase local validation — no project needed)
+node scripts/validate-schema.js          # applies schema + RLS to PGlite
+npx vitest run src/lib/supabase          # 23 RLS policy tests
+npx vitest run src/lib/migration         # 26 mapper + migrate tests
 
-The startup env-validation logs a summary like:
+# 5. (Optional) test the Firebase→Supabase migration locally:
+FIRESTORE_EMULATOR_HOST=localhost:8080 npx tsx scripts/migrate-firebase-to-supabase.ts
 ```
-[env-validation] mode=local-dev (emulator)  problems=3  checked=24
-[env-validation] Missing or not-configured variables (values are NOT shown):
-  - GEMINI_API_KEY [AI] status=empty len=1-7  → ...
-  - TURNSTILE_SECRET_KEY [CAPTCHA] status=missing  → ...
-  - NEXT_PUBLIC_TURNSTILE_SITE_KEY [CAPTCHA] status=missing  → ...
-```
-This is expected in local dev — those features degrade honestly (chatbot
-fallback, CAPTCHA test mode) rather than crash.
 
 ---
 
-## 5. Verifying your configuration
-
-After filling in variables, verify with:
+## 10. Verifying your configuration
 
 ```bash
-# TypeScript + build (must pass with no errors)
-npm run typecheck && npm run build
-
-# Unit + integration tests (Firestore emulator must be running)
-npm run test
-
-# Boot the app + check the env-validation summary in the startup log
-bash scripts/dev-supervisor.sh
-# then in another terminal:
-curl http://localhost:3000/api/health   # → 200 { ok: true, ... }
+npm run typecheck && npm run build   # must pass (ignoreBuildErrors:false)
+npm run test                         # 271 Firebase-era + 49 Supabase tests
+bash scripts/dev-supervisor.sh       # check the [env-validation] line at boot
+curl http://localhost:3000/api/health  # → 200
 ```
 
 For production: after deploying to Vercel, check the function logs for the
-`[env-validation]` line. `problems=0` means every required variable for the
-production environment is configured.
+`[env-validation]` line. `problems=0` (ignoring the RETAINED Firebase vars during
+cutover) means the Supabase configuration is complete.
 
 ---
 
-## 6. Security rules (do not weaken)
+## 11. Security rules (do not weaken)
 
-- Every Firestore collection holding PII (`users`, `admins`, `candidates`,
-  `jobApplications`, `leads`, `newsletterSubscribers`, `otpRequests`,
-  `sessions`, `securityEvents`, `registrationChallenges`) is client-denied
-  (`allow read, write: if false`). All access is via Admin-SDK API routes
-  with JWT + ownership/role checks.
-- Firebase Storage is fully client-denied. Resumes are accessible only via
-  short-lived (5-minute) signed URLs issued by authenticated server routes.
-- No plaintext secrets, OTPs, or passwords are stored in Firestore. OTPs are
-  bcrypt-hashed; passwords are bcrypt-hashed; IPs are HMAC-hashed.
+- Every Supabase table has RLS enabled. Candidates read/write ONLY their own
+  rows (enforced by `auth.uid()` policies + the `owns_candidate_row` helper).
+- Anonymous can subscribe to the newsletter + submit enquiries + read published
+  content — nothing else.
+- Admin actions require the `is_admin()` / `is_super_admin()` helper (SECURITY
+  DEFINER, fixed search_path).
+- The service-role key bypasses RLS — use it ONLY in server code for trusted
+  operations. Never expose it to the browser.
+- Resumes are stored in a private Storage bucket; access is via short-lived
+  signed URLs issued server-side, never public URLs.
 
-Do not loosen these rules to make something work. If a feature cannot work
-under the current rules, the fix is a server route with proper authorization,
-not a rule change.
+Do not loosen RLS policies to make something work. If a feature cannot work
+under the current policies, the fix is a server route with proper authorization.

@@ -8,7 +8,9 @@
  * This module is the SINGLE place that turns those stored values into the values
  * the matching/notification engine actually uses. Rules (Prompt 05R §5):
  *   - Default minimum match threshold is 80%.
- *   - The candidate may configure a threshold between 25% and 100%.
+ *   - The candidate may configure a threshold between 75% and 100% (75% is the
+ *     hard floor per Prompt §5.2: "The threshold must never be configurable
+ *     below 75%").
  *   - Values are validated AND clamped server-side. Out-of-range values are
  *     rejected at the preference endpoint (jobAlertPreferencesSchema) and, as a
  *     belt-and-suspenders defense, clamped at resolution time so a stale/legacy
@@ -23,28 +25,49 @@ import { z } from 'zod';
 
 /** Rubric-wide default minimum match threshold (Prompt 05R §5). */
 export const DEFAULT_MATCHING_THRESHOLD = 80;
-/** Supported threshold range (inclusive). */
-export const MIN_THRESHOLD = 25;
+/**
+ * Hard floor for any candidate-configured matching threshold (Prompt §5.2:
+ * "The threshold must never be configurable below 75%"). The DEFAULT stays at
+ * 80 (stricter than the 75 floor) so existing candidates see no increase in
+ * alert volume; the floor only tightens previously-allowed 25–74 values up to
+ * 75. An admin-configurable raise above 75 is tracked as remaining work.
+ */
+export const MIN_THRESHOLD = 75;
 export const MAX_THRESHOLD = 100;
 
 /**
- * Resolve the effective threshold for a candidate profile.
- *   - undefined / null / non-number  -> DEFAULT_MATCHING_THRESHOLD (80)
- *   - < MIN_THRESHOLD                 -> clamped UP to MIN_THRESHOLD (25)
+ * Resolve the effective threshold for a candidate profile, applying the
+ * admin-configurable global floor (Prompt §5.2).
+ *   - The global floor (default MIN_THRESHOLD=75) is clamped to [75, 100].
+ *   - undefined / null / non-number  -> max(floor, DEFAULT_MATCHING_THRESHOLD)
+ *   - < MIN_THRESHOLD                 -> clamped UP to MIN_THRESHOLD (75)
  *   - > MAX_THRESHOLD                 -> clamped DOWN to MAX_THRESHOLD (100)
- *   - otherwise                       -> the stored integer value
- * Always returns an integer in [25, 100].
+ *   - otherwise                       -> max(floor, the stored integer value)
+ * A candidate's threshold can never fall below the global floor. Always returns
+ * an integer in [75, 100] (and ≥ the global floor).
  */
 export function resolveMatchingThreshold(
-  stored: number | undefined | null | unknown
+  stored: number | undefined | null | unknown,
+  globalFloor: number = MIN_THRESHOLD,
 ): number {
+  // Clamp the admin-configurable global floor to the supported range first
+  // (defense-in-depth — the persisted value is validated on write, but a stale
+  // or buggy caller must never produce an out-of-range effective threshold).
+  const floor = Math.min(
+    Math.max(Number.isFinite(globalFloor) ? Math.round(globalFloor) : MIN_THRESHOLD, MIN_THRESHOLD),
+    MAX_THRESHOLD,
+  );
   if (typeof stored !== 'number' || !Number.isFinite(stored)) {
-    return DEFAULT_MATCHING_THRESHOLD;
+    return Math.max(floor, DEFAULT_MATCHING_THRESHOLD);
   }
   let v = Math.round(stored);
   if (v < MIN_THRESHOLD) v = MIN_THRESHOLD;
   if (v > MAX_THRESHOLD) v = MAX_THRESHOLD;
-  return v;
+  // A candidate can never set their threshold BELOW the global floor — the
+  // effective threshold is the higher of the candidate's (clamped) value and the
+  // global floor (Prompt §5.2: "Candidate-level preferences must not bypass the
+  // global threshold").
+  return Math.max(floor, v);
 }
 
 /**

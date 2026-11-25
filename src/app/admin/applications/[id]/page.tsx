@@ -21,6 +21,7 @@ type Application = {
   internalNotes?: string;
   skills?: string[];
   resumeUrl?: string;
+  resumeStoragePath?: string;
 };
 
 export default function ApplicationDetail() {
@@ -198,7 +199,7 @@ export default function ApplicationDetail() {
               </div>
               <Button
                 onClick={handleDownloadResume}
-                disabled={resumeLoading || !app.resumeUrl}
+                disabled={resumeLoading || !(app.resumeStoragePath || app.resumeUrl)}
                 className="w-full bg-white text-zinc-900 hover:bg-zinc-200 font-black h-12"
               >
                 {resumeLoading ? (
@@ -206,7 +207,7 @@ export default function ApplicationDetail() {
                 ) : (
                   <Download className="h-5 w-5 mr-2" />
                 )}
-                {app.resumeUrl ? 'Download Resume' : 'No Resume on File'}
+                {(app.resumeStoragePath || app.resumeUrl) ? 'Download Resume' : 'No Resume on File'}
               </Button>
             </CardContent>
           </Card>

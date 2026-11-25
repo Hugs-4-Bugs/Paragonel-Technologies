@@ -4,6 +4,7 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from '@/firebase/config';
+import { redactReason } from '@/lib/job-alerts/dedup';
 
 let app: FirebaseApp;
 let db: Firestore;
@@ -21,7 +22,7 @@ try {
     storage = getStorage(app);
   }
 } catch (e) {
-  console.error("Error initializing Firebase:", e);
+  console.error("Error initializing Firebase:", redactReason(e));
 }
 
 export { app, db, storage };

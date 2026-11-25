@@ -104,6 +104,18 @@ export default async function JobDetailPage({
     ...(job.experienceRequired ? { experienceRequirements: job.experienceRequired } : {}),
   };
 
+  // BreadcrumbList JSON-LD (Batch 3 Task 4): Home > Careers > role. Helps search
+  // engines show the page's position in the site hierarchy.
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Careers', item: `${siteUrl}/careers` },
+      { '@type': 'ListItem', position: 3, name: job.title, item: `${siteUrl}/careers/${job.id}` },
+    ],
+  };
+
   return (
     <div className="bg-background min-h-screen">
       <article className="mx-auto max-w-3xl px-4 py-12 md:py-16">
@@ -198,6 +210,10 @@ export default async function JobDetailPage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
         />
       </article>
     </div>

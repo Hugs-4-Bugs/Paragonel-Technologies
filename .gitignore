@@ -24,6 +24,14 @@
 .DS_Store
 *.pem
 
+# service-account / key files (never commit — even though the Firebase Admin
+# private key is delivered via the FIREBASE_ADMIN_PRIVATE_KEY env var, a dropped
+# service-account JSON or PEM must never be tracked)
+service-account*.json
+serviceAccount*.json
+*.key
+*.keystore
+
 # debug
 npm-debug.log*
 yarn-debug.log*

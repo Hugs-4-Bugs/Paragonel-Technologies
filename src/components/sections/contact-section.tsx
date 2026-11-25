@@ -108,8 +108,8 @@ export function ContactSection() {
         </ScrollFadeIn>
 
         <div className="grid lg:grid-cols-5 gap-12">
-          <ScrollFadeIn className="lg:col-span-3">
-            <Card className="shadow-xl">
+          <ScrollFadeIn className="lg:col-span-3 h-full">
+            <Card className="shadow-xl h-full">
               <CardHeader>
                 <CardTitle className="text-2xl">Send us a Message</CardTitle>
               </CardHeader>
@@ -209,7 +209,7 @@ export function ContactSection() {
             </Card>
           </ScrollFadeIn>
 
-          <ScrollFadeIn delay="200ms" className="lg:col-span-2">
+          <ScrollFadeIn delay="200ms" className="lg:col-span-2 h-full">
             <Card className="shadow-xl h-full">
               <CardHeader>
                 <CardTitle className="text-2xl">Contact Information</CardTitle>

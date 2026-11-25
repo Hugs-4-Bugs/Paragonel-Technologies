@@ -45,7 +45,7 @@ export default function AdminClientProjectsPage() {
       ) : items.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground">No client projects yet. Click <span className="font-semibold">New project</span> to create one.</div>
       ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
+        <div className="rounded-lg border border-border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-secondary/40 text-muted-foreground"><tr>
               <th className="text-left p-3 font-semibold">Company</th>

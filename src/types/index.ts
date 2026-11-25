@@ -1,3 +1,8 @@
+/** A serialized Firestore Timestamp. Several timestamp fields below can be either
+ * this shape (from the Admin SDK) or an ISO string (from a serialized response)
+ * — replacing the prior `any` with a precise union. */
+export type FirestoreTimestamp = { seconds: number; nanoseconds: number };
+
 export interface Job {
   id: string;
   jobId: string;
@@ -17,7 +22,7 @@ export interface Job {
   postedDate: string;
   createdAt: string;
   updatedAt: string;
-  deletedAt?: any;
+  deletedAt?: FirestoreTimestamp | string | null;
 }
 
 export interface JobApplication {
@@ -32,7 +37,7 @@ export interface JobApplication {
   matchScore: number;
   aiReasoning?: string;
   status: 'New' | 'Reviewing' | 'Shortlisted' | 'Interview Scheduled' | 'Rejected' | 'Hired';
-  appliedAt: any;
+  appliedAt: FirestoreTimestamp | string;
   appliedVia: 'form' | 'ai_agent';
 }
 
@@ -53,7 +58,7 @@ export interface BlogPost {
   status: 'Published' | 'Draft' | 'Scheduled';
   metaTitle?: string;
   metaDescription?: string;
-  publishAt?: any;
+  publishAt?: FirestoreTimestamp | string | null;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -68,7 +73,7 @@ export interface UserProfile {
   resumeUrl?: string;
   resumeDataUri?: string;
   appliedJobs?: string[];
-  updatedAt?: any;
+  updatedAt?: FirestoreTimestamp | string;
 }
 
 export interface ApplicationFormValues {
