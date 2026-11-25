@@ -30,6 +30,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import { ThemeToggleButton } from '@/components/theme-toggle-button';
 
 const sidebarItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -86,9 +87,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <ShieldCheck className="h-6 w-6 text-primary" />
           <span className="font-bold text-lg tracking-tight">ParagonelCMS</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-          {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          <ThemeToggleButton />
+          <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+            {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
+        </div>
       </div>
 
       {/* Sidebar */}
@@ -155,13 +159,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </nav>
           </ScrollArea>
 
-          <div className="p-4 border-t mt-auto shrink-0">
-            <Button 
-              variant="outline" 
+          <div className="p-4 border-t mt-auto shrink-0 space-y-2">
+            <div className={cn("flex", isCollapsed ? "lg:justify-center" : "justify-end")}>
+              <ThemeToggleButton />
+            </div>
+            <Button
+              variant="outline"
               className={cn(
                 "w-full justify-start text-destructive border-destructive/20 hover:text-destructive hover:bg-destructive/5 font-bold h-11 rounded-xl transition-all",
                 isCollapsed && "lg:justify-center lg:px-0"
-              )} 
+              )}
               onClick={handleLogout}
               title={isCollapsed ? "Sign Out" : undefined}
             >
