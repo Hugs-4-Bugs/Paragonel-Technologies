@@ -202,4 +202,112 @@ describe('Paragonel AI knowledge retrieval', () => {
       expect(a).toBe(b);
     });
   });
+
+  /**
+   * Regression for the production retrieval bug (Prompt §PHASE 4):
+   *   'job'        → returned Privacy Policy (it mentions 'job applications')
+   *   'job opening'→ returned Privacy Policy
+   *   'career'     → 0 hits (no stemming → 'career' ≠ 'careers' nav entry)
+   * Fixed by: stemming + synonym expansion + intent recognition + legal-doc
+   * suppression + confidence threshold + honest 'no openings' for careers intent.
+   */
+  describe('retrieve — job/career query regression (must NOT return Privacy Policy)', () => {
+    // Reproduces the production knowledge base shape: a Privacy Policy entry
+    // whose content mentions 'job applications' (the incidental match that made
+    // 'job' surface it), a Careers navigation entry (title 'Careers'), + NO
+    // live cms-jobs (the production state when no openings are published).
+    const BUG_BASE: KnowledgeEntry[] = [
+      {
+        id: 'company-overview',
+        title: 'Paragonel Technologies Pvt. Ltd. — Company Overview',
+        content: 'Paragonel is an AI-native product-engineering company.',
+        category: 'company', canonicalPath: '/about', sourceType: 'company-static',
+      },
+      {
+        id: 'policy-privacy',
+        title: 'Privacy Policy',
+        // Production content — mentions 'job applications' (the incidental match).
+        content: "Paragonel's Privacy Policy describes what data is collected, how it is used, and the visitor's rights. Applicable to all website interactions including contact, newsletter, and job applications.",
+        category: 'policies', canonicalPath: '/privacy', sourceType: 'policy',
+      },
+      {
+        id: 'nav-careers',
+        title: 'Careers',
+        content: 'Browse open positions and apply at the Paragonel careers page.',
+        category: 'navigation', canonicalPath: '/careers', sourceType: 'company-static',
+      },
+    ];
+
+    it('"job" does NOT return the Privacy Policy — returns the honest no-openings entry + Careers nav', () => {
+      const r = retrieve('job', BUG_BASE, 5);
+      const cats = r.map((x) => x.entry.category);
+      const titles = r.map((x) => x.entry.title);
+      expect(cats).not.toContain('policies'); // Privacy Policy suppressed
+      expect(titles).not.toContain('Privacy Policy');
+      expect(r.length).toBeGreaterThan(0); // not 0 hits
+      // Honest no-openings entry is top-ranked (careers intent + no live jobs).
+      expect(r[0].entry.id).toBe('careers-no-openings');
+      expect(r[0].entry.content).toContain('no open job positions');
+    });
+
+    it('"job opening" does NOT return the Privacy Policy', () => {
+      const r = retrieve('job opening', BUG_BASE, 5);
+      expect(r.map((x) => x.entry.title)).not.toContain('Privacy Policy');
+      expect(r[0].entry.id).toBe('careers-no-openings');
+    });
+
+    it('"career" does NOT return 0 hits — matches the Careers nav entry via stemming/synonyms', () => {
+      const r = retrieve('career', BUG_BASE, 5);
+      expect(r.length).toBeGreaterThan(0); // was 0 hits before the fix
+      expect(r.map((x) => x.entry.title)).not.toContain('Privacy Policy');
+      expect(r[0].entry.id).toBe('careers-no-openings');
+    });
+
+    it('"Do you have any job openings?" → honest no-openings, NOT Privacy Policy', () => {
+      const r = retrieve('Do you have any job openings?', BUG_BASE, 5);
+      expect(r.map((x) => x.entry.title)).not.toContain('Privacy Policy');
+      expect(r[0].entry.content).toContain('no open job positions');
+    });
+
+    it('"How can I apply for a job?" → careers intent, NOT Privacy Policy', () => {
+      const r = retrieve('How can I apply for a job?', BUG_BASE, 5);
+      expect(r.map((x) => x.entry.title)).not.toContain('Privacy Policy');
+      expect(r[0].entry.category).toBe('careers');
+    });
+
+    it('"privacy policy" STILL returns the Privacy Policy (no regression on privacy queries)', () => {
+      const r = retrieve('privacy policy', BUG_BASE, 5);
+      expect(r.length).toBeGreaterThan(0);
+      expect(r[0].entry.title).toBe('Privacy Policy');
+    });
+
+    it('when live cms-jobs DO exist, a job query returns the job entry (not the synthetic no-openings)', () => {
+      const WITH_JOBS: KnowledgeEntry[] = [
+        ...BUG_BASE,
+        {
+          id: 'job-1',
+          title: 'Senior Backend Engineer',
+          content: 'Senior backend engineer at Bangalore. Skills: Java, Spring Boot, AWS.',
+          category: 'careers', canonicalPath: '/careers', sourceType: 'cms-jobs',
+        },
+      ];
+      const r = retrieve('job', WITH_JOBS, 5);
+      // The synthetic no-openings entry must NOT appear when live jobs exist.
+      expect(r.map((x) => x.entry.id)).not.toContain('careers-no-openings');
+      // The live job ranks high (careers intent boost).
+      expect(r.map((x) => x.entry.title)).toContain('Senior Backend Engineer');
+      // Privacy Policy still suppressed.
+      expect(r.map((x) => x.entry.title)).not.toContain('Privacy Policy');
+    });
+
+    it('an irrelevant query with no matching content returns no results (honest fallback, no fabrication)', () => {
+      const r = retrieve('xyzzy qwerty', BUG_BASE, 5);
+      expect(r).toEqual([]);
+    });
+
+    it('stemming: "services" matches a "service" entry; "products" matches a "product" entry', () => {
+      const r = retrieve('What products do you build?', MOCK_BASE, 5);
+      expect(r.map((x) => x.entry.category)).toContain('products');
+    });
+  });
 });
