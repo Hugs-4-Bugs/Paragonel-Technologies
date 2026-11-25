@@ -23,6 +23,28 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
   deletedAt?: FirestoreTimestamp | string | null;
+  // Structured job-posting fields (Task 2/3). All optional — legacy jobs may
+  // not have them; the public detail page renders a section only when present.
+  summary?: string;
+  responsibilities?: string;
+  qualifications?: string;
+  preferredQualifications?: string;
+  benefits?: string;
+  certifications?: string;
+  reportingManager?: string;
+  shiftHours?: string;
+  travelRequired?: string;
+  aboutTeam?: string;
+  companyCulture?: string;
+  additionalNotes?: string;
+  screeningQuestions?: string;
+  preferredSkills?: string[];
+  seniority?: string;
+  educationRequired?: string;
+  deadline?: string;
+  resumeRequired?: boolean;
+  linkedinRequired?: boolean;
+  portfolioRequired?: boolean;
 }
 
 export interface JobApplication {

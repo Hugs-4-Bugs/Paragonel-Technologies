@@ -24,17 +24,22 @@ export type CandidateStatus =
   | 'shortlisted' // Shortlisted
   | 'assessment_requested' // Assessment requested
   | 'interview_scheduled' // Interview scheduled
+  | 'interview_rescheduled' // Interview rescheduled (candidate-visible move)
   | 'interview_in_progress' // Interview in progress
+  | 'interview_completed' // Interview completed (feedback being collected)
+  | 'on_hold' // On hold (company chose to communicate it)
   | 'decision_pending' // Decision pending
   | 'rejected' // Rejected
+  | 'not_selected' // Not selected (friendlier framing than 'rejected')
   | 'offer_extended' // Offer extended
   | 'hired' // Hired
   | 'withdrawn'; // Withdrawn (by candidate)
 
 export const CANDIDATE_STATUSES: CandidateStatus[] = [
   'submitted', 'under_review', 'shortlisted', 'assessment_requested',
-  'interview_scheduled', 'interview_in_progress', 'decision_pending',
-  'rejected', 'offer_extended', 'hired', 'withdrawn',
+  'interview_scheduled', 'interview_rescheduled', 'interview_in_progress',
+  'interview_completed', 'on_hold', 'decision_pending',
+  'rejected', 'not_selected', 'offer_extended', 'hired', 'withdrawn',
 ];
 
 export const CANDIDATE_STATUS_LABELS: Record<CandidateStatus, string> = {
@@ -43,9 +48,13 @@ export const CANDIDATE_STATUS_LABELS: Record<CandidateStatus, string> = {
   shortlisted: 'Shortlisted',
   assessment_requested: 'Assessment requested',
   interview_scheduled: 'Interview scheduled',
+  interview_rescheduled: 'Interview rescheduled',
   interview_in_progress: 'Interview in progress',
+  interview_completed: 'Interview completed',
+  on_hold: 'On hold',
   decision_pending: 'Decision pending',
   rejected: 'Rejected',
+  not_selected: 'Not selected',
   offer_extended: 'Offer extended',
   hired: 'Hired',
   withdrawn: 'Withdrawn',
@@ -58,9 +67,13 @@ export const CANDIDATE_STATUS_BADGE: Record<CandidateStatus, string> = {
   shortlisted: 'bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200',
   assessment_requested: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-200',
   interview_scheduled: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200',
+  interview_rescheduled: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200',
   interview_in_progress: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200',
+  interview_completed: 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200',
+  on_hold: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200',
   decision_pending: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200',
   rejected: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200',
+  not_selected: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200',
   offer_extended: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
   hired: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200',
   withdrawn: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
@@ -69,25 +82,29 @@ export const CANDIDATE_STATUS_BADGE: Record<CandidateStatus, string> = {
 export type InternalStage =
   | 'new' // New application
   | 'initial_screening' // Initial screening queue
-  | 'recruiter_screening' // Recruiter screening
+  | 'recruiter_screening' // Recruiter screening / Recruiter review
   | 'hiring_manager_review' // Hiring manager review
   | 'team_feedback' // Team feedback pending
   | 'assessment_review' // Assessment review
   | 'interview' // Interview stage
-  | 'interview_feedback' // Interview feedback collection
+  | 'interview_feedback' // Interview feedback pending / collection
+  | 'internal_deliberation' // Internal deliberation (NEVER exposed to candidate)
+  | 'reference_check' // Reference check (NEVER exposed to candidate)
+  | 'compensation_review' // Compensation review (NEVER exposed to candidate)
   | 'internal_hold' // Internal hold (NEVER exposed to candidate)
   | 'approval_pending' // Approval pending
   | 'rejection_approval' // Rejection approval pending
   | 'offer_approval' // Offer approval
   | 'offer_extended' // Offer extended
   | 'hired' // Hired
-  | 'rejected' // Rejected
+  | 'rejected' // Rejected internally
   | 'withdrawn' // Withdrawn
   | 'archived'; // Archived
 
 export const INTERNAL_STAGES: InternalStage[] = [
   'new', 'initial_screening', 'recruiter_screening', 'hiring_manager_review',
   'team_feedback', 'assessment_review', 'interview', 'interview_feedback',
+  'internal_deliberation', 'reference_check', 'compensation_review',
   'internal_hold', 'approval_pending', 'rejection_approval', 'offer_approval',
   'offer_extended', 'hired', 'rejected', 'withdrawn', 'archived',
 ];
@@ -95,19 +112,22 @@ export const INTERNAL_STAGES: InternalStage[] = [
 export const INTERNAL_STAGE_LABELS: Record<InternalStage, string> = {
   new: 'New application',
   initial_screening: 'Initial screening queue',
-  recruiter_screening: 'Recruiter screening',
+  recruiter_screening: 'Recruiter review',
   hiring_manager_review: 'Hiring manager review',
   team_feedback: 'Team feedback pending',
   assessment_review: 'Assessment review',
   interview: 'Interview stage',
-  interview_feedback: 'Interview feedback collection',
+  interview_feedback: 'Interview feedback pending',
+  internal_deliberation: 'Internal deliberation',
+  reference_check: 'Reference check',
+  compensation_review: 'Compensation review',
   internal_hold: 'Internal hold',
   approval_pending: 'Approval pending',
   rejection_approval: 'Rejection approval pending',
   offer_approval: 'Offer approval',
   offer_extended: 'Offer extended',
   hired: 'Hired',
-  rejected: 'Rejected',
+  rejected: 'Rejected internally',
   withdrawn: 'Withdrawn',
   archived: 'Archived',
 };
@@ -118,9 +138,11 @@ export const INTERNAL_STAGE_LABELS: Record<InternalStage, string> = {
  * per-action; not every internal transition publishes a candidate status).
  *
  * Internal-only stages (initial_screening, recruiter_screening, hiring_manager_review,
- * team_feedback, interview_feedback, internal_hold, approval_pending, rejection_approval,
- * offer_approval) map to a conservative `under_review` / `decision_pending` — the
- * candidate sees meaningful progression, never internal administrative detail.
+ * team_feedback, interview_feedback, internal_deliberation, reference_check,
+ * compensation_review, internal_hold, approval_pending, rejection_approval,
+ * offer_approval) map to a conservative `under_review` / `interview_in_progress` /
+ * `decision_pending` — the candidate sees meaningful progression, never internal
+ * administrative detail.
  */
 export function candidateStatusFromInternal(stage: InternalStage): CandidateStatus {
   switch (stage) {
@@ -133,8 +155,13 @@ export function candidateStatusFromInternal(stage: InternalStage): CandidateStat
     case 'assessment_review':
       return 'under_review';
     case 'interview':
-    case 'interview_feedback':
       return 'interview_in_progress';
+    case 'interview_feedback':
+      // Feedback collection = the interview is done; the candidate sees "completed".
+      return 'interview_completed';
+    case 'internal_deliberation':
+    case 'reference_check':
+    case 'compensation_review':
     case 'internal_hold':
     case 'approval_pending':
     case 'rejection_approval':
@@ -168,6 +195,7 @@ export const EMAIL_TRIGGERING_STATUSES: CandidateStatus[] = [
   'assessment_requested',
   'interview_scheduled',
   'rejected',
+  'not_selected',
   'offer_extended',
   'hired',
   'withdrawn',

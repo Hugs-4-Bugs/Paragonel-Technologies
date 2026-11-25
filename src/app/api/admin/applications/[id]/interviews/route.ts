@@ -196,6 +196,8 @@ export async function PATCH(
   const now = new Date();
   let auditMsg = '';
   let emailKind: 'rescheduled' | 'cancelled' | null = null;
+  // Whether to also update the candidate-visible status + append a timeline entry.
+  let candidateStatusUpdate: { status: string; label: string } | null = null;
 
   if (d.action === 'cancel') {
     iv.status = 'cancelled';
@@ -216,6 +218,8 @@ export async function PATCH(
     iv.updatedBy = actor;
     auditMsg = `Rescheduled interview: ${iv.stage} → ${iv.date} ${iv.startTime} ${iv.timeZone}`;
     emailKind = 'rescheduled';
+    // Publish the reschedule to the candidate-visible status + timeline.
+    candidateStatusUpdate = { status: 'interview_rescheduled', label: 'Interview rescheduled' };
   } else if (d.action === 'feedback') {
     // Internal feedback — NEVER exposed to candidate, NEVER emailed.
     if (typeof d.feedback === 'string') iv.feedback = d.feedback;
@@ -224,15 +228,27 @@ export async function PATCH(
     iv.updatedBy = actor;
     iv.candidateVisible = false; // feedback entries are internal
     auditMsg = `Added interview feedback: ${iv.stage}`;
+    // The interview is done → candidate sees "interview completed" (feedback itself stays private).
+    candidateStatusUpdate = { status: 'interview_completed', label: 'Interview completed' };
   }
 
   interviews[idx] = iv;
-  await ref.update({
+  const update: Record<string, unknown> = {
     interviews: [...interviews],
     updatedAt: Timestamp.now(),
     lastActor: actor,
     lastActorRole: auth.user.role,
-  });
+  };
+  if (candidateStatusUpdate) {
+    update.candidateStatus = candidateStatusUpdate.status;
+    update.status = 'Interview Scheduled'; // legacy sync
+    const timeline = Array.isArray(prev.statusTimeline) ? prev.statusTimeline : [];
+    update.statusTimeline = [
+      ...timeline,
+      { status: candidateStatusUpdate.status, label: candidateStatusUpdate.label, at: now, actor },
+    ];
+  }
+  await ref.update(update);
 
   await logActivityServer(auth.user, auditMsg, 'JobApplication', id);
 

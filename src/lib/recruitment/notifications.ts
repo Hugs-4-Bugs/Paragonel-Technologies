@@ -56,6 +56,7 @@ function subjectFor(status: CandidateStatus, jobTitle: string): string {
     case 'assessment_requested':
       return `Assessment requested${job} — Paragonel`;
     case 'rejected':
+    case 'not_selected':
       return `Update on your application${job} — Paragonel`;
     case 'offer_extended':
       return `Offer from Paragonel${job} — Paragonel`;
@@ -90,6 +91,7 @@ function bodyFor(input: CandidateEmailInput): string {
       body = `<p>As part of your application for <strong>${job}</strong>, we'd like to invite you to complete an assessment. Please review the details below and complete it at your earliest convenience.</p>`;
       break;
     case 'rejected':
+    case 'not_selected':
       body = `<p>Thank you for your interest in <strong>${job}</strong> at Paragonel. After careful review, we have decided not to move forward with your application at this time. We appreciate the time you invested and encourage you to apply for future openings.</p>`;
       break;
     case 'offer_extended':

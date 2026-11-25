@@ -122,3 +122,81 @@ describe('GEMINI_MODEL_ID + GEMINI_REQUEST_TIMEOUT_MS resolution', () => {
     expect(GEMINI_MODEL_REF).toBe('googleai/gemini-flash-latest');
   });
 });
+
+describe('classifyProviderError — honest provider-error classification', () => {
+  beforeEach(() => {
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+    delete process.env.GOOGLE_GENAI_API_KEY;
+  });
+
+  it('returns missing_key when no key is configured (even if the error is unrelated)', async () => {
+    const { classifyProviderError } = await import('../models');
+    expect(classifyProviderError(new Error('anything'))).toBe('missing_key');
+  });
+
+  it('classifies a 404 / "not found" as unsupported_model (sunset model detection)', async () => {
+    process.env.GOOGLE_API_KEY = 'test-key';
+    const { classifyProviderError } = await import('../models');
+    expect(classifyProviderError(Object.assign(new Error('model not found'), { status: 404 }))).toBe('unsupported_model');
+    expect(classifyProviderError(new Error('404 not found'))).toBe('unsupported_model');
+    expect(classifyProviderError(new Error('does not exist'))).toBe('unsupported_model');
+  });
+
+  it('classifies 401/403 / "api key not valid" as invalid_key', async () => {
+    process.env.GOOGLE_API_KEY = 'test-key';
+    const { classifyProviderError } = await import('../models');
+    expect(classifyProviderError(Object.assign(new Error('bad'), { status: 401 }))).toBe('invalid_key');
+    expect(classifyProviderError(Object.assign(new Error('bad'), { status: 403 }))).toBe('invalid_key');
+    expect(classifyProviderError(new Error('API key not valid'))).toBe('invalid_key');
+    expect(classifyProviderError(new Error('permission_denied'))).toBe('invalid_key');
+  });
+
+  it('classifies 429 / "quota" as quota', async () => {
+    process.env.GOOGLE_API_KEY = 'test-key';
+    const { classifyProviderError } = await import('../models');
+    expect(classifyProviderError(Object.assign(new Error('bad'), { status: 429 }))).toBe('quota');
+    expect(classifyProviderError(new Error('resource_exhausted'))).toBe('quota');
+    expect(classifyProviderError(new Error('rate limit exceeded'))).toBe('quota');
+  });
+
+  it('classifies timeout-like messages as timeout', async () => {
+    process.env.GOOGLE_API_KEY = 'test-key';
+    const { classifyProviderError } = await import('../models');
+    expect(classifyProviderError(new Error('request timed out'))).toBe('timeout');
+    expect(classifyProviderError(new Error('deadline exceeded'))).toBe('timeout');
+    expect(classifyProviderError(new Error('aborted'))).toBe('timeout');
+  });
+
+  it('falls back to provider_error for unknown 5xx/network errors', async () => {
+    process.env.GOOGLE_API_KEY = 'test-key';
+    const { classifyProviderError } = await import('../models');
+    expect(classifyProviderError(new Error('internal server error'))).toBe('provider_error');
+    expect(classifyProviderError(Object.assign(new Error('oops'), { status: 500 }))).toBe('provider_error');
+  });
+
+  it('NEVER exposes the key value in the classification output (reason label only)', async () => {
+    process.env.GOOGLE_API_KEY = 'AIza-NEVER_LEAK_THIS_SECRET';
+    const { classifyProviderError } = await import('../models');
+    const reason = classifyProviderError(new Error('some error'));
+    expect(typeof reason).toBe('string');
+    expect(reason).not.toContain('NEVER_LEAK');
+    expect(reason).not.toContain('AIza');
+  });
+});
+
+describe('isProviderFailure + reasonLabel', () => {
+  it('treats all provider failures as retryable EXCEPT unknown_company_fact (honest 200 answer)', async () => {
+    const { isProviderFailure } = await import('../models');
+    const failures = ['missing_key', 'invalid_key', 'unsupported_model', 'quota', 'timeout', 'invalid_output', 'provider_error'] as const;
+    for (const f of failures) expect(isProviderFailure(f)).toBe(true);
+    expect(isProviderFailure('unknown_company_fact')).toBe(false);
+    expect(isProviderFailure(undefined)).toBe(false);
+  });
+
+  it('reasonLabel returns the reason or "ok"', async () => {
+    const { reasonLabel } = await import('../models');
+    expect(reasonLabel('quota')).toBe('quota');
+    expect(reasonLabel(undefined)).toBe('ok');
+  });
+});

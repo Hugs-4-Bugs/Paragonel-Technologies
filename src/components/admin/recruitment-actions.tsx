@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   INTERNAL_STAGES,
   INTERNAL_STAGE_LABELS,
+  CANDIDATE_STATUSES,
   CANDIDATE_STATUS_LABELS,
   type InternalStage,
   type CandidateStatus,
@@ -53,6 +54,7 @@ export function RecruitmentActions({ applicationId, internalStage, candidateStat
   const { toast } = useToast();
   const [busyDecision, setBusyDecision] = useState<string | null>(null);
   const [stageBusy, setStageBusy] = useState(false);
+  const [csBusy, setCsBusy] = useState(false);
   const [noteBody, setNoteBody] = useState('');
   const [noteKind, setNoteKind] = useState<'screening' | 'interview' | 'general'>('general');
   const [noteBusy, setNoteBusy] = useState(false);
@@ -103,6 +105,19 @@ export function RecruitmentActions({ applicationId, internalStage, candidateStat
       toast({ title: 'Failed', description: e instanceof Error ? e.message : 'Try again.', variant: 'destructive' });
     } finally {
       setStageBusy(false);
+    }
+  }
+
+  async function changeCandidateStatus(value: string) {
+    setCsBusy(true);
+    try {
+      await patch({ candidateStatus: value });
+      toast({ title: 'Candidate-visible status updated', description: 'The candidate will see this status + be emailed per policy.' });
+      onChanged();
+    } catch (e) {
+      toast({ title: 'Failed', description: e instanceof Error ? e.message : 'Try again.', variant: 'destructive' });
+    } finally {
+      setCsBusy(false);
     }
   }
 
@@ -204,6 +219,20 @@ export function RecruitmentActions({ applicationId, internalStage, candidateStat
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Candidate-visible status selector (independent of internal stage) */}
+          <div className="pt-2">
+            <Label className="text-xs font-bold uppercase text-zinc-400 tracking-widest">Candidate-visible status</Label>
+            <Select value={cs || 'submitted'} onValueChange={changeCandidateStatus} disabled={csBusy}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CANDIDATE_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>{CANDIDATE_STATUS_LABELS[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground mt-1">This is the ONLY status the candidate sees. Emailed per policy.</p>
           </div>
         </CardContent>
       </Card>

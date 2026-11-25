@@ -108,4 +108,36 @@ describe('POST /api/chat (mocked flow)', () => {
     const data = await res.json();
     expect(data.sessionId).toBe('abc123');
   });
+
+  it('NEVER leaks the provider key or stack traces in any response (200 + 503)', async () => {
+    // A real key-shaped value present in the env must never appear in the response body.
+    process.env.GOOGLE_API_KEY = 'AIza-LEAK_TEST_SECRET_VALUE';
+    flowMock.mockResolvedValue(okOutput('a grounded answer'));
+    const okRes = await POST(chatReq({ message: 'q' }));
+    const okBody = await okRes.text();
+    expect(okBody).not.toContain('LEAK_TEST_SECRET_VALUE');
+    expect(okBody).not.toContain('AIza');
+
+    flowMock.mockResolvedValue(fallbackOutput('provider_error'));
+    const errRes = await POST(chatReq({ message: 'q' }));
+    const errBody = await errRes.text();
+    expect(errBody).not.toContain('LEAK_TEST_SECRET_VALUE');
+    expect(errBody).not.toContain('AIza');
+    // No stack traces / internal config paths in the safe error message.
+    expect(errBody).not.toContain('at /');
+    expect(errBody).not.toContain('node_modules');
+    delete process.env.GOOGLE_API_KEY;
+  });
+
+  it('returns a safe, non-internal error message on a route-level exception', async () => {
+    flowMock.mockRejectedValue(new Error('ECONNREFUSED internal-stack at /app/node_modules/x'));
+    const res = await POST(chatReq({ message: 'q' }));
+    expect(res.status).toBe(503);
+    const data = await res.json();
+    // The route's catch returns a generic safe message — never the raw error/stack.
+    expect(typeof data.answer).toBe('string');
+    expect(data.answer).not.toContain('ECONNREFUSED');
+    expect(data.answer).not.toContain('node_modules');
+    expect(JSON.stringify(data)).not.toContain('internal-stack');
+  });
 });
