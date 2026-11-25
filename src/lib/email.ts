@@ -146,6 +146,22 @@ function brandedHtml(title: string, bodyHtml: string): string {
   </table></body></html>`;
 }
 
+/**
+ * Send a Paragonel-branded email. Generic helper for domain layers (recruitment
+ * notifications, etc.) that build their own subject + body. Returns the
+ * per-recipient EmailResult so callers can persist status for diagnosis/retry.
+ */
+export async function sendBrandedEmail(input: {
+  to: string;
+  subject: string;
+  title: string;
+  bodyHtml: string;
+  text: string;
+}): Promise<EmailResult> {
+  const html = brandedHtml(input.title, input.bodyHtml);
+  return sendSingle(input.to, input.subject, html, input.text);
+}
+
 export interface ContactNotificationResult {
   acknowledgement: EmailResult;   // to the submitter
   companyNotification: EmailResult; // to the company inbox

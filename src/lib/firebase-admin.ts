@@ -43,10 +43,17 @@ function initAdmin(): App | null {
   // Emulator: no credentials required. projectId is used only for namespacing.
   // storageBucket is required by the Admin Storage SDK even against the
   // emulator (otherwise bucket.file() throws "Bucket name not specified").
+  // FALLBACK: if NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is unset, derive the
+  // Firebase default bucket `${projectId}.appspot.com` so resume uploads do not
+  // fail-close merely because the env var was omitted (the default bucket is
+  // provisioned automatically when Storage is enabled in the Firebase project).
   if (isEmulatorMode()) {
+    const bucketName =
+      process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+      (projectId ? `${projectId}.appspot.com` : undefined);
     adminApp = initializeApp({
       projectId: projectId || 'paragonel-dev',
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || undefined,
+      storageBucket: bucketName,
     });
     return adminApp;
   }
@@ -70,10 +77,19 @@ function initAdmin(): App | null {
   // Catch so getAdminDb()/getAdminBucket() return null as documented
   // ("returns null + 503 when misconfigured") instead of crashing the
   // process — callers (admin routes AND public-data fetchers) handle null.
+  // FALLBACK: if NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is unset, derive the
+  // Firebase default bucket `${projectId}.appspot.com`. This is the most common
+  // production failure mode for resume uploads (the env var omitted while the
+  // default bucket actually exists). If the default bucket does NOT exist
+  // (Storage was never enabled), the upload surfaces a classified 404 + the
+  // founder must enable Storage in the Firebase Console (documented in the report).
+  const bucketName =
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+    (projectId ? `${projectId}.appspot.com` : undefined);
   try {
     adminApp = initializeApp({
       credential: cert({ projectId, clientEmail, privateKey }),
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      storageBucket: bucketName,
     });
   } catch (err) {
     adminInitError =

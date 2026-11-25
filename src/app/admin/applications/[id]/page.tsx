@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowLeft, Download, Mail, Phone, Calendar, Briefcase, User, Info, Save, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { RecruitmentActions } from '@/components/admin/recruitment-actions';
 
 type Application = {
   id: string;
@@ -22,6 +23,10 @@ type Application = {
   skills?: string[];
   resumeUrl?: string;
   resumeStoragePath?: string;
+  internalStage?: string;
+  candidateStatus?: string;
+  notes?: Array<{ id: string; body: string; kind?: string; author?: string; at?: { seconds: number } }>;
+  interviews?: Array<Record<string, unknown>>;
 };
 
 export default function ApplicationDetail() {
@@ -34,30 +39,28 @@ export default function ApplicationDetail() {
   const [loading, setLoading] = useState(true);
   const [resumeLoading, setResumeLoading] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!id) return;
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/admin/applications/${id}`, { cache: 'no-store' });
-        if (!res.ok) {
-          if (!cancelled) setApp(null);
-          return;
-        }
-        const data = await res.json();
-        if (!cancelled) {
-          setApp(data.application as Application);
-          setInternalNotes(data.application?.internalNotes || '');
-        }
-      } catch {
-        if (!cancelled) setApp(null);
-      } finally {
-        if (!cancelled) setLoading(false);
+  const loadApp = useCallback(async () => {
+    if (!id) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/applications/${id}`, { cache: 'no-store' });
+      if (!res.ok) {
+        setApp(null);
+        return;
       }
-    })();
-    return () => { cancelled = true; };
+      const data = await res.json();
+      setApp(data.application as Application);
+      setInternalNotes(data.application?.internalNotes || '');
+    } catch {
+      setApp(null);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    loadApp();
+  }, [loadApp]);
 
   const handleSaveNotes = async () => {
     if (!id) return;
@@ -123,6 +126,13 @@ export default function ApplicationDetail() {
           {app.status || 'New'}
         </Badge>
       </div>
+
+      <RecruitmentActions
+        applicationId={app.id}
+        internalStage={app.internalStage}
+        candidateStatus={app.candidateStatus}
+        onChanged={loadApp}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
