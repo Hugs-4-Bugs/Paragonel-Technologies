@@ -329,10 +329,117 @@ export interface RetrievalResult {
 }
 
 /**
- * Keyword retrieval: tokenize the query, score each entry by weighted token
- * matches (title 3x, category 2x, content 1x), return the top-N entries with
- * score > 0. This is a simple, dependency-free indexed retrieval — no external
- * embedding/vector service required (acceptable for the first version per §5.7).
+ * Simple English suffix-stripper for plural/conjugation normalization. One
+ * pass; conservative (only strips a known suffix when the stem is long enough).
+ * Exported for testing. NOT a full Porter stemmer — sufficient for matching
+ * 'careers'↔'career', 'jobs'↔'job', 'services'↔'service', 'policies'↔'policy'.
+ */
+export function stem(token: string): string {
+  const t = token.toLowerCase();
+  if (t.length <= 3) return t;
+  if (t.endsWith('ies')) return t.slice(0, -3) + 'y';
+  if (t.endsWith('ied')) return t.slice(0, -3) + 'y';
+  for (const suf of ['tion', 'ment', 'ions', 'ing', 'ies', 'ied', 'es', 'ed']) {
+    if (t.endsWith(suf) && t.length > suf.length + 2) return t.slice(0, -suf.length);
+  }
+  if (t.endsWith('s') && t.length > 3) return t.slice(0, -1);
+  return t;
+}
+
+/**
+ * Semantic equivalence classes — used to EXPAND a query token with related terms
+ * so paraphrased questions + singular/plural variants match the right entries
+ * (e.g. 'job' → also matches 'careers', 'opening', 'vacancy', 'position'). This
+ * broadens keyword matching only; the ranking + scoring still apply. It is NOT a
+ * hardcoded query→response map (every query still goes through scoring + the
+ * model). The groups cover the company topics the chatbot must distinguish.
+ */
+const SYNONYM_GROUPS: { key: string; words: string[] }[] = [
+  { key: 'careers', words: ['job', 'jobs', 'career', 'careers', 'opening', 'openings', 'vacancy', 'vacancies', 'position', 'positions', 'role', 'roles', 'hiring', 'recruitment', 'recruit', 'employ', 'employment', 'employee', 'opportunity', 'opportunities', 'work', 'working'] },
+  { key: 'apply', words: ['apply', 'application', 'applying', 'applied', 'applicant', 'applicants', 'submit', 'submission', 'resume', 'cv', 'candidate', 'candidates'] },
+  { key: 'services', words: ['service', 'services', 'offering', 'offerings', 'solution', 'solutions', 'capability', 'capabilities', 'provide', 'provides'] },
+  { key: 'products', words: ['product', 'products', 'platform', 'platforms', 'tool', 'tools', 'software', 'build', 'builds', 'building', 'make', 'makes'] },
+  { key: 'company', words: ['company', 'paragonel', 'firm', 'business', 'organization', 'organisation', 'about', 'who', 'founder', 'ceo'] },
+  { key: 'privacy', words: ['privacy', 'policy', 'policies', 'cookie', 'cookies', 'gdpr', 'terms', 'legal', 'consent', 'data'] },
+  { key: 'contact', words: ['contact', 'email', 'phone', 'reach', 'support', 'address', 'location', 'office', 'where'] },
+  { key: 'technology', words: ['technology', 'technologies', 'tech', 'stack', 'framework', 'frameworks', 'tooling', 'infrastructure'] },
+  { key: 'pricing', words: ['price', 'pricing', 'cost', 'costs', 'fee', 'fees', 'rate', 'rates', 'quote', 'charge', 'charges'] },
+];
+
+/** Map each stem → the set of all stems in its synonym group (inclusive). */
+const SYNONYM_MAP: Map<string, Set<string>> = (() => {
+  const m = new Map<string, Set<string>>();
+  for (const g of SYNONYM_GROUPS) {
+    const stems = new Set<string>(g.words.map(stem));
+    stems.add(stem(g.key));
+    for (const s of stems) {
+      const existing = m.get(s);
+      if (existing) for (const x of stems) existing.add(x);
+      else m.set(s, new Set(stems));
+    }
+  }
+  return m;
+})();
+
+/** Expand a raw query token into its stem + all synonym-group stems. */
+function expandQueryToken(raw: string): string[] {
+  const s = stem(raw);
+  const out = new Set<string>([raw, s]);
+  const group = SYNONYM_MAP.get(s) ?? SYNONYM_MAP.get(raw);
+  if (group) for (const g of group) out.add(g);
+  return [...out];
+}
+
+/** Detected query intent — drives category boosts + legal-doc suppression so a
+ *  'job' query never surfaces the Privacy Policy (which mentions 'job
+ *  applications') + a careers query with no live jobs answers honestly. */
+export type RetrievalIntent =
+  | 'careers' | 'privacy' | 'contact' | 'services' | 'products'
+  | 'company' | 'technology' | 'pricing' | null;
+
+/** Detect the dominant intent from raw query tokens. Privacy is checked BEFORE
+ *  careers because a privacy query may also mention 'job' (e.g. 'privacy policy
+ *  for job applications') + should still be privacy. Exported for testing. */
+export function detectIntent(tokens: string[]): RetrievalIntent {
+  const stems = new Set(tokens.map(stem));
+  const has = (words: string[]) => words.some((w) => stems.has(stem(w)));
+  if (has(SYNONYM_GROUPS.find((g) => g.key === 'privacy')!.words)) return 'privacy';
+  if (has(SYNONYM_GROUPS.find((g) => g.key === 'careers')!.words)) return 'careers';
+  if (has(SYNONYM_GROUPS.find((g) => g.key === 'contact')!.words)) return 'contact';
+  if (has(SYNONYM_GROUPS.find((g) => g.key === 'products')!.words)) return 'products';
+  if (has(SYNONYM_GROUPS.find((g) => g.key === 'services')!.words)) return 'services';
+  if (has(SYNONYM_GROUPS.find((g) => g.key === 'technology')!.words)) return 'technology';
+  if (has(SYNONYM_GROUPS.find((g) => g.key === 'company')!.words)) return 'company';
+  if (has(SYNONYM_GROUPS.find((g) => g.key === 'pricing')!.words)) return 'pricing';
+  return null;
+}
+
+/** Confidence threshold: a match needs at least a title OR category hit (score
+ *  >= 2), not just a single incidental content mention (score = 1). This stops
+ *  weak matches like 'job' → Privacy Policy ('...job applications...') from
+ *  grounding an answer when no better candidate exists. */
+const MIN_CONFIDENCE_SCORE = 2;
+
+/**
+ * Robust keyword retrieval with query normalization, stemming, synonym
+ * expansion, intent recognition, category boosts, legal-document suppression,
+ * + a confidence threshold. Dependency-free (no embeddings/vector service).
+ *
+ * Fixes the production bug where 'job' / 'job opening' returned the Privacy
+ * Policy (it mentions 'job applications' → score 1 → only candidate) + 'career'
+ * returned nothing (no stemming → 'career' ≠ 'careers' nav entry):
+ *   - Stemming + synonyms: 'job' now also matches the 'Careers' nav page +
+ *     any live cms-jobs entries (via the careers synonym group).
+ *   - Intent suppression: a careers-intent query NEVER surfaces policies
+ *     entries (they are zeroed); a non-privacy generic query suppresses weak
+ *     policy matches (score <= 2).
+ *   - Confidence threshold: weak single-content matches (score < 2) are
+ *     dropped → the assistant returns an honest 'no verified info' fallback
+ *     instead of the wrong document.
+ *   - Honest 'no openings': a careers-intent query with NO live cms-jobs in
+ *     the base gets a synthetic, truthful 'no current open positions' entry
+ *     so the assistant says there are no openings rather than implying some
+ *     exist via the Careers nav link. Never fabricates specific roles.
  */
 export function retrieve(
   query: string,
@@ -340,24 +447,88 @@ export function retrieve(
   topN = 5,
 ): RetrievalResult[] {
   const kb = base ?? cachedBase ?? [];
-  const queryTokens = tokenize(query);
-  if (queryTokens.length === 0) return [];
+  const rawTokens = tokenize(query);
+  if (rawTokens.length === 0) return [];
+
+  // Expand query tokens with stems + synonyms for paraphrase/variant matching.
+  const queryExpanded = new Set<string>();
+  for (const t of rawTokens) for (const e of expandQueryToken(t)) queryExpanded.add(e);
+
+  const intent = detectIntent(rawTokens);
+  const hasLiveJobs = kb.some(
+    (e) => e.sourceType === 'cms-jobs' || (e.category === 'careers' && e.id.startsWith('job-')),
+  );
 
   const scored: RetrievalResult[] = [];
   for (const entry of kb) {
-    const titleTokens = new Set(tokenize(entry.title));
-    const contentTokens = new Set(tokenize(entry.content));
-    const categoryTokens = new Set(tokenize(entry.category));
+    // Stem entry tokens so 'careers' (entry) matches 'career' (query stem).
+    const titleTokens = new Set(tokenize(entry.title).map(stem));
+    const categoryTokens = new Set(tokenize(entry.category).map(stem));
+    const contentTokens = new Set(tokenize(entry.content).map(stem));
     let score = 0;
-    for (const t of queryTokens) {
-      if (titleTokens.has(t)) score += 3;
-      if (categoryTokens.has(t)) score += 2;
-      if (contentTokens.has(t)) score += 1;
+    for (const t of queryExpanded) {
+      const ts = stem(t);
+      if (titleTokens.has(ts)) score += 3;
+      if (categoryTokens.has(ts)) score += 2;
+      if (contentTokens.has(ts)) score += 1;
+    }
+    if (score === 0) continue;
+
+    // Intent-based boosts + suppression.
+    if (intent === 'careers') {
+      // A job/career query ranks careers entries (live jobs + the Careers nav
+      // page) + suppresses legal docs that match 'job' only via 'job
+      // applications' in their text.
+      if (entry.category === 'careers' || entry.sourceType === 'cms-jobs') score += 6;
+      if (entry.category === 'navigation' && /career|job|hire/i.test(entry.title)) score += 5;
+      if (entry.category === 'policies') score = 0;
+    } else if (intent === 'privacy') {
+      if (entry.category === 'policies') score += 6;
+    } else if (intent === 'contact') {
+      if (entry.category === 'contact') score += 6;
+    } else if (intent === 'services') {
+      if (entry.category === 'services') score += 4;
+    } else if (intent === 'products') {
+      if (entry.category === 'products') score += 4;
+    } else if (intent === 'technology') {
+      if (entry.category === 'technology') score += 4;
+    } else if (intent === 'company') {
+      if (entry.category === 'company') score += 4;
+    } else if (intent === 'pricing') {
+      // No public pricing content — suppress everything (honest 'no pricing
+      // info' fallback) rather than surfacing an unrelated page.
+      score = 0;
+    } else {
+      // No specific intent: suppress weak policy matches that surface only via
+      // incidental content (a generic query shouldn't return the Privacy Policy
+      // unless it explicitly asks about privacy).
+      if (entry.category === 'policies' && score <= 2) score = 0;
     }
     if (score > 0) scored.push({ entry, score });
   }
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, topN);
+
+  // Confidence threshold: drop weak single-content matches.
+  const confident = scored.filter((s) => s.score >= MIN_CONFIDENCE_SCORE);
+  confident.sort((a, b) => b.score - a.score);
+
+  // Careers intent + NO live jobs → prepend a truthful 'no current openings'
+  // entry so the assistant answers honestly instead of implying openings exist.
+  if (intent === 'careers' && !hasLiveJobs) {
+    confident.unshift({
+      entry: {
+        id: 'careers-no-openings',
+        title: 'Careers — No current open positions',
+        content:
+          "Paragonel has no open job positions listed at this time. The /careers page shows open roles when they are available. Candidates are welcome to send their resume via the Contact page for future opportunities. Do not invent or list specific job titles, locations, or requirements that are not present here.",
+        category: 'careers',
+        canonicalPath: '/careers',
+        sourceType: 'company-static',
+      },
+      score: 100, // top-ranked so the honest answer is grounded first
+    });
+  }
+
+  return confident.slice(0, topN);
 }
 
 /**

@@ -113,7 +113,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 py-6 px-3">
+          <ScrollArea className="flex-1 min-h-0 py-6 px-3">
             {!isCollapsed && (
               <div className="px-3 mb-6">
                 <div className="relative">
@@ -184,8 +184,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <ScrollArea className="flex-1 w-full h-full">
-          <div className="w-full h-full p-4 md:p-8 lg:p-10 pt-20 lg:pt-10">
+        <ScrollArea className="flex-1 min-h-0 w-full h-full">
+          {/* NOTE: NO h-full on this inner div — h-full would force it to the
+              ScrollArea viewport height, making scrollHeight === clientHeight
+              so tall content gets CLIPPED instead of scrolling (the "user must
+              drag the scrollbar" bug). Let it grow to content height so the
+              ScrollArea scrolls naturally with wheel/trackpad. */}
+          <div className="w-full p-4 md:p-8 lg:p-10 pt-20 lg:pt-10">
             <div className="max-w-[1600px] mx-auto">
               {children}
             </div>
