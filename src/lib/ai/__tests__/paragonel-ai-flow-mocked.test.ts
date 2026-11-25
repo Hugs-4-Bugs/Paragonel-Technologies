@@ -13,7 +13,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const { promptMock } = vi.hoisted(() => ({ promptMock: vi.fn() }));
 vi.mock('@/ai/genkit', () => ({
-  ai: { definePrompt: vi.fn(() => promptMock) },
+  // defineTool: return a minimal tool stub so importing paragonel-tools (which
+  // defines 4 read-only tools at module load) does not throw under the mock.
+  // The mock promptMock ignores the tools array; this just needs to be callable.
+  ai: {
+    definePrompt: vi.fn(() => promptMock),
+    defineTool: vi.fn((config: unknown, fn: unknown) => ({ ...((config as object) || {}), fn })),
+  },
 }));
 
 import { paragonelAIFlow } from '@/ai/flows/paragonel-ai-flow';
