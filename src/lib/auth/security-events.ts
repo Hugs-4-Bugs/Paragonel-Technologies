@@ -19,6 +19,7 @@ export type SecurityEventType =
   | 'rate_limited' | 'lockout'
   | 'register' | 'password_change' | 'password_reset'
   | 'bootstrap_attempt' | 'bootstrap_success'
+  | 'recovery_attempt' | 'recovery_success' | 'recovery_failed' // Super Admin credential recovery
   | 'admin_created' | 'admin_invited' | 'role_changed'
   | 'admin_suspended' | 'admin_reactivated' | 'session_revoked'
   | 'unauthorized_access'

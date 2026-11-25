@@ -164,6 +164,8 @@ export default function AdminLoginPage() {
           <AlertDescription className="text-blue-700 dark:text-blue-400 text-sm">
             Two-step login: password + email OTP. No public registration.{' '}
             <Link href="/admin/bootstrap" className="underline font-semibold">First-time Super Admin setup</Link>.
+            Lost Super Admin password?{' '}
+            <Link href="/admin/recover" className="underline font-semibold">Recover access</Link>.
           </AlertDescription>
         </Alert>
       </div>

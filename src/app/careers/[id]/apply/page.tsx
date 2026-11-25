@@ -1,11 +1,27 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { getPublicJobById } from '@/lib/public-data';
+import { getPublicJobById, getPublicJobs } from '@/lib/public-data';
 import { ApplyForm } from '@/components/careers/apply-form';
 import type { Metadata } from 'next';
 
 export const revalidate = 60;
+
+/**
+ * Pre-render the apply page for every published job at build time (same source
+ * as /careers/[id]). Without this, /careers/[id]/apply was ƒ (Dynamic-only) —
+ * so on Vercel it ran getPublicJobById at RUNTIME while the /careers listing was
+ * served from a BUILD-TIME cache. When Firebase Admin was configured at runtime
+ * but Firestore had no matching doc, the apply route 404'd even though the
+ * listing showed the job. Pre-rendering (SSG + ISR) makes the two pages use the
+ * SAME build-time data for known ids; unknown ids render on-demand
+ * (dynamicParams defaults to true) + getPublicJobById's dummy fallback handles
+ * the build-time/runtime edge case.
+ */
+export async function generateStaticParams() {
+  const jobs = await getPublicJobs(100);
+  return jobs.map((j) => ({ id: String(j.id) }));
+}
 
 export async function generateMetadata({
   params,
