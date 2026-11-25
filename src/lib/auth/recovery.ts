@@ -32,11 +32,12 @@
  */
 import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
-import { issueOtp, verifyOtp } from './otp';
+import { issueOtp, verifyOtp, getOtpSecret } from './otp';
 import { hashPassword, validatePassword, passwordPolicyMessage } from './password';
 import { logSecurityEvent } from './security-events';
 import { POLICIES, checkRateLimit } from './rate-limit';
 import { getBootstrapEmail } from './bootstrap';
+import { isSmtpConfigured } from './email';
 
 const RECOVERY_PURPOSE = 'recovery' as const;
 
@@ -50,7 +51,13 @@ export interface RecoveryOtpResult {
   ok: boolean;
   otpRequestId?: string;
   maskedEmail?: string;
-  reason?: 'not_authorized' | 'no_account' | 'rate_limited' | 'unavailable' | 'smtp_not_configured' | 'smtp_error' | 'misconfigured';
+  /** Granular pre-flight reasons name the EXACT missing env var so the founder
+   *  knows what to configure (the var NAME is not a secret). Enumeration-safe
+   *  reasons (not_authorized/no_account) stay uniform. */
+  reason?: 'not_authorized' | 'no_account' | 'rate_limited'
+    | 'unavailable'
+    | 'bootstrap_email_not_set' | 'otp_secret_not_set' | 'firebase_not_initialized' | 'smtp_not_configured'
+    | 'smtp_error';
   retryAfter?: number;
   /** The plaintext code — ONLY for the route to email (never returned to the client). */
   code?: string;
@@ -60,24 +67,36 @@ export interface RecoveryOtpResult {
 /**
  * Step 1: request a recovery OTP. Restricted to the configured bootstrap email
  * AND an existing super_admin doc for that email. No new account creation.
+ *
+ * Pre-flight: checks every server-side dependency the flow needs + returns a
+ * granular reason naming the EXACT missing env var (SUPERADMIN_BOOTSTRAP_EMAIL,
+ * OTP_SECRET, FIREBASE_ADMIN_*, SMTP_*) so the founder can configure correctly.
  */
 export async function requestRecoveryOtp(input: { email: string; ip?: string }): Promise<RecoveryOtpResult> {
   const configuredEmail = getBootstrapEmail();
   if (!configuredEmail) {
-    return { ok: false, reason: 'misconfigured' };
+    return { ok: false, reason: 'bootstrap_email_not_set' };
   }
   // HARD restriction: the requested email MUST exactly equal the server-side
   // configured bootstrap email. No other email can be recovered, ever.
   const requestedEmail = (input.email || '').toLowerCase().trim();
   if (requestedEmail !== configuredEmail) {
-    // Log as unauthorized (no email in the event to avoid leaking which email
-    // was probed). Do NOT reveal whether the configured email is different.
     await logSecurityEvent({ type: 'recovery_failed', ip: input.ip, detail: 'email_not_authorized' });
     return { ok: false, reason: 'not_authorized' };
   }
 
   const db = getAdminDb();
-  if (!db) return { ok: false, reason: 'unavailable' };
+  if (!db) return { ok: false, reason: 'firebase_not_initialized' };
+
+  // OTP_SECRET is required to sign/verify the recovery OTP. Without it, the
+  // OTP cannot be issued (issueOtp would return misconfigured) — surface the
+  // exact var so the founder can set it.
+  if (!getOtpSecret()) return { ok: false, reason: 'otp_secret_not_set' };
+
+  // SMTP is required to DELIVER the recovery code by email. Without it, the OTP
+  // would be issued but never emailed (the founder would never receive it).
+  // Surface the exact dependency set (SMTP_HOST/USER/PASS/FROM).
+  if (!isSmtpConfigured()) return { ok: false, reason: 'smtp_not_configured' };
 
   // The super_admin account MUST already exist (bootstrap completed). Recovery
   // never creates or escalates an account — it only resets a known one.
@@ -88,7 +107,6 @@ export async function requestRecoveryOtp(input: { email: string; ip?: string }):
   }
   const data = snap.data() as { role?: string };
   if (data.role !== 'super_admin') {
-    // The doc exists but is NOT super_admin — refuse (no escalation path).
     await logSecurityEvent({ type: 'recovery_failed', email: requestedEmail, ip: input.ip, detail: 'not_super_admin' });
     return { ok: false, reason: 'not_authorized' };
   }

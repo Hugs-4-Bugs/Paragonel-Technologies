@@ -16,7 +16,9 @@ const adminDocMocks: Record<string, { exists: boolean; data?: any }> = {};
 const otpStore: Record<string, { email: string; code: string; consumed: boolean }> = {};
 
 vi.mock('@/lib/firebase-admin', () => ({
-  getAdminDb: () => ({
+  // vi.fn so the pre-flight tests can override (return null once) to simulate
+  // the Admin SDK being unavailable.
+  getAdminDb: vi.fn(() => ({
     collection: (c: string) => ({
       doc: (id: string) => ({
         get: async () => ({
@@ -32,7 +34,7 @@ vi.mock('@/lib/firebase-admin', () => ({
       }),
       where: () => ({ limit: () => ({ get: async () => ({ empty: true, docs: [] }) }) }),
     }),
-  }),
+  })),
 }));
 
 vi.mock('@/lib/auth/otp', () => ({
@@ -48,6 +50,18 @@ vi.mock('@/lib/auth/otp', () => ({
     rec.consumed = true;
     return { ok: true, email: rec.email };
   }),
+  // vi.fn so the pre-flight tests can override (return null once) to simulate
+  // OTP_SECRET being missing.
+  getOtpSecret: vi.fn(() => 'a'.repeat(40)),
+}));
+
+vi.mock('@/lib/auth/email', () => ({
+  // vi.fn so the pre-flight tests can override (return false once) to simulate
+  // SMTP not being configured.
+  isSmtpConfigured: vi.fn(() => true),
+  deliverOtp: vi.fn(async () => {}),
+  getSmtpConfig: () => null,
+  isValidSender: () => true,
 }));
 
 vi.mock('@/lib/auth/password', () => ({
@@ -63,6 +77,10 @@ vi.mock('@/lib/auth/rate-limit', () => ({
 
 vi.mock('@/lib/auth/security-events', () => ({ logSecurityEvent: vi.fn(async () => {}) }));
 
+// Import the mocked functions so the pre-flight tests can override them once.
+import { getAdminDb } from '@/lib/firebase-admin';
+import { getOtpSecret } from '@/lib/auth/otp';
+import { isSmtpConfigured } from '@/lib/auth/email';
 import { requestRecoveryOtp, completeRecovery } from '../recovery';
 
 const CONFIGURED_EMAIL = 'contact@prabhat.online';
@@ -107,11 +125,37 @@ describe('Super Admin recovery — security properties', () => {
       expect(r.code).toBe('123456'); // only returned for the route to email — never to the client
     });
 
-    it('refuses when SUPERADMIN_BOOTSTRAP_EMAIL is not configured', async () => {
+    it('refuses when SUPERADMIN_BOOTSTRAP_EMAIL is not configured (names the var)', async () => {
       delete process.env.SUPERADMIN_BOOTSTRAP_EMAIL;
       const r = await requestRecoveryOtp({ email: CONFIGURED_EMAIL, ip: '1.2.3.4' });
       expect(r.ok).toBe(false);
-      expect(r.reason).toBe('misconfigured');
+      expect(r.reason).toBe('bootstrap_email_not_set');
+    });
+  });
+
+  describe('requestRecoveryOtp — pre-flight env-var checks (granular reasons)', () => {
+    it('refuses with otp_secret_not_set when OTP_SECRET is missing', async () => {
+      // SUPERADMIN_BOOTSTRAP_EMAIL is set (beforeEach) + getAdminDb mock returns
+      // a db, so the next pre-flight is OTP_SECRET. Override the otp mock to
+      // return null for getOtpSecret.
+      vi.mocked(getOtpSecret).mockReturnValueOnce(null as any);
+      const r = await requestRecoveryOtp({ email: CONFIGURED_EMAIL, ip: '1.2.3.4' });
+      expect(r.ok).toBe(false);
+      expect(r.reason).toBe('otp_secret_not_set');
+    });
+
+    it('refuses with smtp_not_configured when SMTP is not set (OTP could not be emailed)', async () => {
+      vi.mocked(isSmtpConfigured).mockReturnValueOnce(false);
+      const r = await requestRecoveryOtp({ email: CONFIGURED_EMAIL, ip: '1.2.3.4' });
+      expect(r.ok).toBe(false);
+      expect(r.reason).toBe('smtp_not_configured');
+    });
+
+    it('refuses with firebase_not_initialized when the Admin SDK is unavailable', async () => {
+      vi.mocked(getAdminDb).mockReturnValueOnce(null as any);
+      const r = await requestRecoveryOtp({ email: CONFIGURED_EMAIL, ip: '1.2.3.4' });
+      expect(r.ok).toBe(false);
+      expect(r.reason).toBe('firebase_not_initialized');
     });
   });
 
