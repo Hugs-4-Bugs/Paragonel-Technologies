@@ -100,6 +100,7 @@ const PURPOSE_LABEL: Record<OtpPurpose, string> = {
   password_reset: 'Reset your Paragonel password',
   admin_login: 'Your Paragonel admin login code',
   bootstrap: 'Verify the Paragonel Super Admin bootstrap',
+  recovery: 'Recover your Paragonel Super Admin account',
 };
 
 function emailBody(code: string, purpose: OtpPurpose): string {

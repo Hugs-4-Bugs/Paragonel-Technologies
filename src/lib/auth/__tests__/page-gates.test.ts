@@ -29,8 +29,12 @@ describe('requiresAdminGate — /admin/** page gate', () => {
     expect(requiresAdminGate('/api/admin/jobs')).toBe(false); // API routes gated at handler, not page gate
   });
 
-  it('PUBLIC_ADMIN_PATHS contains exactly the 3 public auth pages', () => {
-    expect(PUBLIC_ADMIN_PATHS).toEqual(new Set(['/admin/login', '/admin/bootstrap', '/admin/accept-invite']));
+  it('PUBLIC_ADMIN_PATHS contains exactly the public auth pages (login, bootstrap, recover, accept-invite)', () => {
+    expect(PUBLIC_ADMIN_PATHS).toEqual(new Set(['/admin/login', '/admin/bootstrap', '/admin/recover', '/admin/accept-invite']));
+  });
+
+  it('requiresAdminGate is false for /admin/recover (public recovery page)', () => {
+    expect(requiresAdminGate('/admin/recover')).toBe(false);
   });
 });
 

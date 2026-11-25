@@ -103,7 +103,15 @@ export async function getPublicJobs(limit = 50): Promise<any[]> {
       .orderBy('createdAt', 'desc')
       .limit(limit)
       .get();
-    return snap.docs.map((d) => serializeDoc(d));
+    const jobs = snap.docs.map((d) => serializeDoc(d));
+    // If Firestore is configured but has no active published jobs, fall back to
+    // dummyJobs so the public careers page is never empty AND stays consistent
+    // with the /careers/[id] + /careers/[id]/apply pages (which also fall back
+    // to dummyJobs on a missing doc). Real published jobs always take precedence
+    // (snap.docs non-empty → no dummy merge). This closes the build-time/runtime
+    // inconsistency where the static listing showed dummy jobs but the dynamic
+    // apply route 404'd because Firestore had no matching doc.
+    return jobs.length > 0 ? jobs : dummyJobs.filter((j) => j.isActive).slice(0, limit);
   } catch (err) {
     console.error('[public-data] getPublicJobs failed:', err instanceof Error ? err.message : err);
     return dummyJobs.filter((j) => j.isActive);
@@ -152,7 +160,18 @@ export async function getPublicJobById(id: string): Promise<any | null> {
   }
   try {
     const snap = await db.collection('jobs').doc(id).get();
-    if (!snap.exists) return null;
+    if (!snap.exists) {
+      // Firestore is configured but has no doc for this id. Fall back to
+      // dummyJobs so a job shown on the (possibly ISR/build-time-cached)
+      // listing is always resolvable on the detail + apply pages. This closes
+      // the build-time/runtime inconsistency: the static listing shows dummy
+      // jobs (ENG-001 etc.) but the dynamic /careers/[id]/apply route 404'd
+      // because Firestore had no ENG-001 doc. If the id is not a dummy id
+      // either, this returns null → 404 (correct — a genuinely unknown id).
+      // NOTE: the inactive/deleted case below stays null (a real doc that was
+      // intentionally deactivated must NOT be served as a dummy).
+      return dummyJobs.find((j) => j.id === id && j.isActive) ?? null;
+    }
     const data = snap.data() as any;
     if (!data.isActive || data.deletedAt) return null;
     return serializeDoc(snap);

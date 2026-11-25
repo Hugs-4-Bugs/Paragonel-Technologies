@@ -34,7 +34,8 @@ export type OtpPurpose =
   | 'register'
   | 'password_reset'
   | 'admin_login'
-  | 'bootstrap';
+  | 'bootstrap'
+  | 'recovery'; // Super Admin credential recovery (restricted to SUPERADMIN_BOOTSTRAP_EMAIL)
 
 /** Read + validate the OTP secret. Null → callers fail closed. */
 export function getOtpSecret(): string | null {

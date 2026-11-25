@@ -18,6 +18,7 @@
 export const PUBLIC_ADMIN_PATHS = new Set<string>([
   '/admin/login',
   '/admin/bootstrap',
+  '/admin/recover', // Super Admin credential recovery (Phase 4) — gated by email+OTP, not session
   '/admin/accept-invite',
 ]);
 
