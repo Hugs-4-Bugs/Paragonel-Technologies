@@ -121,6 +121,40 @@ describe('POST /api/candidate/resume — authorization + ownership', () => {
     const res = await resumePost(new Request('http://localhost/api/candidate/resume', { method: 'POST', body: fd }));
     expect(res.status).toBe(400);
   });
+
+  it('regression: Firestore profile-write failure returns a classified 500 (not an unhandled crash) + cleans up the orphaned Storage object (PHASE B4)', async () => {
+    // Previously the Firestore write at route.ts:177 was UNGUARDED — if it threw
+    // (Firestore unavailable / permissions / transient), the route crashed with
+    // an unhandled 500 AFTER the resume was already stored, orphaning the resume
+    // in Storage + showing the candidate a generic error with no recovery path.
+    // Now the write is wrapped: on failure it returns a classified 500 + deletes
+    // the just-uploaded object so it does not orphan.
+    //
+    // Use a fake whose .set() throws (simulating a Firestore write failure) but
+    // whose .get() still works (the route reads the previous resume path first).
+    const throwingDb = {
+      collection: () => ({
+        doc: () => ({
+          get: async () => ({ exists: false, id: 'cand@example.com', data: () => undefined, ref: {} }),
+          set: async () => { throw new Error('7 PERMISSION_DENIED: missing or insufficient permissions'); },
+        }),
+      }),
+    };
+    fakeDb = throwingDb as unknown as FakeFirestore;
+
+    const fd = new FormData();
+    fd.append('resume', pdfFile());
+    const res = await resumePost(new Request('http://localhost/api/candidate/resume', { method: 'POST', body: fd }));
+
+    // 1. Classified 500 (NOT an unhandled crash / generic Next.js error page).
+    expect(res.status).toBe(500);
+    const data = await res.json();
+    expect(data.message).toMatch(/permission denied/i);
+    expect(data.message).toMatch(/Firestore write access/);
+
+    // 2. The just-uploaded Storage object was cleaned up (no orphan).
+    expect([...fileStore.keys()].some((k) => k.startsWith('candidates/cand@example.com/resumes/'))).toBe(false);
+  });
 });
 
 describe('GET /api/candidate/resume — ownership', () => {
