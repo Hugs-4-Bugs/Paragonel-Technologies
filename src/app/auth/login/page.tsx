@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaptchaWidget } from '@/components/auth/captcha-widget';
 import { safeRedirect } from '@/lib/safe-redirect';
+import { useAuth } from '@/contexts/auth-context';
 import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
 
 export default function UserLoginPage() {
@@ -31,6 +32,7 @@ function LoginInner() {
   const router = useRouter();
   const params = useSearchParams();
   const redirect = safeRedirect(params.get('redirect'), '/');
+  const { refresh } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,6 +53,12 @@ function LoginInner() {
       });
       const data = await res.json();
       if (res.ok) {
+        // Refresh the AuthProvider's server-verified state BEFORE navigating so
+        // the navbar + the careers Apply guards see the fresh session
+        // immediately. Without this, the AuthProvider keeps its mount-time
+        // isAuthenticated:false → the navbar stays logged out (Issue A) and the
+        // careers list Apply guard falsely redirects back to login (Issue B).
+        await refresh();
         router.push(redirect);
         router.refresh();
       } else {
@@ -61,7 +69,7 @@ function LoginInner() {
     } finally {
       setBusy(false);
     }
-  }, [email, password, captchaToken, ack, router, redirect]);
+  }, [email, password, captchaToken, ack, router, redirect, refresh]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">

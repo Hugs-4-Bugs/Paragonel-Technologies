@@ -397,7 +397,9 @@ export default function CandidateProfilePage() {
         {note && <p className="text-sm text-green-600">{note}</p>}
         {parsedNote && <div className="flex items-start gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg"><FileText className="h-4 w-4 mt-0.5 shrink-0" /><span>{parsedNote}</span></div>}
 
-        {/* My applications — closes the "track its status from your profile" dead-end */}
+        {/* My applications — closes the "track its status from your profile" dead-end.
+            id="applications" anchors the navbar "My Applications" link. */}
+        <div id="applications" className="scroll-mt-24">
         <Card>
           <CardHeader><CardTitle className="text-lg">My applications</CardTitle><CardDescription>The roles you have applied to and their current status.</CardDescription></CardHeader>
           <CardContent className="space-y-2">
@@ -422,6 +424,7 @@ export default function CandidateProfilePage() {
             )}
           </CardContent>
         </Card>
+        </div>
 
         {/* Resume */}
         <Card>

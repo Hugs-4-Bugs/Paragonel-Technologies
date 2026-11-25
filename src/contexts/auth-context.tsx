@@ -42,6 +42,13 @@ interface AuthContextType {
   login: (email: string, password?: string, redirectPath?: string) => void;
   logout: () => void;
   signup: (fullName: string, email: string, password?: string, redirectPath?: string) => void;
+  /**
+   * Re-check the server-verified session + update context state. Call this
+   * after any flow that establishes or destroys a session (login, signup,
+   * logout) so every consumer (navbar, careers guards) syncs to the fresh
+   * state WITHOUT a full page reload. Returns the user or null.
+   */
+  refresh: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -140,18 +147,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Network failure: still clear local state + redirect; the cookie may
       // remain until it expires, but we never leave the UI showing "logged in".
     }
-    setIsAuthenticated(false);
-    setUser(null);
+    // Refresh the server-verified session so every consumer (navbar, careers
+    // guards) syncs to the logged-out state immediately. After the cookie is
+    // cleared server-side, /api/auth/me returns 401 → refresh sets
+    // isAuthenticated:false + user:null. This replaces the stale manual flip
+    // that left the navbar showing "logged in" until the next full reload.
+    await refresh();
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
     });
     router.push('/');
-    void refresh;
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, logout, signup }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, isLoading, login, logout, signup, refresh }}>
       {children}
     </AuthContext.Provider>
   );

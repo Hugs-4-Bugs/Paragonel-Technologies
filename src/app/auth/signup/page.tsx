@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CaptchaWidget } from '@/components/auth/captcha-widget';
 import { safeRedirect } from '@/lib/safe-redirect';
+import { useAuth } from '@/contexts/auth-context';
 import { Eye, EyeOff, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 
 const STEPS = ['Details', 'Verify email', 'Set password', 'Done'] as const;
@@ -36,6 +37,7 @@ function SignupInner() {
   const router = useRouter();
   const params = useSearchParams();
   const redirect = safeRedirect(params.get('redirect'), '/candidate/profile');
+  const { refresh } = useAuth();
 
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [busy, setBusy] = useState(false);
@@ -126,6 +128,11 @@ function SignupInner() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.message || data.error ||'Could not complete registration.'); return; }
+      // Refresh the AuthProvider's server-verified state so the navbar reflects
+      // the new session before the redirect (the complete route issues a user
+      // session cookie). Without this the candidate lands on /candidate/profile
+      // with a stale logged-out navbar.
+      await refresh();
       setStep(3);
       setTimeout(() => router.push(redirect), 1500);
     } catch {
@@ -133,7 +140,7 @@ function SignupInner() {
     } finally {
       setBusy(false);
     }
-  }, [verificationToken, password, confirm, router, redirect]);
+  }, [verificationToken, password, confirm, router, redirect, refresh]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4 py-8">

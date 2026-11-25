@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { ThemeToggleButton } from "@/components/theme-toggle-button";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Brain, Cloud, GitBranch, Boxes, ArrowRight, Code2, BarChart3, Layers, Workflow, Network, Compass, ShieldCheck, Gauge, Building2, Cpu, FlaskConical } from "lucide-react";
+import { Menu, X, ChevronDown, LogIn, UserPlus, LogOut, UserCircle, Settings2, Briefcase, Brain, Cloud, GitBranch, Boxes, ArrowRight, Code2, BarChart3, Layers, Workflow, Network, Compass, ShieldCheck, Gauge, Building2, Cpu, FlaskConical } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -106,6 +106,7 @@ export function Navbar() {
     const links: NavLink[] = [...mainNavLinks, ...moreNavLinks];
     if (isAuthenticated && user) {
       links.push({ href: "/profile", label: "My Profile", icon: UserCircle });
+      links.push({ href: "/candidate/profile#applications", label: "My Applications", icon: Briefcase });
       links.push({ href: "#", label: "Logout", icon: LogOut, action: () => { logout(); setIsMobileMenuOpen(false); } });
     } else {
       links.push(...authNavLinksBase);
@@ -249,6 +250,12 @@ export function Navbar() {
                        <Link href="/profile" className="cursor-pointer">
                          <Settings2 className="mr-2 h-4 w-4" />
                          My Profile
+                       </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                       <Link href="/candidate/profile#applications" className="cursor-pointer">
+                         <Briefcase className="mr-2 h-4 w-4" />
+                         My Applications
                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
