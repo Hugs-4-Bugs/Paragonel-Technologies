@@ -83,6 +83,23 @@ export default async function JobDetailPage({
   const company = job.company || 'Paragonel Technologies';
   const jobForApply = { ...job, company } as Job;
 
+  // Related jobs: other active, non-deleted jobs, preferring the same department.
+  // No fabricated content — only real published jobs. Limit 3.
+  let relatedJobs: Job[] = [];
+  try {
+    const all = await getPublicJobs(100);
+    relatedJobs = (all as Job[])
+      .filter((j) => j.id !== job.id && j.isActive && j.deletedAt == null)
+      .sort((a, b) => {
+        const aMatch = a.department === job.department ? 0 : 1;
+        const bMatch = b.department === job.department ? 0 : 1;
+        return aMatch - bMatch;
+      })
+      .slice(0, 3);
+  } catch {
+    // Non-fatal — the related section is omitted if the fetch fails.
+  }
+
   // JobPosting JSON-LD — accurate published fields only. salaryRange is free
   // text (e.g. "₹8-12 LPA"), not a parseable number, so it is omitted from
   // baseSalary to keep the structured data valid (it is still shown in the UI).
@@ -206,6 +223,28 @@ export default async function JobDetailPage({
           </div>
           <JobApplyCta job={jobForApply} />
         </section>
+
+        {relatedJobs.length > 0 ? (
+          <section className="mt-12 border-t border-border pt-8">
+            <h2 className="text-xl font-semibold text-foreground mb-4">Related open roles</h2>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {relatedJobs.map((r) => (
+                <li key={r.id}>
+                  <Link
+                    href={`/careers/${r.id}`}
+                    className="block rounded-lg border border-border p-4 hover:border-primary/40 transition-colors"
+                  >
+                    <p className="font-medium text-foreground">{r.title}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{r.company || company}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {r.location}{r.employmentType ? ` · ${r.employmentType}` : ''}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <script
           type="application/ld+json"

@@ -15,6 +15,9 @@ export default defineConfig({
       'src/lib/matching/**/*.test.ts',
       'src/lib/job-alerts/**/*.test.ts',
       'src/lib/__tests__/**/*.test.ts',
+      // Recruitment: status architecture + candidate-safe serializer + email
+      // notification policy (pure functions — verify internal fields never leak).
+      'src/lib/recruitment/**/*.test.ts',
       // Supabase migration: schema + RLS policy tests run against PGlite
       // (real in-process Postgres — no Docker/Supabase platform needed).
       'src/lib/supabase/**/*.test.ts',

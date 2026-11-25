@@ -48,6 +48,15 @@ const applySchema = z.object({
   expectedSalary: z.string().trim().max(100).optional().or(z.literal('')),
   noticePeriod: z.string().trim().max(100).optional().or(z.literal('')),
   preferredJobLocation: z.string().trim().max(200).optional().or(z.literal('')),
+  // Extended application snapshot fields (Phase 3). These are the candidate's
+  // submitted values for THIS application — independent of future profile
+  // changes. Profile completeness is NEVER a gate; all optional.
+  currentLocation: z.string().trim().max(200).optional().or(z.literal('')),
+  linkedin: z.string().trim().max(200).optional().or(z.literal('')),
+  portfolio: z.string().trim().max(200).optional().or(z.literal('')),
+  currentDesignation: z.string().trim().max(200).optional().or(z.literal('')),
+  yearsExperience: z.string().trim().max(50).optional().or(z.literal('')),
+  skills: z.string().trim().max(500).optional().or(z.literal('')),
   // Explicit confirmation the candidate reviewed the application details.
   confirmSubmission: z.boolean().refine((v) => v === true, 'Please confirm the application details to submit.'),
   // Honeypot (kept for defense-in-depth even though auth is required).
@@ -179,23 +188,51 @@ export async function POST(request: Request) {
       if (hasActive) {
         throw new DuplicateApplication();
       }
+      // Status architecture (Phase 6): candidate-visible + internal status are
+      // separate fields. The application snapshot preserves the submitted
+      // values for THIS application — independent of future profile changes.
+      const submittedSkills = (data.skills && data.skills.trim())
+        ? data.skills.split(',').map((s) => s.trim()).filter(Boolean)
+        : (Array.isArray(profile.skills) ? profile.skills : []);
+      const jobFull = jobSnap.data() as { title?: string; company?: string } | undefined;
       tx.create(appRef, {
         applicationId,
         candidateId: email, // authenticated candidate
         candidateName: data.fullName || profile.fullName || '',
         candidateEmail: email, // verified account email
         candidatePhone: data.phone || profile.phone || '',
-        jobId: data.jobId,
-        jobTitle: job.title || '',
-        resumeStoragePath: resumePath, // validated + ownership-checked at step 5
-        skills: Array.isArray(profile.skills) ? profile.skills : [],
+        // Application snapshot (submitted values — NOT a reference to the live profile).
+        currentLocation: data.currentLocation || '',
+        preferredJobLocation: data.preferredJobLocation || '',
+        linkedin: data.linkedin || '',
+        portfolio: data.portfolio || '',
+        currentDesignation: data.currentDesignation || '',
+        yearsExperience: data.yearsExperience || '',
+        skills: submittedSkills,
         coverLetter: data.coverLetter || '',
         expectedSalary: data.expectedSalary || '',
         noticePeriod: data.noticePeriod || '',
-        preferredJobLocation: data.preferredJobLocation || '',
+        // Job context (denormalized at submission so the candidate view + emails
+        // work without a join + survive a job being archived later).
+        jobId: data.jobId,
+        jobTitle: jobFull?.title || '',
+        company: jobFull?.company || 'Paragonel Technologies',
+        // Resume (validated + ownership-checked at step 5). fileName denormalized
+        // for the candidate view (the storage path is never exposed to candidates).
+        resumeStoragePath: resumePath,
+        resumeFileName: resumePath ? (resumePath.split('/').pop() || 'resume') : null,
+        // Status architecture (Phase 6): legacy `status` kept for backward compat;
+        // `candidateStatus` + `internalStage` are the authoritative fields.
         status: 'New',
+        candidateStatus: 'submitted',
+        internalStage: 'new',
+        statusTimeline: [
+          { status: 'submitted', label: 'Application submitted', at: new Date() },
+        ],
+        // Audit/meta.
         appliedAt: new Date(),
         appliedVia: 'candidate_account',
+        withdrawnAt: null,
         deletedAt: null,
       });
     });

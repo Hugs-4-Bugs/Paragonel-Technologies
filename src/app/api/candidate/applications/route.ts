@@ -1,48 +1,25 @@
 /**
- * GET /api/candidate/applications — the authenticated candidate's application
- * history + status (Batch 2 Task 2).
+ * GET /api/candidate/applications — the authenticated candidate's applications,
+ * candidate-safe serialized (Phase 5/6).
  *
- * Closes the dead-end where `ApplyJobModal` told candidates to "track its
- * status from your profile" but `/candidate/profile` showed no applications.
+ * Ownership: verifySession(tier:'user') → the candidate's email. The query is
+ * scoped to candidateEmail == email (server-set on submission). A candidate can
+ * ONLY see their own applications — never another candidate's. Soft-deleted
+ * applications are excluded.
  *
- * Ownership: `verifySession(tier:'user')` → the candidate's email. The query
- * is scoped to `candidateEmail == email` (server-set on submission); a
- * candidate can ONLY see their own applications — never another candidate's.
- * Soft-deleted applications (`deletedAt != null`) are excluded. The response
- * carries no resume path, no other candidate's data, no internal ids beyond
- * the application id + job id the candidate already knows.
+ * SECURITY: the response is built from `toCandidateApplication` — an EXPLICIT
+ * allowlist of candidate-visible fields. Internal notes, internalStage, reviewer
+ * identities, internal scores, and confidential interview feedback are NEVER
+ * serialized to the candidate (stripped server-side, not hidden in the frontend).
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifySession } from '@/lib/auth/sessions';
 import { jsonError } from '@/lib/auth/route-helpers';
-import { Timestamp } from 'firebase-admin/firestore';
+import { toCandidateApplication } from '@/lib/recruitment/candidate-view';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-interface ApplicationRow {
-  applicationId?: string;
-  jobId?: string;
-  jobTitle?: string;
-  status?: string;
-  appliedAt?: Timestamp | Date | string | null;
-  deletedAt?: unknown;
-}
-
-function toISO(v: ApplicationRow['appliedAt']): string | null {
-  if (!v) return null;
-  try {
-    if (v instanceof Date) return v.toISOString();
-    if (typeof v === 'object' && v !== null && 'toDate' in v && typeof (v as { toDate: () => Date }).toDate === 'function') {
-      return (v as { toDate: () => Date }).toDate().toISOString();
-    }
-    if (typeof v === 'string') return v;
-  } catch {
-    return null;
-  }
-  return null;
-}
 
 export async function GET(request: Request) {
   const v = await verifySession(request, undefined, 'user');
@@ -55,15 +32,8 @@ export async function GET(request: Request) {
   try {
     const snap = await db.collection('jobApplications').where('candidateEmail', '==', email).get();
     const applications = snap.docs
-      .map((d) => d.data() as ApplicationRow)
-      .filter((a) => a.deletedAt == null)
-      .map((a) => ({
-        applicationId: a.applicationId ?? null,
-        jobId: a.jobId ?? null,
-        jobTitle: a.jobTitle ?? '',
-        status: a.status ?? 'New',
-        appliedAt: toISO(a.appliedAt),
-      }))
+      .filter((d) => (d.data() as { deletedAt?: unknown }).deletedAt == null)
+      .map((d) => toCandidateApplication(d.data(), d.id))
       .sort((a, b) => {
         const ta = a.appliedAt ? Date.parse(a.appliedAt) : 0;
         const tb = b.appliedAt ? Date.parse(b.appliedAt) : 0;

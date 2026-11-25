@@ -106,7 +106,7 @@ export function Navbar() {
     const links: NavLink[] = [...mainNavLinks, ...moreNavLinks];
     if (isAuthenticated && user) {
       links.push({ href: "/profile", label: "My Profile", icon: UserCircle });
-      links.push({ href: "/candidate/profile#applications", label: "My Applications", icon: Briefcase });
+      links.push({ href: "/candidate/applications", label: "My Applications", icon: Briefcase });
       links.push({ href: "#", label: "Logout", icon: LogOut, action: () => { logout(); setIsMobileMenuOpen(false); } });
     } else {
       links.push(...authNavLinksBase);
@@ -253,7 +253,7 @@ export function Navbar() {
                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                       <Link href="/candidate/profile#applications" className="cursor-pointer">
+                       <Link href="/candidate/applications" className="cursor-pointer">
                          <Briefcase className="mr-2 h-4 w-4" />
                          My Applications
                        </Link>
