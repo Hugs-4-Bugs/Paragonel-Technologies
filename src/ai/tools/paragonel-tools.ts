@@ -32,7 +32,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getKnowledgeBase, retrieve, sanitizeUntrusted, type KnowledgeEntry } from '@/lib/ai/knowledge-retrieval';
-import { getVerifiedJobs } from '@/lib/public-data';
+import { getVerifiedJobsWithStatus } from '@/lib/public-data';
+import { getGlobalMatchingThreshold } from '@/lib/matching/global-threshold';
 import {
   scoreJobCandidate,
   meetsThreshold,
@@ -41,10 +42,23 @@ import {
   type MatchResult,
 } from '@/lib/matching/match-engine';
 
-/** Chatbot recommendation threshold (PHASE 7): jobs below 80% are NOT
- *  recommended by the assistant. This is SEPARATE from the Career Page's
- *  configurable threshold (career-assist route) — that is preserved unchanged. */
+/** Chatbot recommendation threshold default (PHASE 7): jobs below 80% are NOT
+ *  recommended by the assistant. This is the FALLBACK used when the
+ *  admin-configurable global floor cannot be read; the effective threshold at
+ *  runtime is `await getGlobalMatchingThreshold()` (Supabase-backed, default 80,
+ *  clamped [75,100], super-admin-configurable) — so raising the admin floor to
+ *  85/90/100 also tightens chatbot recommendations. Kept exported (=== 80) for
+ *  backward compatibility with existing tests + as the catch-all default. */
 export const CHATBOT_MATCH_THRESHOLD = 80;
+
+/** Honest status signal returned to the model when the jobs database is
+ *  unreachable (admin unconfigured OR query failed after index-free fallback).
+ *  The model is instructed (SYSTEM_PROMPT) to report this as "verification
+ *  unavailable" — NOT as "no openings" — and never to fabricate jobs. */
+const STATUS_UNAVAILABLE =
+  'unavailable' as const;
+const STATUS_UNAVAILABLE_MSG =
+  'Current job openings could not be verified right now (the jobs database is unreachable). Do NOT claim there are no openings — say verification is temporarily unavailable and suggest trying again shortly or contacting /contact.';
 
 /** Minimal shape of a CMS job doc as returned by getVerifiedJobs (mirrors the
  *  career-assist route's JobDoc — kept local to avoid coupling). */
@@ -175,7 +189,7 @@ export const findJobs = ai.defineTool(
   {
     name: 'find_jobs',
     description:
-      'Discover REAL, currently-published Paragonel job openings from the live jobs database. Use this whenever the user asks about jobs, careers, openings, hiring, vacancies, or roles — do NOT answer from memory (job openings change). Returns a list of open roles with title, location, type, required skills, and a short description. If no openings are published, returns an empty list — say honestly "no current openings" and direct the user to /careers for future opportunities. NEVER invent job titles, locations, or requirements.',
+      'Discover REAL, currently-published Paragonel job openings from the live jobs database. Use this whenever the user asks about jobs, careers, openings, hiring, vacancies, or roles — do NOT answer from memory (job openings change). Returns a list of open roles with title, location, type, required skills, and a short description. If no openings are published, returns an empty list with status "ok" — say honestly "no current openings" and direct the user to /careers. If the jobs database is unreachable, returns status "unavailable" — do NOT claim there are no openings; say verification is temporarily unavailable and suggest trying again or contacting /contact. NEVER invent job titles, locations, or requirements.',
     inputSchema: z.object({
       skills: z.string().max(300).optional().describe('Optional comma-separated skills to filter by (e.g. "Java, AWS").'),
       location: z.string().max(100).optional().describe('Optional location filter (e.g. "Bangalore").'),
@@ -195,11 +209,17 @@ export const findJobs = ai.defineTool(
         applyPath: z.string(),
       })),
       count: z.number(),
+      status: z.enum(['ok', 'unavailable']).describe('"ok" = the jobs database was queried (jobs may be empty); "unavailable" = verification failed (database unreachable) — do NOT report as "no openings".'),
+      statusMessage: z.string().optional().describe('Honest guidance to surface when status is "unavailable".'),
     }),
   },
   async (input) => {
     try {
-      const docs: JobDoc[] = await getVerifiedJobs(50);
+      const result = await getVerifiedJobsWithStatus(50);
+      if (result.status !== 'ok') {
+        return { jobs: [], count: 0, status: STATUS_UNAVAILABLE, statusMessage: STATUS_UNAVAILABLE_MSG };
+      }
+      const docs: JobDoc[] = result.jobs;
       let jobs = docs.map(toJobForMatching).filter((j): j is JobForMatching => j !== null);
       // Optional lightweight filter by skill/location (the matching tool does
       // proper scoring; this is just a coarse pre-filter for "show me Java jobs").
@@ -215,11 +235,11 @@ export const findJobs = ai.defineTool(
       return {
         jobs: jobs.slice(0, 10).map((j) => jobSummary(j, docsById.get(j.id) || ({} as JobDoc))),
         count: jobs.length,
+        status: 'ok' as const,
       };
     } catch {
-      // Honest empty — Firebase unreachable. The model says it could not verify
-      // current openings + directs to /careers.
-      return { jobs: [], count: 0 };
+      // Unexpected error — honest unavailable, never fabricate.
+      return { jobs: [], count: 0, status: STATUS_UNAVAILABLE, statusMessage: STATUS_UNAVAILABLE_MSG };
     }
   },
 );
@@ -233,7 +253,7 @@ export const matchJobsToProfile = ai.defineTool(
   {
     name: 'match_jobs_to_profile',
     description:
-      'Match a candidate profile (from their stated skills/experience OR an uploaded+parsed resume) to REAL published Paragonel jobs using the actual matching engine. Returns ONLY jobs that score at or above the 80% recommendation threshold, with the verified match score and human-readable reasons (matched skills, evidence). If no job reaches 80%, returns an empty list — say honestly "no qualifying match found" and suggest profile improvements where relevant. NEVER lower the threshold, fabricate a score, or recommend a job below 80%. The score is an aid, not a guarantee of suitability.',
+      'Match a candidate profile (from their stated skills/experience OR an uploaded+parsed resume) to REAL published Paragonel jobs using the actual matching engine. Returns ONLY jobs that score at or above the chatbot recommendation threshold (the `threshold` field reports the exact threshold applied — it is the admin-configurable global floor, default 80, never lowered below 75), with the verified match score and human-readable reasons (matched skills, evidence). If no job reaches the threshold, returns an empty list with status "ok" — say honestly "no qualifying match found at the recommendation threshold" and suggest profile improvements. If the jobs database is unreachable, returns status "unavailable" — say matching is temporarily unavailable, do NOT claim no matches exist. NEVER lower the threshold, fabricate a score, or recommend a below-threshold job. The score is an aid, not a guarantee of suitability.',
     inputSchema: z.object({
       skills: z.array(z.string().max(60)).max(30).describe('Candidate skills (from their message or parsed resume).'),
       totalExperienceYears: z.number().min(0).max(60).optional().describe('Total years of experience if stated.'),
@@ -255,16 +275,38 @@ export const matchJobsToProfile = ai.defineTool(
       count: z.number(),
       threshold: z.number(),
       note: z.string().optional(),
+      status: z.enum(['ok', 'unavailable']).describe('"ok" = matching ran (matches may be empty); "unavailable" = the jobs database was unreachable — do NOT report as "no matches".'),
+      statusMessage: z.string().optional().describe('Honest guidance to surface when status is "unavailable".'),
     }),
   },
   async (input) => {
+    // The effective threshold is the admin-configurable global floor (Supabase
+    // app_settings, default 80, clamped [75,100]). Fall back to the constant if
+    // the floor cannot be read — never lower below the floor.
+    let threshold = CHATBOT_MATCH_THRESHOLD;
     try {
-      const docs: JobDoc[] = await getVerifiedJobs(50);
+      threshold = await getGlobalMatchingThreshold();
+    } catch {
+      threshold = CHATBOT_MATCH_THRESHOLD; // never throw — matching still runs
+    }
+    try {
+      const result = await getVerifiedJobsWithStatus(50);
+      if (result.status !== 'ok') {
+        return {
+          matches: [],
+          count: 0,
+          threshold,
+          status: STATUS_UNAVAILABLE,
+          statusMessage: STATUS_UNAVAILABLE_MSG,
+        };
+      }
+      const docs: JobDoc[] = result.jobs;
       if (docs.length === 0) {
         return {
           matches: [],
           count: 0,
-          threshold: CHATBOT_MATCH_THRESHOLD,
+          threshold,
+          status: 'ok' as const,
           note: 'No current openings could be verified. Direct the user to /careers for future opportunities.',
         };
       }
@@ -282,20 +324,20 @@ export const matchJobsToProfile = ai.defineTool(
       for (const doc of docs) {
         const job = toJobForMatching(doc);
         if (!job) continue;
-        const result: MatchResult = scoreJobCandidate(job, profile);
-        const gate = meetsThreshold(result, CHATBOT_MATCH_THRESHOLD);
-        if (!gate.pass) continue; // below 80% → not recommended
+        const resultScore: MatchResult = scoreJobCandidate(job, profile);
+        const gate = meetsThreshold(resultScore, threshold);
+        if (!gate.pass) continue; // below threshold → not recommended
         matches.push({
           id: job.id,
           title: job.title,
           location: job.location || 'unspecified',
           employmentType: job.employmentType || 'unspecified',
-          score: result.overallScore,
+          score: resultScore.overallScore,
           reasons: [
-            ...(result.matchedRequiredSkills.length
-              ? [`Matches ${result.matchedRequiredSkills.length} required skill${result.matchedRequiredSkills.length > 1 ? 's' : ''}: ${result.matchedRequiredSkills.slice(0, 5).join(', ')}`]
+            ...(resultScore.matchedRequiredSkills.length
+              ? [`Matches ${resultScore.matchedRequiredSkills.length} required skill${resultScore.matchedRequiredSkills.length > 1 ? 's' : ''}: ${resultScore.matchedRequiredSkills.slice(0, 5).join(', ')}`]
               : []),
-            ...result.otherEvidence.slice(0, 2),
+            ...resultScore.otherEvidence.slice(0, 2),
           ].slice(0, 3),
           applyPath: '/careers',
         });
@@ -304,15 +346,17 @@ export const matchJobsToProfile = ai.defineTool(
       return {
         matches: matches.slice(0, 5),
         count: matches.length,
-        threshold: CHATBOT_MATCH_THRESHOLD,
-        note: matches.length === 0 ? 'No job reached the 80% recommendation threshold. Suggest the user strengthen their profile (add more skills, experience) or check /careers for all openings.' : undefined,
+        threshold,
+        status: 'ok' as const,
+        note: matches.length === 0 ? `No job reached the ${threshold}% recommendation threshold. Suggest the user strengthen their profile (add more skills, experience) or check /careers for all openings.` : undefined,
       };
     } catch {
       return {
         matches: [],
         count: 0,
-        threshold: CHATBOT_MATCH_THRESHOLD,
-        note: 'Matching is unavailable right now. Direct the user to /careers to browse openings.',
+        threshold,
+        status: STATUS_UNAVAILABLE,
+        statusMessage: STATUS_UNAVAILABLE_MSG,
       };
     }
   },
@@ -325,7 +369,7 @@ export const getJobDetails = ai.defineTool(
   {
     name: 'get_job_details',
     description:
-      'Fetch full details of a SPECIFIC published Paragonel job by its id (returned by find_jobs or match_jobs_to_profile). Use this when the user asks about a particular role, its requirements, responsibilities, or how to apply. Returns the full job description, skills, experience, location, and apply path. If the id is not found, returns a not-found result — say so honestly, do not invent details.',
+      'Fetch full details of a SPECIFIC published Paragonel job by its id (returned by find_jobs or match_jobs_to_profile). Use this when the user asks about a particular role, its requirements, responsibilities, or how to apply. Returns the full job description, skills, experience, location, and apply path. If the id is not found among published jobs, returns found=false with status "ok" — say so honestly, do not invent details. If the jobs database is unreachable, returns status "unavailable" with found=false — do NOT claim the job does not exist; say it could not be verified right now.',
     inputSchema: z.object({
       jobId: z.string().min(1).max(120).describe('The job id (or jobId) returned by find_jobs / match_jobs_to_profile.'),
     }),
@@ -344,17 +388,24 @@ export const getJobDetails = ai.defineTool(
         description: z.string(),
         applyPath: z.string(),
       }).optional(),
+      status: z.enum(['ok', 'unavailable']).describe('"ok" = the jobs database was queried (found may be false); "unavailable" = database unreachable — do NOT report as "not found".'),
+      statusMessage: z.string().optional().describe('Honest guidance to surface when status is "unavailable".'),
     }),
   },
   async (input) => {
     try {
-      const docs: JobDoc[] = await getVerifiedJobs(50);
+      const result = await getVerifiedJobsWithStatus(50);
+      if (result.status !== 'ok') {
+        return { found: false, status: STATUS_UNAVAILABLE, statusMessage: STATUS_UNAVAILABLE_MSG };
+      }
+      const docs: JobDoc[] = result.jobs;
       const doc = docs.find((d) => d.id === input.jobId || d.jobId === input.jobId);
-      if (!doc) return { found: false };
+      if (!doc) return { found: false, status: 'ok' as const };
       const job = toJobForMatching(doc);
-      if (!job) return { found: false };
+      if (!job) return { found: false, status: 'ok' as const };
       return {
         found: true,
+        status: 'ok' as const,
         job: {
           id: job.id,
           jobId: job.jobId,
@@ -370,7 +421,7 @@ export const getJobDetails = ai.defineTool(
         },
       };
     } catch {
-      return { found: false };
+      return { found: false, status: STATUS_UNAVAILABLE, statusMessage: STATUS_UNAVAILABLE_MSG };
     }
   },
 );

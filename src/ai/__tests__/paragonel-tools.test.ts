@@ -42,6 +42,13 @@ const MOCK_JOBS = [
 ];
 vi.mock('@/lib/public-data', () => ({
   getVerifiedJobs: vi.fn(async () => MOCK_JOBS),
+  getVerifiedJobsWithStatus: vi.fn(async () => ({ status: 'ok', jobs: MOCK_JOBS })),
+}));
+
+vi.mock('@/lib/matching/global-threshold', () => ({
+  // Default admin-configurable global floor is 80 (matches CHATBOT_MATCH_THRESHOLD).
+  // Individual tests override with mockResolvedValueOnce to raise it (e.g. 85).
+  getGlobalMatchingThreshold: vi.fn(async () => 80),
 }));
 
 vi.mock('@/lib/matching/match-engine', () => ({
@@ -104,13 +111,25 @@ describe('Paragonel AI tools — execution + honesty (PHASE 4+7)', () => {
     expect(out.jobs[0].title).toBe('Senior Backend Engineer');
   });
 
-  it('find_jobs returns empty honestly when getVerifiedJobs throws', async () => {
-    const { getVerifiedJobs } = await import('@/lib/public-data');
-    (getVerifiedJobs as unknown as { mockRejectedValueOnce: (e: unknown) => void }).mockRejectedValueOnce(new Error('firestore down'));
+  it('find_jobs distinguishes retrieval failure (status unavailable) from "no jobs" — the core honesty fix', async () => {
+    const { getVerifiedJobsWithStatus } = await import('@/lib/public-data');
+    (getVerifiedJobsWithStatus as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce({ status: 'query_failed', reason: 'firestore down' });
     const fn = toolFns.get('find_jobs')!;
-    const out = await fn({}) as { jobs: unknown[]; count: number };
+    const out = await fn({}) as { jobs: unknown[]; count: number; status: string; statusMessage?: string };
     expect(out.count).toBe(0);
     expect(out.jobs).toEqual([]);
+    // CRITICAL: a query failure is reported as "unavailable", NOT as "no openings".
+    expect(out.status).toBe('unavailable');
+    expect(out.statusMessage).toContain('could not be verified');
+  });
+
+  it('find_jobs reports status "ok" (not unavailable) when the DB is up but empty', async () => {
+    const { getVerifiedJobsWithStatus } = await import('@/lib/public-data');
+    (getVerifiedJobsWithStatus as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce({ status: 'ok', jobs: [] });
+    const fn = toolFns.get('find_jobs')!;
+    const out = await fn({}) as { jobs: unknown[]; count: number; status: string };
+    expect(out.count).toBe(0);
+    expect(out.status).toBe('ok'); // distinguishable from retrieval failure
   });
 
   it('match_jobs_to_profile recommends ONLY jobs ≥ 80% (PHASE 7 threshold)', async () => {
@@ -134,12 +153,32 @@ describe('Paragonel AI tools — execution + honesty (PHASE 4+7)', () => {
   });
 
   it('match_jobs_to_profile returns honest "no openings" when no jobs published', async () => {
-    const { getVerifiedJobs } = await import('@/lib/public-data');
-    (getVerifiedJobs as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce([]);
+    const { getVerifiedJobsWithStatus } = await import('@/lib/public-data');
+    (getVerifiedJobsWithStatus as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce({ status: 'ok', jobs: [] });
     const fn = toolFns.get('match_jobs_to_profile')!;
-    const out = await fn({ skills: ['Java'] }) as { count: number; note?: string };
+    const out = await fn({ skills: ['Java'] }) as { count: number; note?: string; status: string };
     expect(out.count).toBe(0);
+    expect(out.status).toBe('ok'); // empty-but-verified, NOT unavailable
     expect(out.note).toContain('No current openings');
+  });
+
+  it('match_jobs_to_profile reports status "unavailable" (not "no matches") when the DB is unreachable', async () => {
+    const { getVerifiedJobsWithStatus } = await import('@/lib/public-data');
+    (getVerifiedJobsWithStatus as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce({ status: 'admin_unconfigured' });
+    const fn = toolFns.get('match_jobs_to_profile')!;
+    const out = await fn({ skills: ['Java', 'AWS'] }) as { count: number; status: string; statusMessage?: string };
+    expect(out.count).toBe(0);
+    expect(out.status).toBe('unavailable'); // NOT reported as "no qualifying match"
+    expect(out.statusMessage).toContain('could not be verified');
+  });
+
+  it('match_jobs_to_profile threshold follows the admin-configurable global floor (raise to 85)', async () => {
+    const { getGlobalMatchingThreshold } = await import('@/lib/matching/global-threshold');
+    (getGlobalMatchingThreshold as unknown as { mockResolvedValueOnce: (v: unknown) => void }).mockResolvedValueOnce(85);
+    const fn = toolFns.get('match_jobs_to_profile')!;
+    const out = await fn({ skills: ['Java', 'AWS'] }) as { threshold: number; status: string };
+    expect(out.threshold).toBe(85); // admin raised floor → chatbot tightens from 80 → 85
+    expect(out.status).toBe('ok');
   });
 
   it('get_job_details returns the full job when found', async () => {

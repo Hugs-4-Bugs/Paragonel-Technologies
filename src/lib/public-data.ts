@@ -121,16 +121,69 @@ export async function getPublicJobs(limit = 50): Promise<any[]> {
 /**
  * Verified public jobs for AI use (Prompt 05P §3.3).
  *
- * DIFFERENCE from getPublicJobs: this NEVER falls back to dummyJobs. When the
- * Admin SDK is unavailable or the query fails, it returns an EMPTY array — so
- * Paragonel AI never represents sample/demo jobs as current vacancies. The AI
- * then honestly says current openings could not be verified.
+ * DIFFERENCE from getPublicJobs: this NEVER falls back to dummyJobs. Only
+ * genuine, active, non-deleted CMS job records are returned. The AI then
+ * honestly says current openings could not be verified when none exist OR when
+ * the source is unreachable.
  *
- * Only genuine, active, non-deleted CMS job records are returned.
+ * STATUS-AWARE (chatbot honesty fix): `getVerifiedJobsWithStatus` returns a
+ * discriminated result that distinguishes three unrelated failure modes that
+ * `getVerifiedJobs` previously collapsed into one empty array:
+ *   - admin_unconfigured : Firebase Admin SDK not initialized (missing env).
+ *   - query_failed       : the Firestore query threw (after the index-free
+ *                          fallback also failed).
+ *   - ok                 : query succeeded (jobs may legitimately be empty).
+ * The chatbot tools consume the status so the model can say "the jobs database
+ * is unreachable right now" (status=unavailable) instead of falsely claiming
+ * "Paragonel has no open positions" when verification simply failed.
+ *
+ * INDEX-FREE FALLBACK: the primary query needs a composite index
+ * (isActive + deletedAt + orderBy createdAt desc). If that index is missing or
+ * still building (FAILED_PRECONDITION), the function retries with a single
+ * equality filter (`isActive == true`) that needs NO composite index, then
+ * filters `deletedAt == null` + sorts by `createdAt` in memory. The result is
+ * tagged `degraded: true` so callers know the index is unavailable. This
+ * prevents a missing/building index from being reported to a candidate as
+ * "no jobs".
  */
-export async function getVerifiedJobs(limit = 50): Promise<any[]> {
+export type VerifiedJobsResult =
+  | { status: 'ok'; jobs: any[]; degraded?: boolean }
+  | { status: 'admin_unconfigured' }
+  | { status: 'query_failed'; reason: string };
+
+/** Detect a Firestore composite-index failure (FAILED_PRECONDITION) so the
+ *  index-free fallback can be attempted instead of returning an empty array. */
+function isIndexFailure(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err ?? '')).toLowerCase();
+  return (
+    msg.includes('failed_precondition') ||
+    msg.includes('requires an index') ||
+    msg.includes('needs an index') ||
+    msg.includes('composite index') ||
+    msg.includes('no matching index') ||
+    msg.includes('add an index')
+  );
+}
+
+/** In-memory comparator for serialized job docs by createdAt (newest first).
+ *  serializeDoc normalizes createdAt to an ISO string (or null). The `id` field
+ *  is named so the param type shares a property with the serialized-doc type
+ *  (DocumentData & { id }) — satisfying TS's common-properties check for the
+ *  Array.sort comparator assignability without resorting to `any`. */
+function byCreatedAtDesc(
+  a: { id: string; createdAt?: string | null },
+  b: { id: string; createdAt?: string | null },
+): number {
+  const ta = Date.parse(a?.createdAt || '') || 0;
+  const tb = Date.parse(b?.createdAt || '') || 0;
+  return tb - ta;
+}
+
+export async function getVerifiedJobsWithStatus(
+  limit = 50,
+): Promise<VerifiedJobsResult> {
   const db = getAdminDb();
-  if (!db) return []; // NO dummyJobs fallback — AI must not present samples as live
+  if (!db) return { status: 'admin_unconfigured' }; // NO dummyJobs fallback
   try {
     const snap = await db
       .collection('jobs')
@@ -139,11 +192,47 @@ export async function getVerifiedJobs(limit = 50): Promise<any[]> {
       .orderBy('createdAt', 'desc')
       .limit(limit)
       .get();
-    return snap.docs.map((d) => serializeDoc(d));
+    return { status: 'ok', jobs: snap.docs.map((d) => serializeDoc(d)) };
   } catch (err) {
-    console.error('[public-data] getVerifiedJobs failed:', err instanceof Error ? err.message : err);
-    return []; // NO fallback — AI says openings could not be verified
+    // Index-free fallback: a single equality filter needs no composite index.
+    // Filter deletedAt + sort in memory. Tagged degraded so callers know.
+    if (isIndexFailure(err)) {
+      try {
+        const snap2 = await db
+          .collection('jobs')
+          .where('isActive', '==', true)
+          .limit(limit * 2)
+          .get();
+        const items = snap2.docs
+          .map((d) => serializeDoc(d))
+          .filter((j) => !j.deletedAt); // deletedAt == null in memory
+        items.sort(byCreatedAtDesc);
+        return { status: 'ok', jobs: items.slice(0, limit), degraded: true };
+      } catch (err2) {
+        console.error(
+          '[public-data] getVerifiedJobsWithStatus index-free fallback failed:',
+          err2 instanceof Error ? err2.message : err2,
+        );
+        return { status: 'query_failed', reason: 'index-fallback-failed' };
+      }
+    }
+    console.error(
+      '[public-data] getVerifiedJobsWithStatus failed:',
+      err instanceof Error ? err.message : err,
+    );
+    return { status: 'query_failed', reason: 'query-error' };
   }
+}
+
+/**
+ * Backward-compatible wrapper: returns just the jobs (empty on any non-ok
+ * status). Preserved so existing callers (knowledge-retrieval, career-assist,
+ * phase1-corrections test) keep working unchanged. New callers that need to
+ * distinguish failure-from-empty should use `getVerifiedJobsWithStatus`.
+ */
+export async function getVerifiedJobs(limit = 50): Promise<any[]> {
+  const r = await getVerifiedJobsWithStatus(limit);
+  return r.status === 'ok' ? r.jobs : [];
 }
 
 /**
