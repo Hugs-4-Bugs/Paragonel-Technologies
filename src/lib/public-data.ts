@@ -166,8 +166,14 @@ function isIndexFailure(err: unknown): boolean {
 }
 
 /** In-memory comparator for serialized job docs by createdAt (newest first).
- *  serializeDoc normalizes createdAt to an ISO string (or null). */
-function byCreatedAtDesc(a: any, b: any): number {
+ *  serializeDoc normalizes createdAt to an ISO string (or null). The `id` field
+ *  is named so the param type shares a property with the serialized-doc type
+ *  (DocumentData & { id }) — satisfying TS's common-properties check for the
+ *  Array.sort comparator assignability without resorting to `any`. */
+function byCreatedAtDesc(
+  a: { id: string; createdAt?: string | null },
+  b: { id: string; createdAt?: string | null },
+): number {
   const ta = Date.parse(a?.createdAt || '') || 0;
   const tb = Date.parse(b?.createdAt || '') || 0;
   return tb - ta;

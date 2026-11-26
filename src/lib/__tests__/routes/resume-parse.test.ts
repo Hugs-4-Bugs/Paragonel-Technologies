@@ -17,22 +17,27 @@ import { FakeFirestore } from '../../auth/__tests__/fake-firestore';
 import { ResumeAnalysisError } from '@/lib/ai/resume-analysis-error';
 
 let fakeDb: FakeFirestore;
-const fileStore = new Map<string, Buffer>();
-const fakeBucket = {
-  bucket: () => ({
-    file: (path: string) => ({
-      save: vi.fn(async (buf: Buffer) => { fileStore.set(path, buf); }),
-      getSignedUrl: vi.fn(async () => ['https://signed.example/' + path]),
-      getMetadata: vi.fn(async () => [{ size: 1024 }]),
-      download: vi.fn(async () => [Buffer.from('')]),
-      delete: vi.fn(async () => {}),
-    }),
+
+// Resume storage mocked as an in-memory backend (the route talks to
+// @/lib/resume-storage, not Firebase Admin Storage directly). uploadResume
+// returns a candidate-scoped path; delete is a no-op. The parse path is
+// exercised via the analyzeResume mock below.
+vi.mock('@/lib/resume-storage', () => ({
+  uploadResume: vi.fn(async ({ email, fileName, buf }: { email: string; fileName: string; buf: Buffer }) => {
+    const path = `candidates/${email}/resumes/${Date.now()}_${fileName}`;
+    return { path, size: buf.length };
   }),
-};
+  createResumeSignedUrl: vi.fn(async (path: string) => ({ url: `https://signed.example/${path}`, expiresIn: 300 })),
+  downloadResumeBytes: vi.fn(async () => null),
+  deleteResumeObject: vi.fn(async () => {}),
+  ResumeStorageError: class ResumeStorageError extends Error {
+    code: string;
+    constructor(code: string, message: string) { super(message); this.code = code; }
+  },
+}));
 
 vi.mock('@/lib/firebase-admin', () => ({
   getAdminDb: () => fakeDb,
-  getAdminBucket: () => fakeBucket,
 }));
 
 vi.mock('@/lib/auth/sessions', () => ({
@@ -69,7 +74,6 @@ function pdfFile(): File {
 
 beforeEach(() => {
   fakeDb = new FakeFirestore();
-  fileStore.clear();
   parseFn = async () => ({
     name: 'Jane Doe', email: 'cand@example.com', phone: '555-0100',
     location: 'Bangalore', experienceYears: 5, skills: ['React'],

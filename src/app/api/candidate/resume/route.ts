@@ -25,7 +25,7 @@
  * it as data + never obey embedded instructions).
  */
 import { NextResponse } from 'next/server';
-import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { verifySession } from '@/lib/auth/sessions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
@@ -38,11 +38,16 @@ import {
   sanitizeFileName,
   validateResumePath,
 } from '@/lib/resume-security';
+import {
+  uploadResume,
+  createResumeSignedUrl,
+  deleteResumeObject,
+  ResumeStorageError,
+} from '@/lib/resume-storage';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const SIGNED_URL_TTL_SECONDS = 5 * 60; // 5 minutes
 const PARSE_TIMEOUT_MS = 30_000; // hard cap on the AI parse call (parser-abuse guard)
 
 /**
@@ -97,8 +102,6 @@ export async function POST(request: Request) {
     return jsonError(400, 'The file content does not match a valid PDF/DOC/DOCX.');
   }
 
-  const storage = getAdminBucket();
-  if (!storage) return jsonError(503, 'Resume storage unavailable.');
   const db = getAdminDb();
   if (!db) return jsonError(503, 'Service unavailable.');
 
@@ -118,34 +121,31 @@ export async function POST(request: Request) {
     // Non-fatal: if we cannot read the previous path, we simply skip cleanup.
   }
 
-  // Private, candidate-scoped path.
   const safeName = sanitizeFileName(f.name);
-  const objectPath = `candidates/${email}/resumes/${Date.now()}_${safeName}`;
   const contentType = f.type || (kind === 'pdf' ? 'application/pdf' : kind === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/msword');
 
+  // Upload to the private Supabase Storage bucket `candidate-resumes`. The
+  // resume-storage module builds the candidate-scoped path
+  // (`candidates/{email}/resumes/{ts}_{safeName}`) and enforces ownership; it
+  // throws a classified ResumeStorageError on failure. The legacy Firebase
+  // Storage backend is no longer used for NEW uploads — existing Firebase
+  // resumes remain readable via the module's legacy read fallback.
+  let objectPath: string;
   try {
-    await storage.bucket().file(objectPath).save(buf, {
-      metadata: { contentType },
-    });
+    const uploaded = await uploadResume({ email, fileName: f.name, contentType, buf });
+    objectPath = uploaded.path;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[candidate/resume] upload failed:', msg);
-    // Surface a specific, diagnosable reason (never a fake success). The
-    // message classifies the failure class without leaking the storage path,
-    // credentials, or stack. This replaces the generic "Could not store
-    // resume." which hid the real cause — most often a missing/misnamed
-    // NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET or a service account without Storage
-    // Admin permissions on the bucket. The founder can act on the classified
-    // reason without needing Vercel function logs.
+    const code = err instanceof ResumeStorageError ? err.code : 'upload-failed';
+    const status = code === 'unconfigured' ? 503 : 500;
     const reason =
-      /permission|forbidden|403/i.test(msg)
-        ? 'Resume storage permission denied. The Firebase service account needs Storage Admin on the bucket.'
-      : /not.?found|404|no such bucket/i.test(msg)
-        ? 'Resume storage bucket not found. Check NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET matches an existing bucket.'
-      : /bucket.*not.*specif|no bucket|bucket name/i.test(msg)
-        ? 'Resume storage bucket is not configured. Set NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET.'
+      code === 'unconfigured'
+        ? 'Resume storage unavailable. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.'
+      : code === 'forbidden'
+        ? 'Resume storage permission denied. Check the Supabase service-role key and the candidate-resumes bucket policies.'
         : 'Could not store resume. Please try again or contact support.';
-    return jsonError(500, reason);
+    return jsonError(status, reason);
   }
 
   // Parse via analyzeResume (injection-safe prompt — treats resume as data).
@@ -199,7 +199,7 @@ export async function POST(request: Request) {
     console.error('[candidate/resume] profile write failed:', msg);
     // Best-effort cleanup of the just-uploaded object so it does not orphan.
     try {
-      await storage.bucket().file(objectPath).delete();
+      await deleteResumeObject(objectPath, { email });
     } catch {
       // Non-fatal — the orphan is logged above for later cleanup.
     }
@@ -218,7 +218,7 @@ export async function POST(request: Request) {
   // resume). The orphan is logged for later cleanup but never blocks the user.
   if (previousPath && previousPath !== objectPath) {
     try {
-      await storage.bucket().file(previousPath).delete();
+      await deleteResumeObject(previousPath, { email });
     } catch (err) {
       console.warn(
         '[candidate/resume] orphan cleanup failed (non-fatal):',
@@ -255,9 +255,6 @@ export async function GET(request: Request) {
   const path = profile?.resumeStoragePath;
   if (!path) return jsonError(404, 'No resume on file.');
 
-  const storage = getAdminBucket();
-  if (!storage) return jsonError(503, 'Resume storage unavailable.');
-
   // Enforce the path is within this candidate's own folder (ownership) AND
   // matches the strict resume-path shape (defense-in-depth against a tampered
   // or injected profile value). Both must pass.
@@ -267,13 +264,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [url] = await storage.bucket().file(path).getSignedUrl({
-      version: 'v4',
-      action: 'read',
-      expires: Date.now() + SIGNED_URL_TTL_SECONDS * 1000,
-    });
-    return NextResponse.json({ url, fileName: profile?.resumeFileName ?? 'resume', expiresIn: SIGNED_URL_TTL_SECONDS });
+    const signed = await createResumeSignedUrl(path, { email });
+    if (!signed) {
+      return jsonError(500, 'Could not generate a download link.');
+    }
+    return NextResponse.json({ url: signed.url, fileName: profile?.resumeFileName ?? 'resume', expiresIn: signed.expiresIn });
   } catch (err) {
+    if (err instanceof ResumeStorageError && err.code === 'forbidden') {
+      return jsonError(403, 'Resume path is not authorized.');
+    }
     console.error('[candidate/resume] signed-url failed:', err instanceof Error ? err.message : err);
     return jsonError(500, 'Could not generate a download link.');
   }
@@ -298,15 +297,11 @@ export async function DELETE(request: Request) {
     return jsonError(403, 'Resume path is not authorized.');
   }
 
-  const storage = getAdminBucket();
-  if (storage) {
-    try {
-      await storage.bucket().file(path).delete();
-    } catch (err) {
-      // Non-fatal if the file is already gone — clear the ref regardless.
-      console.warn('[candidate/resume] delete file failed:', err instanceof Error ? err.message : err);
-    }
-  }
+  // Best-effort delete from Supabase (primary) + legacy Firebase Storage (in
+  // case the resume was uploaded before the migration). Non-throwing — the
+  // Firestore ref is cleared regardless, so a storage delete failure never
+  // blocks the candidate from removing their resume.
+  await deleteResumeObject(path, { email });
 
   await db.collection('candidates').doc(email).set(
     {

@@ -28,8 +28,9 @@
  * Real signed-URL delivery is a production-bucket behavior (see test notes).
  */
 import { NextResponse } from 'next/server';
-import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { verifyAdminPermission, serviceUnavailable, logActivityServer } from '@/lib/admin-auth';
+import { createResumeSignedUrl } from '@/lib/resume-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,17 +96,19 @@ export async function GET(
     );
   }
 
-  // 4. Generate a short-lived signed read URL via Admin Storage.
-  const storage = getAdminBucket();
-  if (!storage) return serviceUnavailable(); // 503
-
+  // 4. Generate a short-lived signed read URL. The resume-storage module issues
+  // a Supabase signed URL (service role) and falls back to Firebase Admin
+  // Storage for legacy resumes uploaded before the migration. No email/ownership
+  // arg here — admin access is RBAC-gated (verifyAdminPermission('cms.read'))
+  // and the path is resolved from the application record, never the request.
   try {
-    const bucket = storage.bucket();
-    const [url] = await bucket.file(resumePath).getSignedUrl({
-      action: 'read',
-      expires: Date.now() + SIGNED_URL_TTL_MS,
-      version: 'v4',
-    });
+    const signed = await createResumeSignedUrl(resumePath);
+    if (!signed) {
+      return NextResponse.json(
+        { error: 'Could not generate resume link.' },
+        { status: 500 },
+      );
+    }
 
     // Audit the resume download (actor + application id only — never the path
     // or the signed URL). Best-effort: a failed audit log does not block the
@@ -113,7 +116,7 @@ export async function GET(
     await logActivityServer(auth.user, 'resume_download', 'jobApplication', id);
 
     return NextResponse.json({
-      url,
+      url: signed.url,
       expiresAt: new Date(Date.now() + SIGNED_URL_TTL_MS).toISOString(),
       fileName: resumePath.split('/').pop() || 'resume',
     });

@@ -21,13 +21,14 @@
  *               409 duplicate, 422 profile incomplete, 429 rate-limited, 503 unavailable.
  */
 import { NextResponse } from 'next/server';
-import { getAdminDb, getAdminBucket } from '@/lib/firebase-admin';
+import { getAdminDb } from '@/lib/firebase-admin';
 import { z } from 'zod';
 import { verifySession } from '@/lib/auth/sessions';
 import { checkRateLimit, getClientId } from '@/lib/submission-security';
 import { logSecurityEvent } from '@/lib/auth/security-events';
 import { getClientIp, jsonError } from '@/lib/auth/route-helpers';
 import { validateResumePath } from '@/lib/resume-security';
+import { downloadResumeBytes } from '@/lib/resume-storage';
 import { sendApplicationConfirmation, SAFE_ATTACHMENT_BYTES } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
@@ -261,16 +262,15 @@ export async function POST(request: Request) {
   // fetch an arbitrary Storage object). Ownership was already enforced.
   if (validateResumePath(resumePath)) {
     try {
-      const bucket = getAdminBucket()?.bucket();
-      if (bucket) {
-        const file = bucket.file(resumePath);
-        const [meta] = await file.getMetadata();
-        const sizeBytes = Number(meta.size || 0);
-        if (sizeBytes > 0 && sizeBytes <= SAFE_ATTACHMENT_BYTES) {
-          const [buf] = await file.download();
-          resumeBuffer = buf;
-          resumeFileName = (resumePath.split('/').pop() || 'resume').slice(0, 100);
-        }
+      // Fetch the candidate's own resume bytes from Supabase Storage (with a
+      // legacy Firebase fallback for resumes uploaded before the migration).
+      // Ownership is re-enforced inside the module (email-scoped path). The
+      // size guard caps the SMTP attachment; a failed/oversized fetch is
+      // non-fatal — the email is sent with an authenticated profile link.
+      const fetched = await downloadResumeBytes(resumePath, { email });
+      if (fetched && fetched.size > 0 && fetched.size <= SAFE_ATTACHMENT_BYTES) {
+        resumeBuffer = fetched.buf;
+        resumeFileName = (resumePath.split('/').pop() || 'resume').slice(0, 100);
       }
     } catch {
       // Non-fatal: send the confirmation without the attachment.
