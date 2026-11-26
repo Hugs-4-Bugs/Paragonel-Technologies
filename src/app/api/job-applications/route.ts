@@ -30,6 +30,7 @@ import { getClientIp, jsonError } from '@/lib/auth/route-helpers';
 import { validateResumePath } from '@/lib/resume-security';
 import { downloadResumeBytes } from '@/lib/resume-storage';
 import { sendApplicationConfirmation, SAFE_ATTACHMENT_BYTES } from '@/lib/email';
+import { writeAuditLog, newCorrelationId } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -175,6 +176,9 @@ export async function POST(request: Request) {
   //        re-application (existing product policy).
   const appRef = db.collection('jobApplications').doc();
   const applicationId = 'APP_' + Math.random().toString(36).slice(2, 11);
+  // Correlation id is generated ONCE before the transaction so the success and
+  // the failure audit records share it (a single submit attempt is one trace).
+  const correlationId = newCorrelationId();
   try {
     await db.runTransaction(async (tx) => {
       const dup = await tx.get(
@@ -242,6 +246,18 @@ export async function POST(request: Request) {
       return jsonError(409, 'You have already applied for this role.');
     }
     console.error('[job-app] store failed:', err instanceof Error ? err.message : err);
+    // Persist a failure audit so a failed submit is traceable in the Activity feed
+    // (every other candidate lifecycle route audits its write failures; the store
+    // path — the most security-relevant failure to trace — was the one gap).
+    await writeAuditLog({
+      actor: { id: email, role: 'candidate', tier: 'user' },
+      eventType: 'candidate_application_submit',
+      entityType: 'jobApplication',
+      entityId: applicationId,
+      outcome: 'failure',
+      correlationId,
+      metadata: { reason: 'store_failed', jobId: data.jobId },
+    });
     return jsonError(500, 'Could not store application.');
   }
 
@@ -293,6 +309,21 @@ export async function POST(request: Request) {
   }
 
   await logSecurityEvent({ type: 'register', email, ip, detail: `job_application:${data.jobId}` });
+
+  // Server-generated audit so submitted applications appear in the admin
+  // Activity feed (adminActivityLogs), in addition to the securityEvents
+  // record above. Previously submissions were absent from the admin Activity
+  // page because only securityEvents was written. Actor from the verified
+  // candidate session — never the request body.
+  await writeAuditLog({
+    actor: { id: email, role: 'candidate', tier: 'user' },
+    eventType: 'candidate_application_submit',
+    entityType: 'jobApplication',
+    entityId: applicationId,
+    outcome: 'success',
+    correlationId,
+    metadata: { jobId: data.jobId, jobTitle: job.title || '' },
+  });
 
   return NextResponse.json(
     { success: true, message: 'Application submitted.', reference: applicationId, notification: confirmation.status },

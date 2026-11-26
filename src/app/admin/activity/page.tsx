@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { History, ShieldAlert, Clock, User } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
+import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 
 type Log = {
   id: string;
@@ -12,28 +13,18 @@ type Log = {
   resourceType?: string;
   resourceId?: string;
   adminEmail?: string;
+  actorRole?: string;
+  outcome?: string;
   timestamp?: { seconds: number };
 };
 
 export default function ActivityLogsPage() {
-  const [logs, setLogs] = useState<Log[] | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const loadLogs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/activity', { cache: 'no-store' });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setLogs(data.logs as Log[]);
-    } catch {
-      setLogs([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { loadLogs(); }, [loadLogs]);
+  // Realtime over SSE: the server holds an Admin-SDK onSnapshot on
+  // adminActivityLogs (locked to clients) and pushes the newest 100 entries.
+  // Replaces the previous one-shot fetch — admins now see new audit events
+  // arrive live without a manual reload.
+  const { data, loading, error } = useAdminRealtime<Log[]>('activity');
+  const logs = data ?? null;
 
   return (
     <div className="space-y-8">
@@ -42,8 +33,14 @@ export default function ActivityLogsPage() {
           <History className="h-8 w-8 text-primary" />
           Security & Audit Logs
         </h1>
-        <p className="text-zinc-500">Historical record of all administrative actions (Read-only).</p>
+        <p className="text-zinc-500">Live record of all administrative + candidate lifecycle actions (real-time, read-only).</p>
       </div>
+
+      {error && (
+        <div className="text-xs font-medium rounded-xl border border-amber-200 bg-amber-50 text-amber-700 px-4 py-3 dark:bg-amber-950/30 dark:border-amber-900 dark:text-amber-300">
+          {error}
+        </div>
+      )}
 
       <Card className="border-none shadow-sm rounded-2xl bg-white dark:bg-zinc-900">
         <CardContent className="p-0">
@@ -64,9 +61,17 @@ export default function ActivityLogsPage() {
                       <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full font-bold uppercase text-zinc-500">
                         {log.resourceType}
                       </span>
+                      {log.outcome && log.outcome !== 'success' && (
+                        <span className="text-[10px] bg-red-100 dark:bg-red-950 px-2 py-0.5 rounded-full font-bold uppercase text-red-600">
+                          {log.outcome}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-zinc-500 font-medium">
                       <span className="flex items-center gap-1"><User className="h-3 w-3" /> {log.adminEmail}</span>
+                      {log.actorRole && log.actorRole !== 'admin' && (
+                        <span className="text-[10px] uppercase">{log.actorRole}</span>
+                      )}
                       <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {log.timestamp?.seconds ? formatDistanceToNow(log.timestamp.seconds * 1000, { addSuffix: true }) : 'Just now'}</span>
                     </div>
                   </div>

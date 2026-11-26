@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 import { cn } from '@/lib/utils';
 
 const statusOptions = ["New", "Reviewing", "Shortlisted", "Interview Scheduled", "Rejected", "Hired"];
@@ -30,26 +31,16 @@ type Application = {
 export default function ApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [applications, setApplications] = useState<Application[] | null>(null);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const loadApps = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/applications', { cache: 'no-store' });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setApplications(data.applications as Application[]);
-    } catch {
-      setApplications([]);
-      toast({ title: "Failed to load applications", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => { loadApps(); }, [loadApps]);
+  // Realtime over SSE: the server holds an Admin-SDK onSnapshot on
+  // jobApplications (locked to clients) and pushes the newest 500 entries
+  // (mirrors GET /api/admin/applications, incl. soft-deleted for the restore
+  // control). Replaces the previous one-shot fetch — concurrent admin edits +
+  // new candidate submissions now appear live. No optimistic local updates: the
+  // list reflects server-confirmed state only.
+  const { data, loading, error } = useAdminRealtime<Application[]>('applications');
+  const applications = data ?? null;
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
@@ -60,7 +51,7 @@ export default function ApplicationsPage() {
       });
       if (!res.ok) throw new Error();
       toast({ title: "Status Updated", description: `Application is now ${newStatus}.` });
-      setApplications(prev => prev?.map(a => a.id === id ? { ...a, status: newStatus } : a) ?? null);
+      // No optimistic local update — the realtime stream pushes the server-confirmed row.
     } catch {
       toast({ title: "Update Failed", variant: "destructive" });
     }
@@ -77,9 +68,7 @@ export default function ApplicationsPage() {
       });
       if (!res.ok) throw new Error();
       toast({ title: `Application ${action}d` });
-      setApplications(prev => prev?.map(a => a.id === id
-        ? { ...a, deletedAt: isRestoring ? null : { seconds: Math.floor(Date.now()/1000) } }
-        : a) ?? null);
+      // No optimistic local update — the realtime stream pushes the server-confirmed row.
     } catch {
       toast({ title: "Action Failed", variant: "destructive" });
     }
@@ -104,6 +93,12 @@ export default function ApplicationsPage() {
           <p className="text-zinc-500">Manage your hiring funnel and candidate pipeline.</p>
         </div>
       </div>
+
+      {error && (
+        <div className="text-xs font-medium rounded-xl border border-amber-200 bg-amber-50 text-amber-700 px-4 py-3 dark:bg-amber-950/30 dark:border-amber-900 dark:text-amber-300">
+          {error}
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative flex-1 w-full max-w-sm">

@@ -23,22 +23,22 @@ service cloud.firestore {
     //     `/api/admin/seed` (Admin SDK batch, dev-only) instead of a client
     //     writeBatch, so local seeding still works after the write lock.
     //
-    // STILL OPEN (separate IU-0 workstreams — do NOT close here without the
-    // matching migration, or features break):
-    //   * `users` read/write remains open — candidate signup/profile uses
-    //     simulated end-user auth (no Firebase Auth yet). Locking requires
-    //     Firebase Auth for end-users.
-    //   * Signed resume URLs (Storage) — applications detail still shows a
-    //     raw object path; a `/api/admin/applications/[id]/resume` signed-URL
-    //     route is the documented follow-up.
-    //   * `drafts` has NO match here → default-deny. The `useAutosave` hook
-    //     still attempts client writes to `drafts`; those silently fail and
-    //     fall back to localStorage. Migrating autosave to a server route is a
-    //     follow-up (not PII; out of this slice's scope).
-    //   * `services` has NO match here → default-deny. Public service pages
-    //     read `services` client-side; if that read breaks it is a separate
-    //     fix (migrate to a public read rule or server route). The dev seed
-    //     writes services via the Admin SDK, which bypasses rules.
+    // STATUS (DB/realtime foundation batch):
+    //   Every collection the app uses is now explicitly DENIED to clients below
+    //   (jobs, blogPosts+revisions, jobApplications, leads, newsletterSubscribers,
+    //   adminActivityLogs, admins, candidates, jobMatchEvents, jobAlertsSent,
+    //   registrationChallenges, services, testimonials, users, otpRequests,
+    //   sessions, securityEvents, bootstrap, clientProjects, techEcosystem,
+    //   drafts). All reads/writes go through `/api/**` route handlers that use
+    //   the Admin SDK (bypasses these rules) + verifySession/verifyAdminPermission.
+    //   `clientProjects`, `techEcosystem` and `drafts` previously had NO match
+    //   (default-deny by omission); they now have an explicit `allow read, write:
+    //   if false` for defense-in-depth + so the rules file documents every
+    //   collection the app touches.
+    //   Signed resume URLs (Storage) are delivered via
+    //   `/api/admin/applications/[id]/resume` (signed, 5-min TTL, RBAC-gated) —
+    //   the legacy "raw object path" follow-up is resolved. Autosave is
+    //   server-side via `/api/admin/drafts` (Admin SDK).
     // =====================================================================
 
     // Public job listings: READ + WRITE fully denied to clients.
@@ -170,6 +170,21 @@ match /securityEvents/{eventId} {
 }
 match /bootstrap/{stateId} {
   allow read, write: if false;
+}
+
+// CMS collections added after the original lockdown. These previously had NO
+// match (default-deny by omission); explicit `allow read, write: if false`
+// documents them + provides defense-in-depth. All access is via the Admin SDK
+// in `/api/admin/client-projects/**`, `/api/admin/tech-ecosystem/**`, and
+// `/api/admin/drafts/**` (verifyAdmin / verifyAdminPermission + owner-scoped).
+match /clientProjects/{projectId} {
+  allow read, write: if false;
+}
+match /techEcosystem/{entryId} {
+  allow read, write: if false;
+}
+match /drafts/{draftId} {
+  allow read, write: if false; // owner-scoped via /api/admin/drafts (Admin SDK)
 }
   }
 }

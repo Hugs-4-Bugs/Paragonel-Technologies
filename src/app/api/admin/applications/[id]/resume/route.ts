@@ -31,18 +31,17 @@ import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifyAdminPermission, serviceUnavailable, logActivityServer } from '@/lib/admin-auth';
 import { createResumeSignedUrl } from '@/lib/resume-storage';
+import { validateResumePath } from '@/lib/resume-security';
 
 export const dynamic = 'force-dynamic';
 
 const SIGNED_URL_TTL_MS = 5 * 60 * 1000; // 5 minutes
-// Strict resume object path. The actual stored path (set by
-// /api/candidate/resume) is `candidates/{email}/resumes/{ts}_{safeName}` —
-// NOT the legacy `resumes/<name>` this route previously assumed (which read
-// the wrong field `resumeUrl` and matched the wrong pattern, always 404).
-// This regex validates the real structure: an email-scoped candidate folder,
-// a resumes/ prefix, and a sanitized filename. It rejects "..", leading "/",
-// "gs://", query strings, and paths outside the candidates/.../resumes/ tree.
-const RESUME_PATH_RE = /^candidates\/[A-Za-z0-9._@+-]{1,254}\/resumes\/[A-Za-z0-9._ -]{1,200}$/;
+// Resume path validation uses the shared `validateResumePath` from
+// @/lib/resume-security (single source of truth). Previously this route
+// declared a duplicate RESUME_PATH_RE that could drift from the canonical
+// validator used by the candidate upload/download/delete paths. The validator
+// rejects "..", leading "/", "gs://", query strings, and any path outside the
+// candidates/{email}/resumes/{safeName} tree.
 
 export async function GET(
   request: Request,
@@ -86,8 +85,8 @@ export async function GET(
     );
   }
 
-  // 3. Validate the stored path against the strict pattern (reject untrusted refs).
-  if (!RESUME_PATH_RE.test(resumePath)) {
+  // 3. Validate the stored path against the strict shared shape (reject untrusted refs).
+  if (!validateResumePath(resumePath)) {
     // Do not echo the rejected value back.
     console.warn('[admin/applications/[id]/resume] rejected non-conforming resume path');
     return NextResponse.json(

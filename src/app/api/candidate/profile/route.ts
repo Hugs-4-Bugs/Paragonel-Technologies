@@ -23,6 +23,7 @@ import {
   type CandidateProfile,
 } from '@/lib/auth/candidate-profile';
 import { jsonError } from '@/lib/auth/route-helpers';
+import { writeAuditLog, sanitizeChangeSummary, newCorrelationId } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -83,16 +84,59 @@ export async function PUT(request: Request) {
   // update the editable profile fields + updatedAt.
   const existing = await ref.get();
   const createdAt = existing.exists ? (existing.data() as { createdAt?: Timestamp }).createdAt : now;
+  const beforeData = existing.exists ? (existing.data() as Record<string, unknown>) : null;
 
-  await ref.set(
-    {
-      ...data,
-      email, // server-set (never client-updatable)
-      createdAt,
-      updatedAt: now,
-    },
-    { merge: true },
-  );
+  const correlationId = newCorrelationId();
+  try {
+    await ref.set(
+      {
+        ...data,
+        email, // server-set (never client-updatable)
+        createdAt,
+        updatedAt: now,
+      },
+      { merge: true },
+    );
+  } catch (err) {
+    // Persist a failure audit (server-generated actor) so a failed profile save
+    // is traceable, then surface a classified 500. The actor is taken from the
+    // verified session — never from the request body.
+    await writeAuditLog({
+      actor: { id: email, role: 'candidate', tier: 'user' },
+      eventType: 'candidate_profile_update',
+      entityType: 'candidate',
+      entityId: email,
+      outcome: 'failure',
+      correlationId,
+      metadata: { reason: 'profile_write_failed' },
+    });
+    console.error('[candidate/profile] save failed:', err instanceof Error ? err.message : err);
+    return jsonError(500, 'Could not save profile. Please try again.');
+  }
+
+  // Server-generated audit record with a SAFE before/after summary (secret /
+  // path / nested fields are redacted to their names only — see sanitizeChangeSummary).
+  // Compute the REAL after-state — the merged result of the write above — so the
+  // diff only flags fields that actually changed. Comparing the stored doc against
+  // the zod-parsed INPUT would mark every server-only field (email, createdAt,
+  // resume refs) as "changed" and sample their before-values, leaking e.g.
+  // resumeFileName (the candidate's real name) on every save.
+  const afterData: Record<string, unknown> = {
+    ...(beforeData ?? {}),
+    ...(data as Record<string, unknown>),
+    email,
+    createdAt,
+    updatedAt: now,
+  };
+  await writeAuditLog({
+    actor: { id: email, role: 'candidate', tier: 'user' },
+    eventType: 'candidate_profile_update',
+    entityType: 'candidate',
+    entityId: email,
+    outcome: 'success',
+    changeSummary: sanitizeChangeSummary(beforeData, afterData),
+    correlationId,
+  });
 
   const profile = (await ref.get()).data() as CandidateProfile;
   return NextResponse.json({

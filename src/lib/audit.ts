@@ -1,37 +1,35 @@
 'use client';
 
 /**
- * Client audit helper (Phase 4, IU-0 slice 1).
+ * DEPRECATED — client audit helper (no-op).
  *
- * Previously this wrote directly to the `adminActivityLogs` Firestore
- * collection with the client SDK. With `adminActivityLogs` now locked
- * (`allow read, write: if false` for clients), it instead POSTs to the
- * server-side `/api/admin/activity` route, which verifies the admin JWT and
- * writes via the Admin SDK.
+ * Audit records are now SERVER-GENERATED ONLY (src/lib/audit-log.ts ->
+ * `writeAuditLog`, called from route handlers after a verified mutation). The
+ * client must NOT write audit entries: a browser cannot be trusted to supply
+ * the actor identity, role, timestamp or event type, and allowing client writes
+ * let a read-only `viewer`-role admin append arbitrary entries.
  *
- * Signature is unchanged so existing callers (blog/jobs/leads/applications
- * admin pages) need no edits beyond removing the local call where the
- * mutation itself is now server-side.
- *
- * Errors are surfaced to the console but never thrown — audit logging must
- * not crash a successful admin action.
+ * The previous `POST /api/admin/activity` endpoint has been removed. This helper
+ * is retained as a no-op so any stale import still compiles, but it writes
+ * nothing. New audit calls must be added server-side in the route that performs
+ * the mutation (see `writeAuditLog` / `logActivityServer`).
  */
-import { redactReason } from '@/lib/job-alerts/dedup';
-
 export async function logActivity(
   adminEmail: string,
   action: string,
   resourceType: string,
-  resourceId: string
+  resourceId: string,
 ): Promise<void> {
-  try {
-    await fetch('/api/admin/activity', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, resourceType, resourceId }),
-    });
-  } catch (e) {
-    // Surface, but never block the calling admin action.
-    console.error('[audit] failed to post activity:', redactReason(e));
+  // Signature retained for backward compatibility (no live callers remain), but
+  // the params are intentionally unused — void them to satisfy no-unused-vars.
+  void adminEmail;
+  void action;
+  void resourceType;
+  void resourceId;
+  if (typeof console !== 'undefined' && console.warn) {
+    console.warn(
+      '[audit] client logActivity() is a deprecated no-op; audit records are server-generated only.',
+    );
   }
+  return Promise.resolve();
 }

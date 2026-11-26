@@ -26,7 +26,16 @@ function jsonReq(url: string, body: unknown): Request {
   });
 }
 
-describe('Prompt 05Q §2 — no account before OTP verification', () => {
+// This suite is an INTEGRATION test: it calls the real route handlers AND reads
+// Firestore state via the Admin SDK, so it requires the Firestore emulator
+// (FIRESTORE_EMULATOR_HOST — loaded from .env.local by vitest.setup.ts, or set
+// in the environment). Without the emulator, getAdminDb() returns null and every
+// step 503s or null-derefs. It is gated to SKIP cleanly under the default
+// `npm run test` (no emulator) instead of failing. To exercise it, run the
+// emulator-gated suite:
+//   firebase emulators:exec --only firestore,storage "npm run test"
+//   (or: firebase emulators:start, then FIRESTORE_EMULATOR_HOST=localhost:8080 npm run test)
+describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Prompt 05Q §2 — no account before OTP verification (Firestore emulator)', () => {
   beforeAll(() => {
     // CAPTCHA runs in test mode (dev) — any non-empty token passes.
     process.env.NODE_ENV = process.env.NODE_ENV || 'development';

@@ -22,7 +22,7 @@ This document provides an overview of the project structure and guidance on wher
     *   **`src/components/job-card.tsx`**: Component for displaying individual job listings.
     *   **`src/components/job-description-modal.tsx`**: Modal for displaying full job descriptions.
 *   **`src/ai/`**: Genkit AI flows and configuration.
-    *   **`src/ai/flows/`**: TypeScript files defining individual Genkit flows (e.g., `company-qna-flow.ts`, `format-application-email-flow.ts`, `generate-job-match-email-flow.ts`).
+    *   **`src/ai/flows/`**: TypeScript files defining individual Genkit flows (e.g., `company-qna-flow.ts`, `format-application-email-flow.ts`).
     *   **`src/ai/genkit.ts`**: Genkit initialization and global AI model configuration.
     *   **`src/ai/dev.ts`**: File used by the Genkit development server to register flows.
 *   **`src/lib/`**: Utility functions, constants, and data.
@@ -223,8 +223,8 @@ This document provides an overview of the project structure and guidance on wher
     *   **Flow Logic & Prompt**: `src/ai/flows/format-application-email-flow.ts`. This flow formats details for both admin (`erprabhat72@gmail.com`) and applicant confirmation emails, including all fields from the detailed application form.
     *   **Invocation**: Called from `src/components/apply-job-modal.tsx` upon form submission.
 *   **Job Match Notification Email Logic**:
-    *   **Flow Logic & Prompt**: `src/ai/flows/generate-job-match-email-flow.ts`. This flow takes a `jobId` and `userId`, performs skill matching (user skills from Firestore, job skills from `dummyJobs`), and if a >=70% match occurs, formats a notification email.
-    *   **Backend Trigger Required**: This flow demonstrates the *logic* for matching and email formatting. A separate backend process (e.g., Firebase Cloud Function) would be needed to automatically trigger this flow for all users when a new job is posted.
+    *   **Implementation**: `src/lib/job-alerts/` (matching engine + trigger/processor + dedup + unsubscribe + email content). The former `src/ai/flows/generate-job-match-email-flow.ts` Genkit flow has been removed (dead code — never wired into `src/ai/dev.ts`).
+    *   **Backend Trigger**: A backend process (e.g., Firebase Cloud Function / cron) triggers the alert processor when a new job is posted (or on a schedule) to notify eligible candidates above the configurable match threshold.
 *   **Environment Variables**:
     *   Your `GOOGLE_API_KEY` for Genkit needs to be in a `.env` file at the project root for local development, and set in your hosting provider's environment settings for deployment. (See `VERCEL_ENV_SETUP_GUIDE.md`).
     *   Firebase configuration variables (`NEXT_PUBLIC_FIREBASE_...`) also need to be set for the Profile section. (See `FIREBASE_VERCEL_ENV_SETUP_GUIDE.md`).
