@@ -44,6 +44,7 @@ import {
   deleteResumeObject,
   ResumeStorageError,
 } from '@/lib/resume-storage';
+import { writeAuditLog, newCorrelationId } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -131,9 +132,11 @@ export async function POST(request: Request) {
   // Storage backend is no longer used for NEW uploads — existing Firebase
   // resumes remain readable via the module's legacy read fallback.
   let objectPath: string;
+  let uploadSize = 0;
   try {
     const uploaded = await uploadResume({ email, fileName: f.name, contentType, buf });
     objectPath = uploaded.path;
+    uploadSize = uploaded.size;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[candidate/resume] upload failed:', msg);
@@ -181,6 +184,7 @@ export async function POST(request: Request) {
   // Now: on failure, best-effort delete the just-uploaded Storage object (avoid
   // the orphan) + return a classified 500 the candidate can understand + retry.
   const now = Timestamp.fromMillis(Date.now());
+  const correlationId = newCorrelationId();
   try {
     await db.collection('candidates').doc(email).set(
       {
@@ -188,6 +192,7 @@ export async function POST(request: Request) {
         resumeStoragePath: objectPath,
         resumeFileName: safeName,
         resumeContentType: contentType,
+        resumeSizeBytes: uploadSize,
         resumeUploadedAt: now,
         resumeParsedAt: parsed ? now : null,
         updatedAt: now,
@@ -203,6 +208,16 @@ export async function POST(request: Request) {
     } catch {
       // Non-fatal — the orphan is logged above for later cleanup.
     }
+    // Server-generated failure audit (actor from the verified session).
+    await writeAuditLog({
+      actor: { id: email, role: 'candidate', tier: 'user' },
+      eventType: 'candidate_resume_upload',
+      entityType: 'candidate',
+      entityId: email,
+      outcome: 'failure',
+      correlationId,
+      metadata: { reason: 'metadata_write_failed', fileName: safeName, sizeBytes: uploadSize },
+    });
     const reason =
       /permission|forbidden|403/i.test(msg)
         ? 'Could not save resume metadata (permission denied). The Firebase service account needs Firestore write access.'
@@ -211,6 +226,18 @@ export async function POST(request: Request) {
         : 'Could not save resume metadata. Please try again or contact support.';
     return jsonError(500, reason);
   }
+
+  // Server-generated success audit. Metadata is safe (filename + size + type);
+  // the storage path itself is never logged (see resume-storage.ts).
+  await writeAuditLog({
+    actor: { id: email, role: 'candidate', tier: 'user' },
+    eventType: 'candidate_resume_upload',
+    entityType: 'candidate',
+    entityId: email,
+    outcome: 'success',
+    correlationId,
+    metadata: { fileName: safeName, sizeBytes: uploadSize, contentType, parsed: !!parsed },
+  });
 
   // Phase 4: delete the PREVIOUS resume object now that the new one is stored +
   // the profile points at the new path. Best-effort + non-fatal: a failure here
@@ -299,20 +326,53 @@ export async function DELETE(request: Request) {
 
   // Best-effort delete from Supabase (primary) + legacy Firebase Storage (in
   // case the resume was uploaded before the migration). Non-throwing — the
-  // Firestore ref is cleared regardless, so a storage delete failure never
-  // blocks the candidate from removing their resume.
+  // Firestore ref is cleared below, so a storage delete failure never blocks the
+  // candidate from removing their resume.
   await deleteResumeObject(path, { email });
 
-  await db.collection('candidates').doc(email).set(
-    {
-      resumeStoragePath: null,
-      resumeFileName: null,
-      resumeContentType: null,
-      resumeParsedAt: null,
-      resumeUploadedAt: null,
-    },
-    { merge: true },
-  );
+  const correlationId = newCorrelationId();
+  // Wrap the Firestore metadata clear in try/catch (PHASE B4 symmetric fix):
+  // previously this was UNguarded — if it failed, the route threw an unhandled
+  // 500 AFTER the storage object was already deleted (orphan-in-reverse: the
+  // profile still claimed a resume that no longer existed, and the candidate
+  // saw a generic 500). Now: on failure we surface a classified 500 (the
+  // deletion did NOT fully succeed — do not claim success) + a failure audit.
+  // On success we clear all resume fields (incl. resumeSizeBytes) + audit.
+  try {
+    await db.collection('candidates').doc(email).set(
+      {
+        resumeStoragePath: null,
+        resumeFileName: null,
+        resumeContentType: null,
+        resumeSizeBytes: null,
+        resumeParsedAt: null,
+        resumeUploadedAt: null,
+      },
+      { merge: true },
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[candidate/resume] metadata clear failed (storage object already deleted):', msg);
+    await writeAuditLog({
+      actor: { id: email, role: 'candidate', tier: 'user' },
+      eventType: 'candidate_resume_delete',
+      entityType: 'candidate',
+      entityId: email,
+      outcome: 'failure',
+      correlationId,
+      metadata: { reason: 'metadata_clear_failed' },
+    });
+    return jsonError(500, 'Resume file was removed, but we could not clear your profile metadata. Please retry or contact support.');
+  }
+
+  await writeAuditLog({
+    actor: { id: email, role: 'candidate', tier: 'user' },
+    eventType: 'candidate_resume_delete',
+    entityType: 'candidate',
+    entityId: email,
+    outcome: 'success',
+    correlationId,
+  });
 
   return NextResponse.json({ message: 'Resume removed.' });
 }
