@@ -279,19 +279,8 @@ All flows are defined in `src/ai/flows/` and registered in `src/ai/dev.ts`. They
     - Includes fallback content if AI fails to generate.
 - **Invocation**: Called by `ApplyJobModal` upon successful form submission. Output is logged to console (simulating email sending).
 
-### 5.5. `generateJobMatchEmailFlow` (`generate-job-match-email-flow.ts`)
-- **Purpose**: Checks if a user's skills match a job's requirements and, if so, generates a notification email. Designed to be called by a backend system.
-- **Input**: `{ jobId: string, userId: string }`
-- **Output**: `{ shouldNotify: boolean, recipientEmail?: string, emailSubject?: string, emailBody?: string }`
-- **Logic**:
-    1.  Fetches job details (including `requiredSkills`) from `dummyJobs` using `jobId`.
-    2.  Fetches user profile (`skills`, `email`, `fullName`) from Firestore (`users/{userId}`).
-    3.  Calculates skill match percentage.
-    4.  If match >= 70%:
-        - Sets `shouldNotify: true`.
-        - Uses an AI prompt to format a job notification email (job title, company, location, link to careers page).
-        - Sets `recipientEmail`, `emailSubject`, `emailBody`.
-- **Invocation**: Not directly called by the frontend. Intended for a backend system to trigger when a new job is posted.
+### 5.5. Job Match Notification (Genkit flow removed)
+- **Status**: The former `generateJobMatchEmailFlow` (`generate-job-match-email-flow.ts`) Genkit flow has been removed (it was dead code — never wired into `src/ai/dev.ts` and not called by any route). Job-match alert matching, dedup, unsubscribe, and email formatting now live in `src/lib/job-alerts/` (matching engine + trigger/processor + dedup + unsubscribe + email content), triggered by a backend process when a new job is posted or on a schedule.
 
 ## 6. Data Flow Examples
 
@@ -318,8 +307,8 @@ All flows are defined in `src/ai/flows/` and registered in `src/ai/dev.ts`. They
 - **Job Match Alert Automation**: Implement a backend process (e.g., Firebase Cloud Function) that:
     1. Triggers when a new job is posted (or on a schedule).
     2. Fetches all relevant users.
-    3. For each user, calls the `generateJobMatchEmailFlow`.
-    4. If `shouldNotify` is true, uses an email service to send the notification.
+    3. For each user, runs the job-alert matching + email formatting (see `src/lib/job-alerts/`).
+    4. For matches above the configurable threshold, uses an email service to send the notification.
 - **Admin Dashboard**: A separate interface for admins to manage job postings, view applications, etc.
 - **Full Resume Upload**: Instead of just a URL, allow actual file uploads to cloud storage (e.g., Firebase Storage, AWS S3), storing the file path in the application/profile.
 - **Advanced Search & Filtering**: More sophisticated job search capabilities.

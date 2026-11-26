@@ -49,7 +49,8 @@ export class ResumeStorageError extends Error {
   readonly code:
     | 'forbidden'
     | 'unconfigured'
-    | 'upload-failed';
+    | 'upload-failed'
+    | 'delete-failed';
   constructor(code: ResumeStorageError['code'], message: string) {
     super(message);
     this.name = 'ResumeStorageError';
@@ -217,8 +218,15 @@ export async function downloadResumeBytes(
 /**
  * Delete a resume object. Deletes from Supabase AND best-effort from legacy
  * Firebase Storage (in case the resume was uploaded before the migration).
- * Never throws — deletion is best-effort/non-fatal (the caller clears the
- * Firestore ref regardless).
+ *
+ * Semantics: returns normally (void) when the object was deleted OR was already
+ * absent in at least one configured backend (idempotent delete). THROWS a
+ * ResumeStorageError('delete-failed') ONLY when a configured backend reported a
+ * REAL failure (permission / transient / unavailable) AND no configured backend
+ * confirmed the object is gone — so the caller can keep the Firestore metadata
+ * intact + surface a retryable 500 instead of silently orphaning a private
+ * candidate document (a GDPR retention gap). A not-found error is treated as
+ * success (the object is already gone).
  */
 export async function deleteResumeObject(
   path: string,
@@ -228,28 +236,70 @@ export async function deleteResumeObject(
     try {
       assertOwnedBy(path, opts.email);
     } catch {
-      // A tampered path: do not delete anything.
+      // A tampered path: do not delete anything. Treat as a no-op success (the
+      // caller never had a legitimate object at this path to clean up).
       return;
     }
   }
 
+  // Outcome per configured backend: 'gone' (deleted or already absent) | 'failed'
+  // (real error). 'n/a' = backend not configured (not a failure source).
+  type Outcome = 'gone' | 'failed' | 'n/a';
+  const notFound = /not found|404|no such|not exist|notfound|nosuchkey/i;
+  let supabaseOutcome: Outcome = 'n/a';
+  let legacyOutcome: Outcome = 'n/a';
+
   const sb = getSupabaseServer();
   if (sb) {
+    supabaseOutcome = 'failed';
     try {
-      await sb.storage.from(RESUME_BUCKET).remove([path]);
+      const { error } = await sb.storage.from(RESUME_BUCKET).remove([path]);
+      if (error) {
+        const m = String(error.message || '');
+        if (notFound.test(m)) {
+          supabaseOutcome = 'gone'; // already absent
+        } else {
+          console.warn('[resume-storage] supabase delete failed:', m);
+        }
+      } else {
+        supabaseOutcome = 'gone'; // deleted
+      }
     } catch (err) {
-      console.warn('[resume-storage] supabase delete non-fatal:', err instanceof Error ? err.message : err);
+      const m = err instanceof Error ? err.message : String(err);
+      if (notFound.test(m)) {
+        supabaseOutcome = 'gone';
+      } else {
+        console.warn('[resume-storage] supabase delete threw:', m);
+      }
     }
   }
 
   const bucket = getAdminBucket()?.bucket();
   if (bucket) {
+    legacyOutcome = 'failed';
     try {
       await bucket.file(path).delete();
+      legacyOutcome = 'gone';
     } catch (err) {
-      // Non-fatal — the file may already be gone (or only ever existed in Supabase).
-      console.warn('[resume-storage] legacy delete non-fatal:', err instanceof Error ? err.message : err);
+      const m = err instanceof Error ? err.message : String(err);
+      if (notFound.test(m)) {
+        legacyOutcome = 'gone'; // only ever existed in Supabase, or already gone
+      } else {
+        console.warn('[resume-storage] legacy delete failed:', m);
+      }
     }
+  }
+
+  // OK if at least one configured backend confirmed the object is gone. If every
+  // configured backend failed, the object is still in storage -> throw so the
+  // caller keeps the metadata + can retry (no silent orphan).
+  const anyConfigured = supabaseOutcome !== 'n/a' || legacyOutcome !== 'n/a';
+  const anyGone = supabaseOutcome === 'gone' || legacyOutcome === 'gone';
+  if (anyConfigured && !anyGone) {
+    throw new ResumeStorageError(
+      'delete-failed',
+      'Could not remove the resume file from storage. Please retry.',
+    );
   }
 }
 

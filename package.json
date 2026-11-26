@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:emulator": "firebase emulators:exec --only firestore,storage \"npm run test\""
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.16",

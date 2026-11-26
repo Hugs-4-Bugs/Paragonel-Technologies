@@ -38,12 +38,23 @@ export interface UseAdminRealtimeResult<T> {
   lastUpdated: number | null;
 }
 
+// Stop auto-reconnecting after this many consecutive transient failures and ask
+// the user to reload. EventSource otherwise reconnects at the server's `retry:`
+// cadence indefinitely — fine for a healthy service, but a sustained outage
+// should not hammer the serverless function.
+const MAX_RECONNECT_ATTEMPTS = 8;
+
 export function useAdminRealtime<T = unknown>(stream: RealtimeStream): UseAdminRealtimeResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
-  const esRef = useRef<EventSource | null>(null);
+  // Ref mirror of `data` so the onerror handler — which intentionally does NOT
+  // list `data` as a dependency (one EventSource per stream per mount) — reads
+  // the LATEST value instead of the mount-time null. Otherwise every transient
+  // transport drop would flip `loading` back to true even when we already have
+  // data (skeleton flicker on /admin/activity, /applications, /jobs each cycle).
+  const dataRef = useRef<T | null>(null);
 
   useEffect(() => {
     // EventSource is browser-only; the effect never runs on the server.
@@ -51,8 +62,8 @@ export function useAdminRealtime<T = unknown>(stream: RealtimeStream): UseAdminR
 
     setLoading(true);
     let closedByUs = false;
+    let retries = 0;
     const es = new EventSource(`/api/admin/realtime/${stream}`);
-    esRef.current = es;
 
     es.onmessage = (ev) => {
       let payload: unknown;
@@ -70,6 +81,8 @@ export function useAdminRealtime<T = unknown>(stream: RealtimeStream): UseAdminR
         es.close();
         return;
       }
+      retries = 0; // a successful frame resets the reconnect budget
+      dataRef.current = payload as T;
       setData(payload as T);
       setError(null);
       setLoading(false);
@@ -77,34 +90,40 @@ export function useAdminRealtime<T = unknown>(stream: RealtimeStream): UseAdminR
     };
 
     es.onerror = () => {
-      // If we closed it ourselves (terminal __error), nothing to do.
+      // If we closed it ourselves (terminal __error / cap reached), nothing to do.
       if (closedByUs) return;
-      // If the connection is CLOSED (e.g. 401 — SSE never started, or the
-      // server refused), EventSource will NOT auto-reconnect: surface + stop.
+      // If the connection is CLOSED (e.g. 401 — SSE never started, or the server
+      // refused), EventSource will NOT auto-reconnect: surface + stop.
       if (es.readyState === EventSource.CLOSED) {
         setError('Realtime connection closed. Reload to retry.');
         setLoading(false);
         return;
       }
       // Otherwise it's a transient transport drop (proxy / maxDuration) —
-      // EventSource auto-reconnects. Keep the last data; surface a transient
-      // error but do NOT blank the UI. Loading stays false if we already have
-      // data, else true (waiting for first data after reconnect).
+      // EventSource auto-reconnects. Cap consecutive failures so a sustained
+      // outage does not hammer the function; keep the last data visible.
+      retries += 1;
+      if (retries > MAX_RECONNECT_ATTEMPTS) {
+        closedByUs = true;
+        es.close();
+        setError('Realtime connection could not be restored. Reload the page to retry.');
+        setLoading(false);
+        return;
+      }
       setError('Realtime connection interrupted — reconnecting…');
-      if (data === null) setLoading(true);
+      // Loading stays false if we already have data (read via the ref, not the
+      // stale closed-over `data`); only show the skeleton if we never got first
+      // data after reconnect.
+      if (dataRef.current === null) setLoading(true);
     };
 
     return () => {
       closedByUs = true;
       es.close();
-      esRef.current = null;
     };
     // Deliberately depend only on `stream` — one EventSource per stream per mount.
-    // `data` is read inside onerror but not a dependency (stale-closure-safe via
-    // the ref-free read of the latest state through the setter pattern is not
-    // needed because we only branch on null-ness, which is monotonic enough for
-    // the loading hint).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // (dataRef + the React state setters are stable, so react-hooks/exhaustive-deps
+    //  is satisfied with [stream] alone — no suppression needed.)
   }, [stream]);
 
   return { data, loading, error, lastUpdated };

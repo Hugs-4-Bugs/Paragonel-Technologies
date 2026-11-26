@@ -116,13 +116,25 @@ export async function PUT(request: Request) {
 
   // Server-generated audit record with a SAFE before/after summary (secret /
   // path / nested fields are redacted to their names only — see sanitizeChangeSummary).
+  // Compute the REAL after-state — the merged result of the write above — so the
+  // diff only flags fields that actually changed. Comparing the stored doc against
+  // the zod-parsed INPUT would mark every server-only field (email, createdAt,
+  // resume refs) as "changed" and sample their before-values, leaking e.g.
+  // resumeFileName (the candidate's real name) on every save.
+  const afterData: Record<string, unknown> = {
+    ...(beforeData ?? {}),
+    ...(data as Record<string, unknown>),
+    email,
+    createdAt,
+    updatedAt: now,
+  };
   await writeAuditLog({
     actor: { id: email, role: 'candidate', tier: 'user' },
     eventType: 'candidate_profile_update',
     entityType: 'candidate',
     entityId: email,
     outcome: 'success',
-    changeSummary: sanitizeChangeSummary(beforeData, data as Record<string, unknown>),
+    changeSummary: sanitizeChangeSummary(beforeData, afterData),
     correlationId,
   });
 

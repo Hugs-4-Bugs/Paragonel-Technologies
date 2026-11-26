@@ -227,6 +227,29 @@ export async function POST(request: Request) {
     return jsonError(500, reason);
   }
 
+  // Race guard (concurrent uploads by the same candidate): if another upload
+  // landed between our metadata write and now, the profile points at a DIFFERENT
+  // path and our just-uploaded object is orphaned. Re-read the current path; if we
+  // were superseded, delete our orphaned object + skip the previous-resume cleanup
+  // below (the concurrent upload owns that). The response reflects the ACTIVE
+  // resume path so the candidate is never handed a reference to a deleted object.
+  let activePath = objectPath;
+  let superseded = false;
+  try {
+    const curSnap = await db.collection('candidates').doc(email).get();
+    const cur = curSnap.exists ? (curSnap.data() as { resumeStoragePath?: string }).resumeStoragePath : undefined;
+    if (cur && cur !== objectPath) {
+      superseded = true;
+      activePath = cur;
+      await deleteResumeObject(objectPath, { email });
+    }
+  } catch (err) {
+    console.warn(
+      '[candidate/resume] superseded-orphan cleanup failed (non-fatal):',
+      err instanceof Error ? err.message : err,
+    );
+  }
+
   // Server-generated success audit. Metadata is safe (filename + size + type);
   // the storage path itself is never logged (see resume-storage.ts).
   await writeAuditLog({
@@ -239,24 +262,35 @@ export async function POST(request: Request) {
     metadata: { fileName: safeName, sizeBytes: uploadSize, contentType, parsed: !!parsed },
   });
 
-  // Phase 4: delete the PREVIOUS resume object now that the new one is stored +
-  // the profile points at the new path. Best-effort + non-fatal: a failure here
-  // does NOT roll back the successful upload (the candidate has a working
-  // resume). The orphan is logged for later cleanup but never blocks the user.
-  if (previousPath && previousPath !== objectPath) {
+  // Delete the PREVIOUS resume object now that the new one is stored + the
+  // profile points at the new path. Skipped if a concurrent upload superseded
+  // ours (that upload owns the previous-path cleanup). Best-effort + non-fatal: a
+  // failure does NOT roll back the successful upload, but it IS audited so the
+  // orphan can be reconciled (previously it was only console.warn'd — a silent
+  // orphan with no trace).
+  if (!superseded && previousPath && previousPath !== objectPath) {
     try {
       await deleteResumeObject(previousPath, { email });
     } catch (err) {
       console.warn(
-        '[candidate/resume] orphan cleanup failed (non-fatal):',
+        '[candidate/resume] previous-resume cleanup failed (orphan left in storage):',
         err instanceof Error ? err.message : err,
       );
+      await writeAuditLog({
+        actor: { id: email, role: 'candidate', tier: 'user' },
+        eventType: 'candidate_resume_upload',
+        entityType: 'candidate',
+        entityId: email,
+        outcome: 'failure',
+        correlationId,
+        metadata: { reason: 'previous_resume_cleanup_failed', sizeBytes: uploadSize },
+      });
     }
   }
 
   return NextResponse.json({
     message: parsed ? 'Resume uploaded + parsed. Review the extracted fields before saving.' : 'Resume uploaded. Parsing could not be completed — you can fill in your profile manually.',
-    resumeStoragePath: objectPath,
+    resumeStoragePath: activePath,
     resumeFileName: safeName,
     parsed: parsed
       ? {
@@ -324,20 +358,77 @@ export async function DELETE(request: Request) {
     return jsonError(403, 'Resume path is not authorized.');
   }
 
-  // Best-effort delete from Supabase (primary) + legacy Firebase Storage (in
-  // case the resume was uploaded before the migration). Non-throwing — the
-  // Firestore ref is cleared below, so a storage delete failure never blocks the
-  // candidate from removing their resume.
-  await deleteResumeObject(path, { email });
-
   const correlationId = newCorrelationId();
-  // Wrap the Firestore metadata clear in try/catch (PHASE B4 symmetric fix):
-  // previously this was UNguarded — if it failed, the route threw an unhandled
-  // 500 AFTER the storage object was already deleted (orphan-in-reverse: the
-  // profile still claimed a resume that no longer existed, and the candidate
-  // saw a generic 500). Now: on failure we surface a classified 500 (the
-  // deletion did NOT fully succeed — do not claim success) + a failure audit.
-  // On success we clear all resume fields (incl. resumeSizeBytes) + audit.
+
+  // Delete the storage object. deleteResumeObject throws ResumeStorageError ONLY
+  // on a real backend failure (permission/transient/unavailable) when no
+  // configured backend confirmed the object is gone — a not-found is treated as
+  // success (idempotent). On a real failure we do NOT clear the Firestore
+  // metadata (the object still exists) + surface a retryable 500 + a failure
+  // audit, so a private candidate document is never silently orphaned with no
+  // metadata reference (a GDPR retention gap). Symmetric to the Firestore-clear
+  // failure handling below.
+  try {
+    await deleteResumeObject(path, { email });
+  } catch (err) {
+    console.error('[candidate/resume] storage delete failed (metadata left intact):', err instanceof Error ? err.message : err);
+    await writeAuditLog({
+      actor: { id: email, role: 'candidate', tier: 'user' },
+      eventType: 'candidate_resume_delete',
+      entityType: 'candidate',
+      entityId: email,
+      outcome: 'failure',
+      correlationId,
+      metadata: { reason: 'storage_delete_failed' },
+    });
+    return jsonError(500, 'Could not remove the resume file from storage. Please retry.');
+  }
+
+  // CAS guard (upload-then-delete race): if a concurrent upload changed the
+  // profile path between our read and now, do NOT clobber it — the new resume is
+  // the candidate's active one, and the old object (`path`) was already deleted
+  // above. Only clear the metadata if the path is still the one we deleted.
+  let curPath: string | undefined;
+  try {
+    const curSnap = await db.collection('candidates').doc(email).get();
+    curPath = curSnap.exists ? (curSnap.data() as { resumeStoragePath?: string }).resumeStoragePath : undefined;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[candidate/resume] metadata re-read failed (storage object already deleted):', msg);
+    await writeAuditLog({
+      actor: { id: email, role: 'candidate', tier: 'user' },
+      eventType: 'candidate_resume_delete',
+      entityType: 'candidate',
+      entityId: email,
+      outcome: 'failure',
+      correlationId,
+      metadata: { reason: 'metadata_reread_failed' },
+    });
+    return jsonError(500, 'Resume file was removed, but we could not verify your profile. Please retry or contact support.');
+  }
+
+  if (curPath !== path) {
+    // A concurrent upload installed a new resume while we were deleting the old
+    // one. The old object is gone; leave the new resume's metadata intact + audit
+    // the partial outcome (no false success claim, no clobber of the new resume).
+    await writeAuditLog({
+      actor: { id: email, role: 'candidate', tier: 'user' },
+      eventType: 'candidate_resume_delete',
+      entityType: 'candidate',
+      entityId: email,
+      outcome: 'success',
+      correlationId,
+      metadata: { reason: 'superseded_by_concurrent_upload' },
+    });
+    return NextResponse.json({ message: 'The previous resume was removed. Your latest uploaded resume is still on file.' });
+  }
+
+  // Clear all resume metadata (incl. resumeSizeBytes). Wrapped in try/catch
+  // (PHASE B4 symmetric fix): previously this was UNguarded — if it failed, the
+  // route threw an unhandled 500 AFTER the storage object was already deleted
+  // (orphan-in-reverse: the profile still claimed a resume that no longer
+  // existed). Now: on failure surface a classified 500 (do not claim success) +
+  // a failure audit. On success we clear all resume fields + audit.
   try {
     await db.collection('candidates').doc(email).set(
       {

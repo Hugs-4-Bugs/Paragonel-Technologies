@@ -164,3 +164,41 @@ describe('DELETE /api/candidate/resume — Firestore-clear failure (G6)', () => 
     expect(entry.metadata?.reason).toBe('metadata_clear_failed');
   });
 });
+
+describe('DELETE /api/candidate/resume — storage-delete failure (symmetric: storage object NOT deleted, metadata kept)', () => {
+  it('returns a classified 500 + keeps the metadata intact (no silent orphan) + writes a failure audit', async () => {
+    const fakeDb = new FakeFirestore();
+    setDb(fakeDb);
+    await fakeDb.collection('candidates').doc(EMAIL).set({
+      email: EMAIL,
+      resumeStoragePath: PATH,
+      resumeFileName: 'jane.pdf',
+      resumeSizeBytes: 12345,
+    });
+    // deleteResumeObject now THROWS on a real backend failure (not on not-found).
+    // The route must NOT clear the Firestore metadata (the object still exists) +
+    // surface a retryable 500 + a failure audit, so a private candidate document
+    // is never silently orphaned with no metadata reference (GDPR retention gap).
+    deleteSpy.mockRejectedValueOnce(new Error('supabase delete failed'));
+
+    const res = await DELETE(new Request('http://localhost/api/candidate/resume', { method: 'DELETE' }));
+
+    // 1. Classified 500 — does NOT falsely claim the resume was removed.
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.message).toMatch(/could not remove the resume file from storage/i);
+
+    // 2. Metadata is INTACT (the object still exists in storage — no orphan).
+    const snap = await fakeDb.collection('candidates').doc(EMAIL).get();
+    const d = snap.data() as Record<string, unknown>;
+    expect(d.resumeStoragePath).toBe(PATH);
+    expect(d.resumeSizeBytes).toBe(12345);
+
+    // 3. Failure audit written (server-generated actor).
+    expect(writeAuditLogSpy).toHaveBeenCalledTimes(1);
+    const entry = writeAuditLogSpy.mock.calls[0][0];
+    expect(entry.eventType).toBe('candidate_resume_delete');
+    expect(entry.outcome).toBe('failure');
+    expect(entry.metadata?.reason).toBe('storage_delete_failed');
+  });
+});

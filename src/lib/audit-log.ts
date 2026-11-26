@@ -104,8 +104,10 @@ type SafeScalar = string | number | boolean | null;
 
 /** Field-name pattern that indicates a secret — value is NEVER stored, only the name. */
 const SECRET_FIELD_RE = /password|token|secret|key|hash|otp|code|credential|cookie|session/i;
-/** Field-name pattern that indicates a private path/id we summarize but do not dump. */
-const SENSITIVE_PATH_RE = /resumeStoragePath|resumeStorageUrl|storagePath|signedUrl/i;
+/** Field-name pattern that indicates a private path/id we summarize but do not dump.
+ *  Includes resumeFileName — a resume filename routinely contains the candidate's
+ *  real name (e.g. "John_Doe_Resume.pdf"), so it is treated as PII, not a scalar. */
+const SENSITIVE_PATH_RE = /resumeStoragePath|resumeStorageUrl|storagePath|signedUrl|resumeFileName/i;
 
 const MAX_SAMPLE_STRING = 120;
 const MAX_CHANGED_FIELDS = 60;

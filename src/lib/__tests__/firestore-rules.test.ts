@@ -90,4 +90,36 @@ describe('firestore.rules — defense-in-depth', () => {
   it('the rules version is v2', () => {
     expect(RULES).toMatch(/rules_version\s*=\s*'2'/);
   });
+
+  it('has NO catch-all wildcard match that could silently shadow the explicit denies', () => {
+    // A top-level `match /{document=**}` (or `{path=**}` / `{db=**}`) appearing
+    // after the collection blocks would override every `allow ... if false` with
+    // its own rule, silently reopening all client access. The per-collection
+    // guard above checks each block in isolation; this asserts no such shadowing
+    // wildcard exists anywhere in the file.
+    expect(RULES, 'rules must not contain a catch-all match /{document=**}').not.toMatch(
+      /match\s*\/\{document=\*\*?\}/,
+    );
+    expect(RULES, 'rules must not contain a catch-all match /{path=**}').not.toMatch(
+      /match\s*\/\{path=\*\*?\}/,
+    );
+    expect(RULES, 'rules must not contain a catch-all match /{db=**}').not.toMatch(
+      /match\s*\/\{db=\*\*?\}/,
+    );
+  });
+
+  it('the blogPosts/{postId}/revisions subcollection is explicitly denied (nested match)', () => {
+    // The top-level loop only checks top-level collection blocks. Revisions live
+    // under blogPosts as a nested match — assert it is present + denies clients,
+    // so a future edit that drops the nested block cannot reopen revision reads.
+    const idx = RULES.search(/match\s*\/blogPosts\/\{postId\}/);
+    expect(idx, 'rules must declare match /blogPosts/{postId}').toBeGreaterThanOrEqual(0);
+    const block = RULES.slice(idx, idx + 600);
+    const revMatch = block.match(/match\s*\/revisions\/\{[A-Za-z]+\}/);
+    expect(revMatch, 'rules must declare a nested match /revisions/{...} under blogPosts').not.toBeNull();
+    const revBlock = block.slice(revMatch!.index ?? 0);
+    expect(revBlock.slice(0, 200), 'revisions block must deny').toMatch(/if false/);
+    expect(revBlock.slice(0, 200), 'revisions block must not grant client access').not.toMatch(/if true/);
+    expect(revBlock.slice(0, 200), 'revisions block must not grant client access').not.toMatch(/request\.auth/);
+  });
 });

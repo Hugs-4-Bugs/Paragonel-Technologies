@@ -39,6 +39,14 @@ type RecentApp = {
   appliedAt?: { seconds: number };
 };
 
+type HealthStatus = 'online' | 'degraded' | 'unconfigured';
+
+type SystemHealth = {
+  firestore: HealthStatus;
+  resumeStorage: HealthStatus;
+  ai: HealthStatus;
+};
+
 export default function AdminDashboard() {
   const router = useRouter();
   const { toast } = useToast();
@@ -53,10 +61,12 @@ export default function AdminDashboard() {
   const recentApps = statsData?.recentApplications ?? [];
   const loading = rtLoading && !statsData;
 
-  // Real system health (replaces the previously HARDCODED "Firestore Persistence:
-  // Online" + "AI Matching Engine: Ready 95%" card, which were literal strings
-  // with no underlying check). Booleans only — never keys or credentials.
-  const [health, setHealth] = useState<{ firestore: boolean; resumeStorage: boolean; ai: boolean } | null>(null);
+  // Real system health — each backend dependency is a liveness probe
+  // (online/degraded/unconfigured), not an env-presence boolean. A fetch failure
+  // is tracked separately from initial-loading so the card shows "Health check
+  // failed" instead of "Checking…" forever when the endpoint errors.
+  const [health, setHealth] = useState<SystemHealth | null>(null);
+  const [healthError, setHealthError] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/auth/me').then(res => {
@@ -68,8 +78,12 @@ export default function AdminDashboard() {
     let cancelled = false;
     fetch('/api/admin/system/health', { cache: 'no-store' })
       .then(res => res.ok ? res.json() : null)
-      .then(d => { if (!cancelled) setHealth(d?.health ?? null); })
-      .catch(() => { if (!cancelled) setHealth(null); });
+      .then(d => {
+        if (cancelled) return;
+        if (d?.health) { setHealth(d.health); setHealthError(false); }
+        else { setHealth(null); setHealthError(true); }
+      })
+      .catch(() => { if (!cancelled) { setHealth(null); setHealthError(true); } });
     return () => { cancelled = true; };
   }, []);
 
@@ -214,20 +228,40 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent className="p-6 space-y-4">
               {([
-                { label: 'Firestore Persistence', ok: health?.firestore, on: 'Online', off: 'Unconfigured' },
-                { label: 'Resume Storage', ok: health?.resumeStorage, on: 'Ready', off: 'Unconfigured' },
-                { label: 'AI Matching Engine', ok: health?.ai, on: 'Ready', off: 'No API key' },
+                { label: 'Firestore Persistence', status: health?.firestore, okLabel: 'Online', offLabel: 'Unconfigured' },
+                { label: 'Resume Storage', status: health?.resumeStorage, okLabel: 'Ready', offLabel: 'Unconfigured' },
+                { label: 'AI Matching Engine', status: health?.ai, okLabel: 'Ready', offLabel: 'No API key' },
               ] as const).map((ind) => {
-                const checking = health === null;
-                const ok = ind.ok === true;
-                const barColor = checking ? 'bg-zinc-300' : ok ? 'bg-green-500' : 'bg-red-400';
-                const textColor = checking ? 'text-zinc-400' : ok ? 'text-green-500' : 'text-red-500';
-                const status = checking ? 'Checking…' : ok ? ind.on : ind.off;
+                const checking = health === null && !healthError;
+                const s = ind.status;
+                const barColor = checking
+                  ? 'bg-zinc-300'
+                  : s === 'online'
+                    ? 'bg-green-500'
+                    : s === 'degraded'
+                      ? 'bg-amber-500'
+                      : 'bg-red-400';
+                const textColor = checking
+                  ? 'text-zinc-400'
+                  : s === 'online'
+                    ? 'text-green-500'
+                    : s === 'degraded'
+                      ? 'text-amber-600'
+                      : 'text-red-500';
+                const statusLabel = healthError
+                  ? 'Health check failed'
+                  : checking
+                    ? 'Checking…'
+                    : s === 'online'
+                      ? ind.okLabel
+                      : s === 'degraded'
+                        ? 'Degraded'
+                        : ind.offLabel;
                 return (
                   <div key={ind.label} className="space-y-2">
                     <div className="flex justify-between text-[10px] font-black uppercase text-zinc-500">
                       <span>{ind.label}</span>
-                      <span className={cn('font-bold', textColor)}>{status}</span>
+                      <span className={cn('font-bold', textColor)}>{statusLabel}</span>
                     </div>
                     <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                       <div className={cn('h-full', barColor, checking ? 'w-1/2' : 'w-full')} />
