@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { 
   Plus, 
@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 import { ScrollFadeIn } from '@/components/ui/scroll-fade-in';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
@@ -41,25 +42,13 @@ export default function AdminJobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [deptFilter, setDeptFilter] = useState('All');
   const { toast } = useToast();
-  const [jobs, setJobs] = useState<any[] | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  // Phase 4 IU-0 slice 2: jobs are locked to public writes, so the admin list
-  // fetches server-side via /api/admin/jobs (Admin SDK) instead of useCollection.
-  const loadJobs = useCallback(async () => {
-    try {
-      const res = await fetch('/api/admin/jobs', { cache: 'no-store' });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setJobs(data.jobs);
-    } catch {
-      setJobs([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { loadJobs(); }, [loadJobs]);
+  // Realtime over SSE: the server holds an Admin-SDK onSnapshot on jobs (locked
+  // to clients) and pushes the newest 500 (mirrors GET /api/admin/jobs). Edits,
+  // toggles + deletes by other admins now appear live. No optimistic local
+  // updates: the list reflects server-confirmed state only.
+  const { data, loading, error } = useAdminRealtime<any[]>('jobs');
+  const jobs = data ?? null;
 
   const handleToggleActive = async (id: string, currentIsActive: boolean) => {
     try {
@@ -70,7 +59,7 @@ export default function AdminJobsPage() {
       });
       if (!res.ok) throw new Error();
       toast({ title: 'Status Updated', description: `Job is now ${!currentIsActive ? 'Active' : 'Archived'}.` });
-      loadJobs();
+      // No reload — the realtime stream pushes the server-confirmed row.
     } catch {
       toast({ title: 'Error', description: 'Failed to update job status.', variant: 'destructive' });
     }
@@ -82,7 +71,7 @@ export default function AdminJobsPage() {
       const res = await fetch(`/api/admin/jobs/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
       toast({ title: 'Success', description: 'Job deleted permanently.' });
-      loadJobs();
+      // No reload — the realtime stream removes the row when the server confirms.
     } catch {
       toast({ title: 'Error', description: 'Failed to delete job.', variant: 'destructive' });
     }
@@ -112,6 +101,12 @@ export default function AdminJobsPage() {
           </Button>
         </div>
       </ScrollFadeIn>
+
+      {error && (
+        <div className="text-xs font-medium rounded-xl border border-amber-200 bg-amber-50 text-amber-700 px-4 py-3 dark:bg-amber-950/30 dark:border-amber-900 dark:text-amber-300">
+          {error}
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative flex-1 w-full max-w-sm">

@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminRealtime } from '@/hooks/useAdminRealtime';
 import { formatDistanceToNow } from 'date-fns';
 
 type Stats = {
@@ -42,9 +43,20 @@ export default function AdminDashboard() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = useState(false);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [recentApps, setRecentApps] = useState<RecentApp[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Realtime dashboard stats over SSE (server-backed Admin-SDK onSnapshot on the
+  // 5 count/recent-app queries — see src/lib/realtime/admin-realtime.ts).
+  // Replaces the previous one-shot /api/admin/stats fetch: counts + the pipeline
+  // preview now update live when the underlying records change.
+  const { data: statsData, loading: rtLoading } = useAdminRealtime<{ stats: Stats; recentApplications: RecentApp[] }>('stats');
+  const stats = statsData?.stats ?? null;
+  const recentApps = statsData?.recentApplications ?? [];
+  const loading = rtLoading && !statsData;
+
+  // Real system health (replaces the previously HARDCODED "Firestore Persistence:
+  // Online" + "AI Matching Engine: Ready 95%" card, which were literal strings
+  // with no underlying check). Booleans only — never keys or credentials.
+  const [health, setHealth] = useState<{ firestore: boolean; resumeStorage: boolean; ai: boolean } | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/auth/me').then(res => {
@@ -54,25 +66,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/admin/stats', { cache: 'no-store' });
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        if (!cancelled) {
-          setStats(data.stats as Stats);
-          setRecentApps((data.recentApplications as RecentApp[]) || []);
-        }
-      } catch {
-        if (!cancelled) {
-          // Non-fatal: dashboard renders with zeroes; CRM data is now locked
-          // behind server auth, so a failure here must not crash the page.
-          setStats({ jobs: 0, blogs: 0, leads: 0, subscribers: 0 });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
+    fetch('/api/admin/system/health', { cache: 'no-store' })
+      .then(res => res.ok ? res.json() : null)
+      .then(d => { if (!cancelled) setHealth(d?.health ?? null); })
+      .catch(() => { if (!cancelled) setHealth(null); });
     return () => { cancelled = true; };
   }, []);
 
@@ -210,29 +207,34 @@ export default function AdminDashboard() {
         </div>
 
         <div className="lg:col-span-4 space-y-6">
-          <Card className="shadow-sm border-zinc-200 rounded-2xl">
+          <Card className="shadow-sm border-zinc-200 dark:border-zinc-800 rounded-2xl">
             <CardHeader className="p-6 border-b">
               <CardTitle className="text-lg font-bold">System Health</CardTitle>
+              <CardDescription className="text-xs">Derived from live service configuration.</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-[10px] font-black uppercase text-zinc-500">
-                  <span>Firestore Persistence</span>
-                  <span className="text-green-500 font-bold">Online</span>
-                </div>
-                <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500 w-full" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-[10px] font-black uppercase text-zinc-500">
-                  <span>AI Matching Engine</span>
-                  <span className="text-primary font-bold">Ready</span>
-                </div>
-                <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary w-[95%]" />
-                </div>
-              </div>
+              {([
+                { label: 'Firestore Persistence', ok: health?.firestore, on: 'Online', off: 'Unconfigured' },
+                { label: 'Resume Storage', ok: health?.resumeStorage, on: 'Ready', off: 'Unconfigured' },
+                { label: 'AI Matching Engine', ok: health?.ai, on: 'Ready', off: 'No API key' },
+              ] as const).map((ind) => {
+                const checking = health === null;
+                const ok = ind.ok === true;
+                const barColor = checking ? 'bg-zinc-300' : ok ? 'bg-green-500' : 'bg-red-400';
+                const textColor = checking ? 'text-zinc-400' : ok ? 'text-green-500' : 'text-red-500';
+                const status = checking ? 'Checking…' : ok ? ind.on : ind.off;
+                return (
+                  <div key={ind.label} className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-black uppercase text-zinc-500">
+                      <span>{ind.label}</span>
+                      <span className={cn('font-bold', textColor)}>{status}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                      <div className={cn('h-full', barColor, checking ? 'w-1/2' : 'w-full')} />
+                    </div>
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         </div>
