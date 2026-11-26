@@ -17,6 +17,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifySession } from '@/lib/auth/sessions';
 import { jsonError } from '@/lib/auth/route-helpers';
+import { writeAuditLog, sanitizeChangeSummary, newCorrelationId } from '@/lib/audit-log';
 import {
   jobAlertPreferencesSchema,
   resolveMatchingThreshold,
@@ -84,6 +85,11 @@ export async function PATCH(request: Request) {
   if (!db) return jsonError(503, 'Service unavailable.');
 
   const ref = db.collection('candidates').doc(email);
+  // Capture the pre-change state for a SAFE audit summary (secret/path fields
+  // redacted to names only — see sanitizeChangeSummary).
+  const beforeSnap = await ref.get();
+  const beforeData = beforeSnap.exists ? (beforeSnap.data() as Record<string, unknown>) : null;
+
   // Only update the preference fields — never touch identity/resume/consent.
   const patch: Record<string, unknown> = {
     jobAlertPreference: parsed.data.jobAlertPreference,
@@ -95,8 +101,34 @@ export async function PATCH(request: Request) {
   if (parsed.data.preferredEmploymentType !== undefined) patch.preferredEmploymentType = parsed.data.preferredEmploymentType;
   if (parsed.data.workModePreference !== undefined) patch.workModePreference = parsed.data.workModePreference;
 
+  const correlationId = newCorrelationId();
   // Ensure the profile doc exists (merge creates it if missing, preserving email).
-  await ref.set({ ...patch, email }, { merge: true });
+  try {
+    await ref.set({ ...patch, email }, { merge: true });
+  } catch (err) {
+    await writeAuditLog({
+      actor: { id: email, role: 'candidate', tier: 'user' },
+      eventType: 'candidate_preferences_update',
+      entityType: 'candidate',
+      entityId: email,
+      outcome: 'failure',
+      correlationId,
+      metadata: { reason: 'preferences_write_failed' },
+    });
+    console.error('[candidate/preferences] save failed:', err instanceof Error ? err.message : err);
+    return jsonError(500, 'Could not save preferences.');
+  }
+
+  // Server-generated audit record (actor from the verified session).
+  await writeAuditLog({
+    actor: { id: email, role: 'candidate', tier: 'user' },
+    eventType: 'candidate_preferences_update',
+    entityType: 'candidate',
+    entityId: email,
+    outcome: 'success',
+    changeSummary: sanitizeChangeSummary(beforeData, { ...beforeData, ...patch }),
+    correlationId,
+  });
 
   const snap = await ref.get();
   const data = (snap.data() || {}) as Record<string, unknown>;

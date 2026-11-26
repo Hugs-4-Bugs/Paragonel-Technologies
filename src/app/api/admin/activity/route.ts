@@ -1,25 +1,34 @@
 /**
- * GET  /api/admin/activity — list admin audit logs (Phase 4, IU-0 slice 1).
- * POST /api/admin/activity — record an audit entry (server-side write).
+ * GET /api/admin/activity — list admin audit logs.
  *
- * `adminActivityLogs` is now locked (`allow read, write: if false` for
- * clients). The admin Activity page fetches the list here (GET), and the
- * client `logActivity` helper (src/lib/audit.ts) posts here (POST) so that
- * still-unconverted admin CMS pages (blog/jobs) keep producing audit trails
- * without client Firestore writes.
+ * Audit records are SERVER-GENERATED ONLY. There is NO public POST route: the
+ * previous client-writable POST let any active admin (incl. a read-only
+ * `viewer`) append entries with client-supplied `action`/`resourceType`/
+ * `resourceId`, which violated "audit records must be server-generated" and
+ * "ordinary users must not edit privileged audit records". Audit entries are now
+ * written exclusively by server code via `writeAuditLog` / `logActivityServer`
+ * (src/lib/audit-log.ts, src/lib/admin-auth.ts), with the actor taken from the
+ * verified session — never from the request body.
  *
- * POST body: { action, resourceType, resourceId } — adminEmail is taken from
- * the verified JWT (never trusted from the client).
+ * `adminActivityLogs` is locked (`allow read, write: if false` for clients).
+ * Reads happen here via the Admin SDK. GET requires `security.audit.read`
+ * (super_admin only) so audit entries (which contain admin emails + action
+ * records) are not exposed to viewer/editor/admin roles.
+ *
+ * Each record carries the legacy fields (`adminEmail`/`action`/`resourceType`/
+ * `resourceId`/`timestamp`) the Activity page reads, PLUS the enriched fields
+ * (`eventId`/`actorRole`/`actorTier`/`eventType`/`outcome`/`changeSummary`/
+ * `correlationId`/`metadata`) for future, richer audit tooling.
  */
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase-admin';
-import { verifyAdmin, verifyAdminPermission, logActivityServer, serializeDoc, serviceUnavailable } from '@/lib/admin-auth';
+import { verifyAdminPermission, serializeDoc, serviceUnavailable } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  // Audit logs may contain admin emails + sensitive action records — restrict
-  // to security.audit.read (super_admin only per RBAC). A viewer/editor/admin
+  // Audit logs contain admin emails + sensitive action records — restrict to
+  // security.audit.read (super_admin only per RBAC). A viewer/editor/admin
   // reading all audit entries is a PII + audit-access gap.
   const auth = await verifyAdminPermission(request, 'security.audit.read');
   if (!auth.ok) return auth.response;
@@ -39,27 +48,4 @@ export async function GET(request: Request) {
     console.error('[admin/activity] list failed:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Failed to load activity' }, { status: 500 });
   }
-}
-
-export async function POST(request: Request) {
-  const auth = await verifyAdmin(request);
-  if (!auth.ok) return auth.response;
-
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  const action = typeof body?.action === 'string' ? body.action.slice(0, 200) : '';
-  const resourceType = typeof body?.resourceType === 'string' ? body.resourceType.slice(0, 60) : '';
-  const resourceId = typeof body?.resourceId === 'string' ? body.resourceId.slice(0, 120) : '';
-
-  if (!action || !resourceType) {
-    return NextResponse.json({ error: 'action and resourceType are required' }, { status: 400 });
-  }
-
-  await logActivityServer(auth.user, action, resourceType, resourceId);
-  return NextResponse.json({ ok: true }, { status: 201 });
 }

@@ -15,6 +15,7 @@ import { verifySession } from '@/lib/auth/sessions';
 import { jsonError } from '@/lib/auth/route-helpers';
 import { sendCandidateStatusEmail } from '@/lib/recruitment/notifications';
 import type { CandidateStatus } from '@/lib/recruitment/status';
+import { writeAuditLog, newCorrelationId } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -56,14 +57,29 @@ export async function POST(
 
     const now = new Date();
     const timeline = Array.isArray(data.statusTimeline) ? data.statusTimeline : [];
-    await ref.update({
-      candidateStatus: 'withdrawn',
-      internalStage: 'withdrawn',
-      status: 'Withdrawn',
-      withdrawnAt: now,
-      updatedAt: now,
-      statusTimeline: [...timeline, { status: 'withdrawn', label: 'Application withdrawn by candidate', at: now }],
-    });
+    const correlationId = newCorrelationId();
+    try {
+      await ref.update({
+        candidateStatus: 'withdrawn',
+        internalStage: 'withdrawn',
+        status: 'Withdrawn',
+        withdrawnAt: now,
+        updatedAt: now,
+        statusTimeline: [...timeline, { status: 'withdrawn', label: 'Application withdrawn by candidate', at: now }],
+      });
+    } catch (err) {
+      await writeAuditLog({
+        actor: { id: email, role: 'candidate', tier: 'user' },
+        eventType: 'candidate_application_withdraw',
+        entityType: 'jobApplication',
+        entityId: data.applicationId || id,
+        outcome: 'failure',
+        correlationId,
+        metadata: { reason: 'withdraw_update_failed' },
+      });
+      console.error('[candidate/withdraw] update failed:', err instanceof Error ? err.message : err);
+      return jsonError(500, 'Could not withdraw application.');
+    }
 
     // Withdrawal confirmation email (Phase 9). Best-effort — a failed email does
     // NOT revert the withdrawal (the DB is the source of truth).
@@ -74,6 +90,17 @@ export async function POST(
       applicationId: data.applicationId || id,
       status: 'withdrawn',
     }).catch(() => {});
+
+    // Server-generated audit so candidate-initiated withdrawals appear in the
+    // admin Activity feed (previously only the timeline entry on the doc recorded this).
+    await writeAuditLog({
+      actor: { id: email, role: 'candidate', tier: 'user' },
+      eventType: 'candidate_application_withdraw',
+      entityType: 'jobApplication',
+      entityId: data.applicationId || id,
+      outcome: 'success',
+      correlationId,
+    });
 
     return NextResponse.json({ ok: true, message: 'Application withdrawn.' });
   } catch {

@@ -19,8 +19,8 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { Timestamp } from 'firebase-admin/firestore';
-import { getAdminDb } from '@/lib/firebase-admin';
 import { verifySession } from '@/lib/auth/sessions';
+import { writeAuditLog } from '@/lib/audit-log';
 import type { Permission } from '@/lib/auth/rbac';
 
 export type AdminUser = { email: string; role?: string };
@@ -119,9 +119,17 @@ export function revalidatePublicContent(kind: 'blog' | 'jobs' | 'services' | 'te
  * Write an audit entry server-side via the Admin SDK. The Admin SDK bypasses
  * Firestore rules, so this keeps working after `adminActivityLogs` is locked.
  *
- * Unlike the old client `logActivity`, this does NOT swallow errors silently —
- * it logs them. A failed audit log must never block a successful mutation
- * (callers await it after the data write succeeds), but it must surface.
+ * This now delegates to `writeAuditLog` (src/lib/audit-log.ts) so every record
+ * carries the enriched, SERVER-generated schema (eventId / actorId / actorRole /
+ * actorTier / eventType / outcome / timestamp / correlationId / metadata) in
+ * ADDITION to the legacy fields (`adminEmail` / `action` / `resourceType` /
+ * `resourceId` / `timestamp`) that the existing Activity page reads. Existing
+ * call sites need no changes.
+ *
+ * The actor (`user`) comes from `verifyAdmin` / `verifyAdminPermission` (the
+ * verified session) — never from the request body. A failed audit log must
+ * never block a successful mutation (callers await it after the data write
+ * succeeds), but it must surface.
  */
 export async function logActivityServer(
   user: AdminUser,
@@ -129,23 +137,13 @@ export async function logActivityServer(
   resourceType: string,
   resourceId: string
 ): Promise<void> {
-  const db = getAdminDb();
-  if (!db) {
-    console.warn('[audit] admin SDK not configured; activity not logged.');
-    return;
-  }
-  try {
-    await db.collection('adminActivityLogs').add({
-      adminEmail: user.email,
-      action,
-      resourceType,
-      resourceId,
-      timestamp: Timestamp.now(),
-    });
-  } catch (e) {
-    // Surface, but do not throw — the mutation already succeeded.
-    console.error('[audit] server activity log failed:', e instanceof Error ? e.message : e);
-  }
+  await writeAuditLog({
+    actor: { id: user.email, role: user.role ?? 'admin', tier: 'admin' },
+    eventType: action,
+    entityType: resourceType,
+    entityId: resourceId,
+    outcome: 'success',
+  });
 }
 
 /* -------------------------------------------------------------------------- */

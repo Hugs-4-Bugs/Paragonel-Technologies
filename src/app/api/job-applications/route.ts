@@ -30,6 +30,7 @@ import { getClientIp, jsonError } from '@/lib/auth/route-helpers';
 import { validateResumePath } from '@/lib/resume-security';
 import { downloadResumeBytes } from '@/lib/resume-storage';
 import { sendApplicationConfirmation, SAFE_ATTACHMENT_BYTES } from '@/lib/email';
+import { writeAuditLog, newCorrelationId } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -293,6 +294,21 @@ export async function POST(request: Request) {
   }
 
   await logSecurityEvent({ type: 'register', email, ip, detail: `job_application:${data.jobId}` });
+
+  // Server-generated audit so submitted applications appear in the admin
+  // Activity feed (adminActivityLogs), in addition to the securityEvents
+  // record above. Previously submissions were absent from the admin Activity
+  // page because only securityEvents was written. Actor from the verified
+  // candidate session — never the request body.
+  await writeAuditLog({
+    actor: { id: email, role: 'candidate', tier: 'user' },
+    eventType: 'candidate_application_submit',
+    entityType: 'jobApplication',
+    entityId: applicationId,
+    outcome: 'success',
+    correlationId: newCorrelationId(),
+    metadata: { jobId: data.jobId, jobTitle: job.title || '' },
+  });
 
   return NextResponse.json(
     { success: true, message: 'Application submitted.', reference: applicationId, notification: confirmation.status },
